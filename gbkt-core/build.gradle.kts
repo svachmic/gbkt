@@ -28,7 +28,7 @@ kotlin {
 
         jvmMain.dependencies {
             // JSON parsing for Tiled map files
-            implementation("org.json:json:20231013")
+            implementation(libs.json)
         }
     }
 }

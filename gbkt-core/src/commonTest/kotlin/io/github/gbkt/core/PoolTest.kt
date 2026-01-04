@@ -458,6 +458,171 @@ class PoolTest {
     }
 
     // =========================================================================
+    // POOL ENTITY VAR OPERATORS
+    // =========================================================================
+
+    @Test
+    fun `pool entity var operators generate correct IR`() {
+        val game =
+            gbGame("PoolEntityVarOpsTest") {
+                val particle =
+                    pool("particle", size = 8) {
+                        position(0, 0)
+                        velocity(0, 0)
+
+                        onSpawn {
+                            // Test set with Int
+                            x set 50
+                            y set 60
+
+                            // Test set with Expr
+                            x set (y + 10)
+
+                            // Test addAssign with Int
+                            x addAssign 5
+
+                            // Test addAssign with Expr
+                            y addAssign velX
+
+                            // Test subAssign with Int
+                            x subAssign 3
+
+                            // Test subAssign with Expr
+                            y subAssign velY
+                        }
+
+                        onFrame {
+                            // Test plusAssign with Int
+                            x += 1
+
+                            // Test plusAssign with Expr
+                            y += velY
+
+                            // Test minusAssign with Int
+                            x -= 2
+
+                            // Test minusAssign with Expr
+                            y -= velX
+
+                            // Test timesAssign with Int
+                            x *= 2
+
+                            // Test timesAssign with Expr
+                            y *= velY
+
+                            // Test divAssign with Int
+                            x /= 2
+
+                            // Test divAssign with Expr
+                            y /= velX
+
+                            // Test remAssign with Int
+                            x %= 10
+
+                            // Test remAssign with Expr
+                            y %= velY
+                        }
+                    }
+
+                start =
+                    scene("main") {
+                        enter { particle.spawn() }
+                        every.frame { particle.update() }
+                    }
+            }
+
+        val code = game.compileForTest()
+
+        // Verify set operations with array indexing
+        assertTrue(
+            code.contains("particle_x[_particle_i] = 50"),
+            "Should generate array-indexed set for x"
+        )
+        assertTrue(
+            code.contains("particle_y[_particle_i] = 60"),
+            "Should generate array-indexed set for y"
+        )
+
+        // Verify set with expr generates array indexing
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_y[_particle_i] + 10"),
+            "Should generate array-indexed set with expr"
+        )
+
+        // Verify addAssign generates array indexing with addition
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] + 5"),
+            "Should generate addAssign with Int"
+        )
+        assertTrue(
+            code.contains(
+                "particle_y[_particle_i] = particle_y[_particle_i] + particle_vel_x[_particle_i]"
+            ),
+            "Should generate addAssign with Expr"
+        )
+
+        // Verify subAssign generates array indexing with subtraction
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] - 3"),
+            "Should generate subAssign with Int"
+        )
+        assertTrue(
+            code.contains(
+                "particle_y[_particle_i] = particle_y[_particle_i] - particle_vel_y[_particle_i]"
+            ),
+            "Should generate subAssign with Expr"
+        )
+
+        // Verify plusAssign generates array indexing
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] + 1"),
+            "Should generate plusAssign with Int"
+        )
+
+        // Verify minusAssign generates array indexing
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] - 2"),
+            "Should generate minusAssign with Int"
+        )
+
+        // Verify timesAssign generates array indexing (x * 2 -> x << 1 via strength reduction)
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] << 1"),
+            "Should generate timesAssign with Int (strength reduced to shift)"
+        )
+        assertTrue(
+            code.contains(
+                "particle_y[_particle_i] = particle_y[_particle_i] * particle_vel_y[_particle_i]"
+            ),
+            "Should generate timesAssign with Expr"
+        )
+
+        // Verify divAssign generates array indexing (x / 2 -> x >> 1 via strength reduction)
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] >> 1"),
+            "Should generate divAssign with Int (strength reduced to shift)"
+        )
+        assertTrue(
+            code.contains(
+                "particle_y[_particle_i] = particle_y[_particle_i] / particle_vel_x[_particle_i]"
+            ),
+            "Should generate divAssign with Expr"
+        )
+
+        // Verify remAssign generates array indexing
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] % 10"),
+            "Should generate remAssign with Int"
+        )
+        assertTrue(
+            code.contains(
+                "particle_y[_particle_i] = particle_y[_particle_i] % particle_vel_y[_particle_i]"
+            ),
+            "Should generate remAssign with Expr"
+        )
+    }
+
+    // =========================================================================
     // POOL STATE FIELDS
     // =========================================================================
 
