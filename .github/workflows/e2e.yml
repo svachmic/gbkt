@@ -2,10 +2,9 @@ name: E2E Tests
 
 on:
   push:
-    branches: [master, main]
-  # Disabled for PRs due to generateC pre-existing issues
-  # pull_request:
-  #   branches: [master, main, develop]
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main, develop]
 
 jobs:
   e2e:
@@ -34,7 +33,7 @@ jobs:
         run: ./gradlew build -x test --no-daemon
 
       - name: Generate C code from Kotlin DSL
-        run: ./gradlew :sample-game:generateC --no-daemon
+        run: ./gradlew :sample-game:generateC --no-daemon --stacktrace
 
       - name: Verify generated C code
         run: |
