@@ -207,246 +207,238 @@ val runnerGame =
                 onDespawn { hide() }
             }
 
-        // === Scene Definitions ===
-        lateinit var titleScene: SceneRef
-        lateinit var gameplayScene: SceneRef
-        lateinit var gameoverScene: SceneRef
+        // === Scene References ===
+        // Create refs upfront to avoid lateinit issues in callbacks
+        val titleScene = SceneRef("title")
+        val gameplayScene = SceneRef("gameplay")
+        val gameoverScene = SceneRef("gameover")
 
         // === Title Scene ===
-        titleScene =
-            scene("title") {
-                enter {
-                    screen.clear()
-                    screen.hideSprites()
+        scene("title") {
+            enter {
+                screen.clear()
+                screen.hideSprites()
 
-                    printCentered("GBKT DEMO") at 6
-                    printCentered("Features:") at 9
-                    print("Physics") at (6 to 11)
-                    print("Tweening") at (6 to 12)
-                    print("Collision") at (6 to 13)
-                    print("Camera FX") at (6 to 14)
-                    printCentered("PRESS START") at 17
-                }
+                printCentered("GBKT DEMO") at 6
+                printCentered("Features:") at 9
+                print("Physics") at (6 to 11)
+                print("Tweening") at (6 to 12)
+                print("Collision") at (6 to 13)
+                print("Camera FX") at (6 to 14)
+                printCentered("PRESS START") at 17
+            }
 
-                every.frame {
-                    whenever(buttons.start.pressed) {
-                        // Demonstrates camera fade transition
-                        camera.fadeOut(30.frames) { scene(gameplayScene) }
-                    }
+            every.frame {
+                whenever(buttons.start.pressed) {
+                    // Demonstrates camera fade transition
+                    camera.fadeOut(30.frames) { scene(gameplayScene) }
                 }
             }
+        }
 
         // === Gameplay Scene ===
-        gameplayScene =
-            scene("gameplay") {
-                enter {
-                    // Initialize player position and physics state
-                    player.x set 80
-                    player.y set 72
-                    playerVelX set 0
+        scene("gameplay") {
+            enter {
+                // Initialize player position and physics state
+                player.x set 80
+                player.y set 72
+                playerVelX set 0
+                playerVelY set 0
+                isGrounded set 1
+
+                // Initialize coin with bounce-in tween animation
+                // Demonstrates: tweening with EASE_OUT easing
+                coin.x set 120
+                coin.y set 0
+                tween(coin.y, from = 0, to = 100, duration = 30.frames, easing = Easing.EASE_OUT)
+
+                // Initialize enemy
+                enemy.x set 140
+                enemy.y set 100
+                enemy.velX set -1
+
+                // Reset game state
+                score set 0
+                coins set 0
+                gameSpeed set 2
+
+                // Setup camera to follow player
+                // Demonstrates: smooth camera following
+                camera.follow(player)
+
+                // Fade in from black
+                camera.fadeIn(20.frames)
+
+                screen.clear()
+                screen.showSprites()
+                player.play(idleAnim)
+                coin.play(spinAnim)
+            }
+
+            every.frame {
+                // Update pool - REQUIRED for pool lifecycle
+                particlePool.update()
+
+                // Update camera - REQUIRED for follow/shake/transitions
+                camera.update()
+
+                // === Player Input & Movement ===
+
+                // Horizontal movement
+                whenever(buttons.a.pressed) {
+                    whenever(playerVelX isBelow 4) { playerVelX += 1 }
+                    player.play(runAnim)
+                }
+                whenever(buttons.b.pressed) {
+                    whenever(playerVelX isAbove 0) { playerVelX -= 1 }
+                    player.play(runAnim)
+                }
+
+                // Jump mechanic
+                // Demonstrates: spawn particles from pool on jump
+                whenever(buttons.start.pressed and (isGrounded isEqualTo 1)) {
+                    playerVelY set jumpPower
+                    isGrounded set 0
+                    player.play(jumpAnim)
+
+                    // Spawn particle effect at jump position using pool
+                    particlePool.spawn {
+                        x set player.x
+                        y set player.y
+                        velY set -2
+                        velX set 0
+                    }
+                }
+
+                // === Physics System ===
+                // Demonstrates: gravity simulation with velocity
+
+                // Apply gravity when airborne
+                whenever(isGrounded isEqualTo 0) {
+                    whenever(playerVelY isAbove 0) { playerVelY -= gravity }
+                }
+
+                // Apply horizontal velocity to position
+                whenever(playerVelX isAbove 0) { player.x += 1 }
+
+                // Apply vertical velocity to position
+                whenever(playerVelY isAbove 0) { player.y -= 1 }
+
+                // === Tilemap Collision Detection ===
+                // Demonstrates: tile-based collision with Tiled maps
+
+                // Check ground collision (simple floor at groundY)
+                whenever(player.y isAtLeast groundY) {
+                    player.y set groundY
                     playerVelY set 0
                     isGrounded set 1
+                }
 
-                    // Initialize coin with bounce-in tween animation
-                    // Demonstrates: tweening with EASE_OUT easing
-                    coin.x set 120
-                    coin.y set 0
-                    tween(
-                        coin.y,
-                        from = 0,
-                        to = 100,
-                        duration = 30.frames,
-                        easing = Easing.EASE_OUT
-                    )
+                // Screen bounds
+                whenever(player.x isBelow 0) { player.x set 0 }
+                whenever(player.x isAbove 152) { player.x set 152 }
 
-                    // Initialize enemy
+                // Apply friction
+                whenever(playerVelX isAbove 0) { playerVelX -= 1 }
+
+                // === Sprite Collision Detection ===
+                // Demonstrates: entity collision with tags
+
+                // Collect coins
+                // Demonstrates: respawn with tween animation
+                whenever(player collidesWith coin) {
+                    coins += 1
+                    score += 100
+
+                    // Respawn coin at new location with tween
+                    whenever(coins isBelow 10) {
+                        coin.x set 40 + (coins * 15)
+                        coin.y set 0
+                        tween(
+                            coin.y,
+                            from = 0,
+                            to = 100,
+                            duration = 30.frames,
+                            easing = Easing.EASE_OUT
+                        )
+                    }
+
+                    // Spawn particle burst using pool
+                    // Demonstrates: spawn multiple particles in sequence
+                    particlePool.spawn {
+                        x set coin.x
+                        y set coin.y
+                        velX set 2
+                        velY set -1
+                    }
+                    particlePool.spawn {
+                        x set coin.x
+                        y set coin.y
+                        velX set -2
+                        velY set -1
+                    }
+                }
+
+                // Hit enemy
+                // Demonstrates: camera shake on collision
+                whenever(player collidesWith enemy) {
+                    lives -= 1
+
+                    // Camera shake on hit
+                    camera.shake(4, 10.frames)
+
+                    // Knockback player
+                    playerVelX set 0
+                    playerVelY set 4
+
+                    // Reset enemy position
                     enemy.x set 140
-                    enemy.y set 100
-                    enemy.velX set -1
 
-                    // Reset game state
-                    score set 0
-                    coins set 0
-                    gameSpeed set 2
-
-                    // Setup camera to follow player
-                    // Demonstrates: smooth camera following
-                    camera.follow(player)
-
-                    // Fade in from black
-                    camera.fadeIn(20.frames)
-
-                    screen.clear()
-                    screen.showSprites()
-                    player.play(idleAnim)
-                    coin.play(spinAnim)
+                    // Game over check
+                    whenever(lives isEqualTo 0) {
+                        camera.fadeOut(20.frames) { scene(gameoverScene) }
+                    }
                 }
 
-                every.frame {
-                    // Update pool - REQUIRED for pool lifecycle
-                    particlePool.update()
+                // === Enemy AI with Physics ===
+                // Demonstrates: bouncing AI with wall detection
 
-                    // Update camera - REQUIRED for follow/shake/transitions
-                    camera.update()
+                // Bouncing enemy movement
+                enemy.x += enemy.velX
 
-                    // === Player Input & Movement ===
+                // Bounce off walls
+                whenever(enemy.x isBelow 20) { enemy.velX set 1 }
+                whenever(enemy.x isAbove 140) { enemy.velX set -1 }
 
-                    // Horizontal movement
-                    whenever(buttons.a.pressed) {
-                        whenever(playerVelX isBelow 4) { playerVelX += 1 }
-                        player.play(runAnim)
-                    }
-                    whenever(buttons.b.pressed) {
-                        whenever(playerVelX isAbove 0) { playerVelX -= 1 }
-                        player.play(runAnim)
-                    }
+                // === HUD Display ===
+                print("SCORE:", score) at (0 to 0)
+                print("COINS:", coins) at (0 to 1)
+                print("LIVES:", lives) at (0 to 2)
 
-                    // Jump mechanic
-                    // Demonstrates: spawn particles from pool on jump
-                    whenever(buttons.start.pressed and (isGrounded isEqualTo 1)) {
-                        playerVelY set jumpPower
-                        isGrounded set 0
-                        player.play(jumpAnim)
-
-                        // Spawn particle effect at jump position using pool
-                        particlePool.spawn {
-                            x set player.x
-                            y set player.y
-                            velY set -2
-                            velX set 0
-                        }
-                    }
-
-                    // === Physics System ===
-                    // Demonstrates: gravity simulation with velocity
-
-                    // Apply gravity when airborne
-                    whenever(isGrounded isEqualTo 0) {
-                        whenever(playerVelY isAbove 0) { playerVelY -= gravity }
-                    }
-
-                    // Apply horizontal velocity to position
-                    whenever(playerVelX isAbove 0) { player.x += 1 }
-
-                    // Apply vertical velocity to position
-                    whenever(playerVelY isAbove 0) { player.y -= 1 }
-
-                    // === Tilemap Collision Detection ===
-                    // Demonstrates: tile-based collision with Tiled maps
-
-                    // Check ground collision (simple floor at groundY)
-                    whenever(player.y isAtLeast groundY) {
-                        player.y set groundY
-                        playerVelY set 0
-                        isGrounded set 1
-                    }
-
-                    // Screen bounds
-                    whenever(player.x isBelow 0) { player.x set 0 }
-                    whenever(player.x isAbove 152) { player.x set 152 }
-
-                    // Apply friction
-                    whenever(playerVelX isAbove 0) { playerVelX -= 1 }
-
-                    // === Sprite Collision Detection ===
-                    // Demonstrates: entity collision with tags
-
-                    // Collect coins
-                    // Demonstrates: respawn with tween animation
-                    whenever(player collidesWith coin) {
-                        coins += 1
-                        score += 100
-
-                        // Respawn coin at new location with tween
-                        whenever(coins isBelow 10) {
-                            coin.x set 40 + (coins * 15)
-                            coin.y set 0
-                            tween(
-                                coin.y,
-                                from = 0,
-                                to = 100,
-                                duration = 30.frames,
-                                easing = Easing.EASE_OUT
-                            )
-                        }
-
-                        // Spawn particle burst using pool
-                        // Demonstrates: spawn multiple particles in sequence
-                        particlePool.spawn {
-                            x set coin.x
-                            y set coin.y
-                            velX set 2
-                            velY set -1
-                        }
-                        particlePool.spawn {
-                            x set coin.x
-                            y set coin.y
-                            velX set -2
-                            velY set -1
-                        }
-                    }
-
-                    // Hit enemy
-                    // Demonstrates: camera shake on collision
-                    whenever(player collidesWith enemy) {
-                        lives -= 1
-
-                        // Camera shake on hit
-                        camera.shake(4, 10.frames)
-
-                        // Knockback player
-                        playerVelX set 0
-                        playerVelY set 4
-
-                        // Reset enemy position
-                        enemy.x set 140
-
-                        // Game over check
-                        whenever(lives isEqualTo 0) {
-                            camera.fadeOut(20.frames) { scene(gameoverScene) }
-                        }
-                    }
-
-                    // === Enemy AI with Physics ===
-                    // Demonstrates: bouncing AI with wall detection
-
-                    // Bouncing enemy movement
-                    enemy.x += enemy.velX
-
-                    // Bounce off walls
-                    whenever(enemy.x isBelow 20) { enemy.velX set 1 }
-                    whenever(enemy.x isAbove 140) { enemy.velX set -1 }
-
-                    // === HUD Display ===
-                    print("SCORE:", score) at (0 to 0)
-                    print("COINS:", coins) at (0 to 1)
-                    print("LIVES:", lives) at (0 to 2)
-
-                    // === Scene Transitions ===
-                    whenever(buttons.select.pressed) { scene(titleScene) }
-                }
-
-                exit {
-                    // Clean up: despawn all particles
-                    particlePool.despawnAll()
-                }
+                // === Scene Transitions ===
+                whenever(buttons.select.pressed) { scene(titleScene) }
             }
+
+            exit {
+                // Clean up: despawn all particles
+                particlePool.despawnAll()
+            }
+        }
 
         // === Game Over Scene ===
-        gameoverScene =
-            scene("gameover") {
-                enter {
-                    screen.hideSprites()
-                    screen.clear()
+        scene("gameover") {
+            enter {
+                screen.hideSprites()
+                screen.clear()
 
-                    printCentered("GAME OVER") at 6
-                    print("FINAL SCORE: ", score) at (4 to 9)
-                    print("COINS: ", coins) at (4 to 11)
-                    printCentered("PRESS START") at 14
-                }
-
-                every.frame { whenever(buttons.start.pressed) { scene(titleScene) } }
+                printCentered("GAME OVER") at 6
+                print("FINAL SCORE: ", score) at (4 to 9)
+                print("COINS: ", coins) at (4 to 11)
+                printCentered("PRESS START") at 14
             }
+
+            every.frame { whenever(buttons.start.pressed) { scene(titleScene) } }
+        }
 
         // Type-safe starting scene
         start = titleScene

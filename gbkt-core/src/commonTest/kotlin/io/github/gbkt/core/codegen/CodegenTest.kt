@@ -437,4 +437,60 @@ class CodegenTest {
             "Should assign timer in onSpawn"
         )
     }
+
+    @Test
+    fun `scene change generates correct C code`() {
+        val game =
+            gbGame("test") {
+                lateinit var gameOver: SceneRef
+                gameOver = scene("gameover") {}
+
+                start = scene("main") { enter { scene(gameOver) } }
+            }
+
+        val code = CodeGenerator(game).generate()
+
+        assertTrue(
+            code.contains("_next_scene = SCENE_GAMEOVER"),
+            "Should set next scene to gameover"
+        )
+        assertTrue(code.contains("_scene_changed = 1"), "Should mark scene as changed")
+    }
+
+    @Test
+    fun `raw code generates verbatim C`() {
+        val game = gbGame("test") { start = scene("main") { enter { raw("custom_function();") } } }
+
+        val code = CodeGenerator(game).generate()
+
+        assertTrue(code.contains("custom_function();"), "Should include raw C code verbatim")
+    }
+
+    @Test
+    fun `dialog show generates visibility flag`() {
+        val game =
+            gbGame("test") {
+                val chat = dialog("chat") {}
+
+                start = scene("main") { enter { chat.show() } }
+            }
+
+        val code = CodeGenerator(game).generate()
+
+        assertTrue(code.contains("_chat_visible = 1"), "Should set dialog visible flag")
+    }
+
+    @Test
+    fun `dialog hide generates visibility flag clear`() {
+        val game =
+            gbGame("test") {
+                val chat = dialog("chat") {}
+
+                start = scene("main") { enter { chat.hide() } }
+            }
+
+        val code = CodeGenerator(game).generate()
+
+        assertTrue(code.contains("_chat_visible = 0"), "Should clear dialog visible flag")
+    }
 }

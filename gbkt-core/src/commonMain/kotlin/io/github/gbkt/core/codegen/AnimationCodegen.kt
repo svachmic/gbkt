@@ -7,11 +7,16 @@
 package io.github.gbkt.core.codegen
 
 import io.github.gbkt.core.CodeGenerator
+import io.github.gbkt.core.StateMachine
 import io.github.gbkt.core.graphics.Sprite
 
 // =============================================================================
 // ANIMATION AND STATE MACHINE CODE GENERATION
 // =============================================================================
+
+// Constants for repeated C code strings
+private const val BREAK_STMT = "break;"
+private const val DEFAULT_BREAK = "default: break;"
 
 internal fun CodeGenerator.generateAnimationData() {
     val animatedSprites = game.sprites.filter { it.hasAnimations }
@@ -20,8 +25,13 @@ internal fun CodeGenerator.generateAnimationData() {
     line("// === Animation Data ===")
     line()
 
-    // Generate frame arrays for each animation
-    for (sprite in animatedSprites) {
+    generateFrameArrays(animatedSprites)
+    generateAnimationStruct()
+    generateAnimationTables(animatedSprites)
+}
+
+private fun CodeGenerator.generateFrameArrays(sprites: List<Sprite>) {
+    for (sprite in sprites) {
         for ((animName, anim) in sprite.animations) {
             if (anim.frames.isEmpty()) {
                 line(
@@ -35,8 +45,9 @@ internal fun CodeGenerator.generateAnimationData() {
         }
     }
     line()
+}
 
-    // Generate animation metadata struct
+private fun CodeGenerator.generateAnimationStruct() {
     line("typedef struct {")
     indent++
     line("const UINT8 *frames;")
@@ -46,9 +57,10 @@ internal fun CodeGenerator.generateAnimationData() {
     indent--
     line("} AnimationData;")
     line()
+}
 
-    // Generate animation tables for each sprite
-    for (sprite in animatedSprites) {
+private fun CodeGenerator.generateAnimationTables(sprites: List<Sprite>) {
+    for (sprite in sprites) {
         line("const AnimationData ${sprite.name}_anims[] = {")
         indent++
         val animList = sprite.animations.entries.toList()
@@ -56,7 +68,6 @@ internal fun CodeGenerator.generateAnimationData() {
             val (animName, anim) = entry
             val flags = if (anim.loop) "ANIM_FLAG_LOOPING" else "0"
             val comma = if (index < animList.size - 1) "," else ""
-            // Use at least 1 for frame count to avoid division by zero
             val frameCount = if (anim.frames.isEmpty()) 1 else anim.frameCount
             line(
                 "{ ${sprite.name}_${animName}_frames, $frameCount, ${anim.frameDelay}, $flags }$comma  // $animName"
@@ -73,6 +84,13 @@ internal fun CodeGenerator.generateAnimationUpdateFunctions() {
     if (animatedSprites.isEmpty()) return
 
     line("// === Animation Update Functions ===")
+    line()
+
+    // Forward declarations - update functions call play_queued
+    for (sprite in animatedSprites) {
+        line("void ${sprite.name}_update_animation(void);")
+        line("void ${sprite.name}_play_queued(void);")
+    }
     line()
 
     // Generate per-sprite update functions
@@ -132,7 +150,6 @@ internal fun CodeGenerator.generateAnimationUpdateFunctions() {
                     // Generate onComplete callbacks if any
                     generateAnimationCompleteCallbacks(sprite)
                     // Check queue for next animation
-                    val queueVar = "_${sprite.name}_queue"
                     val queueLenVar = "_${sprite.name}_queue_len"
                     block("if ($queueLenVar > 0)") { line("${sprite.name}_play_queued();") }
                     block("else") { line("$animVar = ANIM_NONE;") }
@@ -215,10 +232,10 @@ private fun CodeGenerator.generateAnimationCompleteCallbacks(sprite: Sprite) {
             line("case $animConstant:")
             indent++
             anim.onComplete.forEach { generateStatement(it) }
-            line("break;")
+            line(BREAK_STMT)
             indent--
         }
-        line("default: break;")
+        line(DEFAULT_BREAK)
     }
 }
 
@@ -240,15 +257,15 @@ private fun CodeGenerator.generateAnimationFrameEventCallbacks(sprite: Sprite) {
                     line("case $frameIndex:")
                     indent++
                     statements.forEach { generateStatement(it) }
-                    line("break;")
+                    line(BREAK_STMT)
                     indent--
                 }
-                line("default: break;")
+                line(DEFAULT_BREAK)
             }
-            line("break;")
+            line(BREAK_STMT)
             indent--
         }
-        line("default: break;")
+        line(DEFAULT_BREAK)
     }
 }
 
@@ -258,113 +275,116 @@ internal fun CodeGenerator.generateStateMachineUpdateFunctions() {
     line("// === State Machine Update Functions ===")
     for (machine in game.stateMachines) {
         block("void ${machine.name}_update(void)") {
-            // Check for state transition
             block("if (_${machine.name}_changed)") {
-                // Exit current state
-                block("switch (_${machine.name}_state)") {
-                    for ((stateName, state) in machine.states) {
-                        if (state.onExit.isNotEmpty()) {
-                            line("case STATE_${machine.name.uppercase()}_${stateName.uppercase()}:")
-                            indent++
-                            state.onExit.forEach { generateStatement(it) }
-                            line("break;")
-                            indent--
-                        }
-                    }
-                    line("default: break;")
-                }
+                generateStateExitSwitch(machine)
                 line()
                 line("_${machine.name}_state = _${machine.name}_next;")
                 line("_${machine.name}_changed = 0;")
                 line()
-
-                // Enter new state
-                block("switch (_${machine.name}_state)") {
-                    for ((stateName, state) in machine.states) {
-                        val hasEnterCode = state.onEnter.isNotEmpty() || state.animation != null
-                        if (hasEnterCode) {
-                            line("case STATE_${machine.name.uppercase()}_${stateName.uppercase()}:")
-                            indent++
-                            // Auto-play animation if state has one
-                            if (state.animation != null) {
-                                val anim = state.animation
-                                val sprite = game.sprites.find { it.name == anim.spriteName }
-                                if (sprite != null && sprite.hasAnimations) {
-                                    val animDef = sprite.animations[anim.animationName]
-                                    if (animDef != null && animDef.frames.isNotEmpty()) {
-                                        val animVar = "_${anim.spriteName}_anim"
-                                        val frameVar = "_${anim.spriteName}_frame"
-                                        val timerVar = "_${anim.spriteName}_timer"
-                                        val speedVar = "_${anim.spriteName}_speed"
-                                        val flagsVar = "_${anim.spriteName}_flags"
-                                        val animConstant =
-                                            "ANIM_${anim.spriteName.uppercase()}_${anim.animationName.uppercase()}"
-                                        line("$animVar = $animConstant;")
-                                        line("$frameVar = 0;")
-                                        line("$timerVar = ${animDef.frameDelay};")
-                                        line("$speedVar = 100;")
-                                        line("$flagsVar = 0;")
-                                        line(
-                                            "set_sprite_tile(${sprite.oamSlot}, ${animDef.frames.first()});"
-                                        )
-                                    } else if (animDef != null) {
-                                        line(
-                                            "// WARNING: Animation '${anim.animationName}' has no frames"
-                                        )
-                                    }
-                                }
-                            }
-                            state.onEnter.forEach { generateStatement(it) }
-                            line("break;")
-                            indent--
-                        }
-                    }
-                    line("default: break;")
-                }
+                generateStateEnterSwitch(machine)
             }
             line()
-
-            // Process current state tick and transitions
-            block("switch (_${machine.name}_state)") {
-                for ((stateName, state) in machine.states) {
-                    line("case STATE_${machine.name.uppercase()}_${stateName.uppercase()}:")
-                    indent++
-
-                    // State tick logic
-                    if (state.onTick.isNotEmpty()) {
-                        state.onTick.forEach { generateStatement(it) }
-                    }
-
-                    // Check transitions (with optional lockUntilComplete)
-                    if (state.transitions.isNotEmpty()) {
-                        if (state.animation?.lockUntilComplete == true) {
-                            // Only check transitions when animation is complete
-                            val animVar = "_${state.animation.spriteName}_anim"
-                            block("if ($animVar == ANIM_NONE)") {
-                                for (transition in state.transitions) {
-                                    val cond = generateExpr(transition.condition)
-                                    block("if ($cond)") {
-                                        transition.actions.forEach { generateStatement(it) }
-                                    }
-                                }
-                            }
-                        } else {
-                            // Check transitions normally
-                            for (transition in state.transitions) {
-                                val cond = generateExpr(transition.condition)
-                                block("if ($cond)") {
-                                    transition.actions.forEach { generateStatement(it) }
-                                }
-                            }
-                        }
-                    }
-
-                    line("break;")
-                    indent--
-                }
-                line("default: break;")
-            }
+            generateStateTickSwitch(machine)
         }
         line()
+    }
+}
+
+private fun CodeGenerator.generateStateExitSwitch(machine: StateMachine) {
+    block("switch (_${machine.name}_state)") {
+        for ((stateName, state) in machine.states) {
+            if (state.onExit.isNotEmpty()) {
+                line("case STATE_${machine.name.uppercase()}_${stateName.uppercase()}:")
+                indent++
+                state.onExit.forEach { generateStatement(it) }
+                line(BREAK_STMT)
+                indent--
+            }
+        }
+        line(DEFAULT_BREAK)
+    }
+}
+
+private fun CodeGenerator.generateStateEnterSwitch(machine: StateMachine) {
+    block("switch (_${machine.name}_state)") {
+        for ((stateName, state) in machine.states) {
+            val hasEnterCode = state.onEnter.isNotEmpty() || state.animation != null
+            if (hasEnterCode) {
+                line("case STATE_${machine.name.uppercase()}_${stateName.uppercase()}:")
+                indent++
+                if (state.animation != null) {
+                    generateStateAnimation(state.animation)
+                }
+                state.onEnter.forEach { generateStatement(it) }
+                line(BREAK_STMT)
+                indent--
+            }
+        }
+        line(DEFAULT_BREAK)
+    }
+}
+
+private fun CodeGenerator.generateStateAnimation(anim: io.github.gbkt.core.StateAnimation) {
+    val sprite = game.sprites.find { it.name == anim.spriteName } ?: return
+    if (!sprite.hasAnimations) return
+
+    val animDef = sprite.animations[anim.animationName]
+    if (animDef == null || animDef.frames.isEmpty()) {
+        if (animDef != null) {
+            line("// WARNING: Animation '${anim.animationName}' has no frames")
+        }
+        return
+    }
+
+    val animVar = "_${anim.spriteName}_anim"
+    val frameVar = "_${anim.spriteName}_frame"
+    val timerVar = "_${anim.spriteName}_timer"
+    val speedVar = "_${anim.spriteName}_speed"
+    val flagsVar = "_${anim.spriteName}_flags"
+    val animConstant = "ANIM_${anim.spriteName.uppercase()}_${anim.animationName.uppercase()}"
+
+    line("$animVar = $animConstant;")
+    line("$frameVar = 0;")
+    line("$timerVar = ${animDef.frameDelay};")
+    line("$speedVar = 100;")
+    line("$flagsVar = 0;")
+    line("set_sprite_tile(${sprite.oamSlot}, ${animDef.frames.first()});")
+}
+
+private fun CodeGenerator.generateStateTickSwitch(machine: StateMachine) {
+    block("switch (_${machine.name}_state)") {
+        for ((stateName, state) in machine.states) {
+            line("case STATE_${machine.name.uppercase()}_${stateName.uppercase()}:")
+            indent++
+
+            if (state.onTick.isNotEmpty()) {
+                state.onTick.forEach { generateStatement(it) }
+            }
+
+            generateStateTransitions(state)
+
+            line(BREAK_STMT)
+            indent--
+        }
+        line(DEFAULT_BREAK)
+    }
+}
+
+private fun CodeGenerator.generateStateTransitions(state: io.github.gbkt.core.State) {
+    if (state.transitions.isEmpty()) return
+
+    if (state.animation?.lockUntilComplete == true) {
+        val animVar = "_${state.animation.spriteName}_anim"
+        block("if ($animVar == ANIM_NONE)") {
+            for (transition in state.transitions) {
+                val cond = generateExpr(transition.condition)
+                block("if ($cond)") { transition.actions.forEach { generateStatement(it) } }
+            }
+        }
+    } else {
+        for (transition in state.transitions) {
+            val cond = generateExpr(transition.condition)
+            block("if ($cond)") { transition.actions.forEach { generateStatement(it) } }
+        }
     }
 }

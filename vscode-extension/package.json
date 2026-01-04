@@ -2,7 +2,7 @@
   "name": "gbkt",
   "displayName": "gbkt",
   "description": "Syntax highlighting, snippets, and build integration for gbkt Kotlin DSL",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "publisher": "gbkt",
   "license": "Apache-2.0",
   "repository": {

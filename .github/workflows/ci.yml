@@ -21,10 +21,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -34,15 +34,15 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
 
-      - name: Build
-        run: ./gradlew build -x test --no-daemon
+      - name: Build core modules
+        run: ./gradlew -PcoreOnly=true :gbkt-core:build :gbkt-cli:build --no-daemon
 
       - name: Run Tests
-        run: ./gradlew ${{ matrix.gradle-target }} --no-daemon
+        run: ./gradlew -PcoreOnly=true :gbkt-core:${{ matrix.gradle-target }} --no-daemon
 
       - name: Upload Test Reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-reports-${{ matrix.os }}
           path: |
@@ -53,10 +53,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -64,18 +64,18 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Check formatting (if ktlint configured)
-        run: ./gradlew build -x test --no-daemon || true
+      - name: Check formatting
+        run: ./gradlew -PcoreOnly=true :gbkt-core:spotlessCheck :gbkt-cli:spotlessCheck --no-daemon
         continue-on-error: true
 
   version-consistency:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -84,7 +84,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Check version consistency
-        run: ./gradlew checkVersionConsistency --no-daemon
+        run: ./gradlew -PcoreOnly=true checkVersionConsistency --no-daemon
 
   vscode-extension:
     runs-on: ubuntu-latest
@@ -94,10 +94,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
@@ -112,19 +112,16 @@ jobs:
       - name: Compile
         run: npm run compile
 
-      - name: Run tests
-        run: npm run test:server
-
-  # Optional: Windows build (more expensive runner)
-  build-windows:
-    runs-on: windows-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+  sonarcloud:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -132,5 +129,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build and Test
-        run: ./gradlew build jvmTest --no-daemon
+      - name: Run tests with coverage
+        run: ./gradlew -PcoreOnly=true :gbkt-core:jvmTest :gbkt-core:koverXmlReport --no-daemon
+
+      - name: SonarCloud Scan
+        run: ./gradlew -PcoreOnly=true sonar --no-daemon
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

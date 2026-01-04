@@ -1,6 +1,7 @@
 plugins {
     kotlin("multiplatform")
     `maven-publish`
+    id("org.jetbrains.kotlinx.kover") version "0.9.4"
 }
 
 kotlin {
@@ -27,7 +28,7 @@ kotlin {
 
         jvmMain.dependencies {
             // JSON parsing for Tiled map files
-            implementation("org.json:json:20231013")
+            implementation(libs.json)
         }
     }
 }

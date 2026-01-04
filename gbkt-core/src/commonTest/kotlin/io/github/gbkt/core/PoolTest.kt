@@ -458,6 +458,171 @@ class PoolTest {
     }
 
     // =========================================================================
+    // POOL ENTITY VAR OPERATORS
+    // =========================================================================
+
+    @Test
+    fun `pool entity var operators generate correct IR`() {
+        val game =
+            gbGame("PoolEntityVarOpsTest") {
+                val particle =
+                    pool("particle", size = 8) {
+                        position(0, 0)
+                        velocity(0, 0)
+
+                        onSpawn {
+                            // Test set with Int
+                            x set 50
+                            y set 60
+
+                            // Test set with Expr
+                            x set (y + 10)
+
+                            // Test addAssign with Int
+                            x addAssign 5
+
+                            // Test addAssign with Expr
+                            y addAssign velX
+
+                            // Test subAssign with Int
+                            x subAssign 3
+
+                            // Test subAssign with Expr
+                            y subAssign velY
+                        }
+
+                        onFrame {
+                            // Test plusAssign with Int
+                            x += 1
+
+                            // Test plusAssign with Expr
+                            y += velY
+
+                            // Test minusAssign with Int
+                            x -= 2
+
+                            // Test minusAssign with Expr
+                            y -= velX
+
+                            // Test timesAssign with Int
+                            x *= 2
+
+                            // Test timesAssign with Expr
+                            y *= velY
+
+                            // Test divAssign with Int
+                            x /= 2
+
+                            // Test divAssign with Expr
+                            y /= velX
+
+                            // Test remAssign with Int
+                            x %= 10
+
+                            // Test remAssign with Expr
+                            y %= velY
+                        }
+                    }
+
+                start =
+                    scene("main") {
+                        enter { particle.spawn() }
+                        every.frame { particle.update() }
+                    }
+            }
+
+        val code = game.compileForTest()
+
+        // Verify set operations with array indexing
+        assertTrue(
+            code.contains("particle_x[_particle_i] = 50"),
+            "Should generate array-indexed set for x"
+        )
+        assertTrue(
+            code.contains("particle_y[_particle_i] = 60"),
+            "Should generate array-indexed set for y"
+        )
+
+        // Verify set with expr generates array indexing
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_y[_particle_i] + 10"),
+            "Should generate array-indexed set with expr"
+        )
+
+        // Verify addAssign generates array indexing with addition
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] + 5"),
+            "Should generate addAssign with Int"
+        )
+        assertTrue(
+            code.contains(
+                "particle_y[_particle_i] = particle_y[_particle_i] + particle_vel_x[_particle_i]"
+            ),
+            "Should generate addAssign with Expr"
+        )
+
+        // Verify subAssign generates array indexing with subtraction
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] - 3"),
+            "Should generate subAssign with Int"
+        )
+        assertTrue(
+            code.contains(
+                "particle_y[_particle_i] = particle_y[_particle_i] - particle_vel_y[_particle_i]"
+            ),
+            "Should generate subAssign with Expr"
+        )
+
+        // Verify plusAssign generates array indexing
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] + 1"),
+            "Should generate plusAssign with Int"
+        )
+
+        // Verify minusAssign generates array indexing
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] - 2"),
+            "Should generate minusAssign with Int"
+        )
+
+        // Verify timesAssign generates array indexing (x * 2 -> x << 1 via strength reduction)
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] << 1"),
+            "Should generate timesAssign with Int (strength reduced to shift)"
+        )
+        assertTrue(
+            code.contains(
+                "particle_y[_particle_i] = particle_y[_particle_i] * particle_vel_y[_particle_i]"
+            ),
+            "Should generate timesAssign with Expr"
+        )
+
+        // Verify divAssign generates array indexing (x / 2 -> x >> 1 via strength reduction)
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] >> 1"),
+            "Should generate divAssign with Int (strength reduced to shift)"
+        )
+        assertTrue(
+            code.contains(
+                "particle_y[_particle_i] = particle_y[_particle_i] / particle_vel_x[_particle_i]"
+            ),
+            "Should generate divAssign with Expr"
+        )
+
+        // Verify remAssign generates array indexing
+        assertTrue(
+            code.contains("particle_x[_particle_i] = particle_x[_particle_i] % 10"),
+            "Should generate remAssign with Int"
+        )
+        assertTrue(
+            code.contains(
+                "particle_y[_particle_i] = particle_y[_particle_i] % particle_vel_y[_particle_i]"
+            ),
+            "Should generate remAssign with Expr"
+        )
+    }
+
+    // =========================================================================
     // POOL STATE FIELDS
     // =========================================================================
 
@@ -621,5 +786,144 @@ class PoolTest {
 
         assertTrue(code.contains("player"), "Should reference player")
         assertTrue(code.contains("bullet"), "Should reference bullet pool")
+    }
+
+    // =========================================================================
+    // POOL ANIMATION CODE GENERATION
+    // =========================================================================
+
+    @Test
+    fun `pool animation generates animation constants and arrays`() {
+        val game =
+            gbGame("PoolAnimationCodegenTest") {
+                lateinit var spinAnim: AnimationRef
+
+                val particles =
+                    pool("particle", size = 4) {
+                        position(0, 0)
+                        sprite(SpriteAsset("particle.png")) {
+                            size = 8 x 8
+                            animations {
+                                spinAnim = "spin" plays (frames(0, 1, 2, 3) every 4.frames)
+                            }
+                        }
+
+                        onSpawn { play(spinAnim) }
+                    }
+
+                start = scene("main") { every.frame { particles.update() } }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("ANIM_PARTICLE_SPIN"), "Should generate animation constant")
+        assertTrue(
+            code.contains("particle_anim[PARTICLE_POOL_SIZE]"),
+            "Should generate animation index array"
+        )
+        assertTrue(
+            code.contains("particle_frame[PARTICLE_POOL_SIZE]"),
+            "Should generate frame array"
+        )
+        assertTrue(
+            code.contains("particle_timer[PARTICLE_POOL_SIZE]"),
+            "Should generate timer array"
+        )
+    }
+
+    @Test
+    fun `pool animation play generates correct indexed assignment`() {
+        val game =
+            gbGame("PoolAnimPlayTest") {
+                lateinit var idleAnim: AnimationRef
+                lateinit var walkAnim: AnimationRef
+
+                val enemies =
+                    pool("enemy", size = 4) {
+                        position(0, 0)
+                        sprite(SpriteAsset("enemy.png")) {
+                            size = 8 x 8
+                            animations {
+                                idleAnim = "idle" plays (frames(0, 1) every 8.frames)
+                                walkAnim = "walk" plays (frames(2, 3, 4, 5) every 4.frames)
+                            }
+                        }
+
+                        onSpawn { play(idleAnim) }
+                        onFrame { play(walkAnim) }
+                    }
+
+                start = scene("main") { every.frame { enemies.update() } }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("ANIM_ENEMY_IDLE"), "Should have idle animation constant")
+        assertTrue(code.contains("ANIM_ENEMY_WALK"), "Should have walk animation constant")
+        assertTrue(
+            code.contains("enemy_anim[_enemy_i]"),
+            "Should use indexed access for animation state"
+        )
+    }
+
+    @Test
+    fun `pool animation complete flag generates correct code`() {
+        val game =
+            gbGame("PoolAnimCompleteTest") {
+                lateinit var explodeAnim: AnimationRef
+
+                val effects =
+                    pool("effect", size = 8) {
+                        position(0, 0)
+                        sprite(SpriteAsset("effect.png")) {
+                            size = 16 x 16
+                            animations {
+                                explodeAnim = "explode" plays (frames(0, 1, 2, 3) every 2.frames)
+                            }
+                        }
+
+                        onSpawn { play(explodeAnim, loop = false) }
+                        despawnWhen { isAnimationComplete }
+                    }
+
+                start = scene("main") { every.frame { effects.update() } }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(
+            code.contains("effect_anim_complete[EFFECT_POOL_SIZE]"),
+            "Should generate animation complete flag array"
+        )
+        // Check that animation complete flag is used somewhere (the exact index var name may vary)
+        assertTrue(
+            code.contains("effect_anim_complete["),
+            "Should use animation complete flag array"
+        )
+    }
+
+    @Test
+    fun `pool without animations does not generate animation arrays`() {
+        val game =
+            gbGame("PoolNoAnimTest") {
+                val bullets =
+                    pool("bullet", size = 8) {
+                        position(0, 0)
+                        sprite(SpriteAsset("bullet.png")) { size = 4 x 4 }
+                    }
+
+                start = scene("main") { every.frame { bullets.update() } }
+            }
+
+        val code = game.compileForTest()
+
+        assertFalse(
+            code.contains("bullet_anim["),
+            "Should not generate animation array for pool without animations"
+        )
+        assertFalse(
+            code.contains("bullet_frame["),
+            "Should not generate frame array for pool without animations"
+        )
     }
 }

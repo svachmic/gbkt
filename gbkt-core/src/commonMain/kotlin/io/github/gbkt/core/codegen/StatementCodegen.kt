@@ -127,467 +127,162 @@ import io.github.gbkt.core.ir.PaletteType
 import io.github.gbkt.core.ir.TextPart
 import io.github.gbkt.core.ir.WipeDirection
 
+// Constants for repeated C code strings
+private const val RESET_TRANSITION_TIMER = "_transition_timer = 0;"
+
 /**
  * Statement code generation for IR statements.
  *
- * Handles all IRStatement types and generates corresponding C code.
+ * Core control flow statements are handled inline. All other statements are delegated to
+ * category-specific handlers to reduce cognitive complexity.
  */
 internal fun CodeGenerator.generateStatement(stmt: IRStatement) {
+    // Core control flow statements - keep inline for clarity
     when (stmt) {
-        is IRAssign -> {
-            val value = generateExpr(stmt.value)
-            lineWithSource("${stmt.target} ${stmt.op.c} $value;", stmt.sourceLocation, stmt.target)
-        }
-        is IRIf -> {
-            val cond = generateExpr(stmt.condition)
-            blockWithSource("if ($cond)", stmt.sourceLocation) {
-                stmt.then.forEach { generateStatement(it) }
-            }
-            if (stmt.otherwise != null) {
-                line("else {")
-                indent++
-                stmt.otherwise.forEach { generateStatement(it) }
-                indent--
-                line("}")
-            }
-        }
-        is IRWhen -> {
-            stmt.branches.forEachIndexed { i, branch ->
-                val keyword = if (i == 0) "if" else "else if"
-                val cond = generateExpr(branch.condition)
-                if (i == 0 && stmt.sourceLocation != null) {
-                    blockWithSource("$keyword ($cond)", stmt.sourceLocation) {
-                        branch.body.forEach { generateStatement(it) }
-                    }
-                } else {
-                    block("$keyword ($cond)") { branch.body.forEach { generateStatement(it) } }
-                }
-            }
-            if (stmt.otherwise != null) {
-                block("else") { stmt.otherwise.forEach { generateStatement(it) } }
-            }
-        }
-        is IRWhile -> {
-            val cond = generateExpr(stmt.condition)
-            blockWithSource("while ($cond)", stmt.sourceLocation) {
-                stmt.body.forEach { generateStatement(it) }
-            }
-        }
-        is IRFor -> {
-            val start = stmt.range.first
-            val end = stmt.range.last
-            blockWithSource(
-                "for (UINT8 ${stmt.counter} = $start; ${stmt.counter} <= $end; ${stmt.counter}++)",
-                stmt.sourceLocation,
-                stmt.counter
-            ) {
-                stmt.body.forEach { generateStatement(it) }
-            }
-        }
-        is IRCall -> {
-            val args = stmt.args.joinToString(", ") { generateExpr(it) }
-            lineWithSource("${stmt.function}($args);", stmt.sourceLocation, stmt.function)
-        }
-        is IRSceneChange -> {
-            lineWithSource(
-                "_next_scene = SCENE_${stmt.sceneName.uppercase()};",
-                stmt.sourceLocation,
-                stmt.sceneName
-            )
-            line("_scene_changed = 1;")
-        }
-        is IRRaw -> {
-            // First line gets the source location
-            val lines = stmt.code.lines()
-            if (lines.isNotEmpty()) {
-                lineWithSource(lines.first(), stmt.sourceLocation)
-                lines.drop(1).forEach { line(it) }
-            }
-        }
-        is IRArrayAssign -> {
-            val index = generateExpr(stmt.index)
-            val value = generateExpr(stmt.value)
-            val array = game.arrays.find { it.name == stmt.array }
-            if (array != null) {
-                lineWithSource(
-                    "GB_ARRAY_SET(${stmt.array}, $index, ${array.size}, $value);",
-                    stmt.sourceLocation,
-                    stmt.array
-                )
-            } else {
-                // Fallback for arrays we can't find (shouldn't happen)
-                lineWithSource("${stmt.array}[$index] = $value;", stmt.sourceLocation, stmt.array)
-            }
-        }
-        is IRSoundPlay -> generateSoundPlay(stmt)
-        is IRSoundStop -> generateSoundStop(stmt)
-        is IRMusicPlay -> {
-            line("hUGE_init(&${stmt.musicName}_song);")
-            line("_music_playing = 1;")
-        }
-        is IRMusicStop -> {
-            line("NR12_REG = 0; NR22_REG = 0; NR30_REG = 0; NR42_REG = 0;")
-            line("_music_playing = 0;")
-        }
-        is IRMusicPause -> line("_music_playing = 0;")
-        is IRMusicResume -> line("_music_playing = 1;")
-        is IRMusicFade -> {
-            line("// Start music fade over ${stmt.frames} frames")
-            line("_music_fade_timer = ${stmt.frames};")
-            line("_music_fade_duration = ${stmt.frames};")
-            line("_music_fade_start_vol = 7;  // Max volume")
-        }
-        is IRSoundMasterVolume -> {
-            val vol = (stmt.volume shl 4) or stmt.volume
-            line("NR50_REG = 0x${vol.toString(16).padStart(2, '0').uppercase()};")
-        }
-        is IRSoundEnable -> line("NR52_REG = ${if (stmt.enable) "0x80" else "0x00"};")
-        is IRSoundPan -> generateSoundPan(stmt)
-        is IRSoundMuteChannel -> {
-            if (game.music.isNotEmpty()) {
-                line(
-                    "hUGE_mute_channel(HT_CH${stmt.channel.index + 1}, ${if (stmt.mute) 1 else 0});"
-                )
-            }
-        }
-        is IRPaletteApply -> generatePaletteApply(stmt)
-        is IRPaletteSetColor -> generatePaletteSetColor(stmt)
-        is IRPaletteFlash -> generatePaletteFlash(stmt)
-        is IRPaletteFade -> generatePaletteFade(stmt)
-        is IRSpriteSetPalette -> {
-            if (game.config.gbcSupport) {
-                line("set_sprite_prop(${stmt.spriteSlot}, ${stmt.paletteIndex} & 0x07);")
-            }
-        }
-        is IRClearScreen -> line("cls();")
-        is IRShowSprites -> line(if (stmt.show) "SHOW_SPRITES;" else "HIDE_SPRITES;")
-        is IRShowBackground -> line(if (stmt.show) "SHOW_BKG;" else "HIDE_BKG;")
-        is IRPrintAt -> generatePrintAt(stmt)
-        is IRAnimationPlay -> generateAnimationPlay(stmt)
-        is IRAnimationStop -> {
-            line("_${stmt.spriteName}_anim = ANIM_NONE;")
-            line("_${stmt.spriteName}_flags = 0;")
-        }
-        is IRAnimationPause -> line("_${stmt.spriteName}_flags |= ANIM_FLAG_PAUSED;")
-        is IRAnimationResume -> line("_${stmt.spriteName}_flags &= ~ANIM_FLAG_PAUSED;")
-        is IRAnimationSetSpeed -> line("_${stmt.spriteName}_speed = ${stmt.speed};")
-        is IRAnimationQueue -> generateAnimationQueue(stmt)
-        is IRAnimationSetFrame -> {
-            val sprite = game.sprites.find { it.name == stmt.spriteName }
-            if (sprite != null) {
-                line("set_sprite_tile(${sprite.oamSlot}, ${stmt.frameIndex});")
-            }
-        }
-        is IRStateMachineStart -> {
-            val stateVar = "_${stmt.machineName}_state"
-            val nextVar = "_${stmt.machineName}_next"
-            val changedVar = "_${stmt.machineName}_changed"
-            line(
-                "$stateVar = STATE_${stmt.machineName.uppercase()}_${stmt.initialState.uppercase()};"
-            )
-            line("$nextVar = $stateVar;")
-            line("$changedVar = 1;")
-        }
-        is IRStateMachineGoto -> {
-            val nextVar = "_${stmt.machineName}_next"
-            val changedVar = "_${stmt.machineName}_changed"
-            line(
-                "$nextVar = STATE_${stmt.machineName.uppercase()}_${stmt.targetState.uppercase()};"
-            )
-            line("$changedVar = 1;")
-        }
-        is IRStateMachineUpdate -> line("${stmt.machineName}_update();")
-        is IREntityUpdate -> generateEntityUpdate(stmt)
-        is IRPhysicsApply -> generatePhysicsApply(stmt)
-        is IRSaveLoad -> line("${stmt.saveName}_load(${generateExpr(stmt.slot)});")
-        is IRSaveSave -> line("${stmt.saveName}_save(${generateExpr(stmt.slot)});")
-        is IRSaveErase -> line("${stmt.saveName}_erase(${generateExpr(stmt.slot)});")
-        is IRSaveCopy ->
-            line(
-                "${stmt.saveName}_copy(${generateExpr(stmt.fromSlot)}, ${generateExpr(stmt.toSlot)});"
-            )
-        is IRSaveFieldWrite ->
-            line("${stmt.saveName}_data.${stmt.fieldName} = ${generateExpr(stmt.value)};")
-        is IRSaveArrayWrite ->
-            line(
-                "${stmt.saveName}_data.${stmt.fieldName}[${generateExpr(stmt.index)}] = ${generateExpr(stmt.value)};"
-            )
-        is IRDialogShow -> generateDialogShow(stmt)
-        is IRDialogHide -> generateDialogHide(stmt)
-        is IRDialogSay -> generateDialogSay(stmt)
-        is IRDialogChoice -> generateDialogChoice(stmt)
-        is IRDialogTick -> generateDialogTick(stmt)
-        is IRMenuShow -> {
-            val menu = game.menus.find { it.name == stmt.menuName }
-            if (menu?.isGrid == true) {
-                line("_${stmt.menuName}_cursor_x = 0;")
-                line("_${stmt.menuName}_cursor_y = 0;")
-            } else {
-                line("_${stmt.menuName}_cursor = 0;")
-            }
-            line("_${stmt.menuName}_visible = 1;")
-            line("_${stmt.menuName}_active = 1;")
-            line("_${stmt.menuName}_draw();")
-        }
-        is IRMenuHide -> {
-            line("_${stmt.menuName}_visible = 0;")
-            line("_${stmt.menuName}_active = 0;")
-        }
-        is IRMenuToggle -> {
-            val menu = game.menus.find { it.name == stmt.menuName }
-            line("if (_${stmt.menuName}_visible) {")
-            indent++
-            line("_${stmt.menuName}_visible = 0;")
-            line("_${stmt.menuName}_active = 0;")
-            indent--
-            line("} else {")
-            indent++
-            if (menu?.isGrid == true) {
-                line("_${stmt.menuName}_cursor_x = 0;")
-                line("_${stmt.menuName}_cursor_y = 0;")
-            } else {
-                line("_${stmt.menuName}_cursor = 0;")
-            }
-            line("_${stmt.menuName}_visible = 1;")
-            line("_${stmt.menuName}_active = 1;")
-            line("_${stmt.menuName}_draw();")
-            indent--
-            line("}")
-        }
-        is IRMenuTick -> line("_${stmt.menuName}_tick();")
-        is IRMenuMoveTo -> {
-            val menu = game.menus.find { it.name == stmt.menuName }
-            val indexExpr = generateExpr(stmt.index)
-            if (menu?.isGrid == true) {
-                // Convert 1D index to 2D grid coordinates
-                val cols = menu.columns
-                line("_${stmt.menuName}_cursor_x = ($indexExpr) % $cols;")
-                line("_${stmt.menuName}_cursor_y = ($indexExpr) / $cols;")
-            } else {
-                line("_${stmt.menuName}_cursor = $indexExpr;")
-            }
-            line("_${stmt.menuName}_draw();")
-        }
-        is IRMenuSelect -> {
-            val menu = game.menus.find { it.name == stmt.menuName }
-            if (menu?.isGrid == true) {
-                line(
-                    "_${stmt.menuName}_do_select(_${stmt.menuName}_cursor_y * ${stmt.menuName.uppercase()}_COLS + _${stmt.menuName}_cursor_x);"
-                )
-            } else {
-                line("_${stmt.menuName}_do_select(_${stmt.menuName}_cursor);")
-            }
-        }
-        is IRMenuCancel -> {
-            line("_${stmt.menuName}_visible = 0;")
-            line("_${stmt.menuName}_active = 0;")
-        }
-        is IRMenuOpen -> {
-            val menu = game.menus.find { it.name == stmt.menuName }
-            if (menu?.isGrid == true) {
-                line("_${stmt.menuName}_cursor_x = 0;")
-                line("_${stmt.menuName}_cursor_y = 0;")
-            } else {
-                line("_${stmt.menuName}_cursor = 0;")
-            }
-            line("_${stmt.menuName}_visible = 1;")
-            line("_${stmt.menuName}_active = 1;")
-            line("_${stmt.menuName}_draw();")
-        }
-        is IRMenuClose -> line("// Close current menu (handled by tick function)")
-        is IRPoolUpdate -> line("${stmt.poolName}_update();")
-        is IRPoolSpawn -> {
-            line("{")
-            indent++
-            line("UINT8 _slot = ${stmt.poolName}_spawn();")
-            block("if (_slot != 255)") { stmt.initStatements.forEach { generateStatement(it) } }
-            indent--
-            line("}")
-        }
-        is IRPoolSpawnAt -> {
-            line("{")
-            indent++
-            line("UINT8 _slot = ${stmt.poolName}_spawn();")
-            block("if (_slot != 255)") {
-                line("${stmt.poolName}_x[_slot] = ${generateExpr(stmt.x)};")
-                line("${stmt.poolName}_y[_slot] = ${generateExpr(stmt.y)};")
-                stmt.initStatements.forEach { generateStatement(it) }
-            }
-            indent--
-            line("}")
-        }
-        is IRPoolTrySpawn -> {
-            line("{")
-            indent++
-            line("UINT8 _slot = ${stmt.poolName}_spawn();")
-            block("if (_slot != 255)") { stmt.initStatements.forEach { generateStatement(it) } }
-            block("else") { stmt.elseStatements.forEach { generateStatement(it) } }
-            indent--
-            line("}")
-        }
-        is IRPoolDespawn -> line("${stmt.poolName}_despawn(${generateExpr(stmt.indexExpr)});")
-        is IRPoolDespawnAll -> line("${stmt.poolName}_despawn_all();")
-        is IRPoolForEach -> {
-            val pool = game.pools.find { it.name == stmt.poolName }
-            val size = pool?.size ?: 8
-            block(
-                "for (UINT8 ${stmt.indexVar} = 0; ${stmt.indexVar} < $size; ${stmt.indexVar}++)"
-            ) {
-                block("if (${stmt.poolName}_active[${stmt.indexVar}])") {
-                    stmt.bodyStatements.forEach { generateStatement(it) }
-                }
-            }
-        }
-        is IRPoolDespawnWhere -> {
-            val pool = game.pools.find { it.name == stmt.poolName }
-            val size = pool?.size ?: 8
-            // Iterate backwards to avoid skipping elements after despawn
-            // Use INT16 to support pool sizes > 127 (INT8 max is 127)
-            block(
-                "for (INT16 ${stmt.indexVar} = ${size - 1}; ${stmt.indexVar} >= 0; ${stmt.indexVar}--)"
-            ) {
-                val cond = generateExpr(stmt.condition)
-                block("if (${stmt.poolName}_active[${stmt.indexVar}] && ($cond))") {
-                    line("${stmt.poolName}_despawn(${stmt.indexVar});")
-                }
-            }
-        }
-        is IRCameraUpdate -> line("_camera_update();")
-        is IRCameraSetPosition -> {
-            line("_camera_x = ${generateExpr(stmt.x)};")
-            line("_camera_y = ${generateExpr(stmt.y)};")
-        }
-        is IRCameraFollow -> {
-            line("_camera_follow_active = 1;")
-            line("_camera_follow_x = &${stmt.targetXVar};")
-            line("_camera_follow_y = &${stmt.targetYVar};")
-            line("_camera_offset_x = ${stmt.offsetX};")
-            line("_camera_offset_y = ${stmt.offsetY};")
-            line("_camera_smoothing = ${stmt.smoothing};")
-        }
-        is IRCameraStopFollow -> line("_camera_follow_active = 0;")
-        is IRCameraSnapTo -> {
-            val x = generateExpr(stmt.x)
-            val y = generateExpr(stmt.y)
-            line("_camera_x = $x;")
-            line("_camera_y = $y;")
-            line("_camera_target_x = $x;")
-            line("_camera_target_y = $y;")
-        }
-        is IRCameraSetBounds -> {
-            line("_camera_bounds_min_x = ${stmt.minX};")
-            line("_camera_bounds_max_x = ${stmt.maxX};")
-            line("_camera_bounds_min_y = ${stmt.minY};")
-            line("_camera_bounds_max_y = ${stmt.maxY};")
-        }
-        is IRCameraShake -> {
-            line("_shake_intensity = ${stmt.intensity};")
-            line("_shake_timer = ${stmt.durationFrames};")
-            line("_shake_decay = ${stmt.decay.ordinal};")
-        }
-        is IRCameraShakeStop -> {
-            line("_shake_intensity = 0;")
-            line("_shake_timer = 0;")
-            line("_shake_offset_x = 0;")
-            line("_shake_offset_y = 0;")
-        }
-        is IRTransitionFadeOut -> {
-            line("_transition_type = TRANS_FADE_OUT;")
-            line("_transition_timer = 0;")
-            line("_transition_duration = ${stmt.durationFrames};")
-            if (stmt.onComplete.isNotEmpty()) {
-                line("_transition_callback = ${getTransitionCallbackId(stmt.onComplete)};")
-            }
-        }
-        is IRTransitionFadeIn -> {
-            line("_transition_type = TRANS_FADE_IN;")
-            line("_transition_timer = 0;")
-            line("_transition_duration = ${stmt.durationFrames};")
-            if (stmt.onComplete.isNotEmpty()) {
-                line("_transition_callback = ${getTransitionCallbackId(stmt.onComplete)};")
-            }
-        }
-        is IRTransitionFlash -> {
-            line("_transition_type = TRANS_FLASH;")
-            line("_transition_timer = 0;")
-            line("_transition_duration = ${stmt.durationFrames};")
-            line("_transition_flash_color = ${stmt.color.rgb555};")
-        }
-        is IRTransitionWipe -> generateTransitionWipe(stmt)
-        is IRTransitionIris -> generateTransitionIris(stmt)
-        is IRComposedTransition -> generateComposedTransition(stmt.transition, stmt.targetScene)
-        is IRTransitionCancel -> {
-            line("_transition_type = TRANS_NONE;")
-            line("_transition_timer = 0;")
-            line("_trans_seq_active = 0;")
-            line("BGP_REG = 0xE4;  // Restore default palette")
-        }
-        is IRNavGridInit -> {
-            /* Handled at compile time */
-        }
-        is IRNavGridSetTile -> {
-            val walkable = if (stmt.walkable) "1" else "0"
-            line(
-                "_navgrid_set_tile(${stmt.gridName}_navgrid, ${generateExpr(stmt.x)}, ${generateExpr(stmt.y)}, $walkable);"
-            )
-        }
-        is IRNavGridSetWeight -> {
-            line(
-                "_navgrid_set_weight(${stmt.gridName}_navgrid, ${generateExpr(stmt.x)}, ${generateExpr(stmt.y)}, ${stmt.weight});"
-            )
-        }
-        is IRPathFind -> generatePathFind(stmt)
-        is IRPathAdvance -> line("_path_advance();")
-        is IRPathReset -> line("_path_current = 0;")
-        is IRPathFollow -> generatePathFollow(stmt)
-        is IRPoolPathSetTarget -> {
-            line("${stmt.poolName}_target_x = ${generateExpr(stmt.targetX)};")
-            line("${stmt.poolName}_target_y = ${generateExpr(stmt.targetY)};")
-        }
-        is IRPoolPathFollow -> line("_pool_path_update_${stmt.poolName}();")
-        is IRPoolPathRecalc -> line("_pool_path_recalc_${stmt.poolName}(${stmt.entityIndex});")
+        is IRAssign -> generateAssignStatement(stmt)
+        is IRIf -> generateIfStatement(stmt)
+        is IRWhen -> generateWhenStatement(stmt)
+        is IRWhile -> generateWhileStatement(stmt)
+        is IRFor -> generateForStatement(stmt)
+        is IRCall -> generateCallStatement(stmt)
+        is IRSceneChange -> generateSceneChangeStatement(stmt)
+        is IRRaw -> generateRawStatement(stmt)
+        is IRArrayAssign -> generateArrayAssign(stmt)
+        // Delegate to category handlers for all other statement types
+        else -> generateDelegatedStatement(stmt)
+    }
+}
 
-        // Input buffer statements
-        is IRInputBufferDecl -> {
-            // Declaration is handled in generateVariables, not in statement generation
+private fun CodeGenerator.generateAssignStatement(stmt: IRAssign) {
+    val value = generateExpr(stmt.value)
+    lineWithSource("${stmt.target} ${stmt.op.c} $value;", stmt.sourceLocation, stmt.target)
+}
+
+private fun CodeGenerator.generateWhileStatement(stmt: IRWhile) {
+    val cond = generateExpr(stmt.condition)
+    blockWithSource("while ($cond)", stmt.sourceLocation) {
+        stmt.body.forEach { generateStatement(it) }
+    }
+}
+
+private fun CodeGenerator.generateForStatement(stmt: IRFor) {
+    val start = stmt.range.first
+    val end = stmt.range.last
+    blockWithSource(
+        "for (UINT8 ${stmt.counter} = $start; ${stmt.counter} <= $end; ${stmt.counter}++)",
+        stmt.sourceLocation,
+        stmt.counter
+    ) {
+        stmt.body.forEach { generateStatement(it) }
+    }
+}
+
+private fun CodeGenerator.generateCallStatement(stmt: IRCall) {
+    val args = stmt.args.joinToString(", ") { generateExpr(it) }
+    lineWithSource("${stmt.function}($args);", stmt.sourceLocation, stmt.function)
+}
+
+private fun CodeGenerator.generateSceneChangeStatement(stmt: IRSceneChange) {
+    lineWithSource(
+        "_next_scene = SCENE_${stmt.sceneName.uppercase()};",
+        stmt.sourceLocation,
+        stmt.sceneName
+    )
+    line("_scene_changed = 1;")
+}
+
+private fun CodeGenerator.generateRawStatement(stmt: IRRaw) {
+    val lines = stmt.code.lines()
+    if (lines.isNotEmpty()) {
+        lineWithSource(lines.first(), stmt.sourceLocation)
+        lines.drop(1).forEach { line(it) }
+    }
+}
+
+private fun CodeGenerator.generateDelegatedStatement(stmt: IRStatement) {
+    if (generateSoundMusicStatement(stmt)) return
+    if (generateDisplayStatement(stmt)) return
+    if (generateAnimationStatement(stmt)) return
+    if (generateSaveStatement(stmt)) return
+    if (generateDialogStatement(stmt)) return
+    if (generateMenuStatement(stmt)) return
+    if (generatePoolStatement(stmt)) return
+    if (generateCameraStatement(stmt)) return
+    if (generateTransitionStatement(stmt)) return
+    if (generatePathfindingStatement(stmt)) return
+    if (generateMiscStatement(stmt)) return
+    error("Unhandled IR statement type: ${stmt::class.simpleName}")
+}
+
+// Core control flow helpers
+
+private fun CodeGenerator.generateIfStatement(stmt: IRIf) {
+    val cond = generateExpr(stmt.condition)
+    blockWithSource("if ($cond)", stmt.sourceLocation) {
+        stmt.then.forEach { generateStatement(it) }
+    }
+    if (stmt.otherwise != null) {
+        line("else {")
+        indent++
+        stmt.otherwise.forEach { generateStatement(it) }
+        indent--
+        line("}")
+    }
+}
+
+private fun CodeGenerator.generateWhenStatement(stmt: IRWhen) {
+    stmt.branches.forEachIndexed { i, branch ->
+        val keyword = if (i == 0) "if" else "else if"
+        val cond = generateExpr(branch.condition)
+        if (i == 0 && stmt.sourceLocation != null) {
+            blockWithSource("$keyword ($cond)", stmt.sourceLocation) {
+                branch.body.forEach { generateStatement(it) }
+            }
+        } else {
+            block("$keyword ($cond)") { branch.body.forEach { generateStatement(it) } }
         }
-        is IRInputBufferReset -> line("${stmt.bufferName} = 0;")
-        is IRInputBufferFill -> line("${stmt.bufferName} = ${stmt.frames};")
+    }
+    if (stmt.otherwise != null) {
+        block("else") { stmt.otherwise.forEach { generateStatement(it) } }
+    }
+}
 
-        // Audio mixer statements
-        is IRMixerSetVolume,
-        is IRMixerFade,
-        is IRMixerMute,
-        is IRMixerToggleMute,
-        is IRMixerPriorityCheck -> generateMixerStatement(stmt)
-
-        // Link cable statements
-        is IRLinkInit -> line("_link_init();")
-        is IRLinkUpdate -> line("_link_update();")
-        is IRLinkSend -> line("_link_send(${generateExpr(stmt.data)});")
-
-        // Cutscene statements
-        is IRCutsceneStart -> line("_${stmt.cutsceneName}_start();")
-        is IRCutsceneUpdate -> line("_${stmt.cutsceneName}_update();")
-        is IRCutsceneSkip -> line("_${stmt.cutsceneName}_skip();")
-
-        // Tween statements
-        is IRTween -> generateTweenStart(stmt)
-
-        // Physics world statements
-        is IRPhysicsWorldUpdate -> line("_physics_world_update();")
-        is IRCollisionResponse -> {
-            // Collision response registration is handled in physics codegen
-            // This is stored in game.physicsWorld but emitted during function generation
-            line("// Collision response: ${stmt.tag1} <-> ${stmt.tag2}")
-        }
-        else -> error("Unhandled IR statement type: ${stmt::class.simpleName}")
+private fun CodeGenerator.generateArrayAssign(stmt: IRArrayAssign) {
+    val index = generateExpr(stmt.index)
+    val value = generateExpr(stmt.value)
+    val array = game.arrays.find { it.name == stmt.array }
+    if (array != null) {
+        lineWithSource(
+            "GB_ARRAY_SET(${stmt.array}, $index, ${array.size}, $value);",
+            stmt.sourceLocation,
+            stmt.array
+        )
+    } else {
+        lineWithSource("${stmt.array}[$index] = $value;", stmt.sourceLocation, stmt.array)
     }
 }
 
 // =============================================================================
 // STATEMENT HELPER FUNCTIONS
 // =============================================================================
+
+// Menu helper functions to avoid code duplication
+private fun CodeGenerator.showMenu(menuName: String, isGrid: Boolean) {
+    if (isGrid) {
+        line("_${menuName}_cursor_x = 0;")
+        line("_${menuName}_cursor_y = 0;")
+    } else {
+        line("_${menuName}_cursor = 0;")
+    }
+    line("_${menuName}_visible = 1;")
+    line("_${menuName}_active = 1;")
+    line("_${menuName}_draw();")
+}
+
+private fun CodeGenerator.hideMenu(menuName: String) {
+    line("_${menuName}_visible = 0;")
+    line("_${menuName}_active = 0;")
+}
 
 private fun CodeGenerator.generateSoundPlay(stmt: IRSoundPlay) {
     val sfx = game.soundEffects.find { it.name == stmt.soundName }
@@ -721,6 +416,46 @@ private fun CodeGenerator.generatePrintAt(stmt: IRPrintAt) {
     }
 }
 
+private fun CodeGenerator.validateSpriteAnimation(
+    sprite: io.github.gbkt.core.graphics.Sprite,
+    stmt: IRAnimationPlay
+): io.github.gbkt.core.graphics.Animation? {
+    if (!sprite.hasAnimations) {
+        reportError("Sprite '${stmt.spriteName}' has no animations defined")
+        return null
+    }
+    val anim = sprite.animations[stmt.animationName]
+    if (anim == null) {
+        reportError("Animation '${stmt.animationName}' not found on sprite '${stmt.spriteName}'")
+        return null
+    }
+    if (anim.frames.isEmpty()) {
+        reportError("Animation '${stmt.animationName}' has no frames")
+        return null
+    }
+    return anim
+}
+
+private fun CodeGenerator.validatePoolAnimation(
+    pool: io.github.gbkt.core.entity.Pool,
+    stmt: IRAnimationPlay
+): io.github.gbkt.core.graphics.Animation? {
+    if (pool.animations.isEmpty()) {
+        reportError("Pool '${pool.name}' has no animations defined")
+        return null
+    }
+    val anim = pool.animations[stmt.animationName]
+    if (anim == null) {
+        reportError("Animation '${stmt.animationName}' not found on pool '${pool.name}'")
+        return null
+    }
+    if (anim.frames.isEmpty()) {
+        reportError("Animation '${stmt.animationName}' has no frames")
+        return null
+    }
+    return anim
+}
+
 private fun CodeGenerator.generateAnimationPlay(stmt: IRAnimationPlay) {
     val sprite = game.sprites.find { it.name == stmt.spriteName }
 
@@ -734,41 +469,16 @@ private fun CodeGenerator.generateAnimationPlay(stmt: IRAnimationPlay) {
     val pool = poolName?.let { game.pools.find { p -> p.name == it } }
 
     when {
-        // Handle regular sprite animation
         sprite != null -> {
-            if (!sprite.hasAnimations) {
-                reportError("Sprite '${stmt.spriteName}' has no animations defined")
-            } else {
-                val anim = sprite.animations[stmt.animationName]
-                if (anim == null) {
-                    reportError(
-                        "Animation '${stmt.animationName}' not found on sprite '${stmt.spriteName}'"
-                    )
-                } else if (anim.frames.isEmpty()) {
-                    reportError("Animation '${stmt.animationName}' has no frames")
-                } else {
-                    generateSpriteAnimation(stmt, sprite, anim)
-                }
+            validateSpriteAnimation(sprite, stmt)?.let { anim ->
+                generateSpriteAnimation(stmt, sprite, anim)
             }
         }
-        // Handle pool sprite animation
         pool != null -> {
-            if (pool.animations.isEmpty()) {
-                reportError("Pool '${pool.name}' has no animations defined")
-            } else {
-                val anim = pool.animations[stmt.animationName]
-                if (anim == null) {
-                    reportError(
-                        "Animation '${stmt.animationName}' not found on pool '${pool.name}'"
-                    )
-                } else if (anim.frames.isEmpty()) {
-                    reportError("Animation '${stmt.animationName}' has no frames")
-                } else {
-                    generatePoolAnimation(stmt, pool, anim)
-                }
+            validatePoolAnimation(pool, stmt)?.let { anim ->
+                generatePoolAnimation(stmt, pool, anim)
             }
         }
-        // Neither sprite nor pool found
         else -> {
             reportError("Sprite '${stmt.spriteName}' not found for animation")
         }
@@ -1011,7 +721,7 @@ private fun CodeGenerator.generateTransitionWipe(stmt: IRTransitionWipe) {
             WipeDirection.DOWN -> "TRANS_WIPE_D"
         }
     line("_transition_type = $transType;")
-    line("_transition_timer = 0;")
+    line(RESET_TRANSITION_TIMER)
     line("_transition_duration = ${stmt.durationFrames};")
     if (stmt.onComplete.isNotEmpty()) {
         line("_transition_callback = ${getTransitionCallbackId(stmt.onComplete)};")
@@ -1025,7 +735,7 @@ private fun CodeGenerator.generateTransitionIris(stmt: IRTransitionIris) {
             IrisType.OPEN -> "TRANS_IRIS_OUT"
         }
     line("_transition_type = $transType;")
-    line("_transition_timer = 0;")
+    line(RESET_TRANSITION_TIMER)
     line("_transition_duration = ${stmt.durationFrames};")
     line("_transition_center_x = ${generateExpr(stmt.centerX)};")
     line("_transition_center_y = ${generateExpr(stmt.centerY)};")
@@ -1063,4 +773,421 @@ private fun CodeGenerator.generatePathFollow(stmt: IRPathFollow) {
     if (stmt.onBlocked.isNotEmpty()) {
         block("else if (!_path_found)") { stmt.onBlocked.forEach { generateStatement(it) } }
     }
+}
+
+// =============================================================================
+// CATEGORY HANDLER FUNCTIONS
+// =============================================================================
+
+/** Handle sound and music related statements. Returns true if the statement was handled. */
+private fun CodeGenerator.generateSoundMusicStatement(stmt: IRStatement): Boolean {
+    when (stmt) {
+        is IRSoundPlay -> generateSoundPlay(stmt)
+        is IRSoundStop -> generateSoundStop(stmt)
+        is IRMusicPlay -> {
+            line("hUGE_init(&${stmt.musicName}_song);")
+            line("_music_playing = 1;")
+        }
+        is IRMusicStop -> {
+            line("NR12_REG = 0; NR22_REG = 0; NR30_REG = 0; NR42_REG = 0;")
+            line("_music_playing = 0;")
+        }
+        is IRMusicPause -> line("_music_playing = 0;")
+        is IRMusicResume -> line("_music_playing = 1;")
+        is IRMusicFade -> {
+            line("// Start music fade over ${stmt.frames} frames")
+            line("_music_fade_timer = ${stmt.frames};")
+            line("_music_fade_duration = ${stmt.frames};")
+            line("_music_fade_start_vol = 7;  // Max volume")
+        }
+        is IRSoundMasterVolume -> {
+            val vol = (stmt.volume shl 4) or stmt.volume
+            line("NR50_REG = 0x${vol.toString(16).padStart(2, '0').uppercase()};")
+        }
+        is IRSoundEnable -> line("NR52_REG = ${if (stmt.enable) "0x80" else "0x00"};")
+        is IRSoundPan -> generateSoundPan(stmt)
+        is IRSoundMuteChannel -> {
+            if (game.music.isNotEmpty()) {
+                line(
+                    "hUGE_mute_channel(HT_CH${stmt.channel.index + 1}, ${if (stmt.mute) 1 else 0});"
+                )
+            }
+        }
+        is IRMixerSetVolume,
+        is IRMixerFade,
+        is IRMixerMute,
+        is IRMixerToggleMute,
+        is IRMixerPriorityCheck -> generateMixerStatement(stmt)
+        else -> return false
+    }
+    return true
+}
+
+/** Handle palette and display related statements. */
+private fun CodeGenerator.generateDisplayStatement(stmt: IRStatement): Boolean {
+    when (stmt) {
+        is IRPaletteApply -> generatePaletteApply(stmt)
+        is IRPaletteSetColor -> generatePaletteSetColor(stmt)
+        is IRPaletteFlash -> generatePaletteFlash(stmt)
+        is IRPaletteFade -> generatePaletteFade(stmt)
+        is IRSpriteSetPalette -> {
+            if (game.config.gbcSupport) {
+                line("set_sprite_prop(${stmt.spriteSlot}, ${stmt.paletteIndex} & 0x07);")
+            }
+        }
+        is IRClearScreen -> line("cls();")
+        is IRShowSprites -> line(if (stmt.show) "SHOW_SPRITES;" else "HIDE_SPRITES;")
+        is IRShowBackground -> line(if (stmt.show) "SHOW_BKG;" else "HIDE_BKG;")
+        is IRPrintAt -> generatePrintAt(stmt)
+        else -> return false
+    }
+    return true
+}
+
+/** Handle animation related statements. */
+private fun CodeGenerator.generateAnimationStatement(stmt: IRStatement): Boolean {
+    when (stmt) {
+        is IRAnimationPlay -> generateAnimationPlay(stmt)
+        is IRAnimationStop -> {
+            line("_${stmt.spriteName}_anim = ANIM_NONE;")
+            line("_${stmt.spriteName}_flags = 0;")
+        }
+        is IRAnimationPause -> line("_${stmt.spriteName}_flags |= ANIM_FLAG_PAUSED;")
+        is IRAnimationResume -> line("_${stmt.spriteName}_flags &= ~ANIM_FLAG_PAUSED;")
+        is IRAnimationSetSpeed -> line("_${stmt.spriteName}_speed = ${stmt.speed};")
+        is IRAnimationQueue -> generateAnimationQueue(stmt)
+        is IRAnimationSetFrame -> {
+            val sprite = game.sprites.find { it.name == stmt.spriteName }
+            if (sprite != null) {
+                line("set_sprite_tile(${sprite.oamSlot}, ${stmt.frameIndex});")
+            }
+        }
+        is IRStateMachineStart -> {
+            val stateVar = "_${stmt.machineName}_state"
+            val nextVar = "_${stmt.machineName}_next"
+            val changedVar = "_${stmt.machineName}_changed"
+            line(
+                "$stateVar = STATE_${stmt.machineName.uppercase()}_${stmt.initialState.uppercase()};"
+            )
+            line("$nextVar = $stateVar;")
+            line("$changedVar = 1;")
+        }
+        is IRStateMachineGoto -> {
+            val nextVar = "_${stmt.machineName}_next"
+            val changedVar = "_${stmt.machineName}_changed"
+            line(
+                "$nextVar = STATE_${stmt.machineName.uppercase()}_${stmt.targetState.uppercase()};"
+            )
+            line("$changedVar = 1;")
+        }
+        is IRStateMachineUpdate -> line("${stmt.machineName}_update();")
+        is IREntityUpdate -> generateEntityUpdate(stmt)
+        else -> return false
+    }
+    return true
+}
+
+/** Handle save-related statements. */
+private fun CodeGenerator.generateSaveStatement(stmt: IRStatement): Boolean {
+    when (stmt) {
+        is IRSaveLoad -> line("${stmt.saveName}_load(${generateExpr(stmt.slot)});")
+        is IRSaveSave -> line("${stmt.saveName}_save(${generateExpr(stmt.slot)});")
+        is IRSaveErase -> line("${stmt.saveName}_erase(${generateExpr(stmt.slot)});")
+        is IRSaveCopy ->
+            line(
+                "${stmt.saveName}_copy(${generateExpr(stmt.fromSlot)}, ${generateExpr(stmt.toSlot)});"
+            )
+        is IRSaveFieldWrite ->
+            line("${stmt.saveName}_data.${stmt.fieldName} = ${generateExpr(stmt.value)};")
+        is IRSaveArrayWrite ->
+            line(
+                "${stmt.saveName}_data.${stmt.fieldName}[${generateExpr(stmt.index)}] = ${generateExpr(stmt.value)};"
+            )
+        else -> return false
+    }
+    return true
+}
+
+/** Handle dialog-related statements. */
+private fun CodeGenerator.generateDialogStatement(stmt: IRStatement): Boolean {
+    when (stmt) {
+        is IRDialogShow -> generateDialogShow(stmt)
+        is IRDialogHide -> generateDialogHide(stmt)
+        is IRDialogSay -> generateDialogSay(stmt)
+        is IRDialogChoice -> generateDialogChoice(stmt)
+        is IRDialogTick -> generateDialogTick(stmt)
+        else -> return false
+    }
+    return true
+}
+
+/** Handle menu-related statements. */
+private fun CodeGenerator.generateMenuStatement(stmt: IRStatement): Boolean {
+    when (stmt) {
+        is IRMenuShow,
+        is IRMenuOpen -> {
+            val menuName =
+                when (stmt) {
+                    is IRMenuShow -> stmt.menuName
+                    is IRMenuOpen -> stmt.menuName
+                    else -> error("Unexpected")
+                }
+            val menu = game.menus.find { it.name == menuName }
+            showMenu(menuName, menu?.isGrid == true)
+        }
+        is IRMenuHide -> hideMenu(stmt.menuName)
+        is IRMenuToggle -> {
+            val menu = game.menus.find { it.name == stmt.menuName }
+            line("if (_${stmt.menuName}_visible) {")
+            indent++
+            hideMenu(stmt.menuName)
+            indent--
+            line("} else {")
+            indent++
+            showMenu(stmt.menuName, menu?.isGrid == true)
+            indent--
+            line("}")
+        }
+        is IRMenuTick -> line("_${stmt.menuName}_tick();")
+        is IRMenuMoveTo -> {
+            val menu = game.menus.find { it.name == stmt.menuName }
+            val indexExpr = generateExpr(stmt.index)
+            if (menu?.isGrid == true) {
+                val cols = menu.columns
+                line("_${stmt.menuName}_cursor_x = ($indexExpr) % $cols;")
+                line("_${stmt.menuName}_cursor_y = ($indexExpr) / $cols;")
+            } else {
+                line("_${stmt.menuName}_cursor = $indexExpr;")
+            }
+            line("_${stmt.menuName}_draw();")
+        }
+        is IRMenuSelect -> {
+            val menu = game.menus.find { it.name == stmt.menuName }
+            if (menu?.isGrid == true) {
+                line(
+                    "_${stmt.menuName}_do_select(_${stmt.menuName}_cursor_y * ${stmt.menuName.uppercase()}_COLS + _${stmt.menuName}_cursor_x);"
+                )
+            } else {
+                line("_${stmt.menuName}_do_select(_${stmt.menuName}_cursor);")
+            }
+        }
+        is IRMenuCancel -> hideMenu(stmt.menuName)
+        is IRMenuClose -> line("// Close current menu (handled by tick function)")
+        else -> return false
+    }
+    return true
+}
+
+/** Handle pool-related statements. */
+private fun CodeGenerator.generatePoolStatement(stmt: IRStatement): Boolean {
+    when (stmt) {
+        is IRPoolUpdate -> line("${stmt.poolName}_update();")
+        is IRPoolSpawn -> {
+            val indexVar = "_${stmt.poolName}_i"
+            line("{")
+            indent++
+            line("UINT8 $indexVar = ${stmt.poolName}_spawn();")
+            block("if ($indexVar != 255)") { stmt.initStatements.forEach { generateStatement(it) } }
+            indent--
+            line("}")
+        }
+        is IRPoolSpawnAt -> {
+            val indexVar = "_${stmt.poolName}_i"
+            line("{")
+            indent++
+            line("UINT8 $indexVar = ${stmt.poolName}_spawn();")
+            block("if ($indexVar != 255)") {
+                line("${stmt.poolName}_x[$indexVar] = ${generateExpr(stmt.x)};")
+                line("${stmt.poolName}_y[$indexVar] = ${generateExpr(stmt.y)};")
+                stmt.initStatements.forEach { generateStatement(it) }
+            }
+            indent--
+            line("}")
+        }
+        is IRPoolTrySpawn -> {
+            val indexVar = "_${stmt.poolName}_i"
+            line("{")
+            indent++
+            line("UINT8 $indexVar = ${stmt.poolName}_spawn();")
+            block("if ($indexVar != 255)") { stmt.initStatements.forEach { generateStatement(it) } }
+            block("else") { stmt.elseStatements.forEach { generateStatement(it) } }
+            indent--
+            line("}")
+        }
+        is IRPoolDespawn -> line("${stmt.poolName}_despawn(${generateExpr(stmt.indexExpr)});")
+        is IRPoolDespawnAll -> line("${stmt.poolName}_despawn_all();")
+        is IRPoolForEach -> {
+            val pool = game.pools.find { it.name == stmt.poolName }
+            val size = pool?.size ?: 8
+            block(
+                "for (UINT8 ${stmt.indexVar} = 0; ${stmt.indexVar} < $size; ${stmt.indexVar}++)"
+            ) {
+                block("if (${stmt.poolName}_active[${stmt.indexVar}])") {
+                    stmt.bodyStatements.forEach { generateStatement(it) }
+                }
+            }
+        }
+        is IRPoolDespawnWhere -> {
+            val pool = game.pools.find { it.name == stmt.poolName }
+            val size = pool?.size ?: 8
+            block(
+                "for (INT16 ${stmt.indexVar} = ${size - 1}; ${stmt.indexVar} >= 0; ${stmt.indexVar}--)"
+            ) {
+                val cond = generateExpr(stmt.condition)
+                block("if (${stmt.poolName}_active[${stmt.indexVar}] && ($cond))") {
+                    line("${stmt.poolName}_despawn(${stmt.indexVar});")
+                }
+            }
+        }
+        is IRPoolPathSetTarget -> {
+            line("${stmt.poolName}_target_x = ${generateExpr(stmt.targetX)};")
+            line("${stmt.poolName}_target_y = ${generateExpr(stmt.targetY)};")
+        }
+        is IRPoolPathFollow -> line("_pool_path_update_${stmt.poolName}();")
+        is IRPoolPathRecalc -> line("_pool_path_recalc_${stmt.poolName}(${stmt.entityIndex});")
+        else -> return false
+    }
+    return true
+}
+
+/** Handle camera-related statements. */
+private fun CodeGenerator.generateCameraStatement(stmt: IRStatement): Boolean {
+    when (stmt) {
+        is IRCameraUpdate -> line("_camera_update();")
+        is IRCameraSetPosition -> {
+            line("_camera_x = ${generateExpr(stmt.x)};")
+            line("_camera_y = ${generateExpr(stmt.y)};")
+        }
+        is IRCameraFollow -> {
+            line("_camera_follow_active = 1;")
+            line("_camera_follow_x = &${stmt.targetXVar};")
+            line("_camera_follow_y = &${stmt.targetYVar};")
+            line("_camera_offset_x = ${stmt.offsetX};")
+            line("_camera_offset_y = ${stmt.offsetY};")
+            line("_camera_smoothing = ${stmt.smoothing};")
+        }
+        is IRCameraStopFollow -> line("_camera_follow_active = 0;")
+        is IRCameraSnapTo -> {
+            val x = generateExpr(stmt.x)
+            val y = generateExpr(stmt.y)
+            line("_camera_x = $x;")
+            line("_camera_y = $y;")
+            line("_camera_target_x = $x;")
+            line("_camera_target_y = $y;")
+        }
+        is IRCameraSetBounds -> {
+            line("_camera_bounds_min_x = ${stmt.minX};")
+            line("_camera_bounds_max_x = ${stmt.maxX};")
+            line("_camera_bounds_min_y = ${stmt.minY};")
+            line("_camera_bounds_max_y = ${stmt.maxY};")
+        }
+        is IRCameraShake -> {
+            line("_shake_intensity = ${stmt.intensity};")
+            line("_shake_timer = ${stmt.durationFrames};")
+            line("_shake_decay = ${stmt.decay.ordinal};")
+        }
+        is IRCameraShakeStop -> {
+            line("_shake_intensity = 0;")
+            line("_shake_timer = 0;")
+            line("_shake_offset_x = 0;")
+            line("_shake_offset_y = 0;")
+        }
+        else -> return false
+    }
+    return true
+}
+
+/** Handle transition-related statements. */
+private fun CodeGenerator.generateTransitionStatement(stmt: IRStatement): Boolean {
+    when (stmt) {
+        is IRTransitionFadeOut -> {
+            line("_transition_type = TRANS_FADE_OUT;")
+            line(RESET_TRANSITION_TIMER)
+            line("_transition_duration = ${stmt.durationFrames};")
+            if (stmt.onComplete.isNotEmpty()) {
+                line("_transition_callback = ${getTransitionCallbackId(stmt.onComplete)};")
+            }
+        }
+        is IRTransitionFadeIn -> {
+            line("_transition_type = TRANS_FADE_IN;")
+            line(RESET_TRANSITION_TIMER)
+            line("_transition_duration = ${stmt.durationFrames};")
+            if (stmt.onComplete.isNotEmpty()) {
+                line("_transition_callback = ${getTransitionCallbackId(stmt.onComplete)};")
+            }
+        }
+        is IRTransitionFlash -> {
+            line("_transition_type = TRANS_FLASH;")
+            line(RESET_TRANSITION_TIMER)
+            line("_transition_duration = ${stmt.durationFrames};")
+            line("_transition_flash_color = ${stmt.color.rgb555};")
+        }
+        is IRTransitionWipe -> generateTransitionWipe(stmt)
+        is IRTransitionIris -> generateTransitionIris(stmt)
+        is IRComposedTransition -> generateComposedTransition(stmt.transition, stmt.targetScene)
+        is IRTransitionCancel -> {
+            line("_transition_type = TRANS_NONE;")
+            line(RESET_TRANSITION_TIMER)
+            line("_trans_seq_active = 0;")
+            line("BGP_REG = 0xE4;  // Restore default palette")
+        }
+        else -> return false
+    }
+    return true
+}
+
+/** Handle pathfinding-related statements. */
+private fun CodeGenerator.generatePathfindingStatement(stmt: IRStatement): Boolean {
+    when (stmt) {
+        is IRNavGridInit -> {
+            /* Handled at compile time */
+        }
+        is IRNavGridSetTile -> {
+            val walkable = if (stmt.walkable) "1" else "0"
+            line(
+                "_navgrid_set_tile(${stmt.gridName}_navgrid, ${generateExpr(stmt.x)}, ${generateExpr(stmt.y)}, $walkable);"
+            )
+        }
+        is IRNavGridSetWeight -> {
+            line(
+                "_navgrid_set_weight(${stmt.gridName}_navgrid, ${generateExpr(stmt.x)}, ${generateExpr(stmt.y)}, ${stmt.weight});"
+            )
+        }
+        is IRPathFind -> generatePathFind(stmt)
+        is IRPathAdvance -> line("_path_advance();")
+        is IRPathReset -> line("_path_current = 0;")
+        is IRPathFollow -> generatePathFollow(stmt)
+        else -> return false
+    }
+    return true
+}
+
+/** Handle miscellaneous statements (input, link, cutscene, tween, physics). */
+private fun CodeGenerator.generateMiscStatement(stmt: IRStatement): Boolean {
+    when (stmt) {
+        // Input buffer statements
+        is IRInputBufferDecl -> {
+            /* Declaration is handled in generateVariables */
+        }
+        is IRInputBufferReset -> line("${stmt.bufferName} = 0;")
+        is IRInputBufferFill -> line("${stmt.bufferName} = ${stmt.frames};")
+        // Link cable statements
+        is IRLinkInit -> line("_link_init();")
+        is IRLinkUpdate -> line("_link_update();")
+        is IRLinkSend -> line("_link_send(${generateExpr(stmt.data)});")
+        // Cutscene statements
+        is IRCutsceneStart -> line("_${stmt.cutsceneName}_start();")
+        is IRCutsceneUpdate -> line("_${stmt.cutsceneName}_update();")
+        is IRCutsceneSkip -> line("_${stmt.cutsceneName}_skip();")
+        // Tween statements
+        is IRTween -> generateTweenStart(stmt)
+        // Physics world statements
+        is IRPhysicsWorldUpdate -> line("_physics_world_update();")
+        is IRPhysicsApply -> generatePhysicsApply(stmt)
+        is IRCollisionResponse -> {
+            line("// Collision response: ${stmt.tag1} <-> ${stmt.tag2}")
+        }
+        else -> return false
+    }
+    return true
 }

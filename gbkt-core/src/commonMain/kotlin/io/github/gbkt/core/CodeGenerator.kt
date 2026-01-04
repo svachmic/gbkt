@@ -130,10 +130,11 @@ class CodeGenerator(internal val game: Game) {
             generateSoundData()
             generateMixerData()
             generateSaveData()
+            // Variables must be defined before dialog/menu functions that use _joypad etc.
+            generateVariables()
             generateDialogData()
             generateMenuData()
             generatePoolData()
-            generateVariables()
             generateStateMachineEnums()
             generateAnimationData()
             generateSceneEnum()
@@ -143,13 +144,16 @@ class CodeGenerator(internal val game: Game) {
             generateCutsceneFunctions()
             generateAnimationUpdateFunctions()
             generateStateMachineUpdateFunctions()
-            generateSceneFunctions()
-            generateTransitionSequenceData()
-            generateCameraFunctions()
-            generatePhysicsFunctions()
+            // Tween data structures must be generated before scene functions that use them
             generateTweenData()
             generateEasingLookupTables()
             generateTweenUpdateFunction()
+            // Camera functions must also be generated before scene functions
+            generateTransitionSequenceData()
+            generateCameraFunctions()
+            generatePhysicsFunctions()
+            // Scene functions use tweens, camera, physics - generate after dependencies
+            generateSceneFunctions()
             generateMain()
 
             // Check for validation errors collected during generation
@@ -190,10 +194,12 @@ class CodeGenerator(internal val game: Game) {
 
     private fun generateIncludes() {
         line("#include <gb/gb.h>")
+        line("#include <gbdk/console.h>") // For gotoxy(), cls()
         line("#include <stdint.h>")
         line("#include <string.h>")
         line("#include <stdio.h>")
         line("#include <stdlib.h>")
+        line("#include <rand.h>")
         if (game.music.isNotEmpty()) {
             line("#include <hUGEDriver.h>")
         }
@@ -206,46 +212,31 @@ class CodeGenerator(internal val game: Game) {
     internal fun generateDebugMacros() {
         if (game.arrays.isEmpty()) return
 
+        // Extract repeated C code to avoid duplication
+        val boundsCheck = "    if (idx < 0 || idx >= size) {"
+        val oobPrintf = "        printf(\"OOB: %s[%d] size=%d\\n\", name, idx, size);"
+        val returnElement = "    return arr[idx];"
+
+        fun generateArrayGetter(cType: String, funcSuffix: String, defaultValue: String) {
+            line(
+                "static inline $cType _gb_array_get_$funcSuffix(const $cType* arr, INT16 idx, UINT8 size, const char* name) {"
+            )
+            line(boundsCheck)
+            line(oobPrintf)
+            line("        return $defaultValue;")
+            line("    }")
+            line(returnElement)
+            line("}")
+        }
+
         line("// =============================================================================")
         line("// DEBUG ARRAY BOUNDS CHECKING")
         line("// =============================================================================")
         line("#ifdef DEBUG")
-        line(
-            "static inline UINT8 _gb_array_get_u8(const UINT8* arr, INT16 idx, UINT8 size, const char* name) {"
-        )
-        line("    if (idx < 0 || idx >= size) {")
-        line("        printf(\"OOB: %s[%d] size=%d\\n\", name, idx, size);")
-        line("        return 0u;")
-        line("    }")
-        line("    return arr[idx];")
-        line("}")
-        line(
-            "static inline UINT16 _gb_array_get_u16(const UINT16* arr, INT16 idx, UINT8 size, const char* name) {"
-        )
-        line("    if (idx < 0 || idx >= size) {")
-        line("        printf(\"OOB: %s[%d] size=%d\\n\", name, idx, size);")
-        line("        return 0u;")
-        line("    }")
-        line("    return arr[idx];")
-        line("}")
-        line(
-            "static inline INT8 _gb_array_get_i8(const INT8* arr, INT16 idx, UINT8 size, const char* name) {"
-        )
-        line("    if (idx < 0 || idx >= size) {")
-        line("        printf(\"OOB: %s[%d] size=%d\\n\", name, idx, size);")
-        line("        return 0;")
-        line("    }")
-        line("    return arr[idx];")
-        line("}")
-        line(
-            "static inline INT16 _gb_array_get_i16(const INT16* arr, INT16 idx, UINT8 size, const char* name) {"
-        )
-        line("    if (idx < 0 || idx >= size) {")
-        line("        printf(\"OOB: %s[%d] size=%d\\n\", name, idx, size);")
-        line("        return 0;")
-        line("    }")
-        line("    return arr[idx];")
-        line("}")
+        generateArrayGetter("UINT8", "u8", "0u")
+        generateArrayGetter("UINT16", "u16", "0u")
+        generateArrayGetter("INT8", "i8", "0")
+        generateArrayGetter("INT16", "i16", "0")
         line("#define GB_ARRAY_SET(arr, idx, size, val) \\")
         line("    do { if ((idx) >= 0 && (idx) < (size)) (arr)[(idx)] = (val); \\")
         line("         else printf(\"OOB: %s[%d] size=%d\\n\", #arr, idx, size); } while(0)")
