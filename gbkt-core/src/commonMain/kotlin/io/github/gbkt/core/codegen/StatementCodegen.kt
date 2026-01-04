@@ -139,65 +139,79 @@ private const val RESET_TRANSITION_TIMER = "_transition_timer = 0;"
 internal fun CodeGenerator.generateStatement(stmt: IRStatement) {
     // Core control flow statements - keep inline for clarity
     when (stmt) {
-        is IRAssign -> {
-            val value = generateExpr(stmt.value)
-            lineWithSource("${stmt.target} ${stmt.op.c} $value;", stmt.sourceLocation, stmt.target)
-        }
+        is IRAssign -> generateAssignStatement(stmt)
         is IRIf -> generateIfStatement(stmt)
         is IRWhen -> generateWhenStatement(stmt)
-        is IRWhile -> {
-            val cond = generateExpr(stmt.condition)
-            blockWithSource("while ($cond)", stmt.sourceLocation) {
-                stmt.body.forEach { generateStatement(it) }
-            }
-        }
-        is IRFor -> {
-            val start = stmt.range.first
-            val end = stmt.range.last
-            blockWithSource(
-                "for (UINT8 ${stmt.counter} = $start; ${stmt.counter} <= $end; ${stmt.counter}++)",
-                stmt.sourceLocation,
-                stmt.counter
-            ) {
-                stmt.body.forEach { generateStatement(it) }
-            }
-        }
-        is IRCall -> {
-            val args = stmt.args.joinToString(", ") { generateExpr(it) }
-            lineWithSource("${stmt.function}($args);", stmt.sourceLocation, stmt.function)
-        }
-        is IRSceneChange -> {
-            lineWithSource(
-                "_next_scene = SCENE_${stmt.sceneName.uppercase()};",
-                stmt.sourceLocation,
-                stmt.sceneName
-            )
-            line("_scene_changed = 1;")
-        }
-        is IRRaw -> {
-            val lines = stmt.code.lines()
-            if (lines.isNotEmpty()) {
-                lineWithSource(lines.first(), stmt.sourceLocation)
-                lines.drop(1).forEach { line(it) }
-            }
-        }
+        is IRWhile -> generateWhileStatement(stmt)
+        is IRFor -> generateForStatement(stmt)
+        is IRCall -> generateCallStatement(stmt)
+        is IRSceneChange -> generateSceneChangeStatement(stmt)
+        is IRRaw -> generateRawStatement(stmt)
         is IRArrayAssign -> generateArrayAssign(stmt)
         // Delegate to category handlers for all other statement types
-        else -> {
-            if (generateSoundMusicStatement(stmt)) return
-            if (generateDisplayStatement(stmt)) return
-            if (generateAnimationStatement(stmt)) return
-            if (generateSaveStatement(stmt)) return
-            if (generateDialogStatement(stmt)) return
-            if (generateMenuStatement(stmt)) return
-            if (generatePoolStatement(stmt)) return
-            if (generateCameraStatement(stmt)) return
-            if (generateTransitionStatement(stmt)) return
-            if (generatePathfindingStatement(stmt)) return
-            if (generateMiscStatement(stmt)) return
-            error("Unhandled IR statement type: ${stmt::class.simpleName}")
-        }
+        else -> generateDelegatedStatement(stmt)
     }
+}
+
+private fun CodeGenerator.generateAssignStatement(stmt: IRAssign) {
+    val value = generateExpr(stmt.value)
+    lineWithSource("${stmt.target} ${stmt.op.c} $value;", stmt.sourceLocation, stmt.target)
+}
+
+private fun CodeGenerator.generateWhileStatement(stmt: IRWhile) {
+    val cond = generateExpr(stmt.condition)
+    blockWithSource("while ($cond)", stmt.sourceLocation) {
+        stmt.body.forEach { generateStatement(it) }
+    }
+}
+
+private fun CodeGenerator.generateForStatement(stmt: IRFor) {
+    val start = stmt.range.first
+    val end = stmt.range.last
+    blockWithSource(
+        "for (UINT8 ${stmt.counter} = $start; ${stmt.counter} <= $end; ${stmt.counter}++)",
+        stmt.sourceLocation,
+        stmt.counter
+    ) {
+        stmt.body.forEach { generateStatement(it) }
+    }
+}
+
+private fun CodeGenerator.generateCallStatement(stmt: IRCall) {
+    val args = stmt.args.joinToString(", ") { generateExpr(it) }
+    lineWithSource("${stmt.function}($args);", stmt.sourceLocation, stmt.function)
+}
+
+private fun CodeGenerator.generateSceneChangeStatement(stmt: IRSceneChange) {
+    lineWithSource(
+        "_next_scene = SCENE_${stmt.sceneName.uppercase()};",
+        stmt.sourceLocation,
+        stmt.sceneName
+    )
+    line("_scene_changed = 1;")
+}
+
+private fun CodeGenerator.generateRawStatement(stmt: IRRaw) {
+    val lines = stmt.code.lines()
+    if (lines.isNotEmpty()) {
+        lineWithSource(lines.first(), stmt.sourceLocation)
+        lines.drop(1).forEach { line(it) }
+    }
+}
+
+private fun CodeGenerator.generateDelegatedStatement(stmt: IRStatement) {
+    if (generateSoundMusicStatement(stmt)) return
+    if (generateDisplayStatement(stmt)) return
+    if (generateAnimationStatement(stmt)) return
+    if (generateSaveStatement(stmt)) return
+    if (generateDialogStatement(stmt)) return
+    if (generateMenuStatement(stmt)) return
+    if (generatePoolStatement(stmt)) return
+    if (generateCameraStatement(stmt)) return
+    if (generateTransitionStatement(stmt)) return
+    if (generatePathfindingStatement(stmt)) return
+    if (generateMiscStatement(stmt)) return
+    error("Unhandled IR statement type: ${stmt::class.simpleName}")
 }
 
 // Core control flow helpers
@@ -402,6 +416,46 @@ private fun CodeGenerator.generatePrintAt(stmt: IRPrintAt) {
     }
 }
 
+private fun CodeGenerator.validateSpriteAnimation(
+    sprite: io.github.gbkt.core.graphics.Sprite,
+    stmt: IRAnimationPlay
+): io.github.gbkt.core.graphics.Animation? {
+    if (!sprite.hasAnimations) {
+        reportError("Sprite '${stmt.spriteName}' has no animations defined")
+        return null
+    }
+    val anim = sprite.animations[stmt.animationName]
+    if (anim == null) {
+        reportError("Animation '${stmt.animationName}' not found on sprite '${stmt.spriteName}'")
+        return null
+    }
+    if (anim.frames.isEmpty()) {
+        reportError("Animation '${stmt.animationName}' has no frames")
+        return null
+    }
+    return anim
+}
+
+private fun CodeGenerator.validatePoolAnimation(
+    pool: io.github.gbkt.core.entity.Pool,
+    stmt: IRAnimationPlay
+): io.github.gbkt.core.graphics.Animation? {
+    if (pool.animations.isEmpty()) {
+        reportError("Pool '${pool.name}' has no animations defined")
+        return null
+    }
+    val anim = pool.animations[stmt.animationName]
+    if (anim == null) {
+        reportError("Animation '${stmt.animationName}' not found on pool '${pool.name}'")
+        return null
+    }
+    if (anim.frames.isEmpty()) {
+        reportError("Animation '${stmt.animationName}' has no frames")
+        return null
+    }
+    return anim
+}
+
 private fun CodeGenerator.generateAnimationPlay(stmt: IRAnimationPlay) {
     val sprite = game.sprites.find { it.name == stmt.spriteName }
 
@@ -415,41 +469,16 @@ private fun CodeGenerator.generateAnimationPlay(stmt: IRAnimationPlay) {
     val pool = poolName?.let { game.pools.find { p -> p.name == it } }
 
     when {
-        // Handle regular sprite animation
         sprite != null -> {
-            if (!sprite.hasAnimations) {
-                reportError("Sprite '${stmt.spriteName}' has no animations defined")
-            } else {
-                val anim = sprite.animations[stmt.animationName]
-                if (anim == null) {
-                    reportError(
-                        "Animation '${stmt.animationName}' not found on sprite '${stmt.spriteName}'"
-                    )
-                } else if (anim.frames.isEmpty()) {
-                    reportError("Animation '${stmt.animationName}' has no frames")
-                } else {
-                    generateSpriteAnimation(stmt, sprite, anim)
-                }
+            validateSpriteAnimation(sprite, stmt)?.let { anim ->
+                generateSpriteAnimation(stmt, sprite, anim)
             }
         }
-        // Handle pool sprite animation
         pool != null -> {
-            if (pool.animations.isEmpty()) {
-                reportError("Pool '${pool.name}' has no animations defined")
-            } else {
-                val anim = pool.animations[stmt.animationName]
-                if (anim == null) {
-                    reportError(
-                        "Animation '${stmt.animationName}' not found on pool '${pool.name}'"
-                    )
-                } else if (anim.frames.isEmpty()) {
-                    reportError("Animation '${stmt.animationName}' has no frames")
-                } else {
-                    generatePoolAnimation(stmt, pool, anim)
-                }
+            validatePoolAnimation(pool, stmt)?.let { anim ->
+                generatePoolAnimation(stmt, pool, anim)
             }
         }
-        // Neither sprite nor pool found
         else -> {
             reportError("Sprite '${stmt.spriteName}' not found for animation")
         }
@@ -895,9 +924,16 @@ private fun CodeGenerator.generateDialogStatement(stmt: IRStatement): Boolean {
 /** Handle menu-related statements. */
 private fun CodeGenerator.generateMenuStatement(stmt: IRStatement): Boolean {
     when (stmt) {
-        is IRMenuShow -> {
-            val menu = game.menus.find { it.name == stmt.menuName }
-            showMenu(stmt.menuName, menu?.isGrid == true)
+        is IRMenuShow,
+        is IRMenuOpen -> {
+            val menuName =
+                when (stmt) {
+                    is IRMenuShow -> stmt.menuName
+                    is IRMenuOpen -> stmt.menuName
+                    else -> error("Unexpected")
+                }
+            val menu = game.menus.find { it.name == menuName }
+            showMenu(menuName, menu?.isGrid == true)
         }
         is IRMenuHide -> hideMenu(stmt.menuName)
         is IRMenuToggle -> {
@@ -936,10 +972,6 @@ private fun CodeGenerator.generateMenuStatement(stmt: IRStatement): Boolean {
             }
         }
         is IRMenuCancel -> hideMenu(stmt.menuName)
-        is IRMenuOpen -> {
-            val menu = game.menus.find { it.name == stmt.menuName }
-            showMenu(stmt.menuName, menu?.isGrid == true)
-        }
         is IRMenuClose -> line("// Close current menu (handled by tick function)")
         else -> return false
     }

@@ -210,6 +210,34 @@ private fun CodeGenerator.generatePoolHideFunction(pool: Pool) {
     line()
 }
 
+private fun CodeGenerator.generatePoolOnFrameBlock(pool: Pool) {
+    val name = pool.name
+    line("// onFrame")
+    line("{")
+    indent++
+    line("UINT8 _${name}_i = i;")
+    for (stmt in pool.onFrameStatements) {
+        generateStatement(stmt)
+    }
+    indent--
+    line("}")
+}
+
+private fun CodeGenerator.generatePoolDespawnConditionsBlock(pool: Pool) {
+    val name = pool.name
+    line("// Check despawn conditions")
+    line("{")
+    indent++
+    line("UINT8 _${name}_i = i;")
+    val conditions = pool.despawnConditions.joinToString(" || ") { generateExpr(it) }
+    block("if ($conditions)") {
+        line("${name}_despawn(i);")
+        line("continue;")
+    }
+    indent--
+    line("}")
+}
+
 private fun CodeGenerator.generatePoolUpdateFunction(pool: Pool) {
     val name = pool.name
     val nameUpper = name.uppercase()
@@ -219,15 +247,7 @@ private fun CodeGenerator.generatePoolUpdateFunction(pool: Pool) {
         block("for (i = 0; i < ${nameUpper}_POOL_SIZE; i++)") {
             block("if (${name}_active[i])") {
                 if (pool.onFrameStatements.isNotEmpty()) {
-                    line("// onFrame")
-                    line("{")
-                    indent++
-                    line("UINT8 _${name}_i = i;")
-                    for (stmt in pool.onFrameStatements) {
-                        generateStatement(stmt)
-                    }
-                    indent--
-                    line("}")
+                    generatePoolOnFrameBlock(pool)
                 }
 
                 if (pool.spriteAsset != null && pool.hasPosition) {
@@ -235,18 +255,7 @@ private fun CodeGenerator.generatePoolUpdateFunction(pool: Pool) {
                 }
 
                 if (pool.despawnConditions.isNotEmpty()) {
-                    line("// Check despawn conditions")
-                    line("{")
-                    indent++
-                    line("UINT8 _${name}_i = i;")
-                    val conditions =
-                        pool.despawnConditions.joinToString(" || ") { generateExpr(it) }
-                    block("if ($conditions)") {
-                        line("${name}_despawn(i);")
-                        line("continue;")
-                    }
-                    indent--
-                    line("}")
+                    generatePoolDespawnConditionsBlock(pool)
                 }
             }
         }
