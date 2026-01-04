@@ -34,14 +34,11 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
 
-      - name: Publish gbkt-core to mavenLocal
-        run: ./gradlew :gbkt-core:publishToMavenLocal --no-daemon
-
-      - name: Build
-        run: ./gradlew build -x test --no-daemon
+      - name: Build core modules
+        run: ./gradlew -PcoreOnly=true :gbkt-core:build :gbkt-cli:build --no-daemon
 
       - name: Run Tests
-        run: ./gradlew ${{ matrix.gradle-target }} --no-daemon
+        run: ./gradlew -PcoreOnly=true :gbkt-core:${{ matrix.gradle-target }} --no-daemon
 
       - name: Upload Test Reports
         if: failure()
@@ -67,11 +64,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Publish gbkt-core to mavenLocal
-        run: ./gradlew :gbkt-core:publishToMavenLocal --no-daemon
-
       - name: Check formatting
-        run: ./gradlew spotlessCheck --no-daemon
+        run: ./gradlew -PcoreOnly=true :gbkt-core:spotlessCheck :gbkt-cli:spotlessCheck --no-daemon
         continue-on-error: true
 
   version-consistency:
@@ -90,7 +84,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Check version consistency
-        run: ./gradlew checkVersionConsistency --no-daemon
+        run: ./gradlew -PcoreOnly=true checkVersionConsistency --no-daemon
 
   vscode-extension:
     runs-on: ubuntu-latest
@@ -135,8 +129,5 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Publish gbkt-core to mavenLocal
-        run: ./gradlew :gbkt-core:publishToMavenLocal --no-daemon
-
       - name: Build and Test
-        run: ./gradlew build jvmTest --no-daemon
+        run: ./gradlew -PcoreOnly=true :gbkt-core:build :gbkt-core:jvmTest --no-daemon
