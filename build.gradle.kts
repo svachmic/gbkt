@@ -3,6 +3,7 @@ plugins {
     kotlin("jvm") version "2.3.0" apply false
     id("com.diffplug.spotless") version "6.25.0" apply false
     id("io.gitlab.arturbosch.detekt") version "1.23.6" apply false
+    id("org.sonarqube") version "7.2.2.6593"
 }
 
 val gbktVersion: String by project
@@ -13,6 +14,15 @@ allprojects {
 
     repositories {
         mavenCentral()
+    }
+}
+
+sonarqube {
+    properties {
+        property("sonar.projectKey", "svachmic_gbkt")
+        property("sonar.organization", "svachmic")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.coverage.jacoco.xmlReportPaths", "**/build/reports/kover/report.xml")
     }
 }
 
