@@ -33,7 +33,7 @@ dependencies {
     implementation("io.github.gbkt:gbkt-core-jvm:0.1.0-SNAPSHOT")
 
     // JSON parsing for source map loading
-    implementation("org.json:json:20231013")
+    implementation("org.json:json:20251224")
 
     // Test dependencies
     testImplementation(gradleTestKit())
