@@ -97,35 +97,35 @@ object GameScopeContext {
  * Assignable expression - returned by variable delegates. Allows both `playerX = 5` and `playerX =
  * someExpr` syntax.
  */
-class AssignableExpr(
+open class AssignableExpr(
     val varName: String,
     val varType: GBVar.VarType,
     override val ir: IRExpression = IRVar(varName)
 ) : Expr(ir) {
 
     /** Assign an integer literal */
-    infix fun set(value: Int) {
+    open infix fun set(value: Int) {
         if (RecordingContext.isRecording) {
             RecordingContext.require().emit(IRAssign(varName, IRLiteral(value)))
         }
     }
 
     /** Assign an expression */
-    infix fun set(value: Expr) {
+    open infix fun set(value: Expr) {
         if (RecordingContext.isRecording) {
             RecordingContext.require().emit(IRAssign(varName, value.ir))
         }
     }
 
     /** Compound add */
-    infix fun addAssign(value: Int) {
+    open infix fun addAssign(value: Int) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.ADD, IRLiteral(value)), AssignOp.SET))
         }
     }
 
-    infix fun addAssign(value: Expr) {
+    open infix fun addAssign(value: Expr) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.ADD, value.ir), AssignOp.SET))
@@ -133,14 +133,14 @@ class AssignableExpr(
     }
 
     /** Compound subtract */
-    infix fun subAssign(value: Int) {
+    open infix fun subAssign(value: Int) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.SUB, IRLiteral(value)), AssignOp.SET))
         }
     }
 
-    infix fun subAssign(value: Expr) {
+    open infix fun subAssign(value: Expr) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.SUB, value.ir), AssignOp.SET))
@@ -153,7 +153,7 @@ class AssignableExpr(
     // =========================================================================
 
     /** Add and assign: playerX += 2 */
-    operator fun plusAssign(value: Int) {
+    open operator fun plusAssign(value: Int) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.ADD, IRLiteral(value)), AssignOp.SET))
@@ -161,7 +161,7 @@ class AssignableExpr(
     }
 
     /** Add and assign: playerX += speed */
-    operator fun plusAssign(value: Expr) {
+    open operator fun plusAssign(value: Expr) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.ADD, value.ir), AssignOp.SET))
@@ -169,7 +169,7 @@ class AssignableExpr(
     }
 
     /** Subtract and assign: playerY -= 2 */
-    operator fun minusAssign(value: Int) {
+    open operator fun minusAssign(value: Int) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.SUB, IRLiteral(value)), AssignOp.SET))
@@ -177,7 +177,7 @@ class AssignableExpr(
     }
 
     /** Subtract and assign: health -= damage */
-    operator fun minusAssign(value: Expr) {
+    open operator fun minusAssign(value: Expr) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.SUB, value.ir), AssignOp.SET))
@@ -185,7 +185,7 @@ class AssignableExpr(
     }
 
     /** Multiply and assign: score *= 2 */
-    operator fun timesAssign(value: Int) {
+    open operator fun timesAssign(value: Int) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.MUL, IRLiteral(value)), AssignOp.SET))
@@ -193,7 +193,7 @@ class AssignableExpr(
     }
 
     /** Multiply and assign: damage *= multiplier */
-    operator fun timesAssign(value: Expr) {
+    open operator fun timesAssign(value: Expr) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.MUL, value.ir), AssignOp.SET))
@@ -201,7 +201,7 @@ class AssignableExpr(
     }
 
     /** Divide and assign: health /= 2 */
-    operator fun divAssign(value: Int) {
+    open operator fun divAssign(value: Int) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.DIV, IRLiteral(value)), AssignOp.SET))
@@ -209,7 +209,7 @@ class AssignableExpr(
     }
 
     /** Divide and assign: score /= divisor */
-    operator fun divAssign(value: Expr) {
+    open operator fun divAssign(value: Expr) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.DIV, value.ir), AssignOp.SET))
@@ -217,7 +217,7 @@ class AssignableExpr(
     }
 
     /** Modulo and assign: frame %= 60 */
-    operator fun remAssign(value: Int) {
+    open operator fun remAssign(value: Int) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.MOD, IRLiteral(value)), AssignOp.SET))
@@ -225,7 +225,7 @@ class AssignableExpr(
     }
 
     /** Modulo and assign */
-    operator fun remAssign(value: Expr) {
+    open operator fun remAssign(value: Expr) {
         if (RecordingContext.isRecording) {
             RecordingContext.require()
                 .emit(IRAssign(varName, IRBinary(ir, BinaryOp.MOD, value.ir), AssignOp.SET))

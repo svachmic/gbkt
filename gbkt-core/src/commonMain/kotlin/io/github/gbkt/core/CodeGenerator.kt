@@ -194,10 +194,12 @@ class CodeGenerator(internal val game: Game) {
 
     private fun generateIncludes() {
         line("#include <gb/gb.h>")
+        line("#include <gbdk/console.h>") // For gotoxy(), cls()
         line("#include <stdint.h>")
         line("#include <string.h>")
         line("#include <stdio.h>")
         line("#include <stdlib.h>")
+        line("#include <rand.h>")
         if (game.music.isNotEmpty()) {
             line("#include <hUGEDriver.h>")
         }

@@ -397,30 +397,36 @@ internal fun CodeGenerator.generateStatement(stmt: IRStatement) {
         is IRMenuClose -> line("// Close current menu (handled by tick function)")
         is IRPoolUpdate -> line("${stmt.poolName}_update();")
         is IRPoolSpawn -> {
+            // Use the pool's standard index variable for consistency with PoolEntityScope
+            val indexVar = "_${stmt.poolName}_i"
             line("{")
             indent++
-            line("UINT8 _slot = ${stmt.poolName}_spawn();")
-            block("if (_slot != 255)") { stmt.initStatements.forEach { generateStatement(it) } }
+            line("UINT8 $indexVar = ${stmt.poolName}_spawn();")
+            block("if ($indexVar != 255)") { stmt.initStatements.forEach { generateStatement(it) } }
             indent--
             line("}")
         }
         is IRPoolSpawnAt -> {
+            // Use the pool's standard index variable for consistency with PoolEntityScope
+            val indexVar = "_${stmt.poolName}_i"
             line("{")
             indent++
-            line("UINT8 _slot = ${stmt.poolName}_spawn();")
-            block("if (_slot != 255)") {
-                line("${stmt.poolName}_x[_slot] = ${generateExpr(stmt.x)};")
-                line("${stmt.poolName}_y[_slot] = ${generateExpr(stmt.y)};")
+            line("UINT8 $indexVar = ${stmt.poolName}_spawn();")
+            block("if ($indexVar != 255)") {
+                line("${stmt.poolName}_x[$indexVar] = ${generateExpr(stmt.x)};")
+                line("${stmt.poolName}_y[$indexVar] = ${generateExpr(stmt.y)};")
                 stmt.initStatements.forEach { generateStatement(it) }
             }
             indent--
             line("}")
         }
         is IRPoolTrySpawn -> {
+            // Use the pool's standard index variable for consistency with PoolEntityScope
+            val indexVar = "_${stmt.poolName}_i"
             line("{")
             indent++
-            line("UINT8 _slot = ${stmt.poolName}_spawn();")
-            block("if (_slot != 255)") { stmt.initStatements.forEach { generateStatement(it) } }
+            line("UINT8 $indexVar = ${stmt.poolName}_spawn();")
+            block("if ($indexVar != 255)") { stmt.initStatements.forEach { generateStatement(it) } }
             block("else") { stmt.elseStatements.forEach { generateStatement(it) } }
             indent--
             line("}")

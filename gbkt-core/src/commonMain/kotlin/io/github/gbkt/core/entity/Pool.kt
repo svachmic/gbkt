@@ -17,6 +17,7 @@ import io.github.gbkt.core.ir.Condition
 import io.github.gbkt.core.ir.Expr
 import io.github.gbkt.core.ir.GBVar
 import io.github.gbkt.core.ir.IRAnimationPlay
+import io.github.gbkt.core.ir.IRArrayAssign
 import io.github.gbkt.core.ir.IRBinary
 import io.github.gbkt.core.ir.IRCall
 import io.github.gbkt.core.ir.IRExpression
@@ -238,6 +239,179 @@ class TrySpawnBuilder(private val pool: Pool, private val init: PoolEntityScope.
     }
 }
 
+/**
+ * Assignable expression for pool entity properties (x, y, velX, velY).
+ *
+ * Extends [AssignableExpr] to override assignment methods to use [IRArrayAssign] instead of
+ * [IRAssign], generating array-indexed assignments like `particle_x[_particle_i] = value;` instead
+ * of incorrect `particle_x = value;`.
+ */
+class PoolEntityVar(
+    private val arrayName: String,
+    private val indexVar: String,
+    varType: GBVar.VarType
+) :
+    AssignableExpr(
+        arrayName,
+        varType,
+        IRPoolEntityVar(arrayName.substringBefore("_"), arrayName.substringAfter("_"), indexVar)
+    ) {
+
+    private val indexExpr: IRExpression = IRVar(indexVar)
+
+    override infix fun set(value: Int) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require().emit(IRArrayAssign(arrayName, indexExpr, IRLiteral(value)))
+        }
+    }
+
+    override infix fun set(value: Expr) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require().emit(IRArrayAssign(arrayName, indexExpr, value.ir))
+        }
+    }
+
+    override infix fun addAssign(value: Int) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(
+                    IRArrayAssign(
+                        arrayName,
+                        indexExpr,
+                        IRBinary(ir, BinaryOp.ADD, IRLiteral(value))
+                    )
+                )
+        }
+    }
+
+    override infix fun addAssign(value: Expr) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(IRArrayAssign(arrayName, indexExpr, IRBinary(ir, BinaryOp.ADD, value.ir)))
+        }
+    }
+
+    override infix fun subAssign(value: Int) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(
+                    IRArrayAssign(
+                        arrayName,
+                        indexExpr,
+                        IRBinary(ir, BinaryOp.SUB, IRLiteral(value))
+                    )
+                )
+        }
+    }
+
+    override infix fun subAssign(value: Expr) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(IRArrayAssign(arrayName, indexExpr, IRBinary(ir, BinaryOp.SUB, value.ir)))
+        }
+    }
+
+    override operator fun plusAssign(value: Int) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(
+                    IRArrayAssign(
+                        arrayName,
+                        indexExpr,
+                        IRBinary(ir, BinaryOp.ADD, IRLiteral(value))
+                    )
+                )
+        }
+    }
+
+    override operator fun plusAssign(value: Expr) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(IRArrayAssign(arrayName, indexExpr, IRBinary(ir, BinaryOp.ADD, value.ir)))
+        }
+    }
+
+    override operator fun minusAssign(value: Int) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(
+                    IRArrayAssign(
+                        arrayName,
+                        indexExpr,
+                        IRBinary(ir, BinaryOp.SUB, IRLiteral(value))
+                    )
+                )
+        }
+    }
+
+    override operator fun minusAssign(value: Expr) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(IRArrayAssign(arrayName, indexExpr, IRBinary(ir, BinaryOp.SUB, value.ir)))
+        }
+    }
+
+    override operator fun timesAssign(value: Int) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(
+                    IRArrayAssign(
+                        arrayName,
+                        indexExpr,
+                        IRBinary(ir, BinaryOp.MUL, IRLiteral(value))
+                    )
+                )
+        }
+    }
+
+    override operator fun timesAssign(value: Expr) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(IRArrayAssign(arrayName, indexExpr, IRBinary(ir, BinaryOp.MUL, value.ir)))
+        }
+    }
+
+    override operator fun divAssign(value: Int) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(
+                    IRArrayAssign(
+                        arrayName,
+                        indexExpr,
+                        IRBinary(ir, BinaryOp.DIV, IRLiteral(value))
+                    )
+                )
+        }
+    }
+
+    override operator fun divAssign(value: Expr) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(IRArrayAssign(arrayName, indexExpr, IRBinary(ir, BinaryOp.DIV, value.ir)))
+        }
+    }
+
+    override operator fun remAssign(value: Int) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(
+                    IRArrayAssign(
+                        arrayName,
+                        indexExpr,
+                        IRBinary(ir, BinaryOp.MOD, IRLiteral(value))
+                    )
+                )
+        }
+    }
+
+    override operator fun remAssign(value: Expr) {
+        if (RecordingContext.isRecording) {
+            RecordingContext.require()
+                .emit(IRArrayAssign(arrayName, indexExpr, IRBinary(ir, BinaryOp.MOD, value.ir)))
+        }
+    }
+}
+
 /** Scope available inside pool lifecycle hooks (onSpawn, onFrame, onDespawn) and spawn blocks. */
 class PoolEntityScope(private val pool: Pool, private val indexVar: String) : Movable {
     // =========================================================================
@@ -246,21 +420,11 @@ class PoolEntityScope(private val pool: Pool, private val indexVar: String) : Mo
 
     /** X position of the current entity */
     override val x: AssignableExpr
-        get() =
-            AssignableExpr(
-                "${pool.name}_x",
-                GBVar.VarType.U8,
-                IRPoolEntityVar(pool.name, "x", indexVar)
-            )
+        get() = PoolEntityVar("${pool.name}_x", indexVar, GBVar.VarType.U8)
 
     /** Y position of the current entity */
     override val y: AssignableExpr
-        get() =
-            AssignableExpr(
-                "${pool.name}_y",
-                GBVar.VarType.U8,
-                IRPoolEntityVar(pool.name, "y", indexVar)
-            )
+        get() = PoolEntityVar("${pool.name}_y", indexVar, GBVar.VarType.U8)
 
     // =========================================================================
     // VELOCITY
@@ -268,21 +432,11 @@ class PoolEntityScope(private val pool: Pool, private val indexVar: String) : Mo
 
     /** X velocity of the current entity */
     override val velX: AssignableExpr
-        get() =
-            AssignableExpr(
-                "${pool.name}_vel_x",
-                GBVar.VarType.I8,
-                IRPoolEntityVar(pool.name, "vel_x", indexVar)
-            )
+        get() = PoolEntityVar("${pool.name}_vel_x", indexVar, GBVar.VarType.I8)
 
     /** Y velocity of the current entity */
     override val velY: AssignableExpr
-        get() =
-            AssignableExpr(
-                "${pool.name}_vel_y",
-                GBVar.VarType.I8,
-                IRPoolEntityVar(pool.name, "vel_y", indexVar)
-            )
+        get() = PoolEntityVar("${pool.name}_vel_y", indexVar, GBVar.VarType.I8)
 
     // =========================================================================
     // CURRENT INDEX

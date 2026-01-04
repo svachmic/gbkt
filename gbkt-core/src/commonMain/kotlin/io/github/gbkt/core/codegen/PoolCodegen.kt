@@ -81,6 +81,18 @@ internal fun CodeGenerator.generatePoolFunctions() {
     line("// === Pool Functions ===")
     line()
 
+    // Forward declarations - pool functions may call each other (e.g., despawn calls hide)
+    for (pool in game.pools) {
+        val name = pool.name
+        line("static UINT8 ${name}_spawn(void);")
+        line("static void ${name}_despawn(UINT8 i);")
+        line("static void ${name}_despawn_all(void);")
+        line("static void ${name}_show(UINT8 i);")
+        line("static void ${name}_hide(UINT8 i);")
+        line("static void ${name}_update(void);")
+    }
+    line()
+
     for (pool in game.pools) {
         val name = pool.name
         val size = pool.size

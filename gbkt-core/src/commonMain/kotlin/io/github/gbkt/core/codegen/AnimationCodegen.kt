@@ -75,6 +75,13 @@ internal fun CodeGenerator.generateAnimationUpdateFunctions() {
     line("// === Animation Update Functions ===")
     line()
 
+    // Forward declarations - update functions call play_queued
+    for (sprite in animatedSprites) {
+        line("void ${sprite.name}_update_animation(void);")
+        line("void ${sprite.name}_play_queued(void);")
+    }
+    line()
+
     // Generate per-sprite update functions
     for (sprite in animatedSprites) {
         val hasCallbacks =
