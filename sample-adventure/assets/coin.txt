@@ -1,0 +1,26 @@
+ASSET PLACEHOLDER: coin.png
+
+Description:
+  An 8x8 pixel sprite sheet for collectible coins.
+  Contains 4 frames for spin animation.
+
+Specifications:
+  - Size: 32x8 pixels (4 frames x 8 wide, 8 tall each)
+  - Colors: 4-color Game Boy palette (gold tones for GBC)
+  - Format: PNG with indexed colors
+
+Frame Layout:
+  Frame 0-3: Spinning coin animation
+
+Suggested Design:
+  An animated coin:
+  - Frame 0: Full circle (front view)
+  - Frame 1: Slightly narrower (turning)
+  - Frame 2: Very narrow (edge view)
+  - Frame 3: Slightly narrower (turning back)
+
+To create this asset:
+  1. Use any pixel art editor (Aseprite recommended)
+  2. Create a 32x8 pixel canvas (4 frames)
+  3. Use only 4 colors (GBC enhanced palette)
+  4. Export as coin.png in this directory

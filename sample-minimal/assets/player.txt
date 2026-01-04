@@ -1,0 +1,31 @@
+ASSET PLACEHOLDER: player.png
+
+Description:
+  An 8x8 pixel sprite representing the player character.
+
+Specifications:
+  - Size: 8x8 pixels
+  - Colors: 4-color Game Boy palette (white, light gray, dark gray, black)
+  - Format: PNG with indexed colors
+
+Suggested Design:
+  A simple character sprite, such as:
+  - A small person/character viewed from above (top-down view)
+  - A simple geometric shape (square with face, arrow, etc.)
+  - A minimal robot or creature
+
+To create this asset:
+  1. Use any pixel art editor (Aseprite, GIMP, etc.)
+  2. Create an 8x8 pixel canvas
+  3. Use only 4 colors (Game Boy palette)
+  4. Export as player.png in this directory
+
+Example 8x8 character layout (. = transparent, # = filled):
+  . . # # # # . .
+  . # # # # # # .
+  . # . # # . # .
+  . # # # # # # .
+  . . # # # # . .
+  . # # . . # # .
+  . # # . . # # .
+  . # . . . . # .

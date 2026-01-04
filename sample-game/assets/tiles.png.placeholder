@@ -1,0 +1,19 @@
+# tiles.png - Tileset for Background
+# Size: 8x8 pixels per tile
+# Format: PNG, 4-color Game Boy palette
+#
+# Tile Layout (recommend at least 8 tiles):
+# Tile 0: Empty/air
+# Tile 1: Ground/floor
+# Tile 2: Wall
+# Tile 3: Platform top
+# Tile 4: Platform middle
+# Tile 5-7: Decorative tiles
+#
+# Expected dimensions: Variable (e.g., 64x8 for 8 tiles, or 128x8 for 16 tiles)
+#
+# To create this tileset:
+# 1. Use a pixel art editor
+# 2. Create 8x8 tile sprites
+# 3. Arrange horizontally in a strip
+# 4. Use Game Boy 4-color palette (white, light gray, dark gray, black)

@@ -1,0 +1,43 @@
+{
+  "_comment": "level.json - Tiled Map JSON Format",
+  "_description": "This is a placeholder for a Tiled map file",
+  "_instructions": [
+    "To create this file:",
+    "1. Download Tiled Map Editor (https://www.mapeditor.org/)",
+    "2. Create a new map: 20x18 tiles (160x144 pixels for Game Boy screen)",
+    "3. Set tile size to 8x8 pixels",
+    "4. Import tiles.png as tileset",
+    "5. Create layers:",
+    "   - 'Background': Visual tiles for the level",
+    "   - 'Collision': Mark solid tiles (use tile ID 1 for solid, 0 for empty)",
+    "6. Paint your level layout",
+    "7. Export as JSON",
+    "8. Make sure the 'Collision' layer name matches the collisionLayer setting in RunnerGame.kt"
+  ],
+  "_example_structure": {
+    "width": 20,
+    "height": 18,
+    "tilewidth": 8,
+    "tileheight": 8,
+    "layers": [
+      {
+        "name": "Background",
+        "type": "tilelayer",
+        "data": "array of tile IDs"
+      },
+      {
+        "name": "Collision",
+        "type": "tilelayer",
+        "data": "array of collision IDs (0=empty, 1=solid)"
+      }
+    ],
+    "tilesets": [
+      {
+        "name": "tiles",
+        "image": "tiles.png",
+        "tilewidth": 8,
+        "tileheight": 8
+      }
+    ]
+  }
+}

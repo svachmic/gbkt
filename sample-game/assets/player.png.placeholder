@@ -1,0 +1,18 @@
+# player.png - Player Sprite Sheet
+# Size: 8x16 pixels per frame
+# Format: PNG, 4-color Game Boy palette
+#
+# Frame Layout (8 frames total, horizontal strip):
+# Frame 0-1: Idle animation (2 frames)
+# Frame 2-5: Run animation (4 frames)
+# Frame 6:   Jump pose (1 frame)
+# Frame 7:   Fall pose (1 frame)
+#
+# Expected dimensions: 64x16 pixels (8 frames * 8px wide, 16px tall)
+#
+# To create this sprite:
+# 1. Use a pixel art editor (Aseprite, GraphicsGale, etc.)
+# 2. Create an 8x16 character sprite
+# 3. Animate idle, run, jump, fall states
+# 4. Export as horizontal sprite sheet
+# 5. Use Game Boy 4-color palette (white, light green, dark green, black)

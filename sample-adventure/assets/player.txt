@@ -1,0 +1,27 @@
+ASSET PLACEHOLDER: player.png
+
+Description:
+  An 8x16 pixel sprite sheet for the player character.
+  Contains multiple animation frames for idle, run, and jump.
+
+Specifications:
+  - Size: 56x16 pixels (7 frames x 8 wide, 16 tall each)
+  - Colors: 4-color Game Boy palette (GBC enhanced)
+  - Format: PNG with indexed colors
+
+Frame Layout:
+  Frame 0-1: Idle animation (2 frames)
+  Frame 2-5: Run animation (4 frames)
+  Frame 6:   Jump pose (1 frame)
+
+Suggested Design:
+  A platformer character:
+  - Small humanoid or creature
+  - Clear running motion
+  - Distinct jump pose
+
+To create this asset:
+  1. Use any pixel art editor (Aseprite recommended)
+  2. Create a 56x16 pixel canvas (7 frames)
+  3. Use only 4 colors (GBC enhanced palette)
+  4. Export as player.png in this directory

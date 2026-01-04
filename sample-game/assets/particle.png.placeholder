@@ -1,0 +1,14 @@
+# particle.png - Particle Effect Sprite
+# Size: 4x4 pixels
+# Format: PNG, 4-color Game Boy palette
+#
+# Frame Layout (1 frame):
+# Single small particle sprite
+#
+# Expected dimensions: 4x4 pixels
+#
+# To create this sprite:
+# 1. Use a pixel art editor
+# 2. Create a 4x4 small particle/sparkle
+# 3. Keep it simple (cross, diamond, or star shape)
+# 4. Use Game Boy 4-color palette (white, light blue, blue, black)

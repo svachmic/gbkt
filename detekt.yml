@@ -1,0 +1,156 @@
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+  weights:
+    # severity (low = 1, medium = 2, high = 3) = weights
+
+config:
+  validation: true
+  warningsAsErrors: false
+  excludes: ''
+
+complexity:
+  LongMethod:
+    active: true
+    threshold: 80  # DSL builders get long
+  LongParameterList:
+    active: true
+    functionThreshold: 6
+    constructorThreshold: 7
+    ignoreDefaultParameters: true
+    ignoreDataClasses: true
+    ignoreAnnotatedParameter: []
+  ComplexCondition:
+    active: false  # IR generation is inherently nested
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 25
+    thresholdInClasses: 20
+    thresholdInInterfaces: 15
+    thresholdInObjects: 15
+    thresholdInEnums: 5
+    excludes:
+      - '**/codegen/**'  # Codegen files legitimately have many functions
+  LargeClass:
+    active: true
+    threshold: 600
+    excludes:
+      - '**/codegen/**'  # Codegen files may exceed for complex systems
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 15
+    ignoreSingleWhenExpression: true
+    ignoreSimpleWhenEntries: true
+    ignoreNestingFunctions: false
+    nestingFunctions: []
+  NestedBlockDepth:
+    active: true
+    threshold: 5  # DSL builders can be nested
+
+style:
+  MagicNumber:
+    active: false  # Game development uses many coordinate and color values
+  UnusedPrivateMember:
+    active: false  # DSL receivers trigger false positives
+  UnusedPrivateProperty:
+    active: false  # DSL builders may have unused properties that are needed for API
+  ForbiddenComment:
+    active: false  # TODO/FIXME are fine
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+    excludePackageStatements: true
+    excludeImportStatements: true
+    excludeCommentStatements: false
+    excludeRawStrings: true
+  WildcardImport:
+    active: true
+    excludeImports:
+      - 'java.util.*'
+      - 'kotlinx.coroutines.*'
+      - 'kotlin.test.*'  # Allowed in test files for brevity
+  ReturnCount:
+    active: true
+    max: 4
+    excludedFunctions:
+      - 'equals'
+    excludeLabeled: true
+    excludeReturnFromLambda: true
+    excludeGuardClauses: true
+  ThrowsCount:
+    active: true
+    max: 4
+    excludeGuardClauses: true
+
+naming:
+  InvalidPackageDeclaration:
+    active: false  # Sample games may use simplified package structure
+  FunctionNaming:
+    active: true
+    functionPattern: '[a-z][a-zA-Z0-9]*'  # Allow u8(), i16(), etc.
+    excludeClassPattern: '$^'
+  VariableNaming:
+    active: true
+    variablePattern: '[a-z][A-Za-z0-9]*'
+    privateVariablePattern: '(_)?[a-z][A-Za-z0-9]*'
+    excludeClassPattern: '$^'
+  ClassNaming:
+    active: true
+    classPattern: '[A-Z][a-zA-Z0-9]*'
+  PackageNaming:
+    active: true
+    packagePattern: '[a-z]+(\.[a-z][A-Za-z0-9]*)*'
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: '[A-Z][_A-Z0-9]*'
+    propertyPattern: '[A-Za-z][_A-Za-z0-9]*'
+    privatePropertyPattern: '_?[A-Za-z][_A-Za-z0-9]*'
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: true
+    exceptionNames:
+      - 'ArrayIndexOutOfBoundsException'
+      - 'Error'
+      - 'Exception'
+      - 'IllegalMonitorStateException'
+      - 'NullPointerException'
+      - 'IndexOutOfBoundsException'
+      - 'RuntimeException'
+      - 'Throwable'
+    allowedExceptionNameRegex: '_|(ignore|expected).*'
+  TooGenericExceptionThrown:
+    active: true
+    exceptionNames:
+      - 'Error'
+      - 'Exception'
+      - 'Throwable'
+      - 'RuntimeException'
+  SwallowedException:
+    active: true
+    ignoredExceptionTypes:
+      - 'InterruptedException'
+      - 'MalformedURLException'
+      - 'NumberFormatException'
+      - 'ParseException'
+    allowedExceptionNameRegex: '_|(ignore|expected).*'
+
+empty-blocks:
+  EmptyFunctionBlock:
+    active: true
+    ignoreOverridden: true
+  EmptyCatchBlock:
+    active: true
+    allowedExceptionNameRegex: '_|(ignore|expected).*'
+
+potential-bugs:
+  EqualsWithHashCodeExist:
+    active: true
+  InvalidRange:
+    active: true
+  IteratorHasNextCallsNextMethod:
+    active: true
+  IteratorNotThrowingNoSuchElementException:
+    active: true
+  UselessPostfixExpression:
+    active: true

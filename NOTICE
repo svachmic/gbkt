@@ -1,0 +1,69 @@
+gbkt - Kotlin DSL
+Copyright (c) 2026 Michal Svacha
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+================================================================================
+
+This project includes or depends on the following third-party software:
+
+--------------------------------------------------------------------------------
+
+GBDK-2020
+https://github.com/gbdk-2020/gbdk-2020
+License: Various (GPL for compiler, custom licenses for libraries)
+Used for: Game Boy ROM compilation
+
+The GBDK toolchain is used at build time to compile generated C code into
+Game Boy ROMs. GBDK-2020 is not distributed with gbkt; users must install
+it separately.
+
+--------------------------------------------------------------------------------
+
+EmulatorJS
+https://emulatorjs.org/
+https://github.com/EmulatorJS/EmulatorJS
+License: GPL-3.0
+Used for: Web export feature (browser-based Game Boy emulation)
+
+EmulatorJS is loaded from CDN in the web export feature. It is not bundled
+with gbkt. The web export generates HTML that references EmulatorJS remotely.
+
+--------------------------------------------------------------------------------
+
+mGBA
+https://mgba.io/
+https://github.com/mgba-emu/mgba
+License: MPL-2.0
+Used for: Development emulation, live reload, and debugging
+
+mGBA is the recommended emulator for development. It is not distributed
+with gbkt; users must install it separately. The gbkt Gradle plugin can
+auto-detect and launch mGBA for testing.
+
+--------------------------------------------------------------------------------
+
+hUGETracker / hUGEDriver
+https://github.com/SuperDisk/hUGETracker
+License: MIT
+Used for: Music playback on Game Boy hardware
+
+hUGEDriver is used for playing .uge music files on Game Boy. The driver
+code is linked into compiled ROMs when music features are used.
+
+--------------------------------------------------------------------------------
+
+IMPORTANT NOTICE FOR GAME DEVELOPERS:
+
+Games created with gbkt are YOUR property. The MPL-2.0 license applies only
+to the gbkt framework itself, not to games you create. You may:
+
+- Sell your games commercially
+- Keep your game's source code private
+- Use any license you choose for your game
+- Distribute your ROM files freely
+
+The only requirement is that if you modify the gbkt framework source code
+itself, those modifications must be made available under the MPL-2.0.

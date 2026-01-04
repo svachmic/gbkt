@@ -1,0 +1,15 @@
+# coin.png - Coin Sprite Sheet
+# Size: 8x8 pixels per frame
+# Format: PNG, 4-color Game Boy palette
+#
+# Frame Layout (4 frames total, horizontal strip):
+# Frame 0-3: Spin animation (4 frames)
+#
+# Expected dimensions: 32x8 pixels (4 frames * 8px wide, 8px tall)
+#
+# To create this sprite:
+# 1. Use a pixel art editor
+# 2. Create an 8x8 coin sprite
+# 3. Animate a spinning/rotating effect
+# 4. Export as horizontal sprite sheet
+# 5. Use Game Boy 4-color palette (white, gold/yellow, orange, black)

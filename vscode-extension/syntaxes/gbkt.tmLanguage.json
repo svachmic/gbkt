@@ -1,0 +1,146 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "gbkt",
+  "scopeName": "source.gbkt.injection",
+  "injectionSelector": "L:source.kotlin",
+  "patterns": [
+    { "include": "#gbkt-top-level" },
+    { "include": "#gbkt-variables" },
+    { "include": "#gbkt-conditions" },
+    { "include": "#gbkt-comparisons" },
+    { "include": "#gbkt-actions" },
+    { "include": "#gbkt-input" },
+    { "include": "#gbkt-animation" },
+    { "include": "#gbkt-types" },
+    { "include": "#gbkt-literals" }
+  ],
+  "repository": {
+    "gbkt-top-level": {
+      "patterns": [
+        {
+          "name": "keyword.control.gbkt.toplevel",
+          "match": "\\b(gbGame|scene|sprite|entity|dialog|menu|pool|camera|palette|tag|states|tilemap|navGrid|saveData|soundEffect|music)\\b"
+        }
+      ]
+    },
+    "gbkt-variables": {
+      "patterns": [
+        {
+          "name": "storage.type.gbkt.variable",
+          "match": "\\b(u8Var|u16Var|i8Var|u8Field|u16Field|flagsField|arrayField)\\b"
+        },
+        {
+          "name": "keyword.operator.gbkt.delegate",
+          "match": "\\bby\\s+(u8Var|u16Var|i8Var)\\b",
+          "captures": {
+            "1": { "name": "storage.type.gbkt.variable" }
+          }
+        }
+      ]
+    },
+    "gbkt-conditions": {
+      "patterns": [
+        {
+          "name": "keyword.control.gbkt.condition",
+          "match": "\\b(whenever|otherwise|branch|then)\\b"
+        }
+      ]
+    },
+    "gbkt-comparisons": {
+      "patterns": [
+        {
+          "name": "keyword.operator.gbkt.comparison",
+          "match": "\\b(isEqualTo|isNotEqualTo|isAbove|isBelow|isAtLeast|isAtMost|isBetween)\\b"
+        }
+      ]
+    },
+    "gbkt-actions": {
+      "patterns": [
+        {
+          "name": "keyword.control.gbkt.action",
+          "match": "\\b(set|at|every|enter|exit|tick)\\b"
+        },
+        {
+          "name": "keyword.control.gbkt.lifecycle",
+          "match": "\\bevery\\s*\\.\\s*(frame|second|vblank)\\b"
+        }
+      ]
+    },
+    "gbkt-input": {
+      "patterns": [
+        {
+          "name": "variable.language.gbkt.input",
+          "match": "\\b(buttons|dpad)\\b"
+        },
+        {
+          "name": "keyword.control.gbkt.input-state",
+          "match": "\\b(pressed|held|released)\\b"
+        },
+        {
+          "name": "constant.language.gbkt.button",
+          "match": "\\b(A|B|START|SELECT|UP|DOWN|LEFT|RIGHT)\\b"
+        }
+      ]
+    },
+    "gbkt-animation": {
+      "patterns": [
+        {
+          "name": "keyword.control.gbkt.animation",
+          "match": "\\b(plays|frames|once|onComplete)\\b"
+        },
+        {
+          "name": "constant.numeric.gbkt.duration",
+          "match": "\\b\\d+\\s*\\.\\s*(frames|seconds|ms)\\b"
+        }
+      ]
+    },
+    "gbkt-types": {
+      "patterns": [
+        {
+          "name": "entity.name.type.gbkt",
+          "match": "\\b(Cartridge|GBCMode|PalettePreset|BorderStyle|Checksum)\\b"
+        },
+        {
+          "name": "entity.name.type.gbkt.size",
+          "match": "\\b\\d+\\s*x\\s*\\d+\\b"
+        }
+      ]
+    },
+    "gbkt-literals": {
+      "patterns": [
+        {
+          "name": "constant.language.gbkt.color",
+          "match": "\\b(BLACK|WHITE|LIGHT_GRAY|DARK_GRAY)\\b"
+        },
+        {
+          "name": "constant.language.gbkt.preset",
+          "match": "\\b(DMG_GREEN|DMG_GRAY|POCKET|SGB_DEFAULT)\\b"
+        }
+      ]
+    },
+    "gbkt-sprite-properties": {
+      "patterns": [
+        {
+          "name": "variable.other.property.gbkt",
+          "match": "\\b(size|position|x|y|visible|flipX|flipY|priority|palette)\\b"
+        }
+      ]
+    },
+    "gbkt-camera-properties": {
+      "patterns": [
+        {
+          "name": "variable.other.property.gbkt.camera",
+          "match": "\\b(smoothing|bounds|deadzone|follow|shake|fadeIn|fadeOut|panTo)\\b"
+        }
+      ]
+    },
+    "gbkt-scene-properties": {
+      "patterns": [
+        {
+          "name": "variable.other.property.gbkt.scene",
+          "match": "\\b(background|foreground|collision|onEnter|onExit|onTick)\\b"
+        }
+      ]
+    }
+  }
+}

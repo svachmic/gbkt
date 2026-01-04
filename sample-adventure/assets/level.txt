@@ -1,0 +1,40 @@
+ASSET PLACEHOLDER: level.json
+
+Description:
+  A Tiled map file defining the game level with collision.
+
+Specifications:
+  - Format: Tiled JSON export (.json)
+  - Size: 20x18 tiles (160x144 pixels, one screen)
+  - Tile size: 8x8 pixels
+  - Required layers:
+    - Background: Visual tiles
+    - Collision: Collision data (tile IDs > 0 = blocked)
+
+Required Tileset:
+  - tiles.png: 8x8 pixel tileset with:
+    - Empty/walkable tiles
+    - Solid/platform tiles
+    - Decorative tiles
+
+To create this asset:
+  1. Download Tiled map editor (mapeditor.org)
+  2. Create new map: 20x18 tiles, 8x8 tile size
+  3. Add tileset (tiles.png)
+  4. Create "Background" layer for visuals
+  5. Create "Collision" layer for collision data
+  6. Export as level.json in this directory
+
+Example Level Layout:
+  +--------------------+
+  |                    |
+  |   [C]      [C]     |  <- Coins at y=60-80
+  |  ######  ######    |  <- Platforms
+  |                    |
+  |     [E]    [E]     |  <- Enemies patrol here
+  |####################|  <- Ground at y=110
+  +--------------------+
+
+NOTE: The tilemap is currently commented out in the code.
+Once this file is created, uncomment the tilemap definition
+in AdventureGame.kt to enable tilemap collision.

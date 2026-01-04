@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>WildcardImport:AdventureGame.kt$import io.github.gbkt.core.*</ID>
+    <ID>WildcardImport:AdventureGame.kt$import io.github.gbkt.core.builder.*</ID>
+    <ID>WildcardImport:AdventureGame.kt$import io.github.gbkt.core.dsl.*</ID>
+    <ID>WildcardImport:AdventureGame.kt$import io.github.gbkt.core.entity.*</ID>
+    <ID>WildcardImport:AdventureGame.kt$import io.github.gbkt.core.graphics.*</ID>
+    <ID>WildcardImport:AdventureGame.kt$import io.github.gbkt.core.ir.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

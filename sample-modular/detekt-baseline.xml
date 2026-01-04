@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>WildcardImport:EnemyEntity.kt$import io.github.gbkt.core.builder.*</ID>
+    <ID>WildcardImport:EnemyEntity.kt$import io.github.gbkt.core.dsl.*</ID>
+    <ID>WildcardImport:EnemyEntity.kt$import io.github.gbkt.core.entity.*</ID>
+    <ID>WildcardImport:EnemyEntity.kt$import io.github.gbkt.core.graphics.*</ID>
+    <ID>WildcardImport:EnemyEntity.kt$import io.github.gbkt.core.ir.*</ID>
+    <ID>WildcardImport:GameplayScene.kt$import io.github.gbkt.core.*</ID>
+    <ID>WildcardImport:GameplayScene.kt$import io.github.gbkt.core.builder.*</ID>
+    <ID>WildcardImport:GameplayScene.kt$import io.github.gbkt.core.dsl.*</ID>
+    <ID>WildcardImport:GameplayScene.kt$import io.github.gbkt.core.entity.*</ID>
+    <ID>WildcardImport:ModularGame.kt$import io.github.gbkt.core.*</ID>
+    <ID>WildcardImport:ModularGame.kt$import io.github.gbkt.core.builder.*</ID>
+    <ID>WildcardImport:ModularGame.kt$import io.github.gbkt.core.dsl.*</ID>
+    <ID>WildcardImport:ModularGame.kt$import io.github.gbkt.core.graphics.*</ID>
+    <ID>WildcardImport:PlayerEntity.kt$import io.github.gbkt.core.builder.*</ID>
+    <ID>WildcardImport:PlayerEntity.kt$import io.github.gbkt.core.dsl.*</ID>
+    <ID>WildcardImport:PlayerEntity.kt$import io.github.gbkt.core.entity.*</ID>
+    <ID>WildcardImport:PlayerEntity.kt$import io.github.gbkt.core.graphics.*</ID>
+    <ID>WildcardImport:PlayerEntity.kt$import io.github.gbkt.core.ir.*</ID>
+    <ID>WildcardImport:PlayerModule.kt$import io.github.gbkt.core.builder.*</ID>
+    <ID>WildcardImport:PlayerModule.kt$import io.github.gbkt.core.dsl.*</ID>
+    <ID>WildcardImport:PlayerModule.kt$import io.github.gbkt.core.graphics.*</ID>
+    <ID>WildcardImport:PlayerModule.kt$import io.github.gbkt.core.ir.*</ID>
+    <ID>WildcardImport:TitleScene.kt$import io.github.gbkt.core.*</ID>
+    <ID>WildcardImport:TitleScene.kt$import io.github.gbkt.core.builder.*</ID>
+    <ID>WildcardImport:TitleScene.kt$import io.github.gbkt.core.dsl.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

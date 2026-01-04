@@ -1,0 +1,226 @@
+{
+  "gbGame": {
+    "prefix": "gbgame",
+    "body": [
+      "gbGame(\"${1:MyGame}\") {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Main entry point for a gbkt game"
+  },
+  "scene": {
+    "prefix": "scene",
+    "body": [
+      "scene(\"${1:name}\") {",
+      "\tenter {",
+      "\t\t$0",
+      "\t}",
+      "\tevery.frame {",
+      "\t\t",
+      "\t}",
+      "}"
+    ],
+    "description": "Game scene with lifecycle hooks"
+  },
+  "entity": {
+    "prefix": "entity",
+    "body": [
+      "entity {",
+      "\tposition(${1:x}, ${2:y})",
+      "\t$0",
+      "}"
+    ],
+    "description": "Entity with position"
+  },
+  "entity with sprite": {
+    "prefix": "entitysprite",
+    "body": [
+      "val ${1:player} by entity {",
+      "\tposition(${2:80}, ${3:72})",
+      "\tsprite(SpriteAsset(\"${4:sprite.png}\")) {",
+      "\t\tsize = ${5:8} x ${6:16}",
+      "\t\thitbox(0, 0, $5, $6)",
+      "\t}",
+      "\t$0",
+      "}"
+    ],
+    "description": "Entity with sprite and hitbox"
+  },
+  "sprite": {
+    "prefix": "sprite",
+    "body": [
+      "sprite(SpriteAsset(\"${1:sprite.png}\")) {",
+      "\tsize = ${2:8} x ${3:16}",
+      "\tposition(${4:x}, ${5:y})",
+      "\t$0",
+      "}"
+    ],
+    "description": "Sprite with size and position"
+  },
+  "dialog": {
+    "prefix": "dialog",
+    "body": [
+      "dialog(\"${1:name}\") {",
+      "\ttextSpeed = 3",
+      "\tbox {",
+      "\t\tposition(0, 10)",
+      "\t\tsize = 20 x 6",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Dialog system with text box"
+  },
+  "menu": {
+    "prefix": "menu",
+    "body": [
+      "menu(\"${1:name}\") {",
+      "\tstyle {",
+      "\t\tposition(${2:5}, ${3:8})",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Menu system"
+  },
+  "pool": {
+    "prefix": "pool",
+    "body": [
+      "pool(\"${1:name}\", size = ${2:10}) {",
+      "\tposition(0, 0)",
+      "\t$0",
+      "}"
+    ],
+    "description": "Entity pool for bullets, particles, etc."
+  },
+  "camera": {
+    "prefix": "camera",
+    "body": [
+      "camera {",
+      "\tsmoothing = ${1:0.15f}",
+      "\t$0",
+      "}"
+    ],
+    "description": "Camera with smooth follow"
+  },
+  "palette": {
+    "prefix": "palette",
+    "body": [
+      "palette(\"${1:name}\") {",
+      "\tcolors(0x${2:FFFFFF}, 0x${3:888888}, 0x${4:444444}, 0x${5:000000})",
+      "}"
+    ],
+    "description": "GBC color palette"
+  },
+  "saveData": {
+    "prefix": "savedata",
+    "body": [
+      "saveData(\"${1:save}\") {",
+      "\tvar ${2:score} by u16Field()",
+      "\t$0",
+      "}"
+    ],
+    "description": "Save data structure with SRAM persistence"
+  },
+  "states": {
+    "prefix": "states",
+    "body": [
+      "states(\"${1:name}\") {",
+      "\t\"${2:idle}\" {",
+      "\t\tenter { $0 }",
+      "\t}",
+      "}"
+    ],
+    "description": "State machine for entity behavior"
+  },
+  "whenever": {
+    "prefix": "whenever",
+    "body": [
+      "whenever(${1:condition}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Execute block when condition is true"
+  },
+  "branch": {
+    "prefix": "branch",
+    "body": [
+      "branch {",
+      "\t${1:condition} then { ${2:action} }",
+      "\t$0",
+      "}"
+    ],
+    "description": "Multi-branch condition handler"
+  },
+  "every.frame": {
+    "prefix": "every",
+    "body": [
+      "every.frame {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Run code every frame"
+  },
+  "enter": {
+    "prefix": "enter",
+    "body": [
+      "enter {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Scene enter lifecycle hook"
+  },
+  "exit": {
+    "prefix": "exit",
+    "body": [
+      "exit {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Scene exit lifecycle hook"
+  },
+  "animations": {
+    "prefix": "animations",
+    "body": [
+      "animations {",
+      "\t\"${1:idle}\" plays frames(${2:0, 1}) every ${3:10}.frames",
+      "\t$0",
+      "}"
+    ],
+    "description": "Sprite animations"
+  },
+  "u8Var": {
+    "prefix": "u8var",
+    "body": "var ${1:name} by u8Var(${2:0})",
+    "description": "Unsigned 8-bit variable (0-255)"
+  },
+  "u16Var": {
+    "prefix": "u16var",
+    "body": "var ${1:name} by u16Var(${2:0})",
+    "description": "Unsigned 16-bit variable (0-65535)"
+  },
+  "print": {
+    "prefix": "print",
+    "body": "print(\"${1:text}\") at (${2:x} to ${3:y})",
+    "description": "Print text at position"
+  },
+  "hitbox": {
+    "prefix": "hitbox",
+    "body": "hitbox(${1:0}, ${2:0}, ${3:8}, ${4:16})",
+    "description": "Collision hitbox"
+  },
+  "fadeOut": {
+    "prefix": "fadeout",
+    "body": [
+      "fadeOut(${1:30}.frames) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Fade to black with callback"
+  },
+  "shake": {
+    "prefix": "shake",
+    "body": "shake(${1:4}, ${2:10}.frames)",
+    "description": "Screen shake effect"
+  }
+}

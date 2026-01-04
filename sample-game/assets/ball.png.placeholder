@@ -1,0 +1,14 @@
+# ball.png - Enemy Ball Sprite
+# Size: 8x8 pixels
+# Format: PNG, 4-color Game Boy palette
+#
+# Frame Layout (1 frame):
+# Single static ball sprite
+#
+# Expected dimensions: 8x8 pixels
+#
+# To create this sprite:
+# 1. Use a pixel art editor
+# 2. Create an 8x8 ball/sphere sprite
+# 3. Add shading to suggest volume
+# 4. Use Game Boy 4-color palette (white, light red, dark red, black)

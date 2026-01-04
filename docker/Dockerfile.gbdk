@@ -1,0 +1,31 @@
+# GBDK-2020 Docker image for building Game Boy ROMs
+# Used by CI/CD for E2E testing of gbkt DSL -> C -> ROM pipeline
+
+FROM debian:bookworm-slim
+
+# GBDK version - update as needed
+ARG GBDK_VERSION=4.5.0
+
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    ca-certificates \
+    xxd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download and install GBDK-2020
+RUN wget -q "https://github.com/gbdk-2020/gbdk-2020/releases/download/${GBDK_VERSION}/gbdk-linux64.tar.gz" \
+    && tar xzf gbdk-linux64.tar.gz -C /opt \
+    && rm gbdk-linux64.tar.gz
+
+# Set up environment
+ENV GBDK_HOME=/opt/gbdk
+ENV PATH="${GBDK_HOME}/bin:${PATH}"
+
+# Verify installation
+RUN lcc --version || echo "GBDK lcc installed"
+
+WORKDIR /workspace
+
+# Default command - show help
+CMD ["lcc", "--help"]

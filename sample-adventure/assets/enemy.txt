@@ -1,0 +1,31 @@
+ASSET PLACEHOLDER: enemy.png
+
+Description:
+  An 8x8 pixel sprite for enemy characters.
+
+Specifications:
+  - Size: 8x8 pixels
+  - Colors: 4-color Game Boy palette (red tones for GBC)
+  - Format: PNG with indexed colors
+
+Suggested Design:
+  A simple enemy sprite:
+  - Blob, slime, or creature
+  - Menacing but simple design
+  - Clear visibility against backgrounds
+
+To create this asset:
+  1. Use any pixel art editor
+  2. Create an 8x8 pixel canvas
+  3. Use only 4 colors (Game Boy palette)
+  4. Export as enemy.png in this directory
+
+Example 8x8 enemy layout (slime):
+  . . # # # # . .
+  . # # # # # # .
+  # # . # # . # #
+  # # # # # # # #
+  # # # # # # # #
+  # # # # # # # #
+  . # # # # # # .
+  . . # # # # . .

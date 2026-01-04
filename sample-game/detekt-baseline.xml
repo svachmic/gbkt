@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>WildcardImport:RunnerGame.kt$import io.github.gbkt.core.*</ID>
+    <ID>WildcardImport:RunnerGame.kt$import io.github.gbkt.core.builder.*</ID>
+    <ID>WildcardImport:RunnerGame.kt$import io.github.gbkt.core.dsl.*</ID>
+    <ID>WildcardImport:RunnerGame.kt$import io.github.gbkt.core.entity.*</ID>
+    <ID>WildcardImport:RunnerGame.kt$import io.github.gbkt.core.graphics.*</ID>
+    <ID>WildcardImport:RunnerGame.kt$import io.github.gbkt.core.ir.*</ID>
+    <ID>WildcardImport:RunnerGame.kt$import io.github.gbkt.core.ui.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

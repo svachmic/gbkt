@@ -1,0 +1,40 @@
+ASSET PLACEHOLDER: npc.png
+
+Description:
+  An 8x16 pixel sprite representing the NPC (Elder character).
+  Should look distinct from the player sprite.
+
+Specifications:
+  - Size: 8x16 pixels (8 wide, 16 tall)
+  - Colors: 4-color Game Boy palette
+  - Format: PNG with indexed colors
+
+Suggested Design:
+  An elder/sage character for an RPG:
+  - Robed figure or wise elder
+  - Standing pose, facing left (toward player)
+  - Distinctive feature (beard, hat, robe) to stand out
+
+To create this asset:
+  1. Use any pixel art editor (Aseprite, GIMP, etc.)
+  2. Create an 8x16 pixel canvas
+  3. Use only 4 colors (Game Boy palette)
+  4. Export as npc.png in this directory
+
+Example 8x16 elder layout:
+  . . # # # # . .   <- hood/hat
+  . # # # # # # .
+  . # . # # . # .   <- eyes
+  . # # # # # # .
+  . . # # # # . .   <- beard start
+  . # # # # # # .
+  # # # # # # # #   <- robe
+  # # # # # # # #
+  # # # # # # # #
+  # # # # # # # #
+  # # # . . # # #
+  . # # # # # # .
+  . . # # # # . .
+  . . # # # # . .
+  . . # . . # . .
+  . # # . . # # .

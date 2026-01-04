@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:AssetPipeline.kt$fun compileWithAssets(game: Game, assetDir: String? = game.assetDir): String</ID>
+    <ID>CyclomaticComplexMethod:AssetValidator.kt$AssetValidator$internal fun validateAsset(assetPath: String, assetDir: String?): AssetValidationResult</ID>
+    <ID>LongMethod:AssetPipeline.kt$fun compileWithAssets(game: Game, assetDir: String? = game.assetDir): String</ID>
+    <ID>LoopWithTooManyJumpStatements:SourceLocation.kt$for</ID>
+    <ID>MatchingDeclarationName:FileIOJvm.kt$FileIO</ID>
+    <ID>MaxLineLength:ConsoleReporter.kt$ConsoleReporter$" ${icon(Icon.SAVINGS)} ${color("Potential savings:", Color.GREEN)} ${summary.potentialSavings.formatted}"</ID>
+    <ID>NestedBlockDepth:AssetPipeline.kt$fun compileWithAssets(game: Game, assetDir: String? = game.assetDir): String</ID>
+    <ID>ReturnCount:AssetAnalyzer.kt$AssetAnalyzer$private fun analyzeTilemap(tilemap: TileMap, file: File, assetDir: File?): AnalyzedAsset?</ID>
+    <ID>ReturnCount:AssetValidator.kt$AssetValidator$internal fun validateAsset(assetPath: String, assetDir: String?): AssetValidationResult</ID>
+    <ID>ReturnCount:ValidationJvm.kt$internal actual fun validateAssetFile(assetPath: String, assetDir: String?): AssetValidationResult</ID>
+    <ID>SwallowedException:AssetAnalyzer.kt$AssetAnalyzer$e: Exception</ID>
+    <ID>SwallowedException:FileIOJvm.kt$FileIO$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AssetAnalyzer.kt$AssetAnalyzer$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AssetPipeline.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AssetValidator.kt$AssetValidator$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FileIOJvm.kt$FileIO$e: Exception</ID>
+    <ID>TooManyFunctions:AssetPipeline.kt$AssetPipeline</ID>
+    <ID>UnreachableCode:AssetAnalyzer.kt$AssetAnalyzer$tilemap.tilesetAsset ?: tileset.image.takeIf { it.isNotEmpty() } ?: return null</ID>
+    <ID>UnusedParameter:AssetPipeline.kt$palette: IntArray = AssetPipeline.DEFAULT_PALETTE</ID>
+    <ID>UseOrEmpty:ConsoleReporter.kt$ReporterConfig.Companion$System.getenv("COLORTERM") ?: ""</ID>
+    <ID>UseOrEmpty:ConsoleReporter.kt$ReporterConfig.Companion$System.getenv("LANG") ?: ""</ID>
+    <ID>UseOrEmpty:ConsoleReporter.kt$ReporterConfig.Companion$System.getenv("LC_ALL") ?: ""</ID>
+    <ID>UseOrEmpty:ConsoleReporter.kt$ReporterConfig.Companion$System.getenv("TERM") ?: ""</ID>
+    <ID>WildcardImport:AssetAnalyzer.kt$import io.github.gbkt.core.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

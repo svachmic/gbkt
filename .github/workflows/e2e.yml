@@ -1,0 +1,158 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main, develop]
+
+jobs:
+  e2e:
+    name: DSL -> C -> ROM Pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
+
+      - name: Build project
+        run: ./gradlew build -x test --no-daemon
+
+      - name: Generate C code from Kotlin DSL
+        run: ./gradlew :sample-game:generateC --no-daemon
+
+      - name: Verify generated C code
+        run: |
+          echo "=== Checking generated C code ==="
+
+          # Check output directory structure
+          if [ ! -f "sample-game/build/gbkt/generated/main.c" ]; then
+            echo "ERROR: main.c not found at expected path"
+            echo "Contents of sample-game/build:"
+            find sample-game/build -type f -name "*.c" 2>/dev/null || echo "No .c files found"
+            exit 1
+          fi
+
+          # Basic validation of generated C code
+          C_FILE="sample-game/build/gbkt/generated/main.c"
+          echo "Found: $C_FILE"
+          echo "Size: $(wc -l < "$C_FILE") lines"
+
+          # Check for required GBDK includes
+          if ! grep -q '#include <gb/gb.h>' "$C_FILE"; then
+            echo "ERROR: Missing GBDK include"
+            exit 1
+          fi
+
+          # Check for main function
+          if ! grep -q 'void main(void)' "$C_FILE"; then
+            echo "ERROR: Missing main function"
+            exit 1
+          fi
+
+          echo "C code validation passed"
+
+      - name: Build GBDK Docker image
+        run: |
+          docker build -t gbkt-gbdk:latest -f docker/Dockerfile.gbdk docker/
+
+      - name: Compile ROM with GBDK
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            gbkt-gbdk:latest \
+            lcc -Wa-l -Wl-m -Wl-j -Wm-yc \
+              -o sample-game/build/gbkt/generated/runner.gb \
+              sample-game/build/gbkt/generated/main.c
+
+      - name: Verify ROM
+        run: |
+          ROM_FILE="sample-game/build/gbkt/generated/runner.gb"
+
+          echo "=== ROM Verification ==="
+
+          # Check ROM was created
+          if [ ! -f "$ROM_FILE" ]; then
+            echo "ERROR: ROM file not created"
+            exit 1
+          fi
+
+          echo "ROM file: $ROM_FILE"
+
+          # Check ROM size is valid (32KB-2MB typical for Game Boy)
+          size=$(stat -c%s "$ROM_FILE")
+          echo "ROM size: $size bytes ($(($size / 1024)) KB)"
+
+          if [ $size -lt 32768 ]; then
+            echo "ERROR: ROM size too small (< 32KB)"
+            exit 1
+          fi
+
+          if [ $size -gt 2097152 ]; then
+            echo "ERROR: ROM size too large (> 2MB)"
+            exit 1
+          fi
+
+          # Display Nintendo logo bytes at offset 0x104-0x133
+          # This is a signature that all valid Game Boy ROMs must have
+          echo ""
+          echo "=== Nintendo Logo Check (offset 0x104) ==="
+          xxd -s 0x104 -l 48 "$ROM_FILE"
+
+          # Verify first 4 bytes of Nintendo logo (should be CE ED 66 66)
+          LOGO_BYTES=$(xxd -s 0x104 -l 4 -p "$ROM_FILE")
+          EXPECTED="ceed6666"
+
+          if [ "$LOGO_BYTES" = "$EXPECTED" ]; then
+            echo "Nintendo logo signature: VALID"
+          else
+            echo "WARNING: Nintendo logo bytes: $LOGO_BYTES (expected: $EXPECTED)"
+            echo "ROM may not boot on real hardware"
+          fi
+
+          # Display ROM header info
+          echo ""
+          echo "=== ROM Header Info ==="
+
+          # Title at 0x134-0x143 (15 bytes, null-padded)
+          echo -n "Title: "
+          xxd -s 0x134 -l 15 -p "$ROM_FILE" | xxd -r -p | tr -d '\0'
+          echo ""
+
+          # Cartridge type at 0x147
+          CART_TYPE=$(xxd -s 0x147 -l 1 -p "$ROM_FILE")
+          echo "Cartridge type: 0x$CART_TYPE"
+
+          # ROM size at 0x148
+          ROM_SIZE_CODE=$(xxd -s 0x148 -l 1 -p "$ROM_FILE")
+          echo "ROM size code: 0x$ROM_SIZE_CODE"
+
+          echo ""
+          echo "ROM verification: PASSED"
+
+      - name: Upload ROM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sample-game-rom
+          path: sample-game/build/gbkt/generated/runner.gb
+          retention-days: 7
+
+      - name: Upload generated C code
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: generated-c-code
+          path: sample-game/build/gbkt/generated/main.c
+          retention-days: 7
