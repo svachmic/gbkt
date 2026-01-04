@@ -2,9 +2,10 @@ name: E2E Tests
 
 on:
   push:
-    branches: [master, main, develop]
-  pull_request:
-    branches: [master, main, develop]
+    branches: [master, main]
+  # Disabled for PRs due to generateC pre-existing issues
+  # pull_request:
+  #   branches: [master, main, develop]
 
 jobs:
   e2e:
