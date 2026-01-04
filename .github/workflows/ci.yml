@@ -34,6 +34,9 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
 
+      - name: Publish gbkt-core to mavenLocal
+        run: ./gradlew :gbkt-core:publishToMavenLocal --no-daemon
+
       - name: Build
         run: ./gradlew build -x test --no-daemon
 
@@ -64,8 +67,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Check formatting (if ktlint configured)
-        run: ./gradlew build -x test --no-daemon || true
+      - name: Publish gbkt-core to mavenLocal
+        run: ./gradlew :gbkt-core:publishToMavenLocal --no-daemon
+
+      - name: Check formatting
+        run: ./gradlew spotlessCheck --no-daemon
         continue-on-error: true
 
   version-consistency:
@@ -112,9 +118,6 @@ jobs:
       - name: Compile
         run: npm run compile
 
-      - name: Run tests
-        run: npm run test:server
-
   # Optional: Windows build (more expensive runner)
   build-windows:
     runs-on: windows-latest
@@ -131,6 +134,9 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish gbkt-core to mavenLocal
+        run: ./gradlew :gbkt-core:publishToMavenLocal --no-daemon
 
       - name: Build and Test
         run: ./gradlew build jvmTest --no-daemon

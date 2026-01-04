@@ -26,6 +26,9 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
 
+      - name: Publish gbkt-core to mavenLocal
+        run: ./gradlew :gbkt-core:publishToMavenLocal --no-daemon
+
       - name: Build project
         run: ./gradlew build -x test --no-daemon
 
