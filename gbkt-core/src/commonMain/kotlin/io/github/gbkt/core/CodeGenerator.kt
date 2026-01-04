@@ -130,10 +130,11 @@ class CodeGenerator(internal val game: Game) {
             generateSoundData()
             generateMixerData()
             generateSaveData()
+            // Variables must be defined before dialog/menu functions that use _joypad etc.
+            generateVariables()
             generateDialogData()
             generateMenuData()
             generatePoolData()
-            generateVariables()
             generateStateMachineEnums()
             generateAnimationData()
             generateSceneEnum()
