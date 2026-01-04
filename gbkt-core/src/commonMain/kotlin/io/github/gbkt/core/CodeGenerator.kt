@@ -143,13 +143,16 @@ class CodeGenerator(internal val game: Game) {
             generateCutsceneFunctions()
             generateAnimationUpdateFunctions()
             generateStateMachineUpdateFunctions()
-            generateSceneFunctions()
-            generateTransitionSequenceData()
-            generateCameraFunctions()
-            generatePhysicsFunctions()
+            // Tween data structures must be generated before scene functions that use them
             generateTweenData()
             generateEasingLookupTables()
             generateTweenUpdateFunction()
+            // Camera functions must also be generated before scene functions
+            generateTransitionSequenceData()
+            generateCameraFunctions()
+            generatePhysicsFunctions()
+            // Scene functions use tweens, camera, physics - generate after dependencies
+            generateSceneFunctions()
             generateMain()
 
             // Check for validation errors collected during generation
