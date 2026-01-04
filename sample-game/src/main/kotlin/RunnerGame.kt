@@ -207,14 +207,14 @@ val runnerGame =
                 onDespawn { hide() }
             }
 
-        // === Scene Definitions ===
-        lateinit var titleScene: SceneRef
-        lateinit var gameplayScene: SceneRef
-        lateinit var gameoverScene: SceneRef
+        // === Scene References ===
+        // Create refs upfront to avoid lateinit issues in callbacks
+        val titleScene = SceneRef("title")
+        val gameplayScene = SceneRef("gameplay")
+        val gameoverScene = SceneRef("gameover")
 
         // === Title Scene ===
-        titleScene =
-            scene("title") {
+        scene("title") {
                 enter {
                     screen.clear()
                     screen.hideSprites()
@@ -237,8 +237,7 @@ val runnerGame =
             }
 
         // === Gameplay Scene ===
-        gameplayScene =
-            scene("gameplay") {
+        scene("gameplay") {
                 enter {
                     // Initialize player position and physics state
                     player.x set 80
@@ -433,8 +432,7 @@ val runnerGame =
             }
 
         // === Game Over Scene ===
-        gameoverScene =
-            scene("gameover") {
+        scene("gameover") {
                 enter {
                     screen.hideSprites()
                     screen.clear()

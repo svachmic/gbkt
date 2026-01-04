@@ -11,6 +11,9 @@ on:
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    # CodeQL doesn't support Kotlin 2.3.0 yet (requires < 2.2.30)
+    # Tracking: https://github.com/github/codeql/issues/20661
+    continue-on-error: true
     permissions:
       security-events: write
     steps:
