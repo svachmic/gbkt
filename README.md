@@ -1,5 +1,7 @@
 # gbkt — Game Boy Kotlin
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=svachmic_gbkt&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=svachmic_gbkt)
+
 > Write Game Boy games in Kotlin. Compiles to GBDK-compatible C.
 
 ```kotlin
