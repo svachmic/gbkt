@@ -23,8 +23,6 @@ sonarqube {
         property("sonar.organization", "svachmic")
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.coverage.jacoco.xmlReportPaths", "**/build/reports/kover/report.xml")
-        property("sonar.sources", "gbkt-core/src,gbkt-cli/src,gbkt-gradle-plugin/src,vscode-extension/src")
-        property("sonar.exclusions", "**/build/**,**/out/**,**/*.json,**/*.tmLanguage.json")
     }
 }
 
