@@ -531,4 +531,228 @@ class AudioMixerTest {
         assertTrue(code.contains("_mixer_normal_priority"), "Should have normal priority")
         assertTrue(code.contains("_mixer_high_priority"), "Should have high priority")
     }
+
+    // =========================================================================
+    // MIXER UTILITY METHOD TESTS
+    // =========================================================================
+
+    @Test
+    fun `getGroupPriority returns correct priority`() {
+        lateinit var mixer: AudioMixer
+        gbGame("test") {
+            mixer = audioMixer {
+                group("sfx") {
+                    channels(Channel.PULSE1)
+                    priority = MixerPriority.HIGH
+                }
+                group("music") {
+                    channels(Channel.WAVE)
+                    priority = MixerPriority.LOW
+                }
+            }
+            start = scene("main") {}
+        }
+
+        assertEquals(MixerPriority.HIGH, mixer.getGroupPriority("sfx"))
+        assertEquals(MixerPriority.LOW, mixer.getGroupPriority("music"))
+    }
+
+    @Test
+    fun `getGroupPriority returns NORMAL for unknown group`() {
+        lateinit var mixer: AudioMixer
+        gbGame("test") {
+            mixer = audioMixer { group("sfx") { channels(Channel.PULSE1) } }
+            start = scene("main") {}
+        }
+
+        assertEquals(MixerPriority.NORMAL, mixer.getGroupPriority("unknown"))
+    }
+
+    @Test
+    fun `getGroupForChannel returns correct group`() {
+        lateinit var mixer: AudioMixer
+        gbGame("test") {
+            mixer = audioMixer {
+                group("sfx") { channels(Channel.PULSE1, Channel.NOISE) }
+                group("music") { channels(Channel.WAVE) }
+            }
+            start = scene("main") {}
+        }
+
+        assertEquals("sfx", mixer.getGroupForChannel(Channel.PULSE1)?.name)
+        assertEquals("sfx", mixer.getGroupForChannel(Channel.NOISE)?.name)
+        assertEquals("music", mixer.getGroupForChannel(Channel.WAVE)?.name)
+    }
+
+    @Test
+    fun `getGroupForChannel returns null for unassigned channel`() {
+        lateinit var mixer: AudioMixer
+        gbGame("test") {
+            mixer = audioMixer { group("sfx") { channels(Channel.PULSE1) } }
+            start = scene("main") {}
+        }
+
+        assertNull(mixer.getGroupForChannel(Channel.PULSE2))
+        assertNull(mixer.getGroupForChannel(Channel.WAVE))
+        assertNull(mixer.getGroupForChannel(Channel.NOISE))
+    }
+
+    @Test
+    fun `canPlayOnChannel allows HIGH priority on LOW priority channel`() {
+        lateinit var mixer: AudioMixer
+        gbGame("test") {
+            mixer = audioMixer {
+                group("ambient") {
+                    channels(Channel.WAVE)
+                    priority = MixerPriority.LOW
+                }
+            }
+            start = scene("main") {}
+        }
+
+        assertTrue(mixer.canPlayOnChannel(Channel.WAVE, SoundPriority.HIGH))
+        assertTrue(mixer.canPlayOnChannel(Channel.WAVE, SoundPriority.NORMAL))
+        assertTrue(mixer.canPlayOnChannel(Channel.WAVE, SoundPriority.LOW))
+    }
+
+    @Test
+    fun `canPlayOnChannel blocks LOW priority on HIGH priority channel`() {
+        lateinit var mixer: AudioMixer
+        gbGame("test") {
+            mixer = audioMixer {
+                group("critical") {
+                    channels(Channel.PULSE1)
+                    priority = MixerPriority.HIGH
+                }
+            }
+            start = scene("main") {}
+        }
+
+        assertTrue(mixer.canPlayOnChannel(Channel.PULSE1, SoundPriority.HIGH))
+        assertFalse(mixer.canPlayOnChannel(Channel.PULSE1, SoundPriority.NORMAL))
+        assertFalse(mixer.canPlayOnChannel(Channel.PULSE1, SoundPriority.LOW))
+    }
+
+    @Test
+    fun `canPlayOnChannel allows any priority on unassigned channel`() {
+        lateinit var mixer: AudioMixer
+        gbGame("test") {
+            mixer = audioMixer { group("sfx") { channels(Channel.PULSE1) } }
+            start = scene("main") {}
+        }
+
+        // PULSE2 is not in any group, so any priority should work
+        assertTrue(mixer.canPlayOnChannel(Channel.PULSE2, SoundPriority.LOW))
+        assertTrue(mixer.canPlayOnChannel(Channel.PULSE2, SoundPriority.NORMAL))
+        assertTrue(mixer.canPlayOnChannel(Channel.PULSE2, SoundPriority.HIGH))
+    }
+
+    @Test
+    fun `setGroupVolume with expression generates correct code`() {
+        val game =
+            gbGame("test") {
+                val mixer = audioMixer { group("sfx") { channels(Channel.PULSE1) } }
+                val dynamicVol by u8Var(50)
+
+                start =
+                    scene("main") { enter { mixer.setGroupVolume("sfx", dynamicVol) } }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("_mixer_sfx_volume"), "Should reference sfx volume variable")
+        assertTrue(code.contains("dynamicVol") || code.contains("_v_"), "Should use dynamic variable")
+    }
+
+    @Test
+    fun `channel method adds single channel to group`() {
+        val game =
+            gbGame("test") {
+                audioMixer {
+                    group("solo") {
+                        channel(Channel.WAVE)
+                        volume = 80
+                    }
+                }
+
+                start = scene("main") {}
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("MIXER_GROUP_SOLO"), "Should define solo group ID")
+        assertTrue(code.contains("_mixer_solo_volume = 80"), "Should have volume 80")
+    }
+
+    @Test
+    fun `ChannelGroup validates volume range in constructor`() {
+        val exception = assertFails {
+            ChannelGroup(
+                name = "invalid",
+                channels = setOf(Channel.PULSE1),
+                volume = 150,
+            )
+        }
+
+        assertTrue(
+            exception.message?.contains("Volume must be 0-100") == true,
+            "Should reject volume > 100",
+        )
+    }
+
+    @Test
+    fun `ChannelGroup validates non-empty channels in constructor`() {
+        val exception = assertFails {
+            ChannelGroup(
+                name = "empty",
+                channels = emptySet(),
+                volume = 100,
+            )
+        }
+
+        assertTrue(
+            exception.message?.contains("at least one channel") == true,
+            "Should reject empty channel set",
+        )
+    }
+
+    @Test
+    fun `mixer with no groups throws`() {
+        val exception = assertFails {
+            gbGame("test") {
+                audioMixer {
+                    // No groups defined
+                }
+                start = scene("main") {}
+            }
+        }
+
+        assertTrue(
+            exception.message?.contains("at least one group") == true,
+            "Should reject empty mixer",
+        )
+    }
+
+    @Test
+    fun `MixerPriority enum has correct values`() {
+        assertEquals(0, MixerPriority.LOW.value)
+        assertEquals(1, MixerPriority.NORMAL.value)
+        assertEquals(2, MixerPriority.HIGH.value)
+    }
+
+    @Test
+    fun `groups are assigned sequential IDs`() {
+        lateinit var mixer: AudioMixer
+        gbGame("test") {
+            mixer = audioMixer {
+                group("first") { channels(Channel.PULSE1) }
+                group("second") { channels(Channel.PULSE2) }
+                group("third") { channels(Channel.WAVE) }
+            }
+            start = scene("main") {}
+        }
+
+        val ids = mixer.groups.values.map { it.id }.sorted()
+        assertEquals(listOf(0, 1, 2), ids, "Groups should have sequential IDs")
+    }
 }

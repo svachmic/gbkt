@@ -926,4 +926,230 @@ class PoolTest {
             "Should not generate frame array for pool without animations",
         )
     }
+
+    // =========================================================================
+    // ADDITIONAL POOL EDGE CASES
+    // =========================================================================
+
+    @Test
+    fun `pool despawnWhere generates conditional bulk despawn`() {
+        val game =
+            gbGame("PoolDespawnWhereTest") {
+                val bullets =
+                    pool("bullet", size = 8) {
+                        position(0, 0)
+                        sprite(SpriteAsset("bullet.png")) { size = 4 x 4 }
+                    }
+
+                start =
+                    scene("main") {
+                        enter { bullets.despawnWhere { x isAbove 160 } }
+                        every.frame {}
+                    }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("160"), "Should check x > 160 condition")
+        assertTrue(code.contains("bullet") && code.contains("despawn"), "Should despawn bullets")
+    }
+
+    @Test
+    fun `pool isPlaying generates animation check`() {
+        val game =
+            gbGame("PoolIsPlayingTest") {
+                lateinit var walkAnim: AnimationRef
+
+                val enemies =
+                    pool("enemy", size = 4) {
+                        position(0, 0)
+                        sprite(SpriteAsset("enemy.png")) {
+                            size = 8 x 8
+                            animations { walkAnim = "walk" plays (frames(0, 1) every 4.frames) }
+                        }
+
+                        onFrame { whenever(isPlaying("walk")) { x += 1 } }
+                    }
+
+                start = scene("main") { every.frame { enemies.update() } }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(
+            code.contains("ANIM_ENEMY_WALK") || code.contains("enemy_anim"),
+            "Should check current animation",
+        )
+    }
+
+    @Test
+    fun `pool show and hide generate visibility code`() {
+        val game =
+            gbGame("PoolShowHideTest") {
+                val particles =
+                    pool("particle", size = 8) {
+                        position(0, 0)
+                        sprite(SpriteAsset("particle.png")) { size = 4 x 4 }
+
+                        onSpawn { show() }
+                        onDespawn { hide() }
+                    }
+
+                start =
+                    scene("main") {
+                        enter { particles.spawn() }
+                        every.frame { particles.update() }
+                    }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(
+            code.contains("particle_visible") || code.contains("show"),
+            "Should generate visibility code",
+        )
+    }
+
+    @Test
+    fun `pool state field with different types`() {
+        val game =
+            gbGame("PoolStateTypesTest") {
+                val entities =
+                    pool("entity", size = 4) {
+                        position(0, 0)
+
+                        state {
+                            val byteField by u8Var(0)
+                            val signedField by i8Var(-5)
+                            val wordField by u16Var(1000)
+                        }
+                    }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val fields = game.pools[0].stateFields
+
+        assertEquals(3, fields.size, "Should have 3 state fields")
+
+        val byteField = fields.find { it.name == "byteField" }
+        val signedField = fields.find { it.name == "signedField" }
+        val wordField = fields.find { it.name == "wordField" }
+
+        assertNotNull(byteField, "Should have byteField")
+        assertNotNull(signedField, "Should have signedField")
+        assertNotNull(wordField, "Should have wordField")
+
+        assertEquals(GBVar.VarType.U8, byteField.type, "byteField should be U8")
+        assertEquals(GBVar.VarType.I8, signedField.type, "signedField should be I8")
+        assertEquals(GBVar.VarType.U16, wordField.type, "wordField should be U16")
+    }
+
+    @Test
+    fun `pool field accessor generates indexed access`() {
+        val game =
+            gbGame("PoolFieldAccessTest") {
+                val entities =
+                    pool("entity", size = 4) {
+                        position(0, 0)
+
+                        state { val health by u8Var(100) }
+
+                        onFrame {
+                            this["health"] -= 1
+                            whenever(this["health"] isEqualTo 0) { despawn() }
+                        }
+                    }
+
+                start = scene("main") { every.frame { entities.update() } }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("entity_health["), "Should generate indexed access for health")
+    }
+
+    @Test
+    fun `pool multiple spawn calls in scene`() {
+        val game =
+            gbGame("PoolMultiSpawnTest") {
+                val bullets =
+                    pool("bullet", size = 16) {
+                        position(0, 0)
+                        sprite(SpriteAsset("bullet.png")) { size = 4 x 4 }
+                    }
+
+                start =
+                    scene("main") {
+                        enter {
+                            bullets.spawnAt(10, 10)
+                            bullets.spawnAt(20, 20)
+                            bullets.spawnAt(30, 30)
+                        }
+                        every.frame {}
+                    }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("10") && code.contains("20") && code.contains("30"),
+            "Should spawn at multiple positions")
+    }
+
+    @Test
+    fun `pool with hitbox generates collision code`() {
+        val game =
+            gbGame("PoolHitboxTest") {
+                val player by entity {
+                    position(80, 72)
+                    sprite(SpriteAsset("player.png")) { size = 8 x 16 }
+                }
+
+                val bullets =
+                    pool("bullet", size = 8) {
+                        position(0, 0)
+                        sprite(SpriteAsset("bullet.png")) {
+                            size = 4 x 4
+                            hitbox(0, 0, 4, 4)
+                        }
+                    }
+
+                start =
+                    scene("main") {
+                        every.frame {
+                            bullets.forEachActive { whenever(collidesWith(player)) { despawn() } }
+                        }
+                    }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("bullet") && code.contains("player"), "Should have collision check")
+    }
+
+    @Test
+    fun `pool velocity fields are accessible`() {
+        val game =
+            gbGame("PoolVelocityTest") {
+                val bullets =
+                    pool("bullet", size = 8) {
+                        position(0, 0)
+                        velocity(2, -4)
+
+                        onFrame {
+                            x += velX
+                            y += velY
+                        }
+                    }
+
+                start = scene("main") { every.frame { bullets.update() } }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("bullet_vel_x") || code.contains("velX"),
+            "Should have velocity X")
+        assertTrue(code.contains("bullet_vel_y") || code.contains("velY"),
+            "Should have velocity Y")
+    }
 }

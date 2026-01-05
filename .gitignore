@@ -23,3 +23,6 @@ out/
 
 # Node
 node_modules/
+
+# VSCode extension test cache
+.vscode-test/
