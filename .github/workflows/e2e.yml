@@ -2,9 +2,33 @@ name: E2E Tests
 
 on:
   push:
-    branches: [master, main, develop]
+    branches: [master]
+    paths:
+      - 'gbkt-core/**'
+      - 'gbkt-gradle-plugin/**'
+      - 'sample-game/**'
+      - 'docker/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradle/**'
+      - '.github/workflows/e2e.yml'
   pull_request:
-    branches: [master, main, develop]
+    branches: [master]
+    paths:
+      - 'gbkt-core/**'
+      - 'gbkt-gradle-plugin/**'
+      - 'sample-game/**'
+      - 'docker/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradle/**'
+      - '.github/workflows/e2e.yml'
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   e2e:

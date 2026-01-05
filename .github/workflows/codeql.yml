@@ -3,10 +3,26 @@ name: CodeQL
 on:
   push:
     branches: [master, main]
+    paths:
+      - 'gbkt-core/**'
+      - 'gbkt-cli/**'
+      - 'gbkt-gradle-plugin/**'
+      - '**.kt'
+      - '**.kts'
   pull_request:
     branches: [master, main]
+    paths:
+      - 'gbkt-core/**'
+      - 'gbkt-cli/**'
+      - 'gbkt-gradle-plugin/**'
+      - '**.kt'
+      - '**.kts'
   schedule:
     - cron: '0 0 * * 1'  # Weekly on Monday
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:

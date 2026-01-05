@@ -1,5 +1,7 @@
 # gbkt — Game Boy Kotlin
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=svachmic_gbkt&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=svachmic_gbkt)
+
 > Write Game Boy games in Kotlin. Compiles to GBDK-compatible C.
 
 ```kotlin
@@ -75,7 +77,16 @@ cd gbkt
 
 ## License
 
-MIT — See [LICENSE](LICENSE)
+This project uses multiple licenses:
+
+| Component | License |
+|-----------|---------|
+| gbkt DSL & Core | [MPL-2.0](LICENSE) |
+| VSCode Extension | [Apache-2.0](vscode-extension/LICENSE) |
+
+**Your games are yours.** The licenses above apply only to the gbkt framework—games you create are your property and can use any license.
+
+See [NOTICE](NOTICE) for third-party dependencies including GBDK-2020.
 
 ## Acknowledgments
 
