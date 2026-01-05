@@ -846,6 +846,83 @@ class OptimizationTest {
     }
 
     // =========================================================================
+    // ANALYZER CONFIG BUILDER TESTS
+    // =========================================================================
+
+    @Test
+    fun `AnalyzerConfigBuilder default values`() {
+        val builder = AnalyzerConfigBuilder()
+        assertEquals(true, builder.detectDuplicates)
+        assertEquals(true, builder.detectEmpty)
+        assertEquals(true, builder.detectLowEntropy)
+        assertEquals(true, builder.analyzePalette)
+        assertEquals(true, builder.analyzeCompression)
+        assertEquals(0.5f, builder.lowEntropyThreshold)
+        assertEquals(0.8f, builder.similarityThreshold)
+        assertEquals(256, builder.maxTilesForSimilarity)
+    }
+
+    @Test
+    fun `AnalyzerConfigBuilder builds with custom values`() {
+        val builder = AnalyzerConfigBuilder()
+        builder.detectDuplicates = false
+        builder.detectEmpty = false
+        builder.detectLowEntropy = false
+        builder.analyzePalette = false
+        builder.analyzeCompression = false
+        builder.lowEntropyThreshold = 0.3f
+        builder.similarityThreshold = 0.9f
+        builder.maxTilesForSimilarity = 128
+
+        val config = builder.build()
+
+        assertEquals(false, config.detectDuplicates)
+        assertEquals(false, config.detectEmpty)
+        assertEquals(false, config.detectLowEntropy)
+        assertEquals(false, config.analyzePalette)
+        assertEquals(false, config.analyzeCompression)
+        assertEquals(0.3f, config.lowEntropyThreshold)
+        assertEquals(0.9f, config.similarityThreshold)
+        assertEquals(128, config.maxTilesForSimilarity)
+    }
+
+    // =========================================================================
+    // REPORTER CONFIG BUILDER TESTS
+    // =========================================================================
+
+    @Test
+    fun `ReporterConfigBuilder builds with custom values`() {
+        val builder = ReporterConfigBuilder()
+        builder.useColor = false
+        builder.useUnicode = false
+        builder.showPerAsset = true
+        builder.showSuggestions = false
+        builder.quietWhenOptimal = true
+
+        val config = builder.build()
+
+        assertEquals(false, config.useColor)
+        assertEquals(false, config.useUnicode)
+        assertEquals(true, config.showPerAsset)
+        assertEquals(false, config.showSuggestions)
+        assertEquals(true, config.quietWhenOptimal)
+    }
+
+    @Test
+    fun `ReporterConfig detectColorSupport returns boolean`() {
+        // Just verify it doesn't crash and returns a value
+        val result = ReporterConfig.detectColorSupport()
+        assertTrue(result is Boolean)
+    }
+
+    @Test
+    fun `ReporterConfig detectUnicodeSupport returns boolean`() {
+        // Just verify it doesn't crash and returns a value
+        val result = ReporterConfig.detectUnicodeSupport()
+        assertTrue(result is Boolean)
+    }
+
+    // =========================================================================
     // HELPER METHODS
     // =========================================================================
 
