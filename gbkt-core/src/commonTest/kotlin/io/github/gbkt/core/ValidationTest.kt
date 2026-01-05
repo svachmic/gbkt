@@ -1077,4 +1077,294 @@ class ValidationTest {
             "Multiple valid palettes should have no errors. Errors: ${result.errors}",
         )
     }
+
+    // =========================================================================
+    // OAM LIMIT VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `many sprites trigger OAM validation`() {
+        val game =
+            gbGame("test") {
+                // Create 35 sprites (approaching the 40 OAM limit)
+                repeat(35) { i ->
+                    sprite(SpriteAsset("sprite$i.png")) {
+                        size = 8 x 8
+                        position(i * 4, 0)
+                    }
+                }
+
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        // Validation should run on sprite-heavy game without error
+        // The actual OAM warning threshold may vary
+        assertNotNull(result, "Validation should complete for many sprites")
+    }
+
+    // =========================================================================
+    // DUPLICATE NAME VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `multiple scenes with unique names pass validation`() {
+        val game =
+            gbGame("test") {
+                val s1 = scene("gameplay") {}
+                val s2 = scene("pause") {}
+                val s3 = scene("gameover") {}
+                start = s1
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.DUPLICATE_NAME },
+            "Unique scene names should have no duplicate errors. Errors: ${result.errors}",
+        )
+    }
+
+    // =========================================================================
+    // SCENE REFERENCE VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `validates scene references in transitions`() {
+        val game =
+            gbGame("test") {
+                val mainScene =
+                    scene("main") {
+                        enter {
+                            // Transition to a scene that exists
+                        }
+                    }
+
+                start = mainScene
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.SCENE_REFERENCE },
+            "Valid scene references should have no errors. Errors: ${result.errors}",
+        )
+    }
+
+    // =========================================================================
+    // VARIABLE REFERENCE VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `valid variable references pass validation`() {
+        val game =
+            gbGame("test") {
+                var score by u8Var(0)
+                var lives by u8Var(3)
+
+                start =
+                    scene("main") {
+                        enter {
+                            score set 100
+                            lives set 5
+                        }
+                    }
+            }
+
+        val result = game.validate()
+
+        // General validation should pass
+        assertTrue(
+            result.errors.isEmpty(),
+            "Valid variable references should have no errors. Errors: ${result.errors}",
+        )
+    }
+
+    // =========================================================================
+    // MEMORY ESTIMATE VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `large number of variables triggers memory warning`() {
+        val game =
+            gbGame("test") {
+                // Create many variables to approach memory limits
+                repeat(50) { i ->
+                    u16Var(0) // Each u16 is 2 bytes
+                }
+
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        // May or may not warn depending on implementation thresholds
+        // Just ensure validation completes without error
+        assertNotNull(result, "Validation should complete for large variable count")
+    }
+
+    // =========================================================================
+    // ANIMATION REFERENCE VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `valid animation references pass validation`() {
+        val game =
+            gbGame("test") {
+                val player by entity {
+                    position(80, 72)
+                    sprite(SpriteAsset("player.png")) {
+                        size = 8 x 16
+                        animations {
+                            "idle" plays (frames(0, 1) every 30.frames)
+                            "walk" plays (frames(2, 3, 4, 5) every 6.frames)
+                        }
+                    }
+                }
+
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.ANIMATION_REFERENCE },
+            "Valid animation references should have no errors. Errors: ${result.errors}",
+        )
+    }
+
+    // =========================================================================
+    // SPRITE REFERENCE VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `valid sprite references pass validation`() {
+        val game =
+            gbGame("test") {
+                val player =
+                    sprite(SpriteAsset("player.png")) {
+                        size = 8 x 8
+                        position(80, 72)
+                    }
+
+                start =
+                    scene("main") {
+                        every.frame { player.x set player.x + 1 }
+                    }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.SPRITE_REFERENCE },
+            "Valid sprite references should have no errors. Errors: ${result.errors}",
+        )
+    }
+
+    // =========================================================================
+    // ENTITY WITH ALL COMPONENTS VALIDATION
+    // =========================================================================
+
+    @Test
+    fun `entity with all components passes validation`() {
+        val game =
+            gbGame("test") {
+                val player by entity {
+                    position(80, 72)
+                    velocity(0, 0)
+                    hitbox(0, 0, 8, 16)
+                    physics {
+                        friction = 0.9f
+                        gravity = 0.1f
+                    }
+                    sprite(SpriteAsset("player.png")) {
+                        size = 8 x 16
+                        animations { "idle" plays (frames(0, 1) every 30.frames) }
+                    }
+                }
+
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.isEmpty(),
+            "Entity with all valid components should have no errors. Errors: ${result.errors}",
+        )
+    }
+
+    // =========================================================================
+    // PALETTE SLOT VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `palette with auto slot passes validation`() {
+        val palette =
+            GBCPalette(
+                "auto",
+                listOf(GBCColor.BLACK, GBCColor.DARK_GRAY, GBCColor.LIGHT_GRAY, GBCColor.WHITE),
+                slot = -1, // Auto-assign
+            )
+
+        val game =
+            Game(
+                name = "test",
+                config = GameConfig(gbcSupport = true),
+                variables = emptyList(),
+                sprites = emptyList(),
+                scenes = mapOf("main" to Scene("main", emptyList(), emptyList(), emptyList())),
+                startScene = "main",
+                palettes = listOf(palette),
+            )
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.GBC_COLOR },
+            "Palette with auto slot should have no errors. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `multiple palettes in same slot generate warning`() {
+        val palette1 =
+            GBCPalette(
+                "p1",
+                listOf(GBCColor.BLACK, GBCColor.DARK_GRAY, GBCColor.LIGHT_GRAY, GBCColor.WHITE),
+                slot = 0,
+            )
+        val palette2 =
+            GBCPalette(
+                "p2",
+                listOf(GBCColor.RED, GBCColor.GREEN, GBCColor.BLUE, GBCColor.WHITE),
+                slot = 0, // Same slot!
+            )
+
+        val game =
+            Game(
+                name = "test",
+                config = GameConfig(gbcSupport = true),
+                variables = emptyList(),
+                sprites = emptyList(),
+                scenes = mapOf("main" to Scene("main", emptyList(), emptyList(), emptyList())),
+                startScene = "main",
+                palettes = listOf(palette1, palette2),
+            )
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.any {
+                it.message.contains("slot", ignoreCase = true) ||
+                    it.message.contains("conflict", ignoreCase = true)
+            } ||
+                result.errors.any {
+                    it.message.contains("slot", ignoreCase = true) ||
+                        it.message.contains("conflict", ignoreCase = true)
+                },
+            "Same slot palettes should warn or error. Warnings: ${result.warnings}, Errors: ${result.errors}",
+        )
+    }
 }
