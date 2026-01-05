@@ -14,9 +14,7 @@ import io.github.gbkt.core.graphics.*
 import io.github.gbkt.core.ir.*
 import kotlin.test.*
 
-/**
- * Tests for Camera system - scrolling, following, shake, and transitions.
- */
+/** Tests for Camera system - scrolling, following, shake, and transitions. */
 class CameraTest {
 
     // =========================================================================
@@ -51,9 +49,7 @@ class CameraTest {
     fun `camera with offset generates offset code`() {
         val game =
             gbGame("test") {
-                val cam = camera {
-                    offset(10, -16)
-                }
+                val cam = camera { offset(10, -16) }
                 start = scene("main") { enter { cam.update() } }
             }
 
@@ -65,9 +61,7 @@ class CameraTest {
     fun `camera with bounds generates bounds code`() {
         val game =
             gbGame("test") {
-                val cam = camera {
-                    bounds(0..256, 0..256)
-                }
+                val cam = camera { bounds(0..256, 0..256) }
                 start = scene("main") { enter { cam.update() } }
             }
 
@@ -84,13 +78,14 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    every.frame { cam.update() }
-                }
+                start = scene("main") { every.frame { cam.update() } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("camera") || code.contains("update"), "Should generate update code")
+        assertTrue(
+            code.contains("camera") || code.contains("update"),
+            "Should generate update code",
+        )
     }
 
     // =========================================================================
@@ -102,18 +97,20 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                val player = sprite(SpriteAsset("player.png")) {
-                    position(80, 72)
-                    size = 8 x 16
-                }
+                val player =
+                    sprite(SpriteAsset("player.png")) {
+                        position(80, 72)
+                        size = 8 x 16
+                    }
 
-                start = scene("main") {
-                    enter { cam.follow(player) }
-                }
+                start = scene("main") { enter { cam.follow(player) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("camera") || code.contains("follow"), "Should generate follow code")
+        assertTrue(
+            code.contains("camera") || code.contains("follow"),
+            "Should generate follow code",
+        )
     }
 
     @Test
@@ -121,19 +118,21 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                val player = sprite(SpriteAsset("player.png")) {
-                    position(80, 72)
-                    size = 8 x 16
-                }
+                val player =
+                    sprite(SpriteAsset("player.png")) {
+                        position(80, 72)
+                        size = 8 x 16
+                    }
 
-                start = scene("main") {
-                    enter {
-                        cam.follow(player) {
-                            smoothing = 0.3f
-                            offset(0, -8)
+                start =
+                    scene("main") {
+                        enter {
+                            cam.follow(player) {
+                                smoothing = 0.3f
+                                offset(0, -8)
+                            }
                         }
                     }
-                }
             }
 
         val code = game.compileForTest()
@@ -145,14 +144,13 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                val player = sprite(SpriteAsset("player.png")) {
-                    position(80, 72)
-                    size = 8 x 16
-                }
+                val player =
+                    sprite(SpriteAsset("player.png")) {
+                        position(80, 72)
+                        size = 8 x 16
+                    }
 
-                start = scene("main") {
-                    enter { cam.followX(player) }
-                }
+                start = scene("main") { enter { cam.followX(player) } }
             }
 
         val code = game.compileForTest()
@@ -164,14 +162,13 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                val player = sprite(SpriteAsset("player.png")) {
-                    position(80, 72)
-                    size = 8 x 16
-                }
+                val player =
+                    sprite(SpriteAsset("player.png")) {
+                        position(80, 72)
+                        size = 8 x 16
+                    }
 
-                start = scene("main") {
-                    enter { cam.followY(player) }
-                }
+                start = scene("main") { enter { cam.followY(player) } }
             }
 
         val code = game.compileForTest()
@@ -183,17 +180,19 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                val player = sprite(SpriteAsset("player.png")) {
-                    position(80, 72)
-                    size = 8 x 16
-                }
-
-                start = scene("main") {
-                    enter {
-                        cam.follow(player)
-                        cam.stopFollow()
+                val player =
+                    sprite(SpriteAsset("player.png")) {
+                        position(80, 72)
+                        size = 8 x 16
                     }
-                }
+
+                start =
+                    scene("main") {
+                        enter {
+                            cam.follow(player)
+                            cam.stopFollow()
+                        }
+                    }
             }
 
         val code = game.compileForTest()
@@ -209,9 +208,7 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.setPosition(100, 50) }
-                }
+                start = scene("main") { enter { cam.setPosition(100, 50) } }
             }
 
         val code = game.compileForTest()
@@ -223,14 +220,13 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                val player = sprite(SpriteAsset("player.png")) {
-                    position(80, 72)
-                    size = 8 x 16
-                }
+                val player =
+                    sprite(SpriteAsset("player.png")) {
+                        position(80, 72)
+                        size = 8 x 16
+                    }
 
-                start = scene("main") {
-                    enter { cam.snapTo(player) }
-                }
+                start = scene("main") { enter { cam.snapTo(player) } }
             }
 
         val code = game.compileForTest()
@@ -242,13 +238,14 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.snapTo(100, 50) }
-                }
+                start = scene("main") { enter { cam.snapTo(100, 50) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("camera") || code.contains("100"), "Should generate snap to coords")
+        assertTrue(
+            code.contains("camera") || code.contains("100"),
+            "Should generate snap to coords",
+        )
     }
 
     @Test
@@ -256,17 +253,21 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    every.frame {
-                        cam.update()
-                        whenever(cam.x isAbove 100) { /* scroll limit */ }
-                        whenever(cam.y isAbove 100) { /* scroll limit */ }
+                start =
+                    scene("main") {
+                        every.frame {
+                            cam.update()
+                            whenever(cam.x isAbove 100) { /* scroll limit */ }
+                            whenever(cam.y isAbove 100) { /* scroll limit */ }
+                        }
                     }
-                }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("camera") || code.contains("100"), "Should generate position checks")
+        assertTrue(
+            code.contains("camera") || code.contains("100"),
+            "Should generate position checks",
+        )
     }
 
     // =========================================================================
@@ -278,9 +279,7 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.shake(4, 10.frames) }
-                }
+                start = scene("main") { enter { cam.shake(4, 10.frames) } }
             }
 
         val code = game.compileForTest()
@@ -292,19 +291,23 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter {
-                        cam.shake {
-                            intensity = 6
-                            duration = 20
-                            decay = ShakeDecay.EXPONENTIAL
+                start =
+                    scene("main") {
+                        enter {
+                            cam.shake {
+                                intensity = 6
+                                duration = 20
+                                decay = ShakeDecay.EXPONENTIAL
+                            }
                         }
                     }
-                }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("shake") || code.contains("camera"), "Should generate shake with builder")
+        assertTrue(
+            code.contains("shake") || code.contains("camera"),
+            "Should generate shake with builder",
+        )
     }
 
     @Test
@@ -312,13 +315,14 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.impact(4) }
-                }
+                start = scene("main") { enter { cam.impact(4) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("shake") || code.contains("camera"), "Should generate impact shake")
+        assertTrue(
+            code.contains("shake") || code.contains("camera"),
+            "Should generate impact shake",
+        )
     }
 
     @Test
@@ -326,12 +330,13 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter {
-                        cam.shake(4, 10.frames)
-                        cam.stopShake()
+                start =
+                    scene("main") {
+                        enter {
+                            cam.shake(4, 10.frames)
+                            cam.stopShake()
+                        }
                     }
-                }
             }
 
         val code = game.compileForTest()
@@ -347,13 +352,14 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.fadeIn(30.frames) }
-                }
+                start = scene("main") { enter { cam.fadeIn(30.frames) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("fade") || code.contains("transition"), "Should generate fadeIn code")
+        assertTrue(
+            code.contains("fade") || code.contains("transition"),
+            "Should generate fadeIn code",
+        )
     }
 
     @Test
@@ -363,17 +369,14 @@ class CameraTest {
                 val cam = camera {}
                 lateinit var otherScene: SceneRef
                 otherScene = scene("other") {}
-                start = scene("main") {
-                    enter {
-                        cam.fadeIn(30.frames) {
-                            scene(otherScene)
-                        }
-                    }
-                }
+                start = scene("main") { enter { cam.fadeIn(30.frames) { scene(otherScene) } } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("fade") || code.contains("transition"), "Should generate fadeIn with callback")
+        assertTrue(
+            code.contains("fade") || code.contains("transition"),
+            "Should generate fadeIn with callback",
+        )
     }
 
     @Test
@@ -381,13 +384,14 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.fadeOut(30.frames) }
-                }
+                start = scene("main") { enter { cam.fadeOut(30.frames) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("fade") || code.contains("transition"), "Should generate fadeOut code")
+        assertTrue(
+            code.contains("fade") || code.contains("transition"),
+            "Should generate fadeOut code",
+        )
     }
 
     @Test
@@ -397,17 +401,14 @@ class CameraTest {
                 val cam = camera {}
                 lateinit var otherScene: SceneRef
                 otherScene = scene("other") {}
-                start = scene("main") {
-                    enter {
-                        cam.fadeOut(30.frames) {
-                            scene(otherScene)
-                        }
-                    }
-                }
+                start = scene("main") { enter { cam.fadeOut(30.frames) { scene(otherScene) } } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("fade") || code.contains("transition"), "Should generate fadeOut with callback")
+        assertTrue(
+            code.contains("fade") || code.contains("transition"),
+            "Should generate fadeOut with callback",
+        )
     }
 
     // =========================================================================
@@ -419,13 +420,14 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.flash(10.frames) }
-                }
+                start = scene("main") { enter { cam.flash(10.frames) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("flash") || code.contains("transition"), "Should generate flash code")
+        assertTrue(
+            code.contains("flash") || code.contains("transition"),
+            "Should generate flash code",
+        )
     }
 
     // =========================================================================
@@ -437,13 +439,14 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.wipeLeft(30.frames) }
-                }
+                start = scene("main") { enter { cam.wipeLeft(30.frames) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("wipe") || code.contains("transition"), "Should generate wipe code")
+        assertTrue(
+            code.contains("wipe") || code.contains("transition"),
+            "Should generate wipe code",
+        )
     }
 
     @Test
@@ -451,13 +454,14 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.wipeRight(30.frames) }
-                }
+                start = scene("main") { enter { cam.wipeRight(30.frames) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("wipe") || code.contains("transition"), "Should generate wipe RIGHT")
+        assertTrue(
+            code.contains("wipe") || code.contains("transition"),
+            "Should generate wipe RIGHT",
+        )
     }
 
     @Test
@@ -465,9 +469,7 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.wipeUp(30.frames) }
-                }
+                start = scene("main") { enter { cam.wipeUp(30.frames) } }
             }
 
         val code = game.compileForTest()
@@ -479,13 +481,14 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.wipeDown(30.frames) }
-                }
+                start = scene("main") { enter { cam.wipeDown(30.frames) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("wipe") || code.contains("transition"), "Should generate wipe DOWN")
+        assertTrue(
+            code.contains("wipe") || code.contains("transition"),
+            "Should generate wipe DOWN",
+        )
     }
 
     // =========================================================================
@@ -497,13 +500,14 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.irisClose(30.frames, 80, 72) }
-                }
+                start = scene("main") { enter { cam.irisClose(30.frames, 80, 72) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("iris") || code.contains("transition"), "Should generate iris close code")
+        assertTrue(
+            code.contains("iris") || code.contains("transition"),
+            "Should generate iris close code",
+        )
     }
 
     @Test
@@ -511,13 +515,14 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    enter { cam.irisOpen(30.frames, 80, 72) }
-                }
+                start = scene("main") { enter { cam.irisOpen(30.frames, 80, 72) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("iris") || code.contains("transition"), "Should generate iris open code")
+        assertTrue(
+            code.contains("iris") || code.contains("transition"),
+            "Should generate iris open code",
+        )
     }
 
     @Test
@@ -525,17 +530,19 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                val player = sprite(SpriteAsset("player.png")) {
-                    position(80, 72)
-                    size = 8 x 16
-                }
-                start = scene("main") {
-                    enter { cam.irisClose(30.frames, player) }
-                }
+                val player =
+                    sprite(SpriteAsset("player.png")) {
+                        position(80, 72)
+                        size = 8 x 16
+                    }
+                start = scene("main") { enter { cam.irisClose(30.frames, player) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("iris") || code.contains("transition"), "Should generate iris on sprite")
+        assertTrue(
+            code.contains("iris") || code.contains("transition"),
+            "Should generate iris on sprite",
+        )
     }
 
     @Test
@@ -543,17 +550,19 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                val player = sprite(SpriteAsset("player.png")) {
-                    position(80, 72)
-                    size = 8 x 16
-                }
-                start = scene("main") {
-                    enter { cam.irisOpen(30.frames, player) }
-                }
+                val player =
+                    sprite(SpriteAsset("player.png")) {
+                        position(80, 72)
+                        size = 8 x 16
+                    }
+                start = scene("main") { enter { cam.irisOpen(30.frames, player) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("iris") || code.contains("transition"), "Should generate iris open on sprite")
+        assertTrue(
+            code.contains("iris") || code.contains("transition"),
+            "Should generate iris open on sprite",
+        )
     }
 
     // =========================================================================
@@ -565,16 +574,20 @@ class CameraTest {
         val game =
             gbGame("test") {
                 val cam = camera {}
-                start = scene("main") {
-                    every.frame {
-                        cam.update()
-                        whenever(cam.isTransitioning) { /* wait */ }
+                start =
+                    scene("main") {
+                        every.frame {
+                            cam.update()
+                            whenever(cam.isTransitioning) { /* wait */ }
+                        }
                     }
-                }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("transition") || code.contains("camera"), "Should generate transitioning check")
+        assertTrue(
+            code.contains("transition") || code.contains("camera"),
+            "Should generate transitioning check",
+        )
     }
 
     // =========================================================================
@@ -591,13 +604,14 @@ class CameraTest {
                     sprite(SpriteAsset("player.png")) { size = 8 x 16 }
                 }
 
-                start = scene("main") {
-                    enter { cam.follow(player) }
-                }
+                start = scene("main") { enter { cam.follow(player) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("camera") || code.contains("follow"), "Should generate entity follow code")
+        assertTrue(
+            code.contains("camera") || code.contains("follow"),
+            "Should generate entity follow code",
+        )
     }
 
     @Test
@@ -610,9 +624,7 @@ class CameraTest {
                     sprite(SpriteAsset("player.png")) { size = 8 x 16 }
                 }
 
-                start = scene("main") {
-                    enter { cam.snapTo(player) }
-                }
+                start = scene("main") { enter { cam.snapTo(player) } }
             }
 
         val code = game.compileForTest()
@@ -629,9 +641,7 @@ class CameraTest {
                     sprite(SpriteAsset("player.png")) { size = 8 x 16 }
                 }
 
-                start = scene("main") {
-                    enter { cam.followX(player) }
-                }
+                start = scene("main") { enter { cam.followX(player) } }
             }
 
         val code = game.compileForTest()
@@ -648,9 +658,7 @@ class CameraTest {
                     sprite(SpriteAsset("player.png")) { size = 8 x 16 }
                 }
 
-                start = scene("main") {
-                    enter { cam.followY(player) }
-                }
+                start = scene("main") { enter { cam.followY(player) } }
             }
 
         val code = game.compileForTest()
@@ -667,13 +675,14 @@ class CameraTest {
                     sprite(SpriteAsset("player.png")) { size = 8 x 16 }
                 }
 
-                start = scene("main") {
-                    enter { cam.irisClose(30.frames, player) }
-                }
+                start = scene("main") { enter { cam.irisClose(30.frames, player) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("iris") || code.contains("transition"), "Should generate iris on entity")
+        assertTrue(
+            code.contains("iris") || code.contains("transition"),
+            "Should generate iris on entity",
+        )
     }
 
     @Test
@@ -686,12 +695,13 @@ class CameraTest {
                     sprite(SpriteAsset("player.png")) { size = 8 x 16 }
                 }
 
-                start = scene("main") {
-                    enter { cam.irisOpen(30.frames, player) }
-                }
+                start = scene("main") { enter { cam.irisOpen(30.frames, player) } }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("iris") || code.contains("transition"), "Should generate iris open on entity")
+        assertTrue(
+            code.contains("iris") || code.contains("transition"),
+            "Should generate iris open on entity",
+        )
     }
 }

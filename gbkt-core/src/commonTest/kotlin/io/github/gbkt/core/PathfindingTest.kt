@@ -209,10 +209,11 @@ class PathfindingTest {
     fun testNavGridSetBlockedGeneratesCode() {
         val game =
             gbGame("test") {
-                val grid = navGrid("arena") {
-                    size = 8 x 8
-                    default = true
-                }
+                val grid =
+                    navGrid("arena") {
+                        size = 8 x 8
+                        default = true
+                    }
 
                 start =
                     scene("main") {
@@ -230,10 +231,11 @@ class PathfindingTest {
     fun testNavGridSetWalkableGeneratesCode() {
         val game =
             gbGame("test") {
-                val grid = navGrid("arena") {
-                    size = 8 x 8
-                    default = false
-                }
+                val grid =
+                    navGrid("arena") {
+                        size = 8 x 8
+                        default = false
+                    }
 
                 start =
                     scene("main") {
@@ -251,15 +253,18 @@ class PathfindingTest {
     fun testNavGridIsWalkableCondition() {
         val game =
             gbGame("test") {
-                val grid = navGrid("arena") {
-                    size = 8 x 8
-                    default = true
-                }
+                val grid =
+                    navGrid("arena") {
+                        size = 8 x 8
+                        default = true
+                    }
 
                 var canMove by u8Var(0)
 
                 start =
-                    scene("main") { every.frame { whenever(grid.isWalkable(2, 2)) { canMove set 1 } } }
+                    scene("main") {
+                        every.frame { whenever(grid.isWalkable(2, 2)) { canMove set 1 } }
+                    }
             }
 
         val code = game.compileForTest()
@@ -274,10 +279,11 @@ class PathfindingTest {
     fun testNavGridSetWeightGeneratesCode() {
         val game =
             gbGame("test") {
-                val grid = navGrid("arena") {
-                    size = 8 x 8
-                    default = true
-                }
+                val grid =
+                    navGrid("arena") {
+                        size = 8 x 8
+                        default = true
+                    }
 
                 start =
                     scene("main") {
@@ -297,11 +303,7 @@ class PathfindingTest {
 
     @Test
     fun testPathOptionsAllFields() {
-        val options = PathOptions(
-            diagonal = true,
-            maxDepth = 200,
-            heuristic = Heuristic.EUCLIDEAN,
-        )
+        val options = PathOptions(diagonal = true, maxDepth = 200, heuristic = Heuristic.EUCLIDEAN)
 
         assertTrue(options.diagonal)
         assertEquals(200, options.maxDepth)
@@ -388,14 +390,15 @@ class PathfindingTest {
 
     @Test
     fun testPoolPathfindingBuilderDefaults() {
-        val grid = NavGrid(
-            name = "test",
-            width = 8,
-            height = 8,
-            walkableData = BooleanArray(64) { true },
-            weightData = IntArray(64) { 1 },
-            sourceMap = null,
-        )
+        val grid =
+            NavGrid(
+                name = "test",
+                width = 8,
+                height = 8,
+                walkableData = BooleanArray(64) { true },
+                weightData = IntArray(64) { 1 },
+                sourceMap = null,
+            )
 
         val builder = PoolPathfindingBuilder()
         builder.navGrid = grid

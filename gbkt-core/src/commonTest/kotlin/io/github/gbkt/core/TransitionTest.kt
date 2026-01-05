@@ -155,11 +155,12 @@ class TransitionTest {
     @Test
     fun testShakeBuilderConfig() {
         val scope = SceneTransitionScope()
-        val t = scope.shake {
-            intensity = 8
-            duration = 30.frames
-            decay = ShakeDecay.EXPONENTIAL
-        }
+        val t =
+            scope.shake {
+                intensity = 8
+                duration = 30.frames
+                decay = ShakeDecay.EXPONENTIAL
+            }
 
         assertIs<ShakeTransition>(t)
         assertEquals(8, t.intensity)
@@ -498,7 +499,10 @@ class TransitionTest {
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("fade") || code.contains("transition"), "Should generate transition code")
+        assertTrue(
+            code.contains("fade") || code.contains("transition"),
+            "Should generate transition code",
+        )
     }
 
     @Test
@@ -510,16 +514,17 @@ class TransitionTest {
                 start =
                     scene("main") {
                         enter {
-                            transitionTo(nextScene) {
-                                shake(4, 10.frames) and fadeOut(30.frames)
-                            }
+                            transitionTo(nextScene) { shake(4, 10.frames) and fadeOut(30.frames) }
                         }
                         every.frame {}
                     }
             }
 
         val code = game.compileForTest()
-        assertTrue(code.contains("shake") || code.contains("transition"), "Should generate transition code")
+        assertTrue(
+            code.contains("shake") || code.contains("transition"),
+            "Should generate transition code",
+        )
     }
 
     @Test
@@ -528,16 +533,14 @@ class TransitionTest {
             gbGame("test") {
                 start =
                     scene("main") {
-                        every.frame {
-                            whenever(buttons.start.pressed) { transition.cancel() }
-                        }
+                        every.frame { whenever(buttons.start.pressed) { transition.cancel() } }
                     }
             }
 
         val code = game.compileForTest()
         assertTrue(
             code.contains("cancel") || code.contains("transition"),
-            "Should generate transition cancel code"
+            "Should generate transition cancel code",
         )
     }
 

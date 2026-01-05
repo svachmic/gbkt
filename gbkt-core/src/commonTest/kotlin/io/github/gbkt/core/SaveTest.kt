@@ -625,10 +625,11 @@ class SaveTest {
 
     @Test
     fun `SaveData slotSize calculates correctly`() {
-        val fields = listOf(
-            SaveField("score", SaveFieldType.U16, 0, 2),
-            SaveField("level", SaveFieldType.U8, 2, 1),
-        )
+        val fields =
+            listOf(
+                SaveField("score", SaveFieldType.U16, 0, 2),
+                SaveField("level", SaveFieldType.U8, 2, 1),
+            )
         val config = SaveConfig(slots = 1, checksum = Checksum.CRC8, magic = null)
         val saveData = SaveData("test", fields, config)
 

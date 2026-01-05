@@ -490,7 +490,9 @@ class AudioMixerTest {
         val game =
             gbGame("test") {
                 val mixer = audioMixer {
-                    group("all") { channels(Channel.PULSE1, Channel.PULSE2, Channel.WAVE, Channel.NOISE) }
+                    group("all") {
+                        channels(Channel.PULSE1, Channel.PULSE2, Channel.WAVE, Channel.NOISE)
+                    }
                 }
 
                 start = scene("main") { enter { mixer.setGroupVolume("all", 75) } }
@@ -654,14 +656,16 @@ class AudioMixerTest {
                 val mixer = audioMixer { group("sfx") { channels(Channel.PULSE1) } }
                 val dynamicVol by u8Var(50)
 
-                start =
-                    scene("main") { enter { mixer.setGroupVolume("sfx", dynamicVol) } }
+                start = scene("main") { enter { mixer.setGroupVolume("sfx", dynamicVol) } }
             }
 
         val code = game.compileForTest()
 
         assertTrue(code.contains("_mixer_sfx_volume"), "Should reference sfx volume variable")
-        assertTrue(code.contains("dynamicVol") || code.contains("_v_"), "Should use dynamic variable")
+        assertTrue(
+            code.contains("dynamicVol") || code.contains("_v_"),
+            "Should use dynamic variable",
+        )
     }
 
     @Test
@@ -687,11 +691,7 @@ class AudioMixerTest {
     @Test
     fun `ChannelGroup validates volume range in constructor`() {
         val exception = assertFails {
-            ChannelGroup(
-                name = "invalid",
-                channels = setOf(Channel.PULSE1),
-                volume = 150,
-            )
+            ChannelGroup(name = "invalid", channels = setOf(Channel.PULSE1), volume = 150)
         }
 
         assertTrue(
@@ -703,11 +703,7 @@ class AudioMixerTest {
     @Test
     fun `ChannelGroup validates non-empty channels in constructor`() {
         val exception = assertFails {
-            ChannelGroup(
-                name = "empty",
-                channels = emptySet(),
-                volume = 100,
-            )
+            ChannelGroup(name = "empty", channels = emptySet(), volume = 100)
         }
 
         assertTrue(

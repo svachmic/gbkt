@@ -1053,7 +1053,9 @@ class PoolTest {
                     pool("entity", size = 4) {
                         position(0, 0)
 
-                        state { val health by u8Var(100) }
+                        state {
+                            val health by u8Var(100)
+                        }
 
                         onFrame {
                             this["health"] -= 1
@@ -1092,8 +1094,10 @@ class PoolTest {
 
         val code = game.compileForTest()
 
-        assertTrue(code.contains("10") && code.contains("20") && code.contains("30"),
-            "Should spawn at multiple positions")
+        assertTrue(
+            code.contains("10") && code.contains("20") && code.contains("30"),
+            "Should spawn at multiple positions",
+        )
     }
 
     @Test
@@ -1124,7 +1128,10 @@ class PoolTest {
 
         val code = game.compileForTest()
 
-        assertTrue(code.contains("bullet") && code.contains("player"), "Should have collision check")
+        assertTrue(
+            code.contains("bullet") && code.contains("player"),
+            "Should have collision check",
+        )
     }
 
     @Test
@@ -1147,9 +1154,7 @@ class PoolTest {
 
         val code = game.compileForTest()
 
-        assertTrue(code.contains("bullet_vel_x") || code.contains("velX"),
-            "Should have velocity X")
-        assertTrue(code.contains("bullet_vel_y") || code.contains("velY"),
-            "Should have velocity Y")
+        assertTrue(code.contains("bullet_vel_x") || code.contains("velX"), "Should have velocity X")
+        assertTrue(code.contains("bullet_vel_y") || code.contains("velY"), "Should have velocity Y")
     }
 }

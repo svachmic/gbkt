@@ -891,7 +891,12 @@ class ValidationTest {
                 start =
                     scene("main") {
                         enter {
-                            tween(x, from = 0, to = 250, duration = 60.frames) // Large range warning
+                            tween(
+                                x,
+                                from = 0,
+                                to = 250,
+                                duration = 60.frames,
+                            ) // Large range warning
                         }
                     }
             }
@@ -915,7 +920,13 @@ class ValidationTest {
                 start =
                     scene("main") {
                         enter {
-                            tween(x, from = 0, to = 100, duration = 60.frames, easing = Easing.LINEAR)
+                            tween(
+                                x,
+                                from = 0,
+                                to = 100,
+                                duration = 60.frames,
+                                easing = Easing.LINEAR,
+                            )
                         }
                     }
             }
@@ -1248,10 +1259,7 @@ class ValidationTest {
                         position(80, 72)
                     }
 
-                start =
-                    scene("main") {
-                        every.frame { player.x set player.x + 1 }
-                    }
+                start = scene("main") { every.frame { player.x set player.x + 1 } }
             }
 
         val result = game.validate()
@@ -1377,9 +1385,7 @@ class ValidationTest {
         val game =
             gbGame("test") {
                 // Each 8x16 sprite = 2 tiles. Need >256 tiles = >128 sprites
-                repeat(130) { i ->
-                    sprite(SpriteAsset("sprite$i.png")) { size = 8 x 16 }
-                }
+                repeat(130) { i -> sprite(SpriteAsset("sprite$i.png")) { size = 8 x 16 } }
                 start = scene("main") {}
             }
 
@@ -1400,7 +1406,11 @@ class ValidationTest {
                 repeat(10) { i ->
                     sprite(SpriteAsset("anim$i.png")) {
                         size = 8 x 16
-                        animations { "walk" plays (frames(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15) every 4.frames) }
+                        animations {
+                            "walk" plays
+                                (frames(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15) every
+                                    4.frames)
+                        }
                     }
                 }
                 start = scene("main") {}
