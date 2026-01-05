@@ -635,4 +635,446 @@ class ValidationTest {
         assertEquals(16, result.width, "Width should be 16")
         assertEquals(24, result.height, "Height should be 24")
     }
+
+    // =========================================================================
+    // PHYSICS VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `validates entity physics with zero mass`() {
+        val game =
+            gbGame("test") {
+                physics { gravity = 0.5f }
+
+                val player by entity {
+                    position(80, 72)
+                    velocity(0, 0).physics {
+                        mass = 0.0f // Invalid - must be positive
+                        gravity = 0.5f
+                    }
+                }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.any {
+                it.category == ValidationCategory.PHYSICS && it.message.contains("mass")
+            },
+            "Should error on zero mass. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `validates entity physics with negative mass`() {
+        val game =
+            gbGame("test") {
+                physics { gravity = 0.5f }
+
+                val player by entity {
+                    position(80, 72)
+                    velocity(0, 0).physics {
+                        mass = -1.0f // Invalid - must be positive
+                        gravity = 0.5f
+                    }
+                }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.any {
+                it.category == ValidationCategory.PHYSICS && it.message.contains("mass")
+            },
+            "Should error on negative mass. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `warns on excessive max velocity`() {
+        val game =
+            gbGame("test") {
+                physics { gravity = 0.5f }
+
+                val player by entity {
+                    position(80, 72)
+                    velocity(0, 0).physics {
+                        mass = 1.0f
+                        maxVelocity = 200 to 200 // Exceeds i8 range (127)
+                    }
+                }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.any {
+                it.category == ValidationCategory.PHYSICS && it.message.contains("maxVelocity")
+            },
+            "Should warn on excessive velocity. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `warns on unusual friction values`() {
+        val game =
+            gbGame("test") {
+                physics { gravity = 0.5f }
+
+                val player by entity {
+                    position(80, 72)
+                    velocity(0, 0).physics {
+                        mass = 1.0f
+                        friction = 2.0f // Outside typical range [0, 1.5]
+                    }
+                }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.any {
+                it.category == ValidationCategory.PHYSICS && it.message.contains("friction")
+            },
+            "Should warn on unusual friction. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `warns on extreme gravity values`() {
+        val game =
+            gbGame("test") {
+                physics { gravity = 0.5f }
+
+                val player by entity {
+                    position(80, 72)
+                    velocity(0, 0).physics {
+                        mass = 1.0f
+                        gravity = 5.0f // Outside typical range [-2.0, 2.0]
+                    }
+                }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.any {
+                it.category == ValidationCategory.PHYSICS && it.message.contains("gravity")
+            },
+            "Should warn on extreme gravity. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `valid physics passes validation`() {
+        val game =
+            gbGame("test") {
+                physics { gravity = 0.5f }
+
+                val player by entity {
+                    position(80, 72)
+                    velocity(0, 0).physics {
+                        mass = 1.0f
+                        friction = 0.9f
+                        gravity = 0.5f
+                        maxVelocity = 4 to 8
+                    }
+                }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.PHYSICS },
+            "Valid physics should have no errors. Errors: ${result.errors}",
+        )
+        assertTrue(
+            result.warnings.none { it.category == ValidationCategory.PHYSICS },
+            "Valid physics should have no warnings. Warnings: ${result.warnings}",
+        )
+    }
+
+    // =========================================================================
+    // TWEEN VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `validates tween with zero duration`() {
+        val game =
+            gbGame("test") {
+                var x by u8Var(0)
+
+                start =
+                    scene("main") {
+                        enter {
+                            tween(x, from = 0, to = 100, duration = 0.frames)
+                        } // Invalid: duration = 0
+                    }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.any {
+                it.category == ValidationCategory.TWEEN && it.message.contains("duration")
+            },
+            "Should error on zero duration. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `validates tween with u8 value out of range`() {
+        val game =
+            gbGame("test") {
+                var x by u8Var(0)
+
+                start =
+                    scene("main") {
+                        enter {
+                            tween(x, from = 0, to = 300, duration = 60.frames)
+                        } // Invalid: 300 > 255
+                    }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.any {
+                it.category == ValidationCategory.TWEEN && it.message.contains("bounds")
+            },
+            "Should error on U8 value out of range. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `validates tween with i8 value out of range`() {
+        val game =
+            gbGame("test") {
+                var x by i8Var(0)
+
+                start =
+                    scene("main") {
+                        enter {
+                            tween(x, from = -200, to = 100, duration = 60.frames)
+                        } // Invalid: -200 < -128
+                    }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.any {
+                it.category == ValidationCategory.TWEEN && it.message.contains("bounds")
+            },
+            "Should error on I8 value out of range. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `warns on large u8 tween range`() {
+        val game =
+            gbGame("test") {
+                var x by u8Var(0)
+
+                start =
+                    scene("main") {
+                        enter {
+                            tween(x, from = 0, to = 250, duration = 60.frames) // Large range warning
+                        }
+                    }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.any {
+                it.category == ValidationCategory.TWEEN && it.message.contains("large")
+            },
+            "Should warn on large tween range. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `valid tween passes validation`() {
+        val game =
+            gbGame("test") {
+                var x by u8Var(0)
+
+                start =
+                    scene("main") {
+                        enter {
+                            tween(x, from = 0, to = 100, duration = 60.frames, easing = Easing.LINEAR)
+                        }
+                    }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.TWEEN },
+            "Valid tween should have no errors. Errors: ${result.errors}",
+        )
+    }
+
+    // =========================================================================
+    // ARRAY BOUNDS VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `valid array access passes validation`() {
+        val game =
+            gbGame("test") {
+                val scores by u8Array(10)
+
+                start =
+                    scene("main") {
+                        enter {
+                            val x = scores[5] // Valid: 5 < 10
+                            scores[0] set 100 // Valid: 0 < 10
+                            scores[9] set 50 // Valid: 9 < 10
+                        }
+                    }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.ARRAY_BOUNDS },
+            "Valid array access should have no errors. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `array access at boundary passes validation`() {
+        val game =
+            gbGame("test") {
+                val items by u8Array(5)
+
+                start =
+                    scene("main") {
+                        enter {
+                            val first = items[0] // Valid: first element
+                            val last = items[4] // Valid: last element (size - 1)
+                        }
+                    }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.ARRAY_BOUNDS },
+            "Array access at boundaries should pass. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `array literal out of bounds throws at DSL time`() {
+        // Note: The DSL validates array bounds at build time via require(),
+        // so out-of-bounds literals throw immediately rather than being caught by validation
+        assertFailsWith<IllegalArgumentException> {
+            gbGame("test") {
+                val scores by u8Array(10)
+                start =
+                    scene("main") {
+                        enter {
+                            val x = scores[15] // Throws immediately: index 15 >= size 10
+                        }
+                    }
+            }
+        }
+    }
+
+    @Test
+    fun `array negative index throws at DSL time`() {
+        assertFailsWith<IllegalArgumentException> {
+            gbGame("test") {
+                val scores by u8Array(10)
+                start =
+                    scene("main") {
+                        enter {
+                            val x = scores[-1] // Throws immediately: negative index
+                        }
+                    }
+            }
+        }
+    }
+
+    // =========================================================================
+    // GBC COLOR VALIDATION TESTS (additional coverage)
+    // =========================================================================
+
+    @Test
+    fun `validates palette with exactly 4 valid colors`() {
+        val validColors =
+            listOf(
+                GBCColor(0x0000), // Black
+                GBCColor(0x2108), // Dark gray
+                GBCColor(0x4210), // Light gray
+                GBCColor(0x7FFF), // White
+            )
+
+        val game =
+            Game(
+                name = "test",
+                config = GameConfig(gbcSupport = true),
+                variables = emptyList(),
+                sprites = emptyList(),
+                scenes = mapOf("main" to Scene("main", emptyList(), emptyList(), emptyList())),
+                startScene = "main",
+                palettes = listOf(GBCPalette("colors", validColors)),
+            )
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.GBC_COLOR },
+            "Valid palette should have no color errors. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `validates multiple palettes`() {
+        val palette1 =
+            GBCPalette(
+                "bg",
+                listOf(GBCColor.BLACK, GBCColor.DARK_GRAY, GBCColor.LIGHT_GRAY, GBCColor.WHITE),
+                type = PaletteType.BACKGROUND,
+            )
+        val palette2 =
+            GBCPalette(
+                "sprite",
+                listOf(GBCColor.RED, GBCColor.GREEN, GBCColor.BLUE, GBCColor.WHITE),
+                type = PaletteType.SPRITE,
+            )
+
+        val game =
+            Game(
+                name = "test",
+                config = GameConfig(gbcSupport = true),
+                variables = emptyList(),
+                sprites = emptyList(),
+                scenes = mapOf("main" to Scene("main", emptyList(), emptyList(), emptyList())),
+                startScene = "main",
+                palettes = listOf(palette1, palette2),
+            )
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.GBC_COLOR },
+            "Multiple valid palettes should have no errors. Errors: ${result.errors}",
+        )
+    }
 }

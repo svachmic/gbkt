@@ -352,4 +352,183 @@ class AudioMixerTest {
             "Should accept FrameTiming syntax",
         )
     }
+
+    // =========================================================================
+    // ERROR PATH TESTS
+    // =========================================================================
+
+    @Test
+    fun `setGroupVolume with unknown group throws`() {
+        val exception = assertFails {
+            gbGame("test") {
+                val mixer = audioMixer { group("sfx") { channels(Channel.PULSE1) } }
+
+                start = scene("main") { enter { mixer.setGroupVolume("nonexistent", 50) } }
+            }
+        }
+
+        assertTrue(
+            exception.message?.contains("Unknown group") == true ||
+                exception.message?.contains("nonexistent") == true,
+            "Should reject unknown group name. Got: ${exception.message}",
+        )
+    }
+
+    @Test
+    fun `fadeGroup with unknown group throws`() {
+        val exception = assertFails {
+            gbGame("test") {
+                val mixer = audioMixer { group("music") { channels(Channel.WAVE) } }
+
+                start = scene("main") { enter { mixer.fadeGroup("unknown", to = 0, over = 30) } }
+            }
+        }
+
+        assertTrue(
+            exception.message?.contains("Unknown group") == true ||
+                exception.message?.contains("unknown") == true,
+            "Should reject unknown group name. Got: ${exception.message}",
+        )
+    }
+
+    @Test
+    fun `muteGroup with unknown group throws`() {
+        val exception = assertFails {
+            gbGame("test") {
+                val mixer = audioMixer { group("sfx") { channels(Channel.PULSE1) } }
+
+                start = scene("main") { enter { mixer.muteGroup("invalid") } }
+            }
+        }
+
+        assertTrue(
+            exception.message?.contains("Unknown group") == true ||
+                exception.message?.contains("invalid") == true,
+            "Should reject unknown group name. Got: ${exception.message}",
+        )
+    }
+
+    @Test
+    fun `unmuteGroup with unknown group throws`() {
+        val exception = assertFails {
+            gbGame("test") {
+                val mixer = audioMixer { group("sfx") { channels(Channel.PULSE1) } }
+
+                start = scene("main") { enter { mixer.unmuteGroup("bad_group") } }
+            }
+        }
+
+        assertTrue(
+            exception.message?.contains("Unknown group") == true ||
+                exception.message?.contains("bad_group") == true,
+            "Should reject unknown group name. Got: ${exception.message}",
+        )
+    }
+
+    @Test
+    fun `toggleMuteGroup with unknown group throws`() {
+        val exception = assertFails {
+            gbGame("test") {
+                val mixer = audioMixer { group("sfx") { channels(Channel.PULSE1) } }
+
+                start = scene("main") { enter { mixer.toggleMuteGroup("missing") } }
+            }
+        }
+
+        assertTrue(
+            exception.message?.contains("Unknown group") == true ||
+                exception.message?.contains("missing") == true,
+            "Should reject unknown group name. Got: ${exception.message}",
+        )
+    }
+
+    @Test
+    fun `negative volume is clamped to 0`() {
+        val game =
+            gbGame("test") {
+                audioMixer {
+                    group("sfx") {
+                        channels(Channel.PULSE1)
+                        volume = -50 // Negative!
+                    }
+                }
+
+                start = scene("main") {}
+            }
+
+        // Should compile without error (volume clamped to 0)
+        val code = game.compileForTest()
+        assertTrue(code.contains("_mixer_sfx_volume = 0"), "Should clamp volume to 0")
+    }
+
+    @Test
+    fun `all four channels can be assigned to different groups`() {
+        val game =
+            gbGame("test") {
+                audioMixer {
+                    group("group1") { channels(Channel.PULSE1) }
+                    group("group2") { channels(Channel.PULSE2) }
+                    group("group3") { channels(Channel.WAVE) }
+                    group("group4") { channels(Channel.NOISE) }
+                }
+
+                start = scene("main") {}
+            }
+
+        val code = game.compileForTest()
+
+        // Should have all four groups
+        assertTrue(code.contains("#define MIXER_GROUP_COUNT 4"), "Should have 4 groups")
+        assertTrue(code.contains("MIXER_GROUP_GROUP1"), "Should have group1 ID")
+        assertTrue(code.contains("MIXER_GROUP_GROUP2"), "Should have group2 ID")
+        assertTrue(code.contains("MIXER_GROUP_GROUP3"), "Should have group3 ID")
+        assertTrue(code.contains("MIXER_GROUP_GROUP4"), "Should have group4 ID")
+    }
+
+    @Test
+    fun `mixer with single group works`() {
+        val game =
+            gbGame("test") {
+                val mixer = audioMixer {
+                    group("all") { channels(Channel.PULSE1, Channel.PULSE2, Channel.WAVE, Channel.NOISE) }
+                }
+
+                start = scene("main") { enter { mixer.setGroupVolume("all", 75) } }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("#define MIXER_GROUP_COUNT 1"), "Should have 1 group")
+        assertTrue(code.contains("_mixer_all_volume"), "Should have all group volume")
+    }
+
+    @Test
+    fun `multiple priority levels work correctly`() {
+        val game =
+            gbGame("test") {
+                audioMixer {
+                    group("low") {
+                        channels(Channel.NOISE)
+                        priority = MixerPriority.LOW
+                    }
+                    group("normal") {
+                        channels(Channel.PULSE1)
+                        priority = MixerPriority.NORMAL
+                    }
+                    group("high") {
+                        channels(Channel.PULSE2, Channel.WAVE)
+                        priority = MixerPriority.HIGH
+                    }
+                }
+
+                start = scene("main") {}
+            }
+
+        val code = game.compileForTest()
+
+        // Should have all priority levels defined
+        assertTrue(code.contains("_mixer_low_priority"), "Should have low priority")
+        assertTrue(code.contains("_mixer_normal_priority"), "Should have normal priority")
+        assertTrue(code.contains("_mixer_high_priority"), "Should have high priority")
+    }
 }
