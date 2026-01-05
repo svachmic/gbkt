@@ -312,6 +312,84 @@ class SoundTest {
     }
 
     @Test
+    fun `SELECT preset uses PULSE channel`() {
+        val game =
+            gbGame("test") {
+                val select = soundEffect("select") { preset = SoundPreset.SELECT }
+
+                start = scene("main") {}
+            }
+
+        val code = game.compileForTest()
+        assertTrue(code.contains("select"), "Should define select sound")
+    }
+
+    @Test
+    fun `PAUSE preset uses PULSE channel`() {
+        val game =
+            gbGame("test") {
+                val pause = soundEffect("pause") { preset = SoundPreset.PAUSE }
+
+                start = scene("main") {}
+            }
+
+        val code = game.compileForTest()
+        assertTrue(code.contains("pause"), "Should define pause sound")
+    }
+
+    @Test
+    fun `TICK preset uses PULSE channel`() {
+        val game =
+            gbGame("test") {
+                val tick = soundEffect("tick") { preset = SoundPreset.TICK }
+
+                start = scene("main") {}
+            }
+
+        val code = game.compileForTest()
+        assertTrue(code.contains("tick"), "Should define tick sound")
+    }
+
+    @Test
+    fun `BEEP preset uses PULSE channel`() {
+        val game =
+            gbGame("test") {
+                val beep = soundEffect("beep") { preset = SoundPreset.BEEP }
+
+                start = scene("main") {}
+            }
+
+        val code = game.compileForTest()
+        assertTrue(code.contains("beep"), "Should define beep sound")
+    }
+
+    @Test
+    fun `DEATH preset uses PULSE channel`() {
+        val game =
+            gbGame("test") {
+                val death = soundEffect("death") { preset = SoundPreset.DEATH }
+
+                start = scene("main") {}
+            }
+
+        val code = game.compileForTest()
+        assertTrue(code.contains("death"), "Should define death sound")
+    }
+
+    @Test
+    fun `POWERUP preset uses PULSE channel`() {
+        val game =
+            gbGame("test") {
+                val powerup = soundEffect("powerup") { preset = SoundPreset.POWERUP }
+
+                start = scene("main") {}
+            }
+
+        val code = game.compileForTest()
+        assertTrue(code.contains("powerup"), "Should define powerup sound")
+    }
+
+    @Test
     fun `all pulse channel presets compile correctly`() {
         val pulsePresets =
             listOf(

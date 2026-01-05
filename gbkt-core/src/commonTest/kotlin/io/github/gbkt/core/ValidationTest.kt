@@ -1367,4 +1367,326 @@ class ValidationTest {
             "Same slot palettes should warn or error. Warnings: ${result.warnings}, Errors: ${result.errors}",
         )
     }
+
+    // =========================================================================
+    // MEMORY_BUDGET VALIDATION TESTS (VRAM & WRAM)
+    // =========================================================================
+
+    @Test
+    fun `VRAM validation warns when exceeding tile bank`() {
+        val game =
+            gbGame("test") {
+                // Each 8x16 sprite = 2 tiles. Need >256 tiles = >128 sprites
+                repeat(130) { i ->
+                    sprite(SpriteAsset("sprite$i.png")) { size = 8 x 16 }
+                }
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            "Should warn about VRAM tile usage. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `VRAM validation includes animated sprite frame count`() {
+        val game =
+            gbGame("test") {
+                // 8x16 sprite with 16 frames = 2 tiles × 16 = 32 tiles per sprite
+                // 10 such sprites = 320 tiles > 256 limit
+                repeat(10) { i ->
+                    sprite(SpriteAsset("anim$i.png")) {
+                        size = 8 x 16
+                        animations { "walk" plays (frames(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15) every 4.frames) }
+                    }
+                }
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            "Should warn when animated sprites exceed VRAM. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `VRAM validation passes for small sprite count`() {
+        val game =
+            gbGame("test") {
+                // 10 sprites = well under 256 tiles
+                repeat(10) { i -> sprite(SpriteAsset("sprite$i.png")) { size = 8 x 8 } }
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.none { it.category == ValidationCategory.MEMORY_BUDGET },
+            "Small sprite count should not warn. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `WRAM validation warns at high memory usage`() {
+        val game =
+            gbGame("test") {
+                // Pool: size × (1 byte active flag) + 2 byte overhead
+                // 5200 slots = 5202 bytes (exceeds 5120 warning threshold)
+                pool("bigPool", size = 5200) { position(0, 0) }
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            "Should warn about WRAM usage at 5200 bytes. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `WRAM validation errors when exceeding limit`() {
+        val game =
+            gbGame("test") {
+                // Pool: 6200 slots = 6202 bytes (exceeds 6144 hard limit)
+                pool("hugePool", size = 6200) { position(0, 0) }
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            "Should error when WRAM exceeded. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `WRAM validation passes for low memory usage`() {
+        val game =
+            gbGame("test") {
+                pool("smallPool", size = 10) { position(0, 0) }
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.MEMORY_BUDGET },
+            "Small pool should not error. Errors: ${result.errors}",
+        )
+        assertTrue(
+            result.warnings.none { it.category == ValidationCategory.MEMORY_BUDGET },
+            "Small pool should not warn. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `WRAM validation includes multiple component types`() {
+        val game =
+            gbGame("test") {
+                // Variables: 1000 u8 = 1000 bytes
+                // Unfortunately we can't dynamically create variables with delegates,
+                // but we can test with pools and other components
+
+                // Multiple pools to accumulate memory
+                pool("pool1", size = 2000) { position(0, 0) } // ~2002 bytes
+                pool("pool2", size = 2000) { position(0, 0) } // ~2002 bytes
+                pool("pool3", size = 1200) { position(0, 0) } // ~1202 bytes
+                // Total: ~5206 bytes > 5120 threshold
+
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            "Combined pools should trigger WRAM warning. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `WRAM validation includes state machines`() {
+        val game =
+            gbGame("test") {
+                // Each state machine uses 1 byte for state index
+                repeat(100) { i ->
+                    states("machine$i") {
+                        state("idle") {}
+                        state("active") {}
+                    }
+                }
+                // Plus a large pool to approach threshold
+                pool("filler", size = 5020) { position(0, 0) }
+                // Total: 100 bytes + 5022 bytes = 5122 bytes > 5120 threshold
+
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            "State machines should be included in WRAM calculation. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `WRAM validation includes save data buffer`() {
+        val game =
+            gbGame("test") {
+                // saveData contributes to WRAM usage
+                val save =
+                    saveData("test") {
+                        // Each u8Field = 1 byte, call multiple times
+                        u8Field()
+                        u8Field()
+                        u8Field()
+                        u8Field()
+                        u8Field()
+                    }
+                // Pool fills remaining WRAM to exceed threshold
+                pool("filler", size = 5115) { position(0, 0) }
+                // Total: 5 bytes + 5117 bytes = 5122 bytes > 5120 threshold
+
+                start = scene("main") { enter { save.load(0) } }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            "Save data should be included in WRAM calculation. Warnings: ${result.warnings}",
+        )
+    }
+
+    @Test
+    fun `WRAM breakdown includes pool details in message`() {
+        val game =
+            gbGame("test") {
+                pool("hugePool", size = 6200) { position(0, 0) }
+                start = scene("main") {}
+            }
+
+        val result = game.validate()
+
+        val memoryMessage =
+            result.errors.find { it.category == ValidationCategory.MEMORY_BUDGET }?.message
+        assertNotNull(memoryMessage, "Should have MEMORY_BUDGET error")
+        assertTrue(
+            memoryMessage!!.contains("Pools") || memoryMessage.contains("hugePool"),
+            "Error message should mention pools. Message: $memoryMessage",
+        )
+    }
+
+    // =========================================================================
+    // PALETTE_LIMIT VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `palette limit error when exceeding 8 sprite palettes`() {
+        // Create 9 sprite palettes (exceeds 8 limit)
+        val palettes =
+            (0..8).map { i ->
+                GBCPalette(
+                    "pal$i",
+                    listOf(GBCColor.BLACK, GBCColor.DARK_GRAY, GBCColor.LIGHT_GRAY, GBCColor.WHITE),
+                    type = PaletteType.SPRITE,
+                )
+            }
+
+        val game =
+            Game(
+                name = "test",
+                config = GameConfig(gbcSupport = true),
+                variables = emptyList(),
+                sprites = emptyList(),
+                scenes = mapOf("main" to Scene("main", emptyList(), emptyList(), emptyList())),
+                startScene = "main",
+                palettes = palettes,
+            )
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.any { it.category == ValidationCategory.PALETTE_LIMIT },
+            "Should error when exceeding 8 sprite palettes. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `palette limit error when exceeding 8 background palettes`() {
+        // Create 9 background palettes (exceeds 8 limit)
+        val palettes =
+            (0..8).map { i ->
+                GBCPalette(
+                    "bgpal$i",
+                    listOf(GBCColor.BLACK, GBCColor.DARK_GRAY, GBCColor.LIGHT_GRAY, GBCColor.WHITE),
+                    type = PaletteType.BACKGROUND,
+                )
+            }
+
+        val game =
+            Game(
+                name = "test",
+                config = GameConfig(gbcSupport = true),
+                variables = emptyList(),
+                sprites = emptyList(),
+                scenes = mapOf("main" to Scene("main", emptyList(), emptyList(), emptyList())),
+                startScene = "main",
+                palettes = palettes,
+            )
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.any { it.category == ValidationCategory.PALETTE_LIMIT },
+            "Should error when exceeding 8 background palettes. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `palette limit passes with 8 palettes of each type`() {
+        // Exactly 8 sprite palettes + 8 background palettes
+        val spritePalettes =
+            (0..7).map { i ->
+                GBCPalette(
+                    "sprite$i",
+                    listOf(GBCColor.BLACK, GBCColor.DARK_GRAY, GBCColor.LIGHT_GRAY, GBCColor.WHITE),
+                    type = PaletteType.SPRITE,
+                )
+            }
+        val bgPalettes =
+            (0..7).map { i ->
+                GBCPalette(
+                    "bg$i",
+                    listOf(GBCColor.BLACK, GBCColor.DARK_GRAY, GBCColor.LIGHT_GRAY, GBCColor.WHITE),
+                    type = PaletteType.BACKGROUND,
+                )
+            }
+
+        val game =
+            Game(
+                name = "test",
+                config = GameConfig(gbcSupport = true),
+                variables = emptyList(),
+                sprites = emptyList(),
+                scenes = mapOf("main" to Scene("main", emptyList(), emptyList(), emptyList())),
+                startScene = "main",
+                palettes = spritePalettes + bgPalettes,
+            )
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.PALETTE_LIMIT },
+            "8 palettes of each type should not error. Errors: ${result.errors}",
+        )
+    }
 }
