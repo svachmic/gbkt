@@ -100,7 +100,7 @@ class BranchBuilder {
  */
 class WheneverResult(
     internal val condition: IRExpression,
-    internal val thenStatements: List<IRStatement>
+    internal val thenStatements: List<IRStatement>,
 )
 
 /**
@@ -147,7 +147,7 @@ inline fun whenever(direction: DpadDirectionState, noinline block: () -> Unit): 
 inline fun whenever(
     condition: Condition,
     noinline thenBlock: () -> Unit,
-    noinline elseBlock: () -> Unit
+    noinline elseBlock: () -> Unit,
 ) {
     val thenRecorder = StatementRecorder()
     val elseRecorder = StatementRecorder()

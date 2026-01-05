@@ -32,7 +32,7 @@ enum class PalettePreset(val colors: List<GBCColor>) {
             GBCColor.fromHex(0xE0F8D0),
             GBCColor.fromHex(0x88C070),
             GBCColor.fromHex(0x346856),
-            GBCColor.fromHex(0x081820)
+            GBCColor.fromHex(0x081820),
         )
     ),
     /** Ocean/water theme - blues and teals */
@@ -41,7 +41,7 @@ enum class PalettePreset(val colors: List<GBCColor>) {
             GBCColor.fromHex(0xE0F8F8),
             GBCColor.fromHex(0x70C0D8),
             GBCColor.fromHex(0x3068A8),
-            GBCColor.fromHex(0x082048)
+            GBCColor.fromHex(0x082048),
         )
     ),
     /** Fire/lava theme - reds and oranges */
@@ -50,7 +50,7 @@ enum class PalettePreset(val colors: List<GBCColor>) {
             GBCColor.fromHex(0xFFF8E0),
             GBCColor.fromHex(0xF8A060),
             GBCColor.fromHex(0xC03020),
-            GBCColor.fromHex(0x401008)
+            GBCColor.fromHex(0x401008),
         )
     ),
     /** Ice/snow theme - blues and whites */
@@ -59,7 +59,7 @@ enum class PalettePreset(val colors: List<GBCColor>) {
             GBCColor.fromHex(0xF8F8FF),
             GBCColor.fromHex(0xA8D8F0),
             GBCColor.fromHex(0x5090C0),
-            GBCColor.fromHex(0x203050)
+            GBCColor.fromHex(0x203050),
         )
     ),
     /** Night/dark theme - purples and deep blues */
@@ -68,7 +68,7 @@ enum class PalettePreset(val colors: List<GBCColor>) {
             GBCColor.fromHex(0xD0C0E8),
             GBCColor.fromHex(0x8068A8),
             GBCColor.fromHex(0x483878),
-            GBCColor.fromHex(0x181028)
+            GBCColor.fromHex(0x181028),
         )
     ),
     /** Sepia/vintage theme - warm browns */
@@ -77,9 +77,9 @@ enum class PalettePreset(val colors: List<GBCColor>) {
             GBCColor.fromHex(0xF8E8C8),
             GBCColor.fromHex(0xC8A868),
             GBCColor.fromHex(0x886830),
-            GBCColor.fromHex(0x302010)
+            GBCColor.fromHex(0x302010),
         )
-    )
+    ),
 }
 
 /** DSL wrapper for palette operations at runtime. Returned by the palette() DSL function. */
@@ -87,7 +87,7 @@ class Palette(
     val name: String,
     val colors: List<GBCColor>,
     val assignedSlot: Int,
-    val type: PaletteType
+    val type: PaletteType,
 ) {
     /**
      * Apply this palette to its assigned slot at runtime. Use in scene enter blocks or frame

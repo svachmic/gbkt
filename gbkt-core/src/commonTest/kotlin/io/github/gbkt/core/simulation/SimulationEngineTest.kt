@@ -114,7 +114,7 @@ class SimulationEngineTest {
                 hasVelocity = false,
                 stateFields = emptyList(),
                 onFrameStatements = emptyList(),
-                despawnConditions = emptyList()
+                despawnConditions = emptyList(),
             )
 
         assertEquals(0, pool.activeCount)

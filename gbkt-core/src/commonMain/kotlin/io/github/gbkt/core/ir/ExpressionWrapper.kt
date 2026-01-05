@@ -136,7 +136,7 @@ open class Expr(open val ir: IRExpression) {
             IRBinary(
                 IRBinary(ir, BinaryOp.GTE, IRLiteral(range.first)),
                 BinaryOp.LAND,
-                IRBinary(ir, BinaryOp.LTE, IRLiteral(range.last))
+                IRBinary(ir, BinaryOp.LTE, IRLiteral(range.last)),
             )
         )
     }
@@ -192,7 +192,7 @@ open class Expr(open val ir: IRExpression) {
             IRTernary(
                 IRBinary(ir, BinaryOp.LT, IRLiteral(min)),
                 IRLiteral(min),
-                IRTernary(IRBinary(ir, BinaryOp.GT, IRLiteral(max)), IRLiteral(max), ir)
+                IRTernary(IRBinary(ir, BinaryOp.GT, IRLiteral(max)), IRLiteral(max), ir),
             )
         )
     }

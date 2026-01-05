@@ -27,7 +27,7 @@ class PositionComponent(
     val entityName: String,
     initialX: Int,
     initialY: Int,
-    varType: GBVar.VarType = GBVar.VarType.U8
+    varType: GBVar.VarType = GBVar.VarType.U8,
 ) {
     val xVarName: String = "${entityName}_x"
     val yVarName: String = "${entityName}_y"
@@ -117,7 +117,7 @@ class PhysicsComponent(
     val maxVelocityX: Int, // Max velocity in pixels (integer)
     val maxVelocityY: Int, // Max velocity in pixels (integer)
     val mass: Int = 256, // Fixed-point 8.8: 256 = 1.0 (normal mass)
-    val useLocalFriction: Boolean = false // If true, use entity's friction instead of global
+    val useLocalFriction: Boolean = false, // If true, use entity's friction instead of global
 )
 
 /**
@@ -210,7 +210,7 @@ class PhysicsBuilder(private val entityName: String) {
             maxVelocityX = maxVelocity.first,
             maxVelocityY = maxVelocity.second,
             mass = toFixed88(mass),
-            useLocalFriction = useLocalFriction
+            useLocalFriction = useLocalFriction,
         )
     }
 }

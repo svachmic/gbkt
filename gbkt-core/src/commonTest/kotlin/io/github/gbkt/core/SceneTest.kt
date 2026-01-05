@@ -56,7 +56,7 @@ class SceneTest {
 
         assertTrue(
             code.contains("main_menu") || code.contains("SCENE_MAIN_MENU"),
-            "Generated code should reference scene name"
+            "Generated code should reference scene name",
         )
     }
 
@@ -84,7 +84,7 @@ class SceneTest {
         // Scene enter should set initialized to 1
         assertTrue(
             code.contains("initialized") && code.contains("1"),
-            "Should generate enter block code"
+            "Should generate enter block code",
         )
     }
 
@@ -166,7 +166,7 @@ class SceneTest {
         assertTrue(code.contains("lives"), "Should initialize lives")
         assertTrue(
             code.contains("SHOW_SPRITE") || code.contains("show"),
-            "Should show player sprite"
+            "Should show player sprite",
         )
     }
 
@@ -196,7 +196,7 @@ class SceneTest {
         // Should generate scene change logic
         assertTrue(
             code.contains("scene") || code.contains("SCENE"),
-            "Should generate scene transition code"
+            "Should generate scene transition code",
         )
     }
 
@@ -219,7 +219,7 @@ class SceneTest {
         assertTrue(code.isNotEmpty(), "Should generate valid code")
         assertTrue(
             code.contains("gameover") || code.contains("GAMEOVER"),
-            "Should reference gameover scene"
+            "Should reference gameover scene",
         )
     }
 
@@ -241,7 +241,7 @@ class SceneTest {
 
         assertTrue(
             code.contains("title") || code.contains("TITLE"),
-            "Should generate scene transition to title"
+            "Should generate scene transition to title",
         )
     }
 
@@ -419,7 +419,7 @@ class SceneTest {
         // Should have frame count modulo check
         assertTrue(
             code.contains("60") || code.contains("_frame_count"),
-            "Should generate timed logic with frame count"
+            "Should generate timed logic with frame count",
         )
     }
 
@@ -439,7 +439,7 @@ class SceneTest {
         // Should have modulo 15 check
         assertTrue(
             code.contains("15") && code.contains("%"),
-            "Should generate modulo check for 15 frames"
+            "Should generate modulo check for 15 frames",
         )
     }
 

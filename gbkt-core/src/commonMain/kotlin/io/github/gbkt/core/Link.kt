@@ -27,7 +27,7 @@ import io.github.gbkt.core.ir.IRVar
 data class LinkDefinition(
     val name: String,
     val onReceiveStatements: List<IRStatement>,
-    val receiveDataVar: String
+    val receiveDataVar: String,
 )
 
 /** Handle to a configured link cable for use in scenes. */
@@ -94,6 +94,6 @@ class LinkBuilder {
         LinkDefinition(
             name = "link",
             onReceiveStatements = _onReceiveStatements,
-            receiveDataVar = _receiveDataVar
+            receiveDataVar = _receiveDataVar,
         )
 }

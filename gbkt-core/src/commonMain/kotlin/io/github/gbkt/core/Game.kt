@@ -55,7 +55,7 @@ data class CompiledMapData(
     val height: Int, // Map height in tiles
     val data: ByteArray, // Tile indices (row-major order)
     val tilesetName: String, // Reference to associated tileset
-    val collisionData: ByteArray? = null // Collision map data (0 = walkable, >0 = blocked)
+    val collisionData: ByteArray? = null, // Collision map data (0 = walkable, >0 = blocked)
 ) {
     override fun equals(other: Any?) =
         other is CompiledMapData &&
@@ -106,7 +106,7 @@ class Game(
     val inputBuffers: List<InputBufferData> = emptyList(),
     val audioMixer: AudioMixer? = null,
     val link: LinkDefinition? = null,
-    val cutscenes: List<CutsceneDefinition> = emptyList()
+    val cutscenes: List<CutsceneDefinition> = emptyList(),
 ) {
     /**
      * Compile the game to C code.
@@ -151,7 +151,7 @@ data class GameConfig(
     val romBanks: Int = 2,
     val ramBanks: Int = 0,
     val gbcSupport: Boolean = false,
-    val gbcMode: GBCMode = GBCMode.COMPATIBLE
+    val gbcMode: GBCMode = GBCMode.COMPATIBLE,
 )
 
 enum class Cartridge(val gbdk: String) {
@@ -161,5 +161,5 @@ enum class Cartridge(val gbdk: String) {
     MBC1_RAM_BATTERY("MBC1+RAM+BATTERY"),
     MBC3_TIMER_BATTERY("MBC3+TIMER+BATTERY"),
     MBC5("MBC5"),
-    MBC5_RAM_BATTERY("MBC5+RAM+BATTERY")
+    MBC5_RAM_BATTERY("MBC5+RAM+BATTERY"),
 }

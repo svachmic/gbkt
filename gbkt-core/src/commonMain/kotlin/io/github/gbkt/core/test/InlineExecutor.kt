@@ -52,7 +52,7 @@ import io.github.gbkt.core.ir.u8
  */
 class InlineExecutor(
     private val variables: MutableMap<String, SimValue>,
-    private val variableDefinitions: Map<String, Any>
+    private val variableDefinitions: Map<String, Any>,
 ) {
     init {
         // Initialize variables from definitions if not already set

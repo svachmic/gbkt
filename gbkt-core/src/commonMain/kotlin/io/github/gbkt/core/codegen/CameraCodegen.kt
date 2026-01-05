@@ -33,7 +33,7 @@ internal sealed class TransitionStep {
     data class Primitive(
         val type: String, // TRANS_FADE_OUT, etc.
         val duration: Int,
-        val params: Map<String, Any> = emptyMap()
+        val params: Map<String, Any> = emptyMap(),
     ) : TransitionStep()
 
     data class Callback(val callbackId: Int) : TransitionStep()
@@ -46,7 +46,7 @@ internal sealed class TransitionStep {
 internal data class ComposedTransitionData(
     val id: Int,
     val steps: List<TransitionStep>,
-    val targetScene: String?
+    val targetScene: String?,
 )
 
 // Storage for per-generator state
@@ -85,7 +85,7 @@ internal fun CodeGenerator.getTransitionCallbackId(statements: List<IRStatement>
  */
 internal fun CodeGenerator.generateComposedTransition(
     transition: Transition,
-    targetScene: String?
+    targetScene: String?,
 ) {
     // For simple single transitions, emit legacy code for efficiency
     when (transition) {
@@ -197,7 +197,7 @@ internal fun CodeGenerator.generateComposedTransition(
 /** Flatten a transition tree into steps and register it. */
 private fun CodeGenerator.registerComposedTransition(
     transition: Transition,
-    targetScene: String?
+    targetScene: String?,
 ): Int {
     val steps = flattenTransition(transition)
     val id = composedTransitionSequences.size
@@ -228,8 +228,8 @@ private fun CodeGenerator.flattenTransition(t: Transition): List<TransitionStep>
                     t.frames,
                     mapOf(
                         "colorLo" to (t.color.rgb555 and 0xFF),
-                        "colorHi" to ((t.color.rgb555 shr 8) and 0xFF)
-                    )
+                        "colorHi" to ((t.color.rgb555 shr 8) and 0xFF),
+                    ),
                 )
             )
         is ShakeTransition ->
@@ -237,7 +237,7 @@ private fun CodeGenerator.flattenTransition(t: Transition): List<TransitionStep>
                 TransitionStep.Primitive(
                     "TRANS_SHAKE",
                     t.frames,
-                    mapOf("intensity" to t.intensity, "decay" to t.decay.ordinal)
+                    mapOf("intensity" to t.intensity, "decay" to t.decay.ordinal),
                 )
             )
         is WipeTransition -> {

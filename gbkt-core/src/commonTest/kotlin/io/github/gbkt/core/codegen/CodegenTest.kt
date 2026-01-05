@@ -47,21 +47,21 @@ class CodegenTest {
         // The generated code should have proper if-else chain with state comparisons
         assertTrue(
             code.contains("state") && code.contains("1u"),
-            "Should have state comparison. Generated:\n$relevantLines"
+            "Should have state comparison. Generated:\n$relevantLines",
         )
 
         // Make sure the assignments are in the generated code
         assertTrue(
             code.contains("result = 10u") || code.contains("result = 10"),
-            "Should assign 10 for state 1. Generated:\n$relevantLines"
+            "Should assign 10 for state 1. Generated:\n$relevantLines",
         )
         assertTrue(
             code.contains("result = 20u") || code.contains("result = 20"),
-            "Should assign 20 for state 2. Generated:\n$relevantLines"
+            "Should assign 20 for state 2. Generated:\n$relevantLines",
         )
         assertTrue(
             code.contains("result = 30u") || code.contains("result = 30"),
-            "Should assign 30 for state 3. Generated:\n$relevantLines"
+            "Should assign 30 for state 3. Generated:\n$relevantLines",
         )
     }
 
@@ -85,7 +85,7 @@ class CodegenTest {
         // Camera update should clamp to bounds, not hardcoded 0-255
         assertTrue(
             code.contains("_camera_bounds_min_x") && code.contains("_camera_bounds_max_x"),
-            "Camera update should use bounds variables"
+            "Camera update should use bounds variables",
         )
     }
 
@@ -159,7 +159,7 @@ class CodegenTest {
         // Exception message should mention the missing sprite
         assertTrue(
             exception.message?.contains("nonexistent") == true,
-            "Exception should mention the missing sprite name"
+            "Exception should mention the missing sprite name",
         )
     }
 
@@ -263,7 +263,7 @@ class CodegenTest {
         // Check that friction = 1.0 becomes 256 in fixed-point
         assertTrue(
             code.contains("PLAYER_FRICTION 256"),
-            "Friction 1.0 should be 256 in fixed-point"
+            "Friction 1.0 should be 256 in fixed-point",
         )
 
         // Check max velocity values
@@ -299,7 +299,7 @@ class CodegenTest {
         // Should initialize with values (no 'u' suffix for signed)
         assertTrue(
             code.contains("velocityX = -5;") || code.contains("velocityX = 251;"),
-            "Should initialize signed i8 variable (may be -5 or wrapped)"
+            "Should initialize signed i8 variable (may be -5 or wrapped)",
         )
         assertTrue(code.contains("positionY = 100;"), "Should initialize i16 without 'u' suffix")
     }
@@ -391,12 +391,12 @@ class CodegenTest {
         assertTrue(
             code.contains("GB_ARRAY_SET(inventory, 0u, 10, 5u)") ||
                 code.contains("GB_ARRAY_SET(inventory, 0, 10, 5)"),
-            "Should use GB_ARRAY_SET for index 0"
+            "Should use GB_ARRAY_SET for index 0",
         )
         assertTrue(
             code.contains("GB_ARRAY_SET(inventory, slot, 10, 10u)") ||
                 code.contains("GB_ARRAY_SET(inventory, slot, 10, 10)"),
-            "Should use GB_ARRAY_SET for variable index"
+            "Should use GB_ARRAY_SET for variable index",
         )
     }
 
@@ -425,16 +425,16 @@ class CodegenTest {
         // Should declare state arrays (uses BULLET_POOL_SIZE macro)
         assertTrue(
             code.contains("bullet_timer[BULLET_POOL_SIZE]"),
-            "Should declare timer array for pool"
+            "Should declare timer array for pool",
         )
         assertTrue(
             code.contains("bullet_damage[BULLET_POOL_SIZE]"),
-            "Should declare damage array for pool"
+            "Should declare damage array for pool",
         )
         // Should generate assignments in lifecycle hooks
         assertTrue(
             code.contains("bullet_timer") && code.contains("120"),
-            "Should assign timer in onSpawn"
+            "Should assign timer in onSpawn",
         )
     }
 
@@ -452,7 +452,7 @@ class CodegenTest {
 
         assertTrue(
             code.contains("_next_scene = SCENE_GAMEOVER"),
-            "Should set next scene to gameover"
+            "Should set next scene to gameover",
         )
         assertTrue(code.contains("_scene_changed = 1"), "Should mark scene as changed")
     }

@@ -105,11 +105,11 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
                     widthPx = image.width,
                     heightPx = image.height,
                     tilesWide = sheet.widthInTiles,
-                    tilesHigh = sheet.heightInTiles
+                    tilesHigh = sheet.heightInTiles,
                 ),
             tiles = analyzeTiles(sprite.name, sheet),
             palette = analyzePalette(image),
-            compression = analyzeCompression(sheet)
+            compression = analyzeCompression(sheet),
         )
     }
 
@@ -128,11 +128,11 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
                     widthPx = image.width,
                     heightPx = image.height,
                     tilesWide = sheet.widthInTiles,
-                    tilesHigh = sheet.heightInTiles
+                    tilesHigh = sheet.heightInTiles,
                 ),
             tiles = analyzeTiles(name, sheet),
             palette = analyzePalette(image),
-            compression = analyzeCompression(sheet)
+            compression = analyzeCompression(sheet),
         )
     }
 
@@ -162,11 +162,11 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
                     widthPx = layer.width * 8,
                     heightPx = layer.height * 8,
                     tilesWide = layer.width,
-                    tilesHigh = layer.height
+                    tilesHigh = layer.height,
                 ),
             tiles = analyzeTiles(file.nameWithoutExtension, sheet),
             palette = analyzePalette(image),
-            compression = analyzeCompression(sheet)
+            compression = analyzeCompression(sheet),
         )
     }
 
@@ -219,7 +219,7 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
             unique = tileMap.size,
             duplicates = duplicates,
             empty = emptyTiles,
-            lowEntropy = lowEntropyTiles
+            lowEntropy = lowEntropyTiles,
         )
     }
 
@@ -339,7 +339,7 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
             RLEOpportunity(
                 hasConsecutiveDuplicates = longestRun > 1,
                 longestRun = longestRun,
-                estimatedRatio = if (longestRun > 2) 0.8f else 1.0f
+                estimatedRatio = if (longestRun > 2) 0.8f else 1.0f,
             )
 
         // Find similar tiles (for potential delta compression)
@@ -384,7 +384,7 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
     private fun collectTilesForGlobalAnalysis(
         assetName: String,
         file: File,
-        globalMap: MutableMap<Int, MutableList<TileLocation>>
+        globalMap: MutableMap<Int, MutableList<TileLocation>>,
     ) {
         try {
             val sheet = AssetPipeline.loadSprite(file)
@@ -412,7 +412,7 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
                 CrossAssetDuplicate(
                     hash = hash,
                     assets = locations.map { it.assetName }.distinct(),
-                    totalCount = locations.size
+                    totalCount = locations.size,
                 )
             }
             .sortedByDescending { it.totalCount }
@@ -421,7 +421,7 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
     /** Compute summary statistics from analyzed assets. */
     private fun computeSummary(
         assets: List<AnalyzedAsset>,
-        crossAssetDuplicates: List<CrossAssetDuplicate>
+        crossAssetDuplicates: List<CrossAssetDuplicate>,
     ): AssetSummary {
         var totalTiles = 0
         var uniqueTiles = 0
@@ -445,7 +445,7 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
         val potentialSavings =
             ByteSavings(
                 bytes = (duplicateTiles + emptyTiles + crossAssetSavings) * 16,
-                tiles = duplicateTiles + emptyTiles + crossAssetSavings
+                tiles = duplicateTiles + emptyTiles + crossAssetSavings,
             )
 
         return AssetSummary(
@@ -456,7 +456,7 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
             emptyTiles = emptyTiles,
             lowEntropyTiles = lowEntropyTiles,
             usedPaletteColors = allColorsUsed.size,
-            potentialSavings = potentialSavings
+            potentialSavings = potentialSavings,
         )
     }
 
@@ -464,7 +464,7 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
     private fun generateSuggestions(
         assets: List<AnalyzedAsset>,
         summary: AssetSummary,
-        crossAssetDuplicates: List<CrossAssetDuplicate>
+        crossAssetDuplicates: List<CrossAssetDuplicate>,
     ): List<Suggestion> {
         val suggestions = mutableListOf<Suggestion>()
 
@@ -536,5 +536,5 @@ data class AnalyzerConfig(
     /** Enable palette usage analysis. */
     val analyzePalette: Boolean = true,
     /** Enable compression opportunity analysis. */
-    val analyzeCompression: Boolean = true
+    val analyzeCompression: Boolean = true,
 )

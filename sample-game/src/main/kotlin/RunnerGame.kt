@@ -359,7 +359,7 @@ val runnerGame =
                             from = 0,
                             to = 100,
                             duration = 30.frames,
-                            easing = Easing.EASE_OUT
+                            easing = Easing.EASE_OUT,
                         )
                     }
 
@@ -465,7 +465,7 @@ fun main() {
         ║  • GBC palettes and animations        ║
         ║  • Scene management                   ║
         ╚═══════════════════════════════════════╝
-    """
+        """
             .trimIndent()
     )
     println()

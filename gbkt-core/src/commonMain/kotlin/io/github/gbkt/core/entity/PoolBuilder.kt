@@ -33,7 +33,7 @@ import io.github.gbkt.core.ir.x
 class PoolBuilder(
     private val poolName: String,
     private val poolSize: Int,
-    private val gameBuilder: GameBuilder
+    private val gameBuilder: GameBuilder,
 ) {
     private var initialX: Int = 0
     private var initialY: Int = 0
@@ -135,7 +135,7 @@ class PoolBuilder(
      */
     fun sprite(
         asset: io.github.gbkt.core.assets.SpriteAsset,
-        init: PoolSpriteBuilder.() -> Unit = {}
+        init: PoolSpriteBuilder.() -> Unit = {},
     ) {
         spriteAsset = asset.path
         val builder = PoolSpriteBuilder()
@@ -248,7 +248,7 @@ class PoolBuilder(
             animations = animations,
             hitbox = hitbox,
             paletteRef = paletteRef,
-            paletteIndex = paletteIndex
+            paletteIndex = paletteIndex,
         )
     }
 
@@ -271,7 +271,7 @@ class PoolBuilder(
             animations = animations,
             hitbox = hitbox,
             paletteRef = paletteRef,
-            paletteIndex = paletteIndex
+            paletteIndex = paletteIndex,
         )
     }
 }

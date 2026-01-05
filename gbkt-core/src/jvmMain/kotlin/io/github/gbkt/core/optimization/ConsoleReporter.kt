@@ -299,7 +299,7 @@ class ConsoleReporter(private val config: ReporterConfig = ReporterConfig()) {
         SAVINGS("\uD83D\uDCB0", "[S]"), // 💰
         CHECK("\u2714", "[OK]"), // ✔
         WARNING("\u26A0", "[!]"), // ⚠
-        ARROW("\u2192", "->") // →
+        ARROW("\u2192", "->"), // →
     }
 
     private enum class Color(val ansi: String) {
@@ -310,7 +310,7 @@ class ConsoleReporter(private val config: ReporterConfig = ReporterConfig()) {
         CYAN("\u001B[36m"),
         WHITE("\u001B[37m"),
         DIM("\u001B[2m"),
-        RESET("\u001B[0m")
+        RESET("\u001B[0m"),
     }
 }
 
@@ -325,7 +325,7 @@ data class ReporterConfig(
     /** Show actionable suggestions. */
     val showSuggestions: Boolean = true,
     /** Suppress output when no issues found. */
-    val quietWhenOptimal: Boolean = false
+    val quietWhenOptimal: Boolean = false,
 ) {
     companion object {
         /** Detect if the terminal supports ANSI colors. */
@@ -372,7 +372,7 @@ data class ReporterConfig(
                 useUnicode = false,
                 showPerAsset = false,
                 showSuggestions = true,
-                quietWhenOptimal = true
+                quietWhenOptimal = true,
             )
 
         /** Verbose config - show everything. */
@@ -382,7 +382,7 @@ data class ReporterConfig(
                 useUnicode = true,
                 showPerAsset = true,
                 showSuggestions = true,
-                quietWhenOptimal = false
+                quietWhenOptimal = false,
             )
     }
 }

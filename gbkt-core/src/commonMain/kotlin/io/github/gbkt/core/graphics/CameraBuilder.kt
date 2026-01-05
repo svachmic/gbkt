@@ -24,7 +24,7 @@ data class CameraConfig(
     val boundsMinX: Int = 0,
     val boundsMaxX: Int = 255,
     val boundsMinY: Int = 0,
-    val boundsMaxY: Int = 255
+    val boundsMaxY: Int = 255,
 )
 
 // =============================================================================
@@ -141,7 +141,7 @@ class CameraBuilder(private val name: String) {
                     boundsMinX = boundsMinX,
                     boundsMaxX = boundsMaxX,
                     boundsMinY = boundsMinY,
-                    boundsMaxY = boundsMaxY
-                )
+                    boundsMaxY = boundsMaxY,
+                ),
         )
 }

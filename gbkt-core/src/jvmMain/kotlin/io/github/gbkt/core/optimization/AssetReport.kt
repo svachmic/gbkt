@@ -16,7 +16,7 @@ data class AssetReport(
     val assets: List<AnalyzedAsset>,
     val summary: AssetSummary,
     val suggestions: List<Suggestion>,
-    val analysisTimeMs: Long
+    val analysisTimeMs: Long,
 ) {
     /** Whether any optimization opportunities were found. */
     val hasIssues: Boolean
@@ -36,7 +36,7 @@ data class AssetSummary(
     val emptyTiles: Int,
     val lowEntropyTiles: Int,
     val usedPaletteColors: Int,
-    val potentialSavings: ByteSavings
+    val potentialSavings: ByteSavings,
 ) {
     /** Ratio of unique tiles to total tiles (1.0 = no duplicates). */
     val deduplicationRatio: Float
@@ -67,7 +67,7 @@ data class ByteSavings(val bytes: Int, val tiles: Int) {
         fun fromDuplicates(duplicateCount: Int) =
             ByteSavings(
                 bytes = duplicateCount * 16, // Each tile is 16 bytes
-                tiles = duplicateCount
+                tiles = duplicateCount,
             )
     }
 }

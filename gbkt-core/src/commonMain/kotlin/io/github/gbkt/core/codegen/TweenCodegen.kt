@@ -55,7 +55,7 @@ private fun CodeGenerator.collectUsedEasingTypes(): Set<Easing> {
 /** Recursively collect easing types from a list of IR statements. */
 private fun collectEasingsFromStatements(
     statements: List<IRStatement>,
-    usedEasings: MutableSet<Easing>
+    usedEasings: MutableSet<Easing>,
 ) {
     for (stmt in statements) {
         when (stmt) {

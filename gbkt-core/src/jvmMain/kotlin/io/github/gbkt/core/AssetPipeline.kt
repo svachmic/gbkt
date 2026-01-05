@@ -97,7 +97,7 @@ object AssetPipeline {
         image: BufferedImage,
         startX: Int,
         startY: Int,
-        palette: IntArray
+        palette: IntArray,
     ): Tile {
         val data = ByteArray(16)
 
@@ -212,7 +212,7 @@ object AssetPipeline {
         val widthInTiles: Int,
         val heightInTiles: Int,
         val extractedPalette: GBCPalette?,
-        val colorCount: Int
+        val colorCount: Int,
     )
 
     /**
@@ -317,7 +317,7 @@ object AssetPipeline {
     fun convertImageGBC(
         image: BufferedImage,
         paletteName: String,
-        targetPalette: GBCPalette? = null
+        targetPalette: GBCPalette? = null,
     ): SpriteSheetGBC {
         val width = image.width
         val height = image.height
@@ -355,7 +355,7 @@ object AssetPipeline {
         image: BufferedImage,
         startX: Int,
         startY: Int,
-        palette: GBCPalette
+        palette: GBCPalette,
     ): Tile {
         val data = ByteArray(16)
 
@@ -423,7 +423,7 @@ object AssetPipeline {
 fun loadSpriteWithTiles(
     path: String,
     slot: Int,
-    palette: IntArray = AssetPipeline.DEFAULT_PALETTE
+    palette: IntArray = AssetPipeline.DEFAULT_PALETTE,
 ): Pair<Sprite, AssetPipeline.SpriteSheet> {
     val sheet = AssetPipeline.loadSprite(path)
     val sprite =
@@ -432,7 +432,7 @@ fun loadSpriteWithTiles(
             asset = path,
             width = sheet.widthInTiles * 8,
             height = sheet.heightInTiles * 8,
-            oamSlot = slot
+            oamSlot = slot,
         )
     return sprite to sheet
 }
@@ -450,7 +450,7 @@ fun loadTileMap(
     mapPath: String,
     tilesetPath: String? = null,
     layerName: String? = null,
-    collisionLayerName: String? = null
+    collisionLayerName: String? = null,
 ): Pair<CompiledMapData, CompiledTileData?> {
     val mapFile = File(mapPath)
     require(mapFile.exists()) { "Tiled map not found: $mapPath" }
@@ -500,7 +500,7 @@ fun loadTileMap(
             height = layer.height,
             data = normalizedData,
             tilesetName = tileset.name,
-            collisionData = collisionData
+            collisionData = collisionData,
         )
 
     // Load tileset if available
@@ -514,7 +514,7 @@ fun loadTileMap(
                     CompiledTileData(
                         name = "${mapName}_tileset",
                         data = sheet.tiles.map { it.data },
-                        tileCount = sheet.tiles.size
+                        tileCount = sheet.tiles.size,
                     )
                 } catch (e: Exception) {
                     println("  Warning: Failed to load tileset: ${e.message}")
@@ -565,7 +565,7 @@ fun compileWithAssets(game: Game, assetDir: String? = game.assetDir): String {
                     CompiledTileData(
                         name = name,
                         data = sheet.tiles.map { it.data },
-                        tileCount = sheet.tiles.size
+                        tileCount = sheet.tiles.size,
                     )
                 )
                 println("  Converted: ${sprite.asset} (${sheet.tiles.size} tiles)")
@@ -590,7 +590,7 @@ fun compileWithAssets(game: Game, assetDir: String? = game.assetDir): String {
                         mapFile.path,
                         tilesetPath,
                         tilemap.layerName,
-                        tilemap.collisionLayerName
+                        tilemap.collisionLayerName,
                     )
                 mapDataList.add(mapData)
 
@@ -626,7 +626,7 @@ fun compileWithAssets(game: Game, assetDir: String? = game.assetDir): String {
                                 name = paletteName,
                                 colors = palette.colors,
                                 slot = paletteSlot++,
-                                type = PaletteType.SPRITE
+                                type = PaletteType.SPRITE,
                             )
                         extractedPalettes.add(assignedPalette)
                         println("  Extracted palette: $paletteName (${palette.colors.size} colors)")
@@ -672,7 +672,7 @@ fun compileWithAssets(game: Game, assetDir: String? = game.assetDir): String {
             inputBuffers = game.inputBuffers,
             audioMixer = game.audioMixer,
             link = game.link,
-            cutscenes = game.cutscenes
+            cutscenes = game.cutscenes,
         )
 
     return gameWithAssets.compile(warnOnValidationErrors = true)

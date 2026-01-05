@@ -197,7 +197,7 @@ fun main() {
         |   - Checksum validation               |
         |   - Single save slot                  |
         +---------------------------------------+
-    """
+        """
             .trimIndent()
     )
     println()

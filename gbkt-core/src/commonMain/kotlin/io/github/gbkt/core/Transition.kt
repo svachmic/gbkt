@@ -85,6 +85,7 @@ class SceneTransitionScope {
     /** Fade out with default 30 frames */
     val fadeOut: FadeOutTransition
         get() = FadeOutTransition(30)
+
     /** Fade in with default 20 frames */
     val fadeIn: FadeInTransition
         get() = FadeInTransition(20)

@@ -62,7 +62,7 @@ class CollisionTest {
         assertTrue(code.contains("14"), "Should contain point X coordinate")
         assertTrue(
             code.contains(">=") || code.contains("isAtLeast") || code.contains("10"),
-            "Should contain boundary comparison"
+            "Should contain boundary comparison",
         )
     }
 
@@ -163,7 +163,7 @@ class CollisionTest {
         val code = game.compileForTest()
         assertTrue(
             code.contains("enemy_x") || code.contains("54"),
-            "Should reference sprite position or point coordinate"
+            "Should reference sprite position or point coordinate",
         )
     }
 
@@ -195,7 +195,7 @@ class CollisionTest {
         // Should generate distance squared comparison
         assertTrue(
             code.contains("25") || code.contains("*"),
-            "Should contain radius squared (25) or multiplication for distance calc"
+            "Should contain radius squared (25) or multiplication for distance calc",
         )
     }
 
@@ -223,7 +223,7 @@ class CollisionTest {
         // radius squared = 64
         assertTrue(
             code.contains("64") || code.contains("8"),
-            "Should contain radius or radius squared value"
+            "Should contain radius or radius squared value",
         )
     }
 
@@ -300,7 +300,7 @@ class CollisionTest {
         // radius squared = 2500
         assertTrue(
             code.contains("2500") || code.contains("50"),
-            "Should contain large radius value"
+            "Should contain large radius value",
         )
     }
 
@@ -332,7 +332,7 @@ class CollisionTest {
         // radius squared = 256
         assertTrue(
             code.contains("256") || code.contains("enemy"),
-            "Should reference sprite or radius squared"
+            "Should reference sprite or radius squared",
         )
     }
 
@@ -369,7 +369,7 @@ class CollisionTest {
         // Should reference player position variables
         assertTrue(
             code.contains("player") || code.contains("80") || code.contains("72"),
-            "Should reference player sprite"
+            "Should reference player sprite",
         )
     }
 
@@ -424,7 +424,7 @@ class CollisionTest {
                                     deltaY = Expr(IRLiteral(0)),
                                     width = 4,
                                     height = 4,
-                                    target = AABB(Expr(IRLiteral(50)), Expr(IRLiteral(48)), 8, 8)
+                                    target = AABB(Expr(IRLiteral(50)), Expr(IRLiteral(48)), 8, 8),
                                 )
                             whenever(result.collided) { hit set 1 }
                         }
@@ -455,7 +455,7 @@ class CollisionTest {
                                     deltaY = Expr(IRLiteral(0)),
                                     width = 8,
                                     height = 8,
-                                    target = AABB(Expr(IRLiteral(54)), Expr(IRLiteral(54)), 8, 8)
+                                    target = AABB(Expr(IRLiteral(54)), Expr(IRLiteral(54)), 8, 8),
                                 )
                             whenever(result.collided) { hit set 1 }
                         }
@@ -499,7 +499,7 @@ class CollisionTest {
                                     deltaX = Expr(IRVar("bulletVelX")),
                                     deltaY = Expr(IRVar("bulletVelY")),
                                     sprite = bullet,
-                                    target = enemy
+                                    target = enemy,
                                 )
                             whenever(result.collided) { hit set 1 }
                         }
@@ -513,7 +513,7 @@ class CollisionTest {
         // Sweep collision generates bounds checking code
         assertTrue(
             code.contains("sprite0") && code.contains("sprite1"),
-            "Should reference both sprites (as sprite0/sprite1)"
+            "Should reference both sprites (as sprite0/sprite1)",
         )
     }
 
@@ -584,7 +584,7 @@ class CollisionTest {
                 code.contains("sprite1_x") &&
                 code.contains(">") &&
                 code.contains("<"),
-            "Should generate inlined AABB collision check. Code: ${code.lines().find { it.contains("if") && it.contains("sprite") }}"
+            "Should generate inlined AABB collision check. Code: ${code.lines().find { it.contains("if") && it.contains("sprite") }}",
         )
     }
 
@@ -621,7 +621,7 @@ class CollisionTest {
                 code.contains("sprite1_x") &&
                 code.contains(">") &&
                 code.contains("<"),
-            "collidesWith should generate inlined AABB collision check. Code: ${code.lines().find { it.contains("if") && it.contains("sprite") }}"
+            "collidesWith should generate inlined AABB collision check. Code: ${code.lines().find { it.contains("if") && it.contains("sprite") }}",
         )
     }
 
@@ -663,7 +663,7 @@ class CollisionTest {
                                     deltaY = Expr(IRLiteral(0)),
                                     width = 4,
                                     height = 4,
-                                    target = AABB(Expr(IRLiteral(50)), Expr(IRLiteral(48)), 8, 8)
+                                    target = AABB(Expr(IRLiteral(50)), Expr(IRLiteral(48)), 8, 8),
                                 )
                             whenever(result.collided) { hit set 1 }
                             // Verify all fields are populated (at compile time)
@@ -699,7 +699,7 @@ class CollisionTest {
                                     deltaY = Expr(IRLiteral(0)),
                                     width = 4,
                                     height = 4,
-                                    target = AABB(Expr(IRLiteral(50)), Expr(IRLiteral(48)), 8, 8)
+                                    target = AABB(Expr(IRLiteral(50)), Expr(IRLiteral(48)), 8, 8),
                                 )
                             // Verify normalX and normalY are populated
                             assertNotNull(result.normalX, "normalX should be populated")
@@ -715,7 +715,7 @@ class CollisionTest {
         // Should contain ternary operators for normal calculation
         assertTrue(
             code.contains("?") && code.contains(":"),
-            "Should generate ternary expressions for normal calculation"
+            "Should generate ternary expressions for normal calculation",
         )
     }
 
@@ -736,7 +736,7 @@ class CollisionTest {
                                     deltaY = Expr(IRLiteral(10)),
                                     width = 4,
                                     height = 4,
-                                    target = AABB(Expr(IRLiteral(50)), Expr(IRLiteral(48)), 8, 8)
+                                    target = AABB(Expr(IRLiteral(50)), Expr(IRLiteral(48)), 8, 8),
                                 )
                             // Verify contact points are populated
                             assertNotNull(result.contactX, "contactX should be populated")
@@ -752,7 +752,7 @@ class CollisionTest {
         // Should contain division by 255 for contact point interpolation
         assertTrue(
             code.contains("255") || code.contains("/"),
-            "Should generate contact point interpolation"
+            "Should generate contact point interpolation",
         )
     }
 
@@ -786,7 +786,7 @@ class CollisionTest {
                                     deltaX = Expr(IRVar("bulletVelX")),
                                     deltaY = Expr(IRVar("bulletVelY")),
                                     sprite = bullet,
-                                    target = enemy
+                                    target = enemy,
                                 )
                             whenever(result.collided) { hit set 1 }
                         }
@@ -798,7 +798,7 @@ class CollisionTest {
         val code = game.compileForTest()
         assertTrue(
             code.contains("sprite0") && code.contains("sprite1"),
-            "Should reference both sprites"
+            "Should reference both sprites",
         )
     }
 
@@ -855,7 +855,7 @@ class CollisionTest {
                                     deltaY = Expr(IRLiteral(0)),
                                     width = 4,
                                     height = 4,
-                                    target = AABB(Expr(IRLiteral(50)), Expr(IRLiteral(48)), 8, 8)
+                                    target = AABB(Expr(IRLiteral(50)), Expr(IRLiteral(48)), 8, 8),
                                 )
                             whenever(result.collided) { hit set 1 }
                         }
@@ -889,7 +889,7 @@ class CollisionTest {
                 normalX = normalX,
                 normalY = normalY,
                 contactX = contactX,
-                contactY = contactY
+                contactY = contactY,
             )
 
         assertEquals(collided, result.collided, "collided should match")

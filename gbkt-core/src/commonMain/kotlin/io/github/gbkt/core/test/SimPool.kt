@@ -23,7 +23,7 @@ class SimPool(
     val hasVelocity: Boolean,
     val stateFields: List<PoolStateField>,
     val onFrameStatements: List<IRStatement>,
-    val despawnConditions: List<IRExpression>
+    val despawnConditions: List<IRExpression>,
 ) {
     // Entity active flags
     private val active = BooleanArray(size) { false }

@@ -37,7 +37,7 @@ class SourceMapTest {
                 kotlinLine = 25,
                 kotlinColumn = 8,
                 symbol = "playerX",
-                snippet = "playerX += 1"
+                snippet = "playerX += 1",
             )
 
         assertEquals(100, mapping.cLine)
@@ -53,7 +53,7 @@ class SourceMapTest {
         val mappings =
             listOf(
                 SourceMapping(10, "Game.kt", 5, symbol = "score"),
-                SourceMapping(15, "Game.kt", 8, 4, "playerX", "playerX += 1")
+                SourceMapping(15, "Game.kt", 8, 4, "playerX", "playerX += 1"),
             )
         val sourceMap = SourceMap(gameName = "TestGame", cFile = "main.c", mappings = mappings)
 
@@ -75,7 +75,7 @@ class SourceMapTest {
                 cLine = 1,
                 kotlinFile = "path\\to\\Game.kt",
                 kotlinLine = 1,
-                snippet = "text with \"quotes\" and\nnewline"
+                snippet = "text with \"quotes\" and\nnewline",
             )
         val sourceMap =
             SourceMap(gameName = "Test\"Game", cFile = "main.c", mappings = listOf(mapping))
@@ -93,7 +93,7 @@ class SourceMapTest {
             listOf(
                 SourceMapping(10, "Game.kt", 5),
                 SourceMapping(15, "Game.kt", 8),
-                SourceMapping(20, "Game.kt", 12)
+                SourceMapping(20, "Game.kt", 12),
             )
         val sourceMap = SourceMap(gameName = "Test", cFile = "main.c", mappings = mappings)
 
@@ -111,7 +111,7 @@ class SourceMapTest {
             listOf(
                 SourceMapping(10, "Game.kt", 5),
                 SourceMapping(15, "Game.kt", 5),
-                SourceMapping(20, "Game.kt", 8)
+                SourceMapping(20, "Game.kt", 8),
             )
         val sourceMap = SourceMap(gameName = "Test", cFile = "main.c", mappings = mappings)
 

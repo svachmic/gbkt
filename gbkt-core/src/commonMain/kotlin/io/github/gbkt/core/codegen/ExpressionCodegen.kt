@@ -80,7 +80,7 @@ internal fun CodeGenerator.generateExpr(expr: IRExpression): String {
 private fun CodeGenerator.generateExprWithPrecedence(
     expr: IRExpression,
     parentOp: BinaryOp?,
-    isLeft: Boolean
+    isLeft: Boolean,
 ): String =
     when (expr) {
         is IRLiteral ->
@@ -368,7 +368,7 @@ private fun foldConstants(expr: IRExpression): IRExpression? {
                                     IRBinary(
                                         left,
                                         BinaryOp.SHL,
-                                        IRLiteral(log2(right.value as Int))
+                                        IRLiteral(log2(right.value as Int)),
                                     )
                                 left is IRLiteral &&
                                     left.value is Int &&
@@ -376,7 +376,7 @@ private fun foldConstants(expr: IRExpression): IRExpression? {
                                     IRBinary(
                                         right,
                                         BinaryOp.SHL,
-                                        IRLiteral(log2(left.value as Int))
+                                        IRLiteral(log2(left.value as Int)),
                                     )
                                 else -> null
                             }
@@ -394,7 +394,7 @@ private fun foldConstants(expr: IRExpression): IRExpression? {
                                     IRBinary(
                                         left,
                                         BinaryOp.SHR,
-                                        IRLiteral(log2(right.value as Int))
+                                        IRLiteral(log2(right.value as Int)),
                                     )
                                 else -> null
                             }

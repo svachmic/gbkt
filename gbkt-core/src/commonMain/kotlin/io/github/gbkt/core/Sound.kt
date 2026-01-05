@@ -42,7 +42,7 @@ enum class Channel(val index: Int) {
     PULSE1(0), // CH1: Square wave with sweep
     PULSE2(1), // CH2: Square wave
     WAVE(2), // CH3: Custom waveform
-    NOISE(3) // CH4: Noise
+    NOISE(3), // CH4: Noise
 }
 
 // =============================================================================
@@ -61,7 +61,7 @@ enum class SoundPreset {
     PAUSE, // Pause sound
     DEATH, // Descending tones
     POWERUP, // Ascending arpeggio
-    TICK // Soft tick (for timers)
+    TICK, // Soft tick (for timers)
 }
 
 // =============================================================================
@@ -72,7 +72,7 @@ enum class DutyCycle(val bits: Int) {
     TWELVE_POINT_FIVE(0), // 12.5% duty
     TWENTY_FIVE(1), // 25% duty
     FIFTY_PERCENT(2), // 50% duty
-    SEVENTY_FIVE(3) // 75% duty
+    SEVENTY_FIVE(3), // 75% duty
 }
 
 // =============================================================================
@@ -81,13 +81,13 @@ enum class DutyCycle(val bits: Int) {
 
 enum class SweepDirection {
     INCREASE,
-    DECREASE
+    DECREASE,
 }
 
 data class SweepConfig(
     val time: Int = 0, // 0-7: sweep time
     val direction: SweepDirection = SweepDirection.INCREASE,
-    val shift: Int = 0 // 0-7: frequency change magnitude
+    val shift: Int = 0, // 0-7: frequency change magnitude
 )
 
 class SweepBuilder {
@@ -104,13 +104,13 @@ class SweepBuilder {
 
 enum class EnvelopeDirection {
     INCREASE,
-    DECREASE
+    DECREASE,
 }
 
 data class EnvelopeConfig(
     val volume: Int = 15, // 0-15 initial volume
     val direction: EnvelopeDirection = EnvelopeDirection.DECREASE,
-    val pace: Int = 0 // 0-7: envelope speed (0 = no envelope)
+    val pace: Int = 0, // 0-7: envelope speed (0 = no envelope)
 )
 
 class EnvelopeBuilder {
@@ -129,7 +129,7 @@ enum class WaveOutputLevel(val bits: Int) {
     MUTE(0),
     FULL(1), // 100%
     HALF(2), // 50%
-    QUARTER(3) // 25%
+    QUARTER(3), // 25%
 }
 
 // =============================================================================
@@ -138,7 +138,7 @@ enum class WaveOutputLevel(val bits: Int) {
 
 enum class NoiseWidth {
     FIFTEEN_BIT,
-    SEVEN_BIT
+    SEVEN_BIT,
 }
 
 // =============================================================================
@@ -148,7 +148,7 @@ enum class NoiseWidth {
 enum class SoundPriority {
     LOW,
     NORMAL,
-    HIGH
+    HIGH,
 }
 
 // =============================================================================
@@ -172,7 +172,7 @@ data class SoundRegisters(
     // Noise channel specific
     val clockShift: Int = 0,
     val widthMode: NoiseWidth = NoiseWidth.FIFTEEN_BIT,
-    val divisor: Int = 0
+    val divisor: Int = 0,
 ) {
     override fun equals(other: Any?) =
         other is SoundRegisters &&
@@ -214,7 +214,7 @@ class SoundEffect(
     val name: String,
     val channel: Channel,
     val registers: SoundRegisters,
-    val preset: SoundPreset? = null
+    val preset: SoundPreset? = null,
 ) {
     /** Play the sound effect */
     fun play(priority: SoundPriority = SoundPriority.NORMAL) {
@@ -280,7 +280,7 @@ class SoundEffectBuilder(private val name: String) {
                         outputLevel = outputLevel,
                         clockShift = clockShift,
                         widthMode = widthMode,
-                        divisor = divisor
+                        divisor = divisor,
                     )
             }
 
@@ -301,7 +301,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     envelope = EnvelopeConfig(12, EnvelopeDirection.DECREASE, 3),
                     frequency = 1500,
                     length = 20,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
         SoundPreset.JUMP ->
             Channel.PULSE1 to
@@ -311,7 +311,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     envelope = EnvelopeConfig(10, EnvelopeDirection.DECREASE, 2),
                     frequency = 1200,
                     length = 15,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
         SoundPreset.LAND ->
             Channel.NOISE to
@@ -321,7 +321,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     widthMode = NoiseWidth.FIFTEEN_BIT,
                     divisor = 3,
                     length = 5,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
         SoundPreset.COIN ->
             Channel.PULSE1 to
@@ -330,7 +330,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     envelope = EnvelopeConfig(8, EnvelopeDirection.DECREASE, 1),
                     frequency = 1800,
                     length = 10,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
         SoundPreset.LASER ->
             Channel.PULSE1 to
@@ -340,7 +340,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     envelope = EnvelopeConfig(15, EnvelopeDirection.DECREASE, 2),
                     frequency = 1900,
                     length = 25,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
         SoundPreset.EXPLOSION ->
             Channel.NOISE to
@@ -350,7 +350,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     widthMode = NoiseWidth.SEVEN_BIT,
                     divisor = 1,
                     length = 40,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
         SoundPreset.HIT ->
             Channel.NOISE to
@@ -360,7 +360,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     widthMode = NoiseWidth.FIFTEEN_BIT,
                     divisor = 2,
                     length = 8,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
         SoundPreset.SELECT ->
             Channel.PULSE1 to
@@ -369,7 +369,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     envelope = EnvelopeConfig(6, EnvelopeDirection.DECREASE, 2),
                     frequency = 1600,
                     length = 5,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
         SoundPreset.PAUSE ->
             Channel.PULSE1 to
@@ -378,7 +378,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     envelope = EnvelopeConfig(10, EnvelopeDirection.DECREASE, 4),
                     frequency = 1400,
                     length = 30,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
         SoundPreset.DEATH ->
             Channel.PULSE1 to
@@ -388,7 +388,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     envelope = EnvelopeConfig(15, EnvelopeDirection.DECREASE, 5),
                     frequency = 1600,
                     length = 63,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
         SoundPreset.POWERUP ->
             Channel.PULSE1 to
@@ -398,7 +398,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     envelope = EnvelopeConfig(12, EnvelopeDirection.DECREASE, 2),
                     frequency = 1200,
                     length = 30,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
         SoundPreset.TICK ->
             Channel.PULSE1 to
@@ -407,7 +407,7 @@ private fun getPresetConfig(preset: SoundPreset): Pair<Channel, SoundRegisters> 
                     envelope = EnvelopeConfig(4, EnvelopeDirection.DECREASE, 0),
                     frequency = 1800,
                     length = 2,
-                    lengthEnable = true
+                    lengthEnable = true,
                 )
     }
 
@@ -509,7 +509,7 @@ object sound {
 enum class Panning {
     LEFT,
     RIGHT,
-    CENTER
+    CENTER,
 }
 
 // =============================================================================

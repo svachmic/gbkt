@@ -19,7 +19,7 @@ data class IRNavGridInit(
     val gridName: String,
     val width: Int,
     val height: Int,
-    val walkableData: BooleanArray
+    val walkableData: BooleanArray,
 ) : IRStatement {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -44,7 +44,7 @@ data class IRNavGridSetTile(
     val gridName: String,
     val x: IRExpression,
     val y: IRExpression,
-    val walkable: Boolean
+    val walkable: Boolean,
 ) : IRStatement
 
 /** Set a single tile's movement weight at runtime */
@@ -52,7 +52,7 @@ data class IRNavGridSetWeight(
     val gridName: String,
     val x: IRExpression,
     val y: IRExpression,
-    val weight: Int
+    val weight: Int,
 ) : IRStatement
 
 // --- Pathfinding IR ---
@@ -65,7 +65,7 @@ data class IRPathFind(
     val startY: IRExpression,
     val endX: IRExpression,
     val endY: IRExpression,
-    val options: PathOptions
+    val options: PathOptions,
 ) : IRStatement
 
 /** Advance to the next waypoint */
@@ -81,7 +81,7 @@ data class IRPathFollow(
     val entityYVar: String,
     val speed: Int,
     val onComplete: List<IRStatement>,
-    val onBlocked: List<IRStatement>
+    val onBlocked: List<IRStatement>,
 ) : IRStatement
 
 // --- Path Expression IR ---
@@ -114,7 +114,7 @@ data class IRPathAtWaypoint(
     val pathName: String,
     val entityX: IRExpression,
     val entityY: IRExpression,
-    val threshold: Int
+    val threshold: Int,
 ) : IRExpression
 
 /** Check if tile is walkable */
@@ -127,7 +127,7 @@ data class IRNavGridIsWalkable(val gridName: String, val x: IRExpression, val y:
 data class IRPoolPathSetTarget(
     val poolName: String,
     val targetX: IRExpression,
-    val targetY: IRExpression
+    val targetY: IRExpression,
 ) : IRStatement
 
 /** Update pathfinding and move along path for pool entity */

@@ -27,7 +27,7 @@ data class IRMixerToggleMute(val groupId: Int) : IRStatement
 data class IRMixerPriorityCheck(
     val channelIndex: Int,
     val soundPriority: Int,
-    val thenStatements: List<IRStatement>
+    val thenStatements: List<IRStatement>,
 ) : IRStatement
 
 // =============================================================================

@@ -272,7 +272,7 @@ class SpriteTest {
         // Should generate animation play code
         assertTrue(
             code.contains("anim") || code.contains("animation") || code.contains("ANIM"),
-            "Should generate animation-related code"
+            "Should generate animation-related code",
         )
     }
 
@@ -431,7 +431,7 @@ class SpriteTest {
         // Should generate collision check code
         assertTrue(
             code.contains("sprite0_x") && code.contains("sprite1_x"),
-            "Should reference both sprite positions"
+            "Should reference both sprite positions",
         )
     }
 

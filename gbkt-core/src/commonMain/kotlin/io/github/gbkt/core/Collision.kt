@@ -132,7 +132,7 @@ data class Circle(val centerX: Expr, val centerY: Expr, val radius: Int) {
     constructor(
         centerX: Int,
         centerY: Int,
-        radius: Int
+        radius: Int,
     ) : this(Expr(IRLiteral(centerX)), Expr(IRLiteral(centerY)), radius)
 }
 
@@ -158,7 +158,7 @@ data class AABB(val x: Expr, val y: Expr, val width: Int, val height: Int) {
                 x = sprite.x + hitbox.xOffset,
                 y = sprite.y + hitbox.yOffset,
                 width = hitbox.width,
-                height = hitbox.height
+                height = hitbox.height,
             )
         }
 
@@ -172,7 +172,7 @@ data class AABB(val x: Expr, val y: Expr, val width: Int, val height: Int) {
                 x = pos.x + hitbox.xOffset,
                 y = pos.y + hitbox.yOffset,
                 width = hitbox.width,
-                height = hitbox.height
+                height = hitbox.height,
             )
         }
     }
@@ -255,8 +255,8 @@ infix fun Circle.collidesWithAABB(aabb: AABB): Condition {
                 IRTernary(
                     IRBinary(centerX.ir, BinaryOp.GT, aabb.right.ir),
                     aabb.right.ir,
-                    centerX.ir
-                )
+                    centerX.ir,
+                ),
             )
         )
 
@@ -268,8 +268,8 @@ infix fun Circle.collidesWithAABB(aabb: AABB): Condition {
                 IRTernary(
                     IRBinary(centerY.ir, BinaryOp.GT, aabb.bottom.ir),
                     aabb.bottom.ir,
-                    centerY.ir
-                )
+                    centerY.ir,
+                ),
             )
         )
 
@@ -353,7 +353,7 @@ data class SweepResult(
      * Y coordinate of the contact point on the target AABB. Only populated by
      * `sweepCollisionPrecise()`.
      */
-    val contactY: Expr? = null
+    val contactY: Expr? = null,
 )
 
 /**
@@ -400,7 +400,7 @@ fun sweepCollision(
     deltaY: Expr,
     width: Int,
     height: Int,
-    target: AABB
+    target: AABB,
 ): SweepResult {
     // Calculate the swept bounding box (min/max bounds during entire movement)
     val endX = startX + deltaX
@@ -431,7 +431,7 @@ fun sweepCollision(
             IRTernary(
                 IRBinary(startBottom.ir, BinaryOp.GT, endBottom.ir),
                 startBottom.ir,
-                endBottom.ir
+                endBottom.ir,
             )
         )
 
@@ -467,7 +467,7 @@ fun sweepCollision(
     deltaX: Expr,
     deltaY: Expr,
     sprite: Sprite,
-    target: Sprite
+    target: Sprite,
 ): SweepResult {
     require(sprite.isBound && target.isBound) {
         "Both sprites must have positions for sweep collision"
@@ -481,7 +481,7 @@ fun sweepCollision(
         deltaY = deltaY,
         width = spriteHitbox.width,
         height = spriteHitbox.height,
-        target = targetAABB
+        target = targetAABB,
     )
 }
 
@@ -516,7 +516,7 @@ fun sweepCollision(entity: Entity, target: Entity): SweepResult {
         deltaY = entity.velY,
         width = hitbox.width,
         height = hitbox.height,
-        target = targetAABB
+        target = targetAABB,
     )
 }
 
@@ -574,7 +574,7 @@ fun sweepCollisionPrecise(
     deltaY: Expr,
     width: Int,
     height: Int,
-    target: AABB
+    target: AABB,
 ): SweepResult {
     // Expand target AABB by the moving box's size (Minkowski sum)
     // This converts the box-box sweep into a point-box sweep
@@ -603,7 +603,7 @@ fun sweepCollisionPrecise(
             IRTernary(
                 IRBinary(deltaX.ir, BinaryOp.GTE, IRLiteral(0)),
                 distToLeftX.ir,
-                distToRightX.ir
+                distToRightX.ir,
             )
         )
 
@@ -613,7 +613,7 @@ fun sweepCollisionPrecise(
             IRTernary(
                 IRBinary(deltaX.ir, BinaryOp.GTE, IRLiteral(0)),
                 distToRightX.ir,
-                distToLeftX.ir
+                distToLeftX.ir,
             )
         )
 
@@ -626,7 +626,7 @@ fun sweepCollisionPrecise(
             IRTernary(
                 IRBinary(deltaY.ir, BinaryOp.GTE, IRLiteral(0)),
                 distToTopY.ir,
-                distToBottomY.ir
+                distToBottomY.ir,
             )
         )
 
@@ -635,7 +635,7 @@ fun sweepCollisionPrecise(
             IRTernary(
                 IRBinary(deltaY.ir, BinaryOp.GTE, IRLiteral(0)),
                 distToBottomY.ir,
-                distToTopY.ir
+                distToTopY.ir,
             )
         )
 
@@ -667,7 +667,7 @@ fun sweepCollisionPrecise(
             IRTernary(
                 IRBinary(deltaX.ir, BinaryOp.GTE, IRLiteral(0)),
                 deltaX.ir,
-                IRBinary(IRLiteral(0), BinaryOp.SUB, deltaX.ir)
+                IRBinary(IRLiteral(0), BinaryOp.SUB, deltaX.ir),
             )
         )
 
@@ -676,7 +676,7 @@ fun sweepCollisionPrecise(
             IRTernary(
                 IRBinary(deltaY.ir, BinaryOp.GTE, IRLiteral(0)),
                 deltaY.ir,
-                IRBinary(IRLiteral(0), BinaryOp.SUB, deltaY.ir)
+                IRBinary(IRLiteral(0), BinaryOp.SUB, deltaY.ir),
             )
         )
 
@@ -733,8 +733,8 @@ fun sweepCollisionPrecise(
                 IRBinary(
                     IRBinary(maxEntryScaled.ir, BinaryOp.MUL, IRLiteral(255)),
                     BinaryOp.DIV,
-                    totalDelta.ir
-                )
+                    totalDelta.ir,
+                ),
             )
         )
 
@@ -748,9 +748,9 @@ fun sweepCollisionPrecise(
                 IRTernary(
                     IRBinary(deltaX.ir, BinaryOp.GT, IRLiteral(0)),
                     IRLiteral(-1), // Hit from left
-                    IRLiteral(1) // Hit from right
+                    IRLiteral(1), // Hit from right
                 ),
-                IRLiteral(0)
+                IRLiteral(0),
             )
         )
 
@@ -762,8 +762,8 @@ fun sweepCollisionPrecise(
                 IRTernary(
                     IRBinary(deltaY.ir, BinaryOp.GT, IRLiteral(0)),
                     IRLiteral(-1), // Hit from top
-                    IRLiteral(1) // Hit from bottom
-                )
+                    IRLiteral(1), // Hit from bottom
+                ),
             )
         )
 
@@ -777,8 +777,8 @@ fun sweepCollisionPrecise(
                 IRBinary(
                     IRBinary(deltaX.ir, BinaryOp.MUL, hitTime255.ir),
                     BinaryOp.DIV,
-                    IRLiteral(255)
-                )
+                    IRLiteral(255),
+                ),
             )
         )
 
@@ -790,8 +790,8 @@ fun sweepCollisionPrecise(
                 IRBinary(
                     IRBinary(deltaY.ir, BinaryOp.MUL, hitTime255.ir),
                     BinaryOp.DIV,
-                    IRLiteral(255)
-                )
+                    IRLiteral(255),
+                ),
             )
         )
 
@@ -801,7 +801,7 @@ fun sweepCollisionPrecise(
         normalX = normalX,
         normalY = normalY,
         contactX = contactX,
-        contactY = contactY
+        contactY = contactY,
     )
 }
 
@@ -831,7 +831,7 @@ fun sweepCollisionPrecise(
     deltaX: Expr,
     deltaY: Expr,
     sprite: Sprite,
-    target: Sprite
+    target: Sprite,
 ): SweepResult {
     require(sprite.isBound && target.isBound) {
         "Both sprites must have positions for precise sweep collision"
@@ -845,7 +845,7 @@ fun sweepCollisionPrecise(
         deltaY = deltaY,
         width = spriteHitbox.width,
         height = spriteHitbox.height,
-        target = targetAABB
+        target = targetAABB,
     )
 }
 
@@ -882,7 +882,7 @@ fun sweepCollisionPrecise(entity: Entity, target: Entity): SweepResult {
         deltaY = entity.velY,
         width = hitbox.width,
         height = hitbox.height,
-        target = targetAABB
+        target = targetAABB,
     )
 }
 
@@ -903,7 +903,7 @@ fun sweepCollisionSimple(
     deltaY: Expr,
     width: Int,
     height: Int,
-    target: AABB
+    target: AABB,
 ): SweepResult = sweepCollision(startX, startY, deltaX, deltaY, width, height, target)
 
 /** Alias for [sweepCollision] with sprites - simple expanded AABB approach. */
@@ -913,7 +913,7 @@ fun sweepCollisionSimple(
     deltaX: Expr,
     deltaY: Expr,
     sprite: Sprite,
-    target: Sprite
+    target: Sprite,
 ): SweepResult = sweepCollision(startX, startY, deltaX, deltaY, sprite, target)
 
 /** Alias for [sweepCollision] with entities - simple expanded AABB approach. */

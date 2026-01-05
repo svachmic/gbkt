@@ -193,7 +193,7 @@ class TestGameServices(
     override val assets: AssetService = MockAssetService(),
     override val sprites: SpriteService = MockSpriteService(),
     override val variables: VariableService = MockVariableService(),
-    override val entities: EntityService = MockEntityService()
+    override val entities: EntityService = MockEntityService(),
 ) : GameServices {
     /** Reset all mock services to initial state. */
     fun reset() {

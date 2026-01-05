@@ -124,7 +124,7 @@ class ParameterizedLogicBlock<T : IRExpression>
 internal constructor(
     val name: String,
     @PublishedApi internal val parameterName: String,
-    @PublishedApi internal val statements: List<IRStatement>
+    @PublishedApi internal val statements: List<IRStatement>,
 ) {
     /**
      * Expand this logic block with the given parameter value.
@@ -160,7 +160,7 @@ internal constructor(
     val name: String,
     @PublishedApi internal val param1Name: String,
     @PublishedApi internal val param2Name: String,
-    @PublishedApi internal val statements: List<IRStatement>
+    @PublishedApi internal val statements: List<IRStatement>,
 ) {
     operator fun invoke(value1: T1, value2: T2) {
         val recorder =

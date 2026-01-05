@@ -76,7 +76,7 @@ class LogicBlockTest {
 
                 assertTrue(
                     namedBlock.toString().contains("myLogicBlock"),
-                    "Logic block toString should contain name"
+                    "Logic block toString should contain name",
                 )
 
                 start = scene("main") { every.frame {} }

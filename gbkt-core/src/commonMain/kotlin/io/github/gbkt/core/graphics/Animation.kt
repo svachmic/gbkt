@@ -44,7 +44,7 @@ data class Animation(
     val frameDelay: Int,
     val loop: Boolean = true,
     val onComplete: List<IRStatement> = emptyList(),
-    val frameEvents: Map<Int, List<IRStatement>> = emptyMap()
+    val frameEvents: Map<Int, List<IRStatement>> = emptyMap(),
 ) {
     val frameCount: Int
         get() = frames.size
@@ -85,7 +85,7 @@ class AnimationsBuilder {
                 frameDelay = def.delay,
                 loop = def.loop,
                 onComplete = def.onComplete,
-                frameEvents = def.frameEvents
+                frameEvents = def.frameEvents,
             )
         return AnimationRef(this)
     }
@@ -163,7 +163,7 @@ class AnimationBuilder(private val name: String) {
             frameDelay = frameDelay,
             loop = loop,
             onComplete = onCompleteStatements,
-            frameEvents = frameEventsMap.toMap()
+            frameEvents = frameEventsMap.toMap(),
         )
 }
 
@@ -200,7 +200,7 @@ class AnimationDefinition(
     val delay: Int,
     val loop: Boolean = true,
     val onComplete: List<IRStatement> = emptyList(),
-    val frameEvents: Map<Int, List<IRStatement>> = emptyMap()
+    val frameEvents: Map<Int, List<IRStatement>> = emptyMap(),
 ) {
     /**
      * Make this animation non-looping (one-shot).
@@ -339,7 +339,7 @@ val Int.framesOnce: FrameTiming
 data class SpriteAnimationState(
     val spriteName: String,
     val animations: Map<String, Animation>,
-    val defaultAnimation: String?
+    val defaultAnimation: String?,
 ) {
     fun hasAnimations() = animations.isNotEmpty()
 
@@ -365,7 +365,7 @@ fun AnimatedSprite.play(
     ref: AnimationRef,
     loop: Boolean = true,
     speed: Int = 100,
-    reverse: Boolean = false
+    reverse: Boolean = false,
 ) {
     RecordingContext.require().emit(IRAnimationPlay(name, ref.name, loop, speed, reverse))
 }
@@ -484,7 +484,7 @@ class RegionsBuilder {
 class RegionStart(
     private val name: String,
     private val startTile: Int,
-    private val builder: RegionsBuilder
+    private val builder: RegionsBuilder,
 ) {
     /**
      * Specify the number of tiles in this region.
@@ -578,7 +578,7 @@ class AnimationsBuilderWithRegions(private val regions: Map<String, SpriteRegion
                 frameDelay = def.delay,
                 loop = def.loop,
                 onComplete = def.onComplete,
-                frameEvents = def.frameEvents
+                frameEvents = def.frameEvents,
             )
         return AnimationRef(this)
     }

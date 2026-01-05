@@ -202,7 +202,7 @@ class AudioMixerTest {
 
         assertTrue(
             code.contains("void _mixer_fade_update("),
-            "Should generate fade update function"
+            "Should generate fade update function",
         )
         assertTrue(code.contains("_mixer_music_fade_active"), "Should check fade active flag")
     }
@@ -225,7 +225,7 @@ class AudioMixerTest {
 
         assertTrue(
             code.contains("UINT8 _mixer_can_play("),
-            "Should generate priority check function"
+            "Should generate priority check function",
         )
         assertTrue(code.contains("sound_priority >= group_priority"), "Should compare priorities")
     }
@@ -244,7 +244,7 @@ class AudioMixerTest {
 
         assertTrue(
             exception.message?.contains("already assigned") == true,
-            "Should reject overlapping channels"
+            "Should reject overlapping channels",
         )
     }
 
@@ -260,7 +260,7 @@ class AudioMixerTest {
 
         assertTrue(
             exception.message?.contains("Only one") == true,
-            "Should reject multiple audioMixer blocks"
+            "Should reject multiple audioMixer blocks",
         )
     }
 
@@ -280,7 +280,7 @@ class AudioMixerTest {
 
         assertTrue(
             exception.message?.contains("at least one channel") == true,
-            "Should reject empty channel groups"
+            "Should reject empty channel groups",
         )
     }
 
@@ -330,7 +330,7 @@ class AudioMixerTest {
 
         assertTrue(
             code.contains("void _mixer_apply_volume("),
-            "Should generate apply volume function"
+            "Should generate apply volume function",
         )
         assertTrue(code.contains("NR50_REG"), "Should set master volume register")
     }
@@ -349,7 +349,7 @@ class AudioMixerTest {
 
         assertTrue(
             code.contains("_mixer_music_fade_duration = 30"),
-            "Should accept FrameTiming syntax"
+            "Should accept FrameTiming syntax",
         )
     }
 }

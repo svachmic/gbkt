@@ -31,7 +31,7 @@ enum class CursorChar(val char: Char) {
     DOT('.'),
     ASTERISK('*'),
     TRIANGLE('\u0010'), // Custom tile if available
-    NONE(' ')
+    NONE(' '),
 }
 
 /** How the selected item is visually indicated. */
@@ -41,7 +41,7 @@ enum class SelectedStyle {
     /** Inverse video (swap fg/bg colors) - GBC only */
     INVERSE,
     /** Blinking text */
-    BLINK
+    BLINK,
 }
 
 /** Navigation wrap behavior for cursor at edges. */
@@ -49,7 +49,7 @@ enum class WrapMode {
     /** Stop at edges */
     CLAMP,
     /** Wrap from last to first and vice versa */
-    WRAP
+    WRAP,
 }
 
 // =============================================================================
@@ -71,7 +71,7 @@ data class MenuStyleConfig(
     val padding: Int = 1,
     val wrapMode: WrapMode = WrapMode.WRAP,
     val labelWidth: Int = 10, // For settings: width of label column
-    val valueWidth: Int = 6 // For settings: width of value column
+    val valueWidth: Int = 6, // For settings: width of value column
 )
 
 /** Grid menu styling configuration. */
@@ -85,7 +85,7 @@ data class GridStyleConfig(
     val cursorChar: Char = '[',
     val cursorCloseChar: Char = ']',
     val cursorSprite: String? = null,
-    val wrapMode: WrapMode = WrapMode.WRAP
+    val wrapMode: WrapMode = WrapMode.WRAP,
 )
 
 // =============================================================================
@@ -99,7 +99,7 @@ sealed class MenuItem {
         val label: String,
         val enabled: IRExpression = IRLiteral(1),
         val onSelect: List<IRStatement> = emptyList(),
-        val onHighlight: List<IRStatement> = emptyList()
+        val onHighlight: List<IRStatement> = emptyList(),
     ) : MenuItem()
 
     /** Toggle control - label + boolean variable */
@@ -108,7 +108,7 @@ sealed class MenuItem {
         val variable: String,
         val onLabel: String = "ON",
         val offLabel: String = "OFF",
-        val onChange: List<IRStatement> = emptyList()
+        val onChange: List<IRStatement> = emptyList(),
     ) : MenuItem()
 
     /** Slider control - label + numeric variable with range */
@@ -118,7 +118,7 @@ sealed class MenuItem {
         val min: Int,
         val max: Int,
         val step: Int = 1,
-        val onChange: List<IRStatement> = emptyList()
+        val onChange: List<IRStatement> = emptyList(),
     ) : MenuItem()
 
     /** Option cycle - label + variable with discrete choices */
@@ -126,7 +126,7 @@ sealed class MenuItem {
         val label: String,
         val variable: String,
         val choices: List<String>,
-        val onChange: List<IRStatement> = emptyList()
+        val onChange: List<IRStatement> = emptyList(),
     ) : MenuItem()
 
     /** Visual separator line */
@@ -151,12 +151,12 @@ data class MenuDefinition(
     val rows: Int = 0,
     val parentMenu: String? = null,
     val title: String? = null,
-    val arrayBinding: GridArrayBinding? = null
+    val arrayBinding: GridArrayBinding? = null,
 )
 
 /** Binding information for grid menus bound to arrays. */
 data class GridArrayBinding(
     val arrayVar: String,
     val onSelectStatements: List<IRStatement>,
-    val emptySlotStatements: List<IRStatement>
+    val emptySlotStatements: List<IRStatement>,
 )

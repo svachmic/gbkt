@@ -68,7 +68,7 @@ fun main() {
         ║  See: CONTRIBUTING.md                 ║
         ║  See: context/DEVELOPER_EXPERIENCE.md ║
         ╚═══════════════════════════════════════╝
-    """
+        """
             .trimIndent()
     )
     println()

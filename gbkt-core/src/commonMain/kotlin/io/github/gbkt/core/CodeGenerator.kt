@@ -106,7 +106,7 @@ class CodeGenerator(internal val game: Game) {
         header: String,
         location: SourceLocation?,
         symbol: String? = null,
-        body: () -> Unit
+        body: () -> Unit,
     ) {
         sourceMapBuilder.addMapping(currentLine, location, symbol)
         line("$header {")

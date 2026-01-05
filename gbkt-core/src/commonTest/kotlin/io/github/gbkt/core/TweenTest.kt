@@ -89,7 +89,7 @@ class TweenTest {
                 val value = computeTestEasingValue(easing, t)
                 assertTrue(
                     value in 0..255,
-                    "Easing ${easing.name} at t=$t produced out-of-range value: $value"
+                    "Easing ${easing.name} at t=$t produced out-of-range value: $value",
                 )
             }
         }
@@ -136,7 +136,7 @@ class TweenTest {
                                 from = 0,
                                 to = 100,
                                 duration = 30.frames,
-                                easing = Easing.EASE_IN
+                                easing = Easing.EASE_IN,
                             )
                         }
                         every.frame {}
@@ -174,7 +174,7 @@ class TweenTest {
                                 from = 100,
                                 to = 0,
                                 duration = 60.frames,
-                                easing = Easing.LINEAR
+                                easing = Easing.LINEAR,
                             )
                         }
                         every.frame {}
@@ -186,11 +186,11 @@ class TweenTest {
         // Should successfully compile without errors and use INT16 for signed math
         assertTrue(
             code.contains("_tween_from[slot] = (INT16)("),
-            "Should cast from value to INT16. Generated: ${code.lines().filter { it.contains("_tween_from") }.take(3)}"
+            "Should cast from value to INT16. Generated: ${code.lines().filter { it.contains("_tween_from") }.take(3)}",
         )
         assertTrue(
             code.contains("_tween_to[slot] = (INT16)("),
-            "Should cast to value to INT16. Generated: ${code.lines().filter { it.contains("_tween_to") }.take(3)}"
+            "Should cast to value to INT16. Generated: ${code.lines().filter { it.contains("_tween_to") }.take(3)}",
         )
     }
 
@@ -209,7 +209,7 @@ class TweenTest {
                                 from = 0,
                                 to = 100,
                                 duration = 30.frames,
-                                easing = Easing.LINEAR
+                                easing = Easing.LINEAR,
                             )
                         }
                         every.frame {}
@@ -225,11 +225,11 @@ class TweenTest {
         // (Note: This optimization reduces ROM size)
         assertFalse(
             code.contains("easing_ease_out_bounce[256]"),
-            "Should not generate unused bounce table"
+            "Should not generate unused bounce table",
         )
         assertFalse(
             code.contains("easing_ease_out_elastic[256]"),
-            "Should not generate unused elastic table"
+            "Should not generate unused elastic table",
         )
     }
 
@@ -250,7 +250,7 @@ class TweenTest {
                                 from = Expr(IRVar("startX")),
                                 to = Expr(IRVar("endX")),
                                 duration = 60.frames,
-                                easing = Easing.EASE_OUT
+                                easing = Easing.EASE_OUT,
                             )
                         }
                         every.frame {}

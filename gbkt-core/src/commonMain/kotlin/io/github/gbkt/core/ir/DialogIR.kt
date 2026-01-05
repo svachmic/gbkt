@@ -22,14 +22,14 @@ data class IRDialogSay(
     val text: List<TextPart>,
     val speaker: String? = null,
     val waitForInput: Boolean = true,
-    val autoAdvanceFrames: Int = 0
+    val autoAdvanceFrames: Int = 0,
 ) : IRStatement
 
 /** Display choice menu */
 data class IRDialogChoice(
     val dialogName: String,
     val options: List<String>,
-    val resultVar: String
+    val resultVar: String,
 ) : IRStatement
 
 /** Update typewriter animation (call each frame) */

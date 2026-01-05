@@ -45,7 +45,7 @@ class ExpressionOptimizationTest {
         val code = game.compileForTest()
         assertTrue(
             code.contains("8u"),
-            "5 + 3 should be folded to 8u. Code: ${extractAssignment(code, "result")}"
+            "5 + 3 should be folded to 8u. Code: ${extractAssignment(code, "result")}",
         )
     }
 
@@ -135,7 +135,7 @@ class ExpressionOptimizationTest {
         // Should contain division operator, not a folded constant
         assertTrue(
             code.contains("/") || code.contains("divisor"),
-            "Division by variable should not be folded"
+            "Division by variable should not be folded",
         )
     }
 
@@ -231,7 +231,7 @@ class ExpressionOptimizationTest {
         // Should NOT contain "+ 0u" - should be simplified
         assertFalse(
             assignment.contains("+ 0u"),
-            "x + 0 should be simplified to x. Assignment: $assignment"
+            "x + 0 should be simplified to x. Assignment: $assignment",
         )
     }
 
@@ -258,7 +258,7 @@ class ExpressionOptimizationTest {
         // Should NOT contain "0u +" - should be simplified
         assertFalse(
             assignment.contains("0u +"),
-            "0 + x should be simplified to x. Assignment: $assignment"
+            "0 + x should be simplified to x. Assignment: $assignment",
         )
     }
 
@@ -285,7 +285,7 @@ class ExpressionOptimizationTest {
         // Should NOT contain "* 1u" - should be simplified
         assertFalse(
             assignment.contains("* 1u"),
-            "x * 1 should be simplified to x. Assignment: $assignment"
+            "x * 1 should be simplified to x. Assignment: $assignment",
         )
     }
 
@@ -312,7 +312,7 @@ class ExpressionOptimizationTest {
         // Should NOT contain "1u *" - should be simplified
         assertFalse(
             assignment.contains("1u *"),
-            "1 * x should be simplified to x. Assignment: $assignment"
+            "1 * x should be simplified to x. Assignment: $assignment",
         )
     }
 
@@ -339,7 +339,7 @@ class ExpressionOptimizationTest {
         // Should be "result = 0u" not "result = x * 0u"
         assertTrue(
             assignment.contains("0u") && !assignment.contains("*"),
-            "x * 0 should be simplified to 0. Assignment: $assignment"
+            "x * 0 should be simplified to 0. Assignment: $assignment",
         )
     }
 
@@ -366,7 +366,7 @@ class ExpressionOptimizationTest {
         // Should NOT contain "- 0u" - should be simplified
         assertFalse(
             assignment.contains("- 0u"),
-            "x - 0 should be simplified to x. Assignment: $assignment"
+            "x - 0 should be simplified to x. Assignment: $assignment",
         )
     }
 
@@ -393,7 +393,7 @@ class ExpressionOptimizationTest {
         // Should NOT contain "/ 1u" - should be simplified
         assertFalse(
             assignment.contains("/ 1u"),
-            "x / 1 should be simplified to x. Assignment: $assignment"
+            "x / 1 should be simplified to x. Assignment: $assignment",
         )
     }
 
@@ -429,7 +429,7 @@ class ExpressionOptimizationTest {
         val countParens = assignment.count { it == '(' }
         assertTrue(
             countParens <= 1,
-            "Minimal parens for a + b * c. Assignment: $assignment (parens count: $countParens)"
+            "Minimal parens for a + b * c. Assignment: $assignment (parens count: $countParens)",
         )
     }
 
@@ -458,7 +458,7 @@ class ExpressionOptimizationTest {
         // Should have parens around a + b
         assertTrue(
             assignment.contains("(") && assignment.contains("+") && assignment.contains("*"),
-            "Should have parens for (a + b) * c. Assignment: $assignment"
+            "Should have parens for (a + b) * c. Assignment: $assignment",
         )
     }
 
@@ -488,7 +488,7 @@ class ExpressionOptimizationTest {
         val rightSide = assignment.substringAfter("=").trim().removeSuffix(";").trim()
         assertFalse(
             rightSide.startsWith("(") && rightSide.endsWith(")"),
-            "Simple a + b should not have outer parens. Assignment: $assignment"
+            "Simple a + b should not have outer parens. Assignment: $assignment",
         )
     }
 
@@ -542,7 +542,7 @@ class ExpressionOptimizationTest {
         // Should have parens around b - c since subtraction is non-commutative
         assertTrue(
             assignment.contains("(") || assignment.contains("-"),
-            "Should handle subtraction associativity. Assignment: $assignment"
+            "Should handle subtraction associativity. Assignment: $assignment",
         )
     }
 
@@ -571,7 +571,7 @@ class ExpressionOptimizationTest {
         // Should have parens to preserve semantics
         assertTrue(
             assignment.contains("(") || assignment.contains("/"),
-            "Should handle division associativity. Assignment: $assignment"
+            "Should handle division associativity. Assignment: $assignment",
         )
     }
 
@@ -605,7 +605,7 @@ class ExpressionOptimizationTest {
         // Should have minimal parens - * has higher precedence than + and -
         assertTrue(
             assignment.contains("*") && assignment.contains("+") && assignment.contains("-"),
-            "Should contain all operators. Assignment: $assignment"
+            "Should contain all operators. Assignment: $assignment",
         )
     }
 

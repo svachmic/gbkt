@@ -23,7 +23,7 @@ data class IRPaletteSetColor(
     val paletteName: String,
     val colorIndex: Int,
     val color: GBCColor,
-    val type: PaletteType
+    val type: PaletteType,
 ) : IRStatement
 
 /** Fade palette toward target colors (progress: 0-255) */
@@ -31,7 +31,7 @@ data class IRPaletteFade(
     val paletteName: String,
     val targetColors: List<GBCColor>,
     val progress: IRExpression,
-    val type: PaletteType
+    val type: PaletteType,
 ) : IRStatement
 
 /** Set sprite's palette attribute (which of 8 palettes to use) */
@@ -41,7 +41,7 @@ data class IRSpriteSetPalette(val spriteSlot: Int, val paletteIndex: Int) : IRSt
 data class IRPaletteFlash(
     val paletteName: String,
     val flashColor: GBCColor,
-    val type: PaletteType
+    val type: PaletteType,
 ) : IRStatement
 
 // =============================================================================
@@ -77,7 +77,7 @@ data class IRAnimationPlay(
     val animationName: String,
     val loop: Boolean = true,
     val speed: Int = 100, // Fixed-point: 100 = 1.0x, 50 = 0.5x, 200 = 2.0x
-    val reverse: Boolean = false
+    val reverse: Boolean = false,
 ) : IRStatement
 
 /** Stop a sprite animation */
@@ -95,14 +95,14 @@ data class IRAnimationResume(val spriteName: String) : IRStatement
 /** Set animation speed dynamically */
 data class IRAnimationSetSpeed(
     val spriteName: String,
-    val speed: Int // Fixed-point: 100 = 1.0x
+    val speed: Int, // Fixed-point: 100 = 1.0x
 ) : IRStatement
 
 /** Queue an animation to play after current one finishes */
 data class IRAnimationQueue(
     val spriteName: String,
     val animationName: String,
-    val clearQueue: Boolean = false // If true, clears existing queue first
+    val clearQueue: Boolean = false, // If true, clears existing queue first
 ) : IRStatement
 
 // =============================================================================
@@ -124,7 +124,7 @@ data class IREntityUpdate(
     val entityNames: List<String>,
     val updatePosition: Boolean = true,
     val updateAnimation: Boolean = true,
-    val updateStates: Boolean = true
+    val updateStates: Boolean = true,
 ) : IRStatement
 
 /**
@@ -167,14 +167,14 @@ data class IRPoolSpawnAt(
     val poolName: String,
     val x: IRExpression,
     val y: IRExpression,
-    val initStatements: List<IRStatement>
+    val initStatements: List<IRStatement>,
 ) : IRStatement
 
 /** Try to spawn with fallback if pool is full */
 data class IRPoolTrySpawn(
     val poolName: String,
     val initStatements: List<IRStatement>,
-    val elseStatements: List<IRStatement>
+    val elseStatements: List<IRStatement>,
 ) : IRStatement
 
 /** Despawn a specific entity by index */
@@ -187,14 +187,14 @@ data class IRPoolDespawnAll(val poolName: String) : IRStatement
 data class IRPoolForEach(
     val poolName: String,
     val bodyStatements: List<IRStatement>,
-    val indexVar: String
+    val indexVar: String,
 ) : IRStatement
 
 /** Despawn entities matching a condition */
 data class IRPoolDespawnWhere(
     val poolName: String,
     val condition: IRExpression,
-    val indexVar: String
+    val indexVar: String,
 ) : IRStatement
 
 // Pool expression nodes
@@ -238,7 +238,7 @@ data class IRSaveArrayWrite(
     val saveName: String,
     val fieldName: String,
     val index: IRExpression,
-    val value: IRExpression
+    val value: IRExpression,
 ) : IRStatement
 
 /** Read a save field (expression) */
@@ -267,7 +267,7 @@ data class IRCameraFollow(
     val targetYVar: String,
     val offsetX: Int = 0,
     val offsetY: Int = 0,
-    val smoothing: Int = 26 // Fixed-point 8.8: 26 ≈ 0.1
+    val smoothing: Int = 26, // Fixed-point 8.8: 26 ≈ 0.1
 ) : IRStatement
 
 /** Stop following target */
@@ -286,7 +286,7 @@ data class IRCameraSetBounds(val minX: Int, val maxX: Int, val minY: Int, val ma
 data class IRCameraShake(
     val intensity: Int,
     val durationFrames: Int,
-    val decay: ShakeDecay = ShakeDecay.LINEAR
+    val decay: ShakeDecay = ShakeDecay.LINEAR,
 ) : IRStatement
 
 /** Stop screen shake immediately */
@@ -295,7 +295,7 @@ data object IRCameraShakeStop : IRStatement
 enum class ShakeDecay {
     NONE,
     LINEAR,
-    EXPONENTIAL
+    EXPONENTIAL,
 }
 
 // Camera Transitions
@@ -303,13 +303,13 @@ enum class ShakeDecay {
 /** Fade screen to black */
 data class IRTransitionFadeOut(
     val durationFrames: Int,
-    val onComplete: List<IRStatement> = emptyList()
+    val onComplete: List<IRStatement> = emptyList(),
 ) : IRStatement
 
 /** Fade screen in from black */
 data class IRTransitionFadeIn(
     val durationFrames: Int,
-    val onComplete: List<IRStatement> = emptyList()
+    val onComplete: List<IRStatement> = emptyList(),
 ) : IRStatement
 
 /** Flash the screen a color */
@@ -319,14 +319,14 @@ data class IRTransitionFlash(val color: GBCColor, val durationFrames: Int) : IRS
 data class IRTransitionWipe(
     val direction: WipeDirection,
     val durationFrames: Int,
-    val onComplete: List<IRStatement> = emptyList()
+    val onComplete: List<IRStatement> = emptyList(),
 ) : IRStatement
 
 enum class WipeDirection {
     LEFT,
     RIGHT,
     UP,
-    DOWN
+    DOWN,
 }
 
 /** Iris transition (circle close/open) */
@@ -335,12 +335,12 @@ data class IRTransitionIris(
     val centerX: IRExpression,
     val centerY: IRExpression,
     val durationFrames: Int,
-    val onComplete: List<IRStatement> = emptyList()
+    val onComplete: List<IRStatement> = emptyList(),
 ) : IRStatement
 
 enum class IrisType {
     OPEN,
-    CLOSE
+    CLOSE,
 }
 
 // Camera Expressions

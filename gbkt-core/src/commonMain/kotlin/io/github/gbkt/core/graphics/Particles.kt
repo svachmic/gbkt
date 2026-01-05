@@ -152,7 +152,7 @@ internal constructor(internal val pool: Pool, val name: String, val count: Int, 
 @GbktDsl
 class ParticleSystemBuilder(
     private val particleName: String,
-    private val gameBuilder: GameBuilder
+    private val gameBuilder: GameBuilder,
 ) {
     /** Maximum number of particles. Default: 8 */
     var count: Int = 8
@@ -201,7 +201,7 @@ class ParticleSystemBuilder(
      */
     fun sprite(
         asset: io.github.gbkt.core.assets.SpriteAsset,
-        init: PoolSpriteBuilder.() -> Unit = {}
+        init: PoolSpriteBuilder.() -> Unit = {},
     ) {
         spriteAsset = asset.path
         val builder = PoolSpriteBuilder()
@@ -288,7 +288,7 @@ class ParticleSystemBuilder(
             animations = animations,
             hitbox = hitbox,
             paletteRef = paletteRef,
-            paletteIndex = paletteIndex
+            paletteIndex = paletteIndex,
         )
     }
 
@@ -316,7 +316,7 @@ class ParticleSystemBuilder(
             IRAssign(
                 lifetimeTarget,
                 IRBinary(lifetimeRead, BinaryOp.SUB, IRLiteral(1)),
-                AssignOp.SET
+                AssignOp.SET,
             )
         val fullOnFrameStatements = listOf(lifetimeDecr) + onFrameStatements
 
@@ -341,7 +341,7 @@ class ParticleSystemBuilder(
                 animations = animations,
                 hitbox = hitbox,
                 paletteRef = paletteRef,
-                paletteIndex = paletteIndex
+                paletteIndex = paletteIndex,
             )
 
         val particleSystem =

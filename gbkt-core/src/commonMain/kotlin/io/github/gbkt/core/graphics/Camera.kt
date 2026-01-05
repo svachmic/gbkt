@@ -149,7 +149,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
                     targetYVar = "_camera_y", // Self-reference = no Y movement
                     offsetX = config.offsetX,
                     offsetY = 0,
-                    smoothing = floatToFixed(config.smoothing)
+                    smoothing = floatToFixed(config.smoothing),
                 )
             )
     }
@@ -164,7 +164,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
                     targetYVar = yVar,
                     offsetX = 0,
                     offsetY = config.offsetY,
-                    smoothing = floatToFixed(config.smoothing)
+                    smoothing = floatToFixed(config.smoothing),
                 )
             )
     }
@@ -189,7 +189,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
             posComp.yVarName,
             config.offsetX,
             config.offsetY,
-            config.smoothing
+            config.smoothing,
         )
     }
 
@@ -205,7 +205,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
             posComp.yVarName,
             builder.offsetX,
             builder.offsetY,
-            builder.smoothing
+            builder.smoothing,
         )
     }
 
@@ -220,7 +220,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
                     targetYVar = "_camera_y",
                     offsetX = config.offsetX,
                     offsetY = 0,
-                    smoothing = floatToFixed(config.smoothing)
+                    smoothing = floatToFixed(config.smoothing),
                 )
             )
     }
@@ -236,7 +236,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
                     targetYVar = posComp.yVarName,
                     offsetX = 0,
                     offsetY = config.offsetY,
-                    smoothing = floatToFixed(config.smoothing)
+                    smoothing = floatToFixed(config.smoothing),
                 )
             )
     }
@@ -279,7 +279,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
             .emit(
                 IRCameraSnapTo(
                     IRBinary(IRVar(xVar), BinaryOp.SUB, IRLiteral(80 - config.offsetX)),
-                    IRBinary(IRVar(yVar), BinaryOp.SUB, IRLiteral(72 - config.offsetY))
+                    IRBinary(IRVar(yVar), BinaryOp.SUB, IRLiteral(72 - config.offsetY)),
                 )
             )
     }
@@ -292,7 +292,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
             .emit(
                 IRCameraSnapTo(
                     IRBinary(IRVar(posComp.xVarName), BinaryOp.SUB, IRLiteral(80 - config.offsetX)),
-                    IRBinary(IRVar(posComp.yVarName), BinaryOp.SUB, IRLiteral(72 - config.offsetY))
+                    IRBinary(IRVar(posComp.yVarName), BinaryOp.SUB, IRLiteral(72 - config.offsetY)),
                 )
             )
     }
@@ -458,7 +458,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
     fun irisClose(
         duration: FrameTiming,
         target: Sprite,
-        onComplete: (FrameScope.() -> Unit)? = null
+        onComplete: (FrameScope.() -> Unit)? = null,
     ) {
         val (xVar, yVar) = getSpritePositionVars(target)
         val statements = onComplete?.let { recordCallback(it) } ?: emptyList()
@@ -469,7 +469,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
                     IRVar(xVar),
                     IRVar(yVar),
                     duration.count,
-                    statements
+                    statements,
                 )
             )
     }
@@ -478,7 +478,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
     fun irisClose(
         duration: FrameTiming,
         target: Entity,
-        onComplete: (FrameScope.() -> Unit)? = null
+        onComplete: (FrameScope.() -> Unit)? = null,
     ) {
         val posComp =
             target.positionComponent ?: error("Entity '${target.name}' has no position component")
@@ -490,7 +490,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
                     IRVar(posComp.xVarName),
                     IRVar(posComp.yVarName),
                     duration.count,
-                    statements
+                    statements,
                 )
             )
     }
@@ -506,7 +506,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
         duration: FrameTiming,
         centerX: Int,
         centerY: Int,
-        onComplete: (FrameScope.() -> Unit)? = null
+        onComplete: (FrameScope.() -> Unit)? = null,
     ) {
         val statements = onComplete?.let { recordCallback(it) } ?: emptyList()
         RecordingContext.require()
@@ -516,7 +516,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
                     IRLiteral(centerX),
                     IRLiteral(centerY),
                     duration.count,
-                    statements
+                    statements,
                 )
             )
     }
@@ -531,7 +531,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
     fun irisOpen(
         duration: FrameTiming,
         target: Sprite,
-        onComplete: (FrameScope.() -> Unit)? = null
+        onComplete: (FrameScope.() -> Unit)? = null,
     ) {
         val (xVar, yVar) = getSpritePositionVars(target)
         val statements = onComplete?.let { recordCallback(it) } ?: emptyList()
@@ -542,7 +542,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
                     IRVar(xVar),
                     IRVar(yVar),
                     duration.count,
-                    statements
+                    statements,
                 )
             )
     }
@@ -551,7 +551,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
     fun irisOpen(
         duration: FrameTiming,
         target: Entity,
-        onComplete: (FrameScope.() -> Unit)? = null
+        onComplete: (FrameScope.() -> Unit)? = null,
     ) {
         val posComp =
             target.positionComponent ?: error("Entity '${target.name}' has no position component")
@@ -563,7 +563,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
                     IRVar(posComp.xVarName),
                     IRVar(posComp.yVarName),
                     duration.count,
-                    statements
+                    statements,
                 )
             )
     }
@@ -573,7 +573,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
         duration: FrameTiming,
         centerX: Int,
         centerY: Int,
-        onComplete: (FrameScope.() -> Unit)? = null
+        onComplete: (FrameScope.() -> Unit)? = null,
     ) {
         val statements = onComplete?.let { recordCallback(it) } ?: emptyList()
         RecordingContext.require()
@@ -583,7 +583,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
                     IRLiteral(centerX),
                     IRLiteral(centerY),
                     duration.count,
-                    statements
+                    statements,
                 )
             )
     }
@@ -621,7 +621,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
         yVar: String,
         offsetX: Int,
         offsetY: Int,
-        smoothing: Float
+        smoothing: Float,
     ) {
         RecordingContext.require()
             .emit(
@@ -630,7 +630,7 @@ class Camera internal constructor(val name: String, val config: CameraConfig) {
                     targetYVar = yVar,
                     offsetX = offsetX,
                     offsetY = offsetY,
-                    smoothing = floatToFixed(smoothing)
+                    smoothing = floatToFixed(smoothing),
                 )
             )
     }

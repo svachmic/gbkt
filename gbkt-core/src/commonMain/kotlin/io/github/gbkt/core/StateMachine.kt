@@ -104,7 +104,7 @@ class StateMachine(val name: String, val states: Map<String, State>, val default
             IRBinary(
                 IRVar("_${name}_state"),
                 BinaryOp.EQ,
-                IRVar("STATE_${name.uppercase()}_${ref.stateName.uppercase()}")
+                IRVar("STATE_${name.uppercase()}_${ref.stateName.uppercase()}"),
             )
         )
     }
@@ -118,7 +118,7 @@ class StateMachine(val name: String, val states: Map<String, State>, val default
             IRBinary(
                 IRVar("_${name}_state"),
                 BinaryOp.EQ,
-                IRVar("STATE_${name.uppercase()}_${stateName.uppercase()}")
+                IRVar("STATE_${name.uppercase()}_${stateName.uppercase()}"),
             )
         )
     }
@@ -131,21 +131,21 @@ class State(
     val onTick: List<IRStatement>,
     val onExit: List<IRStatement>,
     val transitions: List<StateTransition>,
-    val animation: StateAnimation? = null // Associated animation
+    val animation: StateAnimation? = null, // Associated animation
 )
 
 /** A state transition - condition and target state. */
 data class StateTransition(
     val condition: IRExpression,
     val targetState: String,
-    val actions: List<IRStatement>
+    val actions: List<IRStatement>,
 )
 
 /** Animation configuration for a state. */
 data class StateAnimation(
     val spriteName: String,
     val animationName: String,
-    val lockUntilComplete: Boolean = false // Block transitions until animation finishes
+    val lockUntilComplete: Boolean = false, // Block transitions until animation finishes
 )
 
 // =============================================================================
@@ -235,7 +235,7 @@ class StateBuilder(private val stateName: String, private val machineName: Strin
     fun animation(
         sprite: AnimatedSprite,
         animationName: String,
-        lockUntilComplete: Boolean = false
+        lockUntilComplete: Boolean = false,
     ) {
         stateAnimation = StateAnimation(sprite.name, animationName, lockUntilComplete)
     }
@@ -258,13 +258,13 @@ class StateBuilder(private val stateName: String, private val machineName: Strin
                 IRBinary(
                     IRVar(animVar),
                     BinaryOp.EQ,
-                    IRLiteral(255u.toInt()) // ANIM_NONE = 255
+                    IRLiteral(255u.toInt()), // ANIM_NONE = 255
                 )
             transitions.add(
                 StateTransition(
                     condition = condition,
                     targetState = scope.targetState!!,
-                    actions = recorder.statements
+                    actions = recorder.statements,
                 )
             )
         }
@@ -300,7 +300,7 @@ class StateBuilder(private val stateName: String, private val machineName: Strin
                 StateTransition(
                     condition = condition.ir,
                     targetState = scope.targetState!!,
-                    actions = recorder.statements
+                    actions = recorder.statements,
                 )
             )
         }
@@ -319,7 +319,7 @@ class StateBuilder(private val stateName: String, private val machineName: Strin
             onTick = tickStatements,
             onExit = exitStatements,
             transitions = transitions,
-            animation = stateAnimation
+            animation = stateAnimation,
         )
 }
 

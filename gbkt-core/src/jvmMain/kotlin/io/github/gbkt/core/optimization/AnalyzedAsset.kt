@@ -16,7 +16,7 @@ data class AnalyzedAsset(
     val dimensions: Dimensions,
     val tiles: TileAnalysis,
     val palette: PaletteAnalysis,
-    val compression: CompressionAnalysis
+    val compression: CompressionAnalysis,
 ) {
     /** Computed optimization score for this asset. */
     val score: OptimizationScore
@@ -26,7 +26,7 @@ data class AnalyzedAsset(
 enum class AssetType {
     SPRITE,
     TILEMAP,
-    TILESET
+    TILESET,
 }
 
 /** Dimensions of an asset in pixels and tiles. */
@@ -41,7 +41,7 @@ data class TileAnalysis(
     val unique: Int,
     val duplicates: List<DuplicateTileInfo>,
     val empty: List<TileLocation>,
-    val lowEntropy: List<LowEntropyTile>
+    val lowEntropy: List<LowEntropyTile>,
 ) {
     val duplicateCount: Int
         get() = total - unique
@@ -76,7 +76,7 @@ data class LowEntropyTile(
     val location: TileLocation,
     val entropy: Float,
     val dominantColor: Int,
-    val colorCoverage: Float // Percentage of pixels using dominant color (0.0-1.0)
+    val colorCoverage: Float, // Percentage of pixels using dominant color (0.0-1.0)
 ) {
     /** True if tile is 90%+ single color. */
     val isNearlySolid: Boolean
@@ -87,7 +87,7 @@ data class LowEntropyTile(
 data class PaletteAnalysis(
     val colorsUsed: Set<Int>,
     val unusedSlots: List<Int>,
-    val colorFrequencies: Map<Int, Int>
+    val colorFrequencies: Map<Int, Int>,
 ) {
     /** Number of unused palette slots (out of 4). */
     val wastedSlots: Int
@@ -105,7 +105,7 @@ data class PaletteAnalysis(
 /** Compression opportunity analysis. */
 data class CompressionAnalysis(
     val rleOpportunity: RLEOpportunity,
-    val similarTiles: List<SimilarTilePair>
+    val similarTiles: List<SimilarTilePair>,
 ) {
     val hasOpportunities: Boolean
         get() = rleOpportunity.hasConsecutiveDuplicates || similarTiles.isNotEmpty()
@@ -115,7 +115,7 @@ data class CompressionAnalysis(
 data class RLEOpportunity(
     val hasConsecutiveDuplicates: Boolean,
     val longestRun: Int,
-    val estimatedRatio: Float // Estimated compression ratio (1.0 = no compression)
+    val estimatedRatio: Float, // Estimated compression ratio (1.0 = no compression)
 ) {
     val worthwhile: Boolean
         get() = longestRun >= 3
@@ -125,7 +125,7 @@ data class RLEOpportunity(
 data class SimilarTilePair(
     val tile1: TileLocation,
     val tile2: TileLocation,
-    val similarity: Float // 0.0 - 1.0
+    val similarity: Float, // 0.0 - 1.0
 ) {
     /** True if tiles differ by only a few bytes. */
     val isNearlyIdentical: Boolean
@@ -135,14 +135,14 @@ data class SimilarTilePair(
 /** Optimization score for quick assessment of an asset. */
 data class OptimizationScore(
     val value: Int, // 0-100
-    val grade: Grade
+    val grade: Grade,
 ) {
     enum class Grade(val label: String, val symbol: String) {
         EXCELLENT("Excellent", "A"),
         GOOD("Good", "B"),
         FAIR("Fair", "C"),
         POOR("Needs work", "D"),
-        CRITICAL("Critical", "F")
+        CRITICAL("Critical", "F"),
     }
 
     companion object {

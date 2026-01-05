@@ -51,7 +51,7 @@ data class FlashTransition(val color: GBCColor = GBCColor.WHITE, val frames: Int
 data class ShakeTransition(
     val intensity: Int,
     val frames: Int = 15,
-    val decay: ShakeDecay = ShakeDecay.LINEAR
+    val decay: ShakeDecay = ShakeDecay.LINEAR,
 ) : Transition() {
     override val estimatedFrames: Int = frames
 }
@@ -66,7 +66,7 @@ data class IrisTransition(
     val type: IrisType,
     val centerX: IRExpression? = null,
     val centerY: IRExpression? = null,
-    val frames: Int = 60
+    val frames: Int = 60,
 ) : Transition() {
     override val estimatedFrames: Int = frames
 }

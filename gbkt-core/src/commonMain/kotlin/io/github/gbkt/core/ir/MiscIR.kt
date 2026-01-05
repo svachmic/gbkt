@@ -32,7 +32,7 @@ data class IRTween(
     val to: IRExpression,
     val duration: Int,
     val easing: Easing,
-    override val sourceLocation: SourceLocation? = null
+    override val sourceLocation: SourceLocation? = null,
 ) : IRStatement
 
 // --- State Machine IR ---

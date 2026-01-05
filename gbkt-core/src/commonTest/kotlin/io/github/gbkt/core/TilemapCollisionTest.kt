@@ -27,7 +27,7 @@ class TilemapCollisionTest {
     private fun createTestTilemap(
         width: Int = 10,
         height: Int = 10,
-        collisionData: IntArray? = null
+        collisionData: IntArray? = null,
     ): TileMap {
         return TileMap(
             name = "test_map",
@@ -40,7 +40,7 @@ class TilemapCollisionTest {
             heightInTiles = height,
             tileData = IntArray(width * height),
             layerData = emptyMap(),
-            collisionData = collisionData
+            collisionData = collisionData,
         )
     }
 
@@ -102,7 +102,7 @@ class TilemapCollisionTest {
         // Pixel (15, 15) is also in tile (1, 1) - should be blocked
         assertTrue(
             tilemap.isBlockedAtPixel(15, 15),
-            "Pixel (15,15) should be in blocked tile (1,1)"
+            "Pixel (15,15) should be in blocked tile (1,1)",
         )
 
         // Pixel (0, 0) is in tile (0, 0) - should be walkable
@@ -160,7 +160,7 @@ class TilemapCollisionTest {
         assertTrue(tilemap.isBlockedAtPixel(80, 0), "Pixel at width boundary should return blocked")
         assertTrue(
             tilemap.isBlockedAtPixel(0, 80),
-            "Pixel at height boundary should return blocked"
+            "Pixel at height boundary should return blocked",
         )
     }
 
@@ -187,7 +187,7 @@ class TilemapCollisionTest {
         assertFalse(tilemap.isBlockedAtPixel(8, 0), "(8,0) should be walkable")
         assertFalse(
             tilemap.isBlockedAtPixel(15, 7),
-            "(15,7) should be walkable (still in tile 1,0)"
+            "(15,7) should be walkable (still in tile 1,0)",
         )
 
         // Tile (0,1) is walkable (0+1=1, odd)
@@ -262,7 +262,7 @@ class TilemapCollisionTest {
         // Should at least generate the tilemap structure
         assertTrue(
             code.contains("LEVEL1") || code.contains("level1"),
-            "Should reference tilemap name"
+            "Should reference tilemap name",
         )
     }
 
@@ -310,7 +310,7 @@ class TilemapCollisionTest {
                 heightInTiles = height,
                 tileData = IntArray(width * height),
                 layerData = emptyMap(),
-                collisionData = collisionData
+                collisionData = collisionData,
             )
 
         assertTrue(tilemap.isBlocked(16, 16), "Center tile should be blocked")

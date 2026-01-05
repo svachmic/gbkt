@@ -13,7 +13,7 @@ data class SourceLocation(
     val file: String,
     val line: Int,
     val column: Int = 0,
-    val snippet: String? = null
+    val snippet: String? = null,
 ) {
     companion object {
         /**
@@ -48,7 +48,7 @@ data class SourceMapping(
     val kotlinLine: Int,
     val kotlinColumn: Int = 0,
     val symbol: String? = null,
-    val snippet: String? = null
+    val snippet: String? = null,
 )
 
 /**
@@ -65,7 +65,7 @@ data class SourceMap(
     val version: String = "1.0",
     val gameName: String,
     val cFile: String,
-    val mappings: List<SourceMapping>
+    val mappings: List<SourceMapping>,
 ) {
     /** Serialize the source map to JSON format. */
     fun toJson(): String {
@@ -150,7 +150,7 @@ class SourceMapBuilder(private val gameName: String, private val cFile: String) 
                     kotlinLine = location.line,
                     kotlinColumn = location.column,
                     symbol = symbol,
-                    snippet = location.snippet
+                    snippet = location.snippet,
                 )
             )
         }
@@ -163,7 +163,7 @@ class SourceMapBuilder(private val gameName: String, private val cFile: String) 
                 cLine = cLine,
                 kotlinFile = kotlinFile,
                 kotlinLine = kotlinLine,
-                symbol = symbol
+                symbol = symbol,
             )
         )
     }

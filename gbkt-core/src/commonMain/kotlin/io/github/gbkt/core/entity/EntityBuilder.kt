@@ -41,12 +41,12 @@ import kotlin.reflect.KProperty
  */
 class EntityDelegate(
     private val gameBuilder: GameBuilder,
-    private val init: EntityBuilder.() -> Unit
+    private val init: EntityBuilder.() -> Unit,
 ) : PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, Entity>> {
 
     override fun provideDelegate(
         thisRef: Any?,
-        property: KProperty<*>
+        property: KProperty<*>,
     ): ReadOnlyProperty<Any?, Entity> {
         // Build and register the entity immediately when the delegate is created
         val builder = EntityBuilder(property.name, gameBuilder)
@@ -155,7 +155,7 @@ class EntityBuilder(private val entityName: String, private val gameBuilder: Gam
      */
     fun sprite(
         asset: io.github.gbkt.core.assets.SpriteAsset,
-        init: EntitySpriteBuilder.() -> Unit = {}
+        init: EntitySpriteBuilder.() -> Unit = {},
     ): Sprite {
         val slot = gameBuilder.nextSpriteSlot()
         val builder = EntitySpriteBuilder(asset.path, slot, entityName, positionComponent)
@@ -235,7 +235,7 @@ class EntityBuilder(private val entityName: String, private val gameBuilder: Gam
             hitboxComponent = hitboxComponent,
             statesComponent = statesComponent,
             tagComponent = tagComponent,
-            physicsComponent = physicsComponent
+            physicsComponent = physicsComponent,
         )
     }
 }
@@ -249,7 +249,7 @@ class EntitySpriteBuilder(
     private val asset: String,
     private val slot: Int,
     private val entityName: String,
-    private val positionComponent: PositionComponent?
+    private val positionComponent: PositionComponent?,
 ) {
     var size: Dimensions = 8 x 8
     private var _paletteRef: String? = null
@@ -316,7 +316,7 @@ class EntitySpriteBuilder(
             paletteRef = _paletteRef,
             paletteIndex = _paletteIndex,
             animations = _animations,
-            hitbox = _hitbox
+            hitbox = _hitbox,
         )
     }
 }

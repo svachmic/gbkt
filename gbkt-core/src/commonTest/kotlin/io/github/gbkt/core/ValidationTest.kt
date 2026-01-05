@@ -32,7 +32,7 @@ class ValidationTest {
         // Should have a warning about approaching OAM limit
         assertTrue(
             result.warnings.any { it.category == ValidationCategory.OAM_LIMIT },
-            "Should warn when approaching OAM limit"
+            "Should warn when approaching OAM limit",
         )
     }
 
@@ -51,7 +51,7 @@ class ValidationTest {
         // Should have an error for exceeding OAM limit
         assertTrue(
             result.errors.any { it.category == ValidationCategory.OAM_LIMIT },
-            "Should error when exceeding OAM limit. Errors: ${result.errors}"
+            "Should error when exceeding OAM limit. Errors: ${result.errors}",
         )
         assertFalse(result.isValid, "Should be invalid")
     }
@@ -72,7 +72,7 @@ class ValidationTest {
         // Should have an error for empty state machine
         assertTrue(
             result.errors.any { it.category == ValidationCategory.STATE_MACHINE },
-            "Should error on empty state machine. Errors: ${result.errors}"
+            "Should error on empty state machine. Errors: ${result.errors}",
         )
     }
 
@@ -97,7 +97,7 @@ class ValidationTest {
                 it.category == ValidationCategory.STATE_MACHINE &&
                     it.message.contains("nonexistent")
             },
-            "Should error on invalid transition target. Errors: ${result.errors}"
+            "Should error on invalid transition target. Errors: ${result.errors}",
         )
     }
 
@@ -125,7 +125,7 @@ class ValidationTest {
                 it.category == ValidationCategory.STATE_MACHINE &&
                     it.message.contains("unreachable")
             },
-            "Should warn about unreachable states. Warnings: ${result.warnings}"
+            "Should warn about unreachable states. Warnings: ${result.warnings}",
         )
     }
 
@@ -156,7 +156,7 @@ class ValidationTest {
 
         assertTrue(
             result.isValid,
-            "Simple valid game should pass validation. Errors: ${result.errors}"
+            "Simple valid game should pass validation. Errors: ${result.errors}",
         )
         assertTrue(result.errors.isEmpty(), "Should have no errors")
     }
@@ -239,7 +239,7 @@ class ValidationTest {
 
         assertTrue(
             result.errors.any { it.category == ValidationCategory.OAM_LIMIT },
-            "Should count pool sprites towards OAM limit. Errors: ${result.errors}"
+            "Should count pool sprites towards OAM limit. Errors: ${result.errors}",
         )
     }
 
@@ -253,11 +253,11 @@ class ValidationTest {
                 variables =
                     listOf(
                         GBVar("score", 0, GBVar.VarType.U8),
-                        GBVar("score", 0, GBVar.VarType.U8) // Duplicate
+                        GBVar("score", 0, GBVar.VarType.U8), // Duplicate
                     ),
                 sprites = emptyList(),
                 scenes = mapOf("main" to Scene("main", emptyList(), emptyList(), emptyList())),
-                startScene = "main"
+                startScene = "main",
             )
 
         val result = game.validate()
@@ -266,7 +266,7 @@ class ValidationTest {
             result.errors.any {
                 it.category == ValidationCategory.DUPLICATE_NAME && it.message.contains("score")
             },
-            "Should detect duplicate variable names. Errors: ${result.errors}"
+            "Should detect duplicate variable names. Errors: ${result.errors}",
         )
     }
 
@@ -281,7 +281,7 @@ class ValidationTest {
                 variables = emptyList(),
                 sprites = listOf(sprite1, sprite2),
                 scenes = mapOf("main" to Scene("main", emptyList(), emptyList(), emptyList())),
-                startScene = "main"
+                startScene = "main",
             )
 
         val result = game.validate()
@@ -290,7 +290,7 @@ class ValidationTest {
             result.errors.any {
                 it.category == ValidationCategory.DUPLICATE_NAME && it.message.contains("player")
             },
-            "Should detect duplicate sprite names. Errors: ${result.errors}"
+            "Should detect duplicate sprite names. Errors: ${result.errors}",
         )
     }
 
@@ -302,7 +302,7 @@ class ValidationTest {
             GBCPalette(
                 name = "valid",
                 colors =
-                    listOf(GBCColor.WHITE, GBCColor.LIGHT_GRAY, GBCColor.DARK_GRAY, GBCColor.BLACK)
+                    listOf(GBCColor.WHITE, GBCColor.LIGHT_GRAY, GBCColor.DARK_GRAY, GBCColor.BLACK),
             )
 
         val game =
@@ -313,14 +313,14 @@ class ValidationTest {
                 sprites = emptyList(),
                 scenes = mapOf("main" to Scene("main", emptyList(), emptyList(), emptyList())),
                 startScene = "main",
-                palettes = listOf(validPalette)
+                palettes = listOf(validPalette),
             )
 
         val result = game.validate()
         // Valid palette should pass
         assertTrue(
             result.errors.none { it.category == ValidationCategory.GBC_COLOR },
-            "Valid GBC palette should not have color errors. Errors: ${result.errors}"
+            "Valid GBC palette should not have color errors. Errors: ${result.errors}",
         )
     }
 
@@ -341,7 +341,7 @@ class ValidationTest {
             result.warnings.any {
                 it.category == ValidationCategory.OAM_LIMIT && it.message.contains("at OAM limit")
             },
-            "Should warn when at OAM limit. Warnings: ${result.warnings}"
+            "Should warn when at OAM limit. Warnings: ${result.warnings}",
         )
     }
 
@@ -366,7 +366,7 @@ class ValidationTest {
                     it.message.contains("huge") &&
                     it.message.contains("exceeds OAM limit")
             },
-            "Should detect pool overflow. Errors: ${result.errors}"
+            "Should detect pool overflow. Errors: ${result.errors}",
         )
     }
 
@@ -381,7 +381,7 @@ class ValidationTest {
         assertFalse(result.isValid, "Empty data should be invalid")
         assertTrue(
             result.errors.any { it.contains("too small") },
-            "Should report file too small. Errors: ${result.errors}"
+            "Should report file too small. Errors: ${result.errors}",
         )
     }
 
@@ -394,7 +394,7 @@ class ValidationTest {
         assertFalse(result.isValid, "JPEG data should be invalid")
         assertTrue(
             result.errors.any { it.contains("signature") || it.contains("too small") },
-            "Should report invalid signature. Errors: ${result.errors}"
+            "Should report invalid signature. Errors: ${result.errors}",
         )
     }
 
@@ -407,7 +407,7 @@ class ValidationTest {
         assertFalse(result.isValid, "Truncated PNG should be invalid")
         assertTrue(
             result.errors.any { it.contains("too small") || it.contains("IHDR") },
-            "Should report file too small or IHDR issue. Errors: ${result.errors}"
+            "Should report file too small or IHDR issue. Errors: ${result.errors}",
         )
     }
 
@@ -456,7 +456,7 @@ class ValidationTest {
                 0x00,
                 0x00,
                 0x00,
-                0x00
+                0x00,
             )
 
         val result = PngValidator.validate(validPng, "test.png")
@@ -510,7 +510,7 @@ class ValidationTest {
                 0x00,
                 0x00,
                 0x00,
-                0x00
+                0x00,
             )
 
         val result = PngValidator.validate(invalidPng, "test.png")
@@ -518,11 +518,11 @@ class ValidationTest {
         assertFalse(result.isValid, "Non-multiple-of-8 dimensions should be invalid")
         assertTrue(
             result.errors.any { it.contains("width") && it.contains("8") },
-            "Should report width not multiple of 8. Errors: ${result.errors}"
+            "Should report width not multiple of 8. Errors: ${result.errors}",
         )
         assertTrue(
             result.errors.any { it.contains("height") && it.contains("8") },
-            "Should report height not multiple of 8. Errors: ${result.errors}"
+            "Should report height not multiple of 8. Errors: ${result.errors}",
         )
     }
 
@@ -570,7 +570,7 @@ class ValidationTest {
                 0x00,
                 0x00,
                 0x00,
-                0x00
+                0x00,
             )
 
         val result = PngValidator.validate(largePng, "test.png")
@@ -578,7 +578,7 @@ class ValidationTest {
         assertFalse(result.isValid, "Oversized image should be invalid")
         assertTrue(
             result.errors.any { it.contains("too large") || it.contains("1024") },
-            "Should report image too large. Errors: ${result.errors}"
+            "Should report image too large. Errors: ${result.errors}",
         )
     }
 
@@ -626,7 +626,7 @@ class ValidationTest {
                 0x00,
                 0x00,
                 0x00,
-                0x00
+                0x00,
             )
 
         val result = PngValidator.validate(validPng, "test.png")

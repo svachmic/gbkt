@@ -99,7 +99,7 @@ class MenuStyleBuilder {
             padding = padding,
             wrapMode = wrapMode,
             labelWidth = labelWidth,
-            valueWidth = valueWidth
+            valueWidth = valueWidth,
         )
 }
 
@@ -267,7 +267,7 @@ class MenuBuilder(private val name: String) {
                 label = label,
                 enabled = itemBuilder.enabled,
                 onSelect = itemBuilder.onSelectStatements,
-                onHighlight = itemBuilder.onHighlightStatements
+                onHighlight = itemBuilder.onHighlightStatements,
             )
         )
     }
@@ -288,7 +288,7 @@ class MenuBuilder(private val name: String) {
                 variable = varName,
                 onLabel = builder.onLabel,
                 offLabel = builder.offLabel,
-                onChange = builder.onChangeStatements
+                onChange = builder.onChangeStatements,
             )
         )
     }
@@ -302,7 +302,7 @@ class MenuBuilder(private val name: String) {
         label: String,
         variable: AssignableExpr,
         range: IntRange,
-        init: SliderBuilder.() -> Unit = {}
+        init: SliderBuilder.() -> Unit = {},
     ) {
         val builder = SliderBuilder().apply(init)
         val varName = (variable.ir as? IRVar)?.name ?: error("Slider requires a variable")
@@ -314,7 +314,7 @@ class MenuBuilder(private val name: String) {
                 min = range.first,
                 max = range.last,
                 step = builder.step,
-                onChange = builder.onChangeStatements
+                onChange = builder.onChangeStatements,
             )
         )
     }
@@ -333,7 +333,7 @@ class MenuBuilder(private val name: String) {
                 label = label,
                 variable = varName,
                 choices = builder.choices,
-                onChange = builder.onChangeStatements
+                onChange = builder.onChangeStatements,
             )
         )
     }
@@ -364,7 +364,7 @@ class MenuBuilder(private val name: String) {
             style = styleConfig,
             items = items.toList(),
             parentMenu = parentMenu,
-            title = menuTitle
+            title = menuTitle,
         )
 }
 
@@ -423,7 +423,7 @@ class GridMenuBuilder(private val name: String) {
             GridArrayBinding(
                 arrayVar = arrayName,
                 onSelectStatements = slotBuilder.onSelectStatements,
-                emptySlotStatements = slotBuilder.whenEmptyStatements
+                emptySlotStatements = slotBuilder.whenEmptyStatements,
             )
     }
 
@@ -435,7 +435,7 @@ class GridMenuBuilder(private val name: String) {
             columns = columns,
             rows = rows,
             parentMenu = parentMenu,
-            arrayBinding = arrayBinding
+            arrayBinding = arrayBinding,
         )
 }
 
@@ -477,7 +477,7 @@ class GridStyleBuilder {
             cursorChar = cursorChar,
             cursorCloseChar = cursorCloseChar,
             cursorSprite = cursorSprite,
-            wrapMode = wrapMode
+            wrapMode = wrapMode,
         )
 }
 

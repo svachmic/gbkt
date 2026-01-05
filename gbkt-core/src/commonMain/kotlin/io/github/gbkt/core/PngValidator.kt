@@ -28,7 +28,7 @@ object PngValidator {
             0x0D, // CR
             0x0A, // LF
             0x1A, // SUB
-            0x0A // LF
+            0x0A, // LF
         )
 
     /** Minimum valid PNG size: 8 (signature) + 25 (IHDR chunk with length/type/crc) */
@@ -94,7 +94,7 @@ object PngValidator {
             isValid = errors.isEmpty(),
             errors = errors,
             width = width,
-            height = height
+            height = height,
         )
     }
 
@@ -173,5 +173,5 @@ data class PngValidationResult(
     val isValid: Boolean,
     val errors: List<String>,
     val width: Int?,
-    val height: Int?
+    val height: Int?,
 )

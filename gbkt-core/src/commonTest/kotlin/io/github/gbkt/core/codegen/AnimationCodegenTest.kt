@@ -43,11 +43,11 @@ class AnimationCodegenTest {
         // Frame arrays - generated code should contain frame data
         assertTrue(
             code.contains("walk") && code.contains("frames"),
-            "Should generate walk frame array"
+            "Should generate walk frame array",
         )
         assertTrue(
             code.contains("jump") && code.contains("frames"),
-            "Should generate jump frame array"
+            "Should generate jump frame array",
         )
 
         // Animation should be referenced
@@ -104,7 +104,7 @@ class AnimationCodegenTest {
         // The callback should trigger a scene change
         assertTrue(
             code.contains("gameover"),
-            "Should generate onComplete callback with scene change"
+            "Should generate onComplete callback with scene change",
         )
     }
 
@@ -158,7 +158,7 @@ class AnimationCodegenTest {
 
         assertTrue(
             code.contains("WARNING") || code.contains("placeholder") || code.contains("{ 0 }"),
-            "Should handle empty animation gracefully"
+            "Should handle empty animation gracefully",
         )
     }
 
@@ -198,7 +198,7 @@ class AnimationCodegenTest {
         assertTrue(lowerCode.contains("idle"), "Should have idle animation")
         assertTrue(
             lowerCode.contains("update") && lowerCode.contains("animation"),
-            "Should generate update function"
+            "Should generate update function",
         )
     }
 
@@ -224,7 +224,7 @@ class AnimationCodegenTest {
         // A non-looping animation should be defined
         assertTrue(
             code.contains("ANIM_PLAYER_RUN") || (code.contains("run") && code.contains("anim")),
-            "Should have run animation constant"
+            "Should have run animation constant",
         )
         assertTrue(code.contains("run") && code.contains("frame"), "Should generate run frame data")
     }

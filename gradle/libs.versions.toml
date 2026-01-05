@@ -1,5 +1,5 @@
 [versions]
-json = "20231013"
+json = "20251224"
 
 [libraries]
 json = { module = "org.json:json", version.ref = "json" }

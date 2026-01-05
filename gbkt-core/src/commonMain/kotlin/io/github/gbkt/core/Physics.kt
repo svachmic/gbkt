@@ -39,7 +39,7 @@ data class GravityZone(
     val y: Int,
     val width: Int,
     val height: Int,
-    val gravity: Int // Fixed-point 8.8
+    val gravity: Int, // Fixed-point 8.8
 )
 
 /**
@@ -87,6 +87,7 @@ data class GravityZone(
 class PhysicsWorld internal constructor(val name: String, val config: PhysicsWorldConfig) {
     internal val collisionPairs = mutableListOf<Pair<String, String>>()
     internal val gravityZones = mutableListOf<GravityZone>()
+
     /**
      * Update physics world - applies physics to all tagged entities and handles collisions. Must be
      * called in every.frame block.
@@ -136,7 +137,7 @@ data class PhysicsWorldConfig(
     val gravity: Float = 0.5f, // Applied to velocityY each frame (fixed-point 8.8)
     val friction: Float = 0.9f, // Multiplied to velocityX each frame (fixed-point 8.8)
     val bounce: Float = 0.3f, // Collision bounce coefficient (0.0 = no bounce, 1.0 = full bounce)
-    val gravityZones: List<GravityZone> = emptyList() // Zones with custom gravity
+    val gravityZones: List<GravityZone> = emptyList(), // Zones with custom gravity
 )
 
 /** Builder for physics world configuration. */
@@ -227,8 +228,8 @@ class PhysicsWorldBuilder(private val name: String) {
                         gravity = gravity,
                         friction = friction,
                         bounce = bounce,
-                        gravityZones = gravityZones.toList()
-                    )
+                        gravityZones = gravityZones.toList(),
+                    ),
             )
         // Also copy zones to the world's internal list for codegen access
         world.gravityZones.addAll(gravityZones)
@@ -242,7 +243,7 @@ class GravityZoneBuilder(
     private val x: Int,
     private val y: Int,
     private val width: Int,
-    private val height: Int
+    private val height: Int,
 ) {
     /**
      * Gravity value within this zone.
@@ -266,7 +267,7 @@ class GravityZoneBuilder(
             y = y,
             width = width,
             height = height,
-            gravity = toFixed88(gravity)
+            gravity = toFixed88(gravity),
         )
     }
 }

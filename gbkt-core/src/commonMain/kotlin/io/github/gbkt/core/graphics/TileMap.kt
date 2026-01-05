@@ -40,7 +40,7 @@ class TileMap(
     internal var heightInTiles: Int = 32,
     internal var tileData: IntArray = IntArray(0),
     internal var layerData: Map<String, IntArray> = emptyMap(),
-    internal var collisionData: IntArray? = null // Collision map data (0 = walkable, >0 = blocked)
+    internal var collisionData: IntArray? = null, // Collision map data (0 = walkable, >0 = blocked)
 ) {
     /** Get tile data for a specific layer. Returns null if layer doesn't exist. */
     fun getLayerData(layerName: String): IntArray? = layerData[layerName]
@@ -103,8 +103,8 @@ class TileMap(
                         IRLiteral(0),
                         IRVar("${name.uppercase()}_WIDTH"),
                         IRVar("${name.uppercase()}_HEIGHT"),
-                        IRVar("${name}_map")
-                    )
+                        IRVar("${name}_map"),
+                    ),
                 )
             )
     }
@@ -163,7 +163,7 @@ class TileMapBuilder(private val asset: String, private val slot: Int) {
             tilesetAsset = tileset,
             layerName = layer,
             collisionLayerName = collisionLayer,
-            slot = slot
+            slot = slot,
         )
     }
 }

@@ -465,7 +465,7 @@ fun main() {
         |   - Physics and collision             |
         |   - Win/lose conditions               |
         +---------------------------------------+
-    """
+        """
             .trimIndent()
     )
     println()

@@ -39,7 +39,7 @@ enum class SaveFieldType(val cType: String, val baseSize: Int) {
     I8("INT8", 1),
     FLAGS("UINT8", 1),
     ARRAY("UINT8", 1), // Size = baseSize * arraySize
-    STRING("char", 1) // Size = baseSize * arraySize
+    STRING("char", 1), // Size = baseSize * arraySize
 }
 
 /** Checksum algorithms for save data integrity. */
@@ -51,7 +51,7 @@ enum class Checksum(val size: Int) {
     /** CRC-8-CCITT - good error detection, 1 byte */
     CRC8(1),
     /** 16-bit sum - catches more errors, 2 bytes */
-    SUM16(2)
+    SUM16(2),
 }
 
 // =============================================================================
@@ -65,7 +65,7 @@ data class SaveField(
     val offset: Int,
     val size: Int,
     val arraySize: Int = 0,
-    val defaultValue: Int = 0
+    val defaultValue: Int = 0,
 )
 
 /** Configuration for save data. */
@@ -73,7 +73,7 @@ data class SaveConfig(
     val slots: Int = 1,
     val checksum: Checksum = Checksum.NONE,
     val magic: String? = null,
-    val version: Int = 1
+    val version: Int = 1,
 ) {
     /** Calculate header size (magic + version + reserved) */
     val headerSize: Int
@@ -105,7 +105,7 @@ class SaveFieldExpr(
     private val saveName: String,
     private val fieldName: String,
     private val fieldType: SaveFieldType,
-    private val arraySize: Int = 0
+    private val arraySize: Int = 0,
 ) : Expr(IRSaveFieldRead(saveName, fieldName)) {
 
     /** Assign an integer value */
@@ -130,7 +130,7 @@ class SaveFieldExpr(
                     IRSaveFieldWrite(
                         saveName,
                         fieldName,
-                        IRBinary(ir, BinaryOp.ADD, IRLiteral(value))
+                        IRBinary(ir, BinaryOp.ADD, IRLiteral(value)),
                     )
                 )
         }
@@ -151,7 +151,7 @@ class SaveFieldExpr(
                     IRSaveFieldWrite(
                         saveName,
                         fieldName,
-                        IRBinary(ir, BinaryOp.SUB, IRLiteral(value))
+                        IRBinary(ir, BinaryOp.SUB, IRLiteral(value)),
                     )
                 )
         }
@@ -172,7 +172,7 @@ class SaveFieldExpr(
                     IRSaveFieldWrite(
                         saveName,
                         fieldName,
-                        IRBinary(ir, BinaryOp.MUL, IRLiteral(value))
+                        IRBinary(ir, BinaryOp.MUL, IRLiteral(value)),
                     )
                 )
         }
@@ -186,7 +186,7 @@ class SaveFieldExpr(
                     IRSaveFieldWrite(
                         saveName,
                         fieldName,
-                        IRBinary(ir, BinaryOp.DIV, IRLiteral(value))
+                        IRBinary(ir, BinaryOp.DIV, IRLiteral(value)),
                     )
                 )
         }
@@ -216,7 +216,7 @@ class SaveFieldExpr(
 class SaveArrayElementExpr(
     private val saveName: String,
     private val fieldName: String,
-    private val indexExpr: IRExpression
+    private val indexExpr: IRExpression,
 ) : Expr(IRSaveArrayAccess(saveName, fieldName, indexExpr)) {
 
     /** Assign value to array element */
@@ -277,7 +277,7 @@ class SaveFlagsExpr(private val saveName: String, private val fieldName: String)
                     IRSaveFieldWrite(
                         saveName,
                         fieldName,
-                        IRBinary(ir, BinaryOp.OR, IRLiteral(1 shl bit))
+                        IRBinary(ir, BinaryOp.OR, IRLiteral(1 shl bit)),
                     )
                 )
         }
@@ -292,7 +292,7 @@ class SaveFlagsExpr(private val saveName: String, private val fieldName: String)
                     IRSaveFieldWrite(
                         saveName,
                         fieldName,
-                        IRBinary(ir, BinaryOp.AND, IRLiteral((1 shl bit).inv() and 0xFF))
+                        IRBinary(ir, BinaryOp.AND, IRLiteral((1 shl bit).inv() and 0xFF)),
                     )
                 )
         }
@@ -307,7 +307,7 @@ class SaveFlagsExpr(private val saveName: String, private val fieldName: String)
                     IRSaveFieldWrite(
                         saveName,
                         fieldName,
-                        IRBinary(ir, BinaryOp.XOR, IRLiteral(1 shl bit))
+                        IRBinary(ir, BinaryOp.XOR, IRLiteral(1 shl bit)),
                     )
                 )
         }
@@ -356,12 +356,12 @@ class SaveConfigBuilder {
 class SaveFieldDelegate<T>(
     private val fieldType: SaveFieldType,
     private val arraySize: Int = 0,
-    private val defaultValue: Int = 0
+    private val defaultValue: Int = 0,
 ) : PropertyDelegateProvider<SaveDataBuilder, ReadOnlyProperty<SaveDataBuilder, T>> {
 
     override fun provideDelegate(
         thisRef: SaveDataBuilder,
-        property: KProperty<*>
+        property: KProperty<*>,
     ): ReadOnlyProperty<SaveDataBuilder, T> {
         val size =
             when (fieldType) {
@@ -377,7 +377,7 @@ class SaveFieldDelegate<T>(
                 offset = thisRef.currentOffset,
                 size = size,
                 arraySize = arraySize,
-                defaultValue = defaultValue
+                defaultValue = defaultValue,
             )
 
         thisRef.addField(field)

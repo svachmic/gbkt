@@ -59,7 +59,7 @@ import io.github.gbkt.core.ir.PaletteType
 /** Validation result containing all errors and warnings found. */
 data class ValidationResult(
     val errors: List<ValidationError>,
-    val warnings: List<ValidationWarning>
+    val warnings: List<ValidationWarning>,
 ) {
     val isValid: Boolean
         get() = errors.isEmpty()
@@ -104,13 +104,13 @@ enum class ValidationCategory {
     MENU_REFERENCE,
     DIALOG_REFERENCE,
     ARRAY_BOUNDS,
-    PHYSICS
+    PHYSICS,
 }
 
 class ValidationException(
     message: String,
     val errors: List<ValidationError>,
-    val warnings: List<ValidationWarning>
+    val warnings: List<ValidationWarning>,
 ) : RuntimeException(message)
 
 /** Validates a game definition for common issues. */
@@ -172,7 +172,7 @@ class GameValidator(private val game: Game) {
                     ValidationCategory.OAM_LIMIT,
                     "Game exceeds OAM limit: $worstCaseTotal sprites possible (max $MAX_OAM_SPRITES). " +
                         "Breakdown: Direct sprites: ${game.sprites.size}, Entity sprites: $entitySprites, " +
-                        "Pool slots: $poolSprites, Particle sprites: $particleSprites"
+                        "Pool slots: $poolSprites, Particle sprites: $particleSprites",
                 )
             )
         } else if (worstCaseTotal == MAX_OAM_SPRITES) {
@@ -180,14 +180,14 @@ class GameValidator(private val game: Game) {
                 ValidationWarning(
                     ValidationCategory.OAM_LIMIT,
                     "Game is at OAM limit: $worstCaseTotal sprites (max $MAX_OAM_SPRITES). " +
-                        "Any additional sprites will cause overflow."
+                        "Any additional sprites will cause overflow.",
                 )
             )
         } else if (worstCaseTotal > MAX_OAM_SPRITES - 5) {
             warnings.add(
                 ValidationWarning(
                     ValidationCategory.OAM_LIMIT,
-                    "Game is close to OAM limit: $worstCaseTotal sprites possible (max $MAX_OAM_SPRITES)"
+                    "Game is close to OAM limit: $worstCaseTotal sprites possible (max $MAX_OAM_SPRITES)",
                 )
             )
         }
@@ -198,7 +198,7 @@ class GameValidator(private val game: Game) {
                 errors.add(
                     ValidationError(
                         ValidationCategory.OAM_LIMIT,
-                        "Pool '${pool.name}' has ${pool.size} sprites, which exceeds OAM limit of $MAX_OAM_SPRITES"
+                        "Pool '${pool.name}' has ${pool.size} sprites, which exceeds OAM limit of $MAX_OAM_SPRITES",
                     )
                 )
             }
@@ -209,7 +209,7 @@ class GameValidator(private val game: Game) {
             errors.add(
                 ValidationError(
                     ValidationCategory.OAM_LIMIT,
-                    "Direct sprite count (${game.sprites.size}) exceeds OAM limit of $MAX_OAM_SPRITES"
+                    "Direct sprite count (${game.sprites.size}) exceeds OAM limit of $MAX_OAM_SPRITES",
                 )
             )
         }
@@ -224,7 +224,7 @@ class GameValidator(private val game: Game) {
             errors.add(
                 ValidationError(
                     ValidationCategory.PALETTE_LIMIT,
-                    "Too many sprite palettes: ${spritePalettes.size} (max $MAX_SPRITE_PALETTES)"
+                    "Too many sprite palettes: ${spritePalettes.size} (max $MAX_SPRITE_PALETTES)",
                 )
             )
         }
@@ -233,7 +233,7 @@ class GameValidator(private val game: Game) {
             errors.add(
                 ValidationError(
                     ValidationCategory.PALETTE_LIMIT,
-                    "Too many background palettes: ${bkgPalettes.size} (max $MAX_BKG_PALETTES)"
+                    "Too many background palettes: ${bkgPalettes.size} (max $MAX_BKG_PALETTES)",
                 )
             )
         }
@@ -245,7 +245,7 @@ class GameValidator(private val game: Game) {
             errors.add(
                 ValidationError(
                     ValidationCategory.PALETTE_LIMIT,
-                    "Duplicate sprite palette slots: ${duplicateSpriteSlots.keys.joinToString()}"
+                    "Duplicate sprite palette slots: ${duplicateSpriteSlots.keys.joinToString()}",
                 )
             )
         }
@@ -256,7 +256,7 @@ class GameValidator(private val game: Game) {
             errors.add(
                 ValidationError(
                     ValidationCategory.PALETTE_LIMIT,
-                    "Duplicate background palette slots: ${duplicateBkgSlots.keys.joinToString()}"
+                    "Duplicate background palette slots: ${duplicateBkgSlots.keys.joinToString()}",
                 )
             )
         }
@@ -278,7 +278,7 @@ class GameValidator(private val game: Game) {
                             ValidationError(
                                 ValidationCategory.SPRITE_REFERENCE,
                                 "State '${machine.name}::$stateName' references unknown sprite '${anim.spriteName}'.$suggestion " +
-                                    "Available: ${allSprites.joinToString()}"
+                                    "Available: ${allSprites.joinToString()}",
                             )
                         )
                     }
@@ -309,7 +309,7 @@ class GameValidator(private val game: Game) {
                             ValidationError(
                                 ValidationCategory.ANIMATION_REFERENCE,
                                 "State '${machine.name}::$stateName' references unknown animation '${anim.animationName}' " +
-                                    "on sprite '${anim.spriteName}'.$suggestion Available: ${animations.joinToString()}"
+                                    "on sprite '${anim.spriteName}'.$suggestion Available: ${animations.joinToString()}",
                             )
                         )
                     }
@@ -328,7 +328,7 @@ class GameValidator(private val game: Game) {
             errors.add(
                 ValidationError(
                     ValidationCategory.SCENE_REFERENCE,
-                    "Start scene '${game.startScene}' not found.$suggestion Available: ${knownScenes.joinToString()}"
+                    "Start scene '${game.startScene}' not found.$suggestion Available: ${knownScenes.joinToString()}",
                 )
             )
         }
@@ -359,7 +359,7 @@ class GameValidator(private val game: Game) {
                 pool.onFrameStatements,
                 "pool '${pool.name}'",
                 "onFrame",
-                referencedScenes
+                referencedScenes,
             )
         }
 
@@ -371,7 +371,7 @@ class GameValidator(private val game: Game) {
                     ValidationError(
                         ValidationCategory.SCENE_REFERENCE,
                         "Scene transition to '${ref.targetScene}' in ${ref.sourceContext} (${ref.block}) " +
-                            "references unknown scene.$suggestion Available: ${knownScenes.joinToString()}"
+                            "references unknown scene.$suggestion Available: ${knownScenes.joinToString()}",
                     )
                 )
             }
@@ -382,7 +382,7 @@ class GameValidator(private val game: Game) {
     private data class SceneReference(
         val targetScene: String,
         val sourceContext: String,
-        val block: String
+        val block: String,
     )
 
     /** Recursively collect scene references from IR statements. */
@@ -390,7 +390,7 @@ class GameValidator(private val game: Game) {
         statements: List<IRStatement>,
         sourceContext: String,
         block: String,
-        refs: MutableSet<SceneReference>
+        refs: MutableSet<SceneReference>,
     ) {
         for (stmt in statements) {
             when (stmt) {
@@ -457,7 +457,7 @@ class GameValidator(private val game: Game) {
                 errors.add(
                     ValidationError(
                         ValidationCategory.STATE_MACHINE,
-                        "State machine '${machine.name}' has no states defined"
+                        "State machine '${machine.name}' has no states defined",
                     )
                 )
             }
@@ -477,7 +477,7 @@ class GameValidator(private val game: Game) {
                 warnings.add(
                     ValidationWarning(
                         ValidationCategory.STATE_MACHINE,
-                        "State machine '${machine.name}' has potentially unreachable states: ${unreachable.joinToString()}"
+                        "State machine '${machine.name}' has potentially unreachable states: ${unreachable.joinToString()}",
                     )
                 )
             }
@@ -489,13 +489,13 @@ class GameValidator(private val game: Game) {
                         val suggestion =
                             Suggestions.formatSuggestion(
                                 transition.targetState,
-                                machine.states.keys
+                                machine.states.keys,
                             )
                         errors.add(
                             ValidationError(
                                 ValidationCategory.STATE_MACHINE,
                                 "State '${machine.name}::$stateName' transitions to unknown state '${transition.targetState}'.$suggestion " +
-                                    "Available: ${machine.states.keys.joinToString()}"
+                                    "Available: ${machine.states.keys.joinToString()}",
                             )
                         )
                     }
@@ -538,7 +538,7 @@ class GameValidator(private val game: Game) {
                 ValidationWarning(
                     ValidationCategory.MEMORY_BUDGET,
                     "Estimated $estimatedTiles sprite tiles may exceed single VRAM bank ($MAX_TILES_PER_BANK tiles). " +
-                        "Consider using tile banking or reducing sprite complexity."
+                        "Consider using tile banking or reducing sprite complexity.",
                 )
             )
         }
@@ -660,7 +660,7 @@ class GameValidator(private val game: Game) {
                 ValidationError(
                     ValidationCategory.MEMORY_BUDGET,
                     "Estimated WRAM usage ($totalBytes bytes) exceeds available RAM ($AVAILABLE_WRAM bytes). " +
-                        "Breakdown: ${breakdown.joinToString("; ")}"
+                        "Breakdown: ${breakdown.joinToString("; ")}",
                 )
             )
         } else if (totalBytes > WRAM_WARNING_THRESHOLD) {
@@ -668,7 +668,7 @@ class GameValidator(private val game: Game) {
                 ValidationWarning(
                     ValidationCategory.MEMORY_BUDGET,
                     "Estimated WRAM usage ($totalBytes bytes) is approaching limit ($AVAILABLE_WRAM bytes). " +
-                        "Breakdown: ${breakdown.joinToString("; ")}"
+                        "Breakdown: ${breakdown.joinToString("; ")}",
                 )
             )
         }
@@ -684,7 +684,7 @@ class GameValidator(private val game: Game) {
                 errors.add(
                     ValidationError(
                         ValidationCategory.DUPLICATE_NAME,
-                        "Duplicate variable name '$name' found ${occurrences.size} times. Variable names must be unique."
+                        "Duplicate variable name '$name' found ${occurrences.size} times. Variable names must be unique.",
                     )
                 )
             }
@@ -698,7 +698,7 @@ class GameValidator(private val game: Game) {
                 errors.add(
                     ValidationError(
                         ValidationCategory.DUPLICATE_NAME,
-                        "Duplicate scene name '$name' found ${occurrences.size} times. Scene names must be unique."
+                        "Duplicate scene name '$name' found ${occurrences.size} times. Scene names must be unique.",
                     )
                 )
             }
@@ -712,7 +712,7 @@ class GameValidator(private val game: Game) {
                 errors.add(
                     ValidationError(
                         ValidationCategory.DUPLICATE_NAME,
-                        "Duplicate sprite name '$name' found ${occurrences.size} times. Sprite names must be unique."
+                        "Duplicate sprite name '$name' found ${occurrences.size} times. Sprite names must be unique.",
                     )
                 )
             }
@@ -729,7 +729,7 @@ class GameValidator(private val game: Game) {
                         ValidationError(
                             ValidationCategory.GBC_COLOR,
                             "Invalid GBC color value in palette '${palette.name}' at index $index: ${color.rgb555} " +
-                                "(must be 0-32767)"
+                                "(must be 0-32767)",
                         )
                     )
                 }
@@ -744,7 +744,7 @@ class GameValidator(private val game: Game) {
                         ValidationError(
                             ValidationCategory.GBC_COLOR,
                             "Invalid GBC color component in palette '${palette.name}' at index $index: " +
-                                "R=$r, G=$g, B=$b (each must be 0-31)"
+                                "R=$r, G=$g, B=$b (each must be 0-31)",
                         )
                     )
                 }
@@ -755,7 +755,7 @@ class GameValidator(private val game: Game) {
                 errors.add(
                     ValidationError(
                         ValidationCategory.GBC_COLOR,
-                        "Palette '${palette.name}' must have exactly 4 colors, got ${palette.colors.size}"
+                        "Palette '${palette.name}' must have exactly 4 colors, got ${palette.colors.size}",
                     )
                 )
             }
@@ -779,7 +779,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.ASSET_FILE,
-                                "Asset '${sprite.name}' ($assetPath): $error"
+                                "Asset '${sprite.name}' ($assetPath): $error",
                             )
                         )
                     }
@@ -824,7 +824,7 @@ class GameValidator(private val game: Game) {
                     ValidationError(
                         ValidationCategory.TWEEN,
                         "Tween for '${tween.target}' in ${info.context} has invalid duration: " +
-                            "${tween.duration}. Duration must be > 0."
+                            "${tween.duration}. Duration must be > 0.",
                     )
                 )
             }
@@ -846,7 +846,7 @@ class GameValidator(private val game: Game) {
                         ValidationError(
                             ValidationCategory.TWEEN,
                             "Tween for '${tween.target}' in ${info.context} has 'from' value $fromValue " +
-                                "outside ${tween.targetType.name} bounds ($minValue to $maxValue)."
+                                "outside ${tween.targetType.name} bounds ($minValue to $maxValue).",
                         )
                     )
                 }
@@ -860,7 +860,7 @@ class GameValidator(private val game: Game) {
                         ValidationError(
                             ValidationCategory.TWEEN,
                             "Tween for '${tween.target}' in ${info.context} has 'to' value $toValue " +
-                                "outside ${tween.targetType.name} bounds ($minValue to $maxValue)."
+                                "outside ${tween.targetType.name} bounds ($minValue to $maxValue).",
                         )
                     )
                 }
@@ -874,7 +874,7 @@ class GameValidator(private val game: Game) {
                         ValidationWarning(
                             ValidationCategory.TWEEN,
                             "Tween for '${tween.target}' in ${info.context} has large value range " +
-                                "($fromValue to $toValue). Consider using U16 for smoother interpolation."
+                                "($fromValue to $toValue). Consider using U16 for smoother interpolation.",
                         )
                     )
                 }
@@ -905,7 +905,7 @@ class GameValidator(private val game: Game) {
     private fun collectTweens(
         statements: List<IRStatement>,
         context: String,
-        tweens: MutableList<TweenInfo>
+        tweens: MutableList<TweenInfo>,
     ) {
         for (stmt in statements) {
             when (stmt) {
@@ -982,7 +982,7 @@ class GameValidator(private val game: Game) {
                 knownSprites,
                 knownPools,
                 knownMenus,
-                knownDialogs
+                knownDialogs,
             )
             validateIRReferencesInStatements(
                 scene.onFrame,
@@ -990,7 +990,7 @@ class GameValidator(private val game: Game) {
                 knownSprites,
                 knownPools,
                 knownMenus,
-                knownDialogs
+                knownDialogs,
             )
             validateIRReferencesInStatements(
                 scene.onExit,
@@ -998,7 +998,7 @@ class GameValidator(private val game: Game) {
                 knownSprites,
                 knownPools,
                 knownMenus,
-                knownDialogs
+                knownDialogs,
             )
         }
 
@@ -1010,7 +1010,7 @@ class GameValidator(private val game: Game) {
                 knownSprites,
                 knownPools,
                 knownMenus,
-                knownDialogs
+                knownDialogs,
             )
         }
 
@@ -1024,7 +1024,7 @@ class GameValidator(private val game: Game) {
                     knownSprites,
                     knownPools,
                     knownMenus,
-                    knownDialogs
+                    knownDialogs,
                 )
                 validateIRReferencesInStatements(
                     state.onTick,
@@ -1032,7 +1032,7 @@ class GameValidator(private val game: Game) {
                     knownSprites,
                     knownPools,
                     knownMenus,
-                    knownDialogs
+                    knownDialogs,
                 )
                 validateIRReferencesInStatements(
                     state.onExit,
@@ -1040,7 +1040,7 @@ class GameValidator(private val game: Game) {
                     knownSprites,
                     knownPools,
                     knownMenus,
-                    knownDialogs
+                    knownDialogs,
                 )
             }
         }
@@ -1053,7 +1053,7 @@ class GameValidator(private val game: Game) {
         knownSprites: Set<String>,
         knownPools: Set<String>,
         knownMenus: Set<String>,
-        knownDialogs: Set<String>
+        knownDialogs: Set<String>,
     ) {
         for (stmt in statements) {
             when (stmt) {
@@ -1064,7 +1064,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.SPRITE_REFERENCE,
-                                "$context: Animation references unknown sprite '${stmt.spriteName}'.$suggestion"
+                                "$context: Animation references unknown sprite '${stmt.spriteName}'.$suggestion",
                             )
                         )
                     }
@@ -1074,7 +1074,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.SPRITE_REFERENCE,
-                                "$context: Animation stop references unknown sprite '${stmt.spriteName}'."
+                                "$context: Animation stop references unknown sprite '${stmt.spriteName}'.",
                             )
                         )
                     }
@@ -1084,7 +1084,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.SPRITE_REFERENCE,
-                                "$context: Animation pause references unknown sprite '${stmt.spriteName}'."
+                                "$context: Animation pause references unknown sprite '${stmt.spriteName}'.",
                             )
                         )
                     }
@@ -1094,7 +1094,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.SPRITE_REFERENCE,
-                                "$context: Animation resume references unknown sprite '${stmt.spriteName}'."
+                                "$context: Animation resume references unknown sprite '${stmt.spriteName}'.",
                             )
                         )
                     }
@@ -1104,7 +1104,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.SPRITE_REFERENCE,
-                                "$context: Animation setFrame references unknown sprite '${stmt.spriteName}'."
+                                "$context: Animation setFrame references unknown sprite '${stmt.spriteName}'.",
                             )
                         )
                     }
@@ -1114,7 +1114,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.SPRITE_REFERENCE,
-                                "$context: Animation setSpeed references unknown sprite '${stmt.spriteName}'."
+                                "$context: Animation setSpeed references unknown sprite '${stmt.spriteName}'.",
                             )
                         )
                     }
@@ -1124,7 +1124,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.SPRITE_REFERENCE,
-                                "$context: Animation queue references unknown sprite '${stmt.spriteName}'."
+                                "$context: Animation queue references unknown sprite '${stmt.spriteName}'.",
                             )
                         )
                     }
@@ -1137,7 +1137,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.POOL_REFERENCE,
-                                "$context: Pool spawn references unknown pool '${stmt.poolName}'.$suggestion"
+                                "$context: Pool spawn references unknown pool '${stmt.poolName}'.$suggestion",
                             )
                         )
                     }
@@ -1147,7 +1147,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                 }
                 is IRPoolSpawnAt -> {
@@ -1155,7 +1155,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.POOL_REFERENCE,
-                                "$context: Pool spawnAt references unknown pool '${stmt.poolName}'."
+                                "$context: Pool spawnAt references unknown pool '${stmt.poolName}'.",
                             )
                         )
                     }
@@ -1165,7 +1165,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                 }
                 is IRPoolTrySpawn -> {
@@ -1173,7 +1173,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.POOL_REFERENCE,
-                                "$context: Pool trySpawn references unknown pool '${stmt.poolName}'."
+                                "$context: Pool trySpawn references unknown pool '${stmt.poolName}'.",
                             )
                         )
                     }
@@ -1183,7 +1183,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                     validateIRReferencesInStatements(
                         stmt.elseStatements,
@@ -1191,7 +1191,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                 }
                 is IRPoolUpdate -> {
@@ -1199,7 +1199,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.POOL_REFERENCE,
-                                "$context: Pool update references unknown pool '${stmt.poolName}'."
+                                "$context: Pool update references unknown pool '${stmt.poolName}'.",
                             )
                         )
                     }
@@ -1209,7 +1209,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.POOL_REFERENCE,
-                                "$context: Pool despawn references unknown pool '${stmt.poolName}'."
+                                "$context: Pool despawn references unknown pool '${stmt.poolName}'.",
                             )
                         )
                     }
@@ -1219,7 +1219,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.POOL_REFERENCE,
-                                "$context: Pool despawnAll references unknown pool '${stmt.poolName}'."
+                                "$context: Pool despawnAll references unknown pool '${stmt.poolName}'.",
                             )
                         )
                     }
@@ -1229,7 +1229,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.POOL_REFERENCE,
-                                "$context: Pool forEach references unknown pool '${stmt.poolName}'."
+                                "$context: Pool forEach references unknown pool '${stmt.poolName}'.",
                             )
                         )
                     }
@@ -1239,7 +1239,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                 }
 
@@ -1250,7 +1250,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.MENU_REFERENCE,
-                                "$context: Menu show references unknown menu '${stmt.menuName}'.$suggestion"
+                                "$context: Menu show references unknown menu '${stmt.menuName}'.$suggestion",
                             )
                         )
                     }
@@ -1260,7 +1260,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.MENU_REFERENCE,
-                                "$context: Menu open references unknown menu '${stmt.menuName}'."
+                                "$context: Menu open references unknown menu '${stmt.menuName}'.",
                             )
                         )
                     }
@@ -1270,7 +1270,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.MENU_REFERENCE,
-                                "$context: Menu tick references unknown menu '${stmt.menuName}'."
+                                "$context: Menu tick references unknown menu '${stmt.menuName}'.",
                             )
                         )
                     }
@@ -1280,7 +1280,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.MENU_REFERENCE,
-                                "$context: Menu select references unknown menu '${stmt.menuName}'."
+                                "$context: Menu select references unknown menu '${stmt.menuName}'.",
                             )
                         )
                     }
@@ -1290,7 +1290,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.MENU_REFERENCE,
-                                "$context: Menu cancel references unknown menu '${stmt.menuName}'."
+                                "$context: Menu cancel references unknown menu '${stmt.menuName}'.",
                             )
                         )
                     }
@@ -1300,7 +1300,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.MENU_REFERENCE,
-                                "$context: Menu moveTo references unknown menu '${stmt.menuName}'."
+                                "$context: Menu moveTo references unknown menu '${stmt.menuName}'.",
                             )
                         )
                     }
@@ -1313,7 +1313,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.DIALOG_REFERENCE,
-                                "$context: Dialog show references unknown dialog '${stmt.dialogName}'.$suggestion"
+                                "$context: Dialog show references unknown dialog '${stmt.dialogName}'.$suggestion",
                             )
                         )
                     }
@@ -1323,7 +1323,7 @@ class GameValidator(private val game: Game) {
                         errors.add(
                             ValidationError(
                                 ValidationCategory.DIALOG_REFERENCE,
-                                "$context: Dialog say references unknown dialog '${stmt.dialogName}'."
+                                "$context: Dialog say references unknown dialog '${stmt.dialogName}'.",
                             )
                         )
                     }
@@ -1337,7 +1337,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                     stmt.otherwise?.let {
                         validateIRReferencesInStatements(
@@ -1346,7 +1346,7 @@ class GameValidator(private val game: Game) {
                             knownSprites,
                             knownPools,
                             knownMenus,
-                            knownDialogs
+                            knownDialogs,
                         )
                     }
                 }
@@ -1358,7 +1358,7 @@ class GameValidator(private val game: Game) {
                             knownSprites,
                             knownPools,
                             knownMenus,
-                            knownDialogs
+                            knownDialogs,
                         )
                     }
                     stmt.otherwise?.let {
@@ -1368,7 +1368,7 @@ class GameValidator(private val game: Game) {
                             knownSprites,
                             knownPools,
                             knownMenus,
-                            knownDialogs
+                            knownDialogs,
                         )
                     }
                 }
@@ -1379,7 +1379,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                 }
                 is IRFor -> {
@@ -1389,7 +1389,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                 }
                 is IRTransitionFadeOut -> {
@@ -1399,7 +1399,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                 }
                 is IRTransitionFadeIn -> {
@@ -1409,7 +1409,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                 }
                 is IRTransitionWipe -> {
@@ -1419,7 +1419,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                 }
                 is IRTransitionIris -> {
@@ -1429,7 +1429,7 @@ class GameValidator(private val game: Game) {
                         knownSprites,
                         knownPools,
                         knownMenus,
-                        knownDialogs
+                        knownDialogs,
                     )
                 }
                 else -> {
@@ -1452,19 +1452,19 @@ class GameValidator(private val game: Game) {
                 scene.onEnter,
                 "scene '$sceneName' enter",
                 arrayBounds,
-                emptyMap()
+                emptyMap(),
             )
             validateArrayBoundsInStatements(
                 scene.onFrame,
                 "scene '$sceneName' frame",
                 arrayBounds,
-                emptyMap()
+                emptyMap(),
             )
             validateArrayBoundsInStatements(
                 scene.onExit,
                 "scene '$sceneName' exit",
                 arrayBounds,
-                emptyMap()
+                emptyMap(),
             )
         }
 
@@ -1474,7 +1474,7 @@ class GameValidator(private val game: Game) {
                 pool.onFrameStatements,
                 "pool '${pool.name}'",
                 arrayBounds,
-                emptyMap()
+                emptyMap(),
             )
         }
 
@@ -1486,19 +1486,19 @@ class GameValidator(private val game: Game) {
                     state.onEnter,
                     "$context onEnter",
                     arrayBounds,
-                    emptyMap()
+                    emptyMap(),
                 )
                 validateArrayBoundsInStatements(
                     state.onTick,
                     "$context onTick",
                     arrayBounds,
-                    emptyMap()
+                    emptyMap(),
                 )
                 validateArrayBoundsInStatements(
                     state.onExit,
                     "$context onExit",
                     arrayBounds,
-                    emptyMap()
+                    emptyMap(),
                 )
             }
         }
@@ -1511,7 +1511,7 @@ class GameValidator(private val game: Game) {
         statements: List<IRStatement>,
         context: String,
         arrayBounds: Map<String, Int>,
-        knownBounds: Map<String, IntRange>
+        knownBounds: Map<String, IntRange>,
     ) {
         for (stmt in statements) {
             when (stmt) {
@@ -1533,7 +1533,7 @@ class GameValidator(private val game: Game) {
                         stmt.condition,
                         context,
                         arrayBounds,
-                        knownBounds
+                        knownBounds,
                     )
                 }
                 is IRWhen -> {
@@ -1542,13 +1542,13 @@ class GameValidator(private val game: Game) {
                             branch.body,
                             context,
                             arrayBounds,
-                            knownBounds
+                            knownBounds,
                         )
                         validateArrayBoundsInExpression(
                             branch.condition,
                             context,
                             arrayBounds,
-                            knownBounds
+                            knownBounds,
                         )
                     }
                     stmt.otherwise?.let {
@@ -1561,7 +1561,7 @@ class GameValidator(private val game: Game) {
                         stmt.condition,
                         context,
                         arrayBounds,
-                        knownBounds
+                        knownBounds,
                     )
                 }
                 is IRPoolForEach -> {
@@ -1569,7 +1569,7 @@ class GameValidator(private val game: Game) {
                         stmt.bodyStatements,
                         context,
                         arrayBounds,
-                        knownBounds
+                        knownBounds,
                     )
                 }
                 is IRPoolSpawn -> {
@@ -1577,7 +1577,7 @@ class GameValidator(private val game: Game) {
                         stmt.initStatements,
                         context,
                         arrayBounds,
-                        knownBounds
+                        knownBounds,
                     )
                 }
                 is IRPoolSpawnAt -> {
@@ -1585,7 +1585,7 @@ class GameValidator(private val game: Game) {
                         stmt.initStatements,
                         context,
                         arrayBounds,
-                        knownBounds
+                        knownBounds,
                     )
                 }
                 is IRPoolTrySpawn -> {
@@ -1593,13 +1593,13 @@ class GameValidator(private val game: Game) {
                         stmt.initStatements,
                         context,
                         arrayBounds,
-                        knownBounds
+                        knownBounds,
                     )
                     validateArrayBoundsInStatements(
                         stmt.elseStatements,
                         context,
                         arrayBounds,
-                        knownBounds
+                        knownBounds,
                     )
                 }
                 is IRTransitionFadeOut -> {
@@ -1607,7 +1607,7 @@ class GameValidator(private val game: Game) {
                         stmt.onComplete,
                         context,
                         arrayBounds,
-                        knownBounds
+                        knownBounds,
                     )
                 }
                 is IRTransitionFadeIn -> {
@@ -1615,7 +1615,7 @@ class GameValidator(private val game: Game) {
                         stmt.onComplete,
                         context,
                         arrayBounds,
-                        knownBounds
+                        knownBounds,
                     )
                 }
                 is IRTransitionWipe -> {
@@ -1623,7 +1623,7 @@ class GameValidator(private val game: Game) {
                         stmt.onComplete,
                         context,
                         arrayBounds,
-                        knownBounds
+                        knownBounds,
                     )
                 }
                 is IRTransitionIris -> {
@@ -1631,7 +1631,7 @@ class GameValidator(private val game: Game) {
                         stmt.onComplete,
                         context,
                         arrayBounds,
-                        knownBounds
+                        knownBounds,
                     )
                 }
                 else -> {
@@ -1646,7 +1646,7 @@ class GameValidator(private val game: Game) {
         expr: IRExpression,
         context: String,
         arrayBounds: Map<String, Int>,
-        knownBounds: Map<String, IntRange>
+        knownBounds: Map<String, IntRange>,
     ) {
         when (expr) {
             is IRArrayAccess -> {
@@ -1690,7 +1690,7 @@ class GameValidator(private val game: Game) {
         index: IRExpression,
         context: String,
         arrayBounds: Map<String, Int>,
-        knownBounds: Map<String, IntRange>
+        knownBounds: Map<String, IntRange>,
     ) {
         val arraySize = arrayBounds[arrayName] ?: return // Unknown array, skip
 
@@ -1702,7 +1702,7 @@ class GameValidator(private val game: Game) {
                     errors.add(
                         ValidationError(
                             ValidationCategory.ARRAY_BOUNDS,
-                            "$context: Array '$arrayName' access with literal index $i is out of bounds (size: $arraySize)"
+                            "$context: Array '$arrayName' access with literal index $i is out of bounds (size: $arraySize)",
                         )
                     )
                 }
@@ -1716,7 +1716,7 @@ class GameValidator(private val game: Game) {
                             ValidationError(
                                 ValidationCategory.ARRAY_BOUNDS,
                                 "$context: Array '$arrayName' access with loop variable '${index.name}' " +
-                                    "(range: ${range.first}..${range.last}) may be out of bounds (size: $arraySize)"
+                                    "(range: ${range.first}..${range.last}) may be out of bounds (size: $arraySize)",
                             )
                         )
                     }
@@ -1726,7 +1726,7 @@ class GameValidator(private val game: Game) {
                         ValidationWarning(
                             ValidationCategory.ARRAY_BOUNDS,
                             "$context: Array '$arrayName' access with unchecked dynamic index '${index.name}'. " +
-                                "Consider using bounds checking or a for loop with known range."
+                                "Consider using bounds checking or a for loop with known range.",
                         )
                     )
                 }
@@ -1737,7 +1737,7 @@ class GameValidator(private val game: Game) {
                     ValidationWarning(
                         ValidationCategory.ARRAY_BOUNDS,
                         "$context: Array '$arrayName' access with complex expression index. " +
-                            "Cannot verify bounds at compile time."
+                            "Cannot verify bounds at compile time.",
                     )
                 )
             }
@@ -1763,7 +1763,7 @@ class GameValidator(private val game: Game) {
                 errors.add(
                     ValidationError(
                         ValidationCategory.PHYSICS,
-                        "Entity '${entity.name}' has non-positive mass ($mass). Mass must be > 0."
+                        "Entity '${entity.name}' has non-positive mass ($mass). Mass must be > 0.",
                     )
                 )
             }
@@ -1774,7 +1774,7 @@ class GameValidator(private val game: Game) {
                     ValidationWarning(
                         ValidationCategory.PHYSICS,
                         "Entity '${entity.name}' maxVelocityX (${physics.maxVelocityX}) exceeds i8 range (127). " +
-                            "Velocity will be clamped."
+                            "Velocity will be clamped.",
                     )
                 )
             }
@@ -1783,7 +1783,7 @@ class GameValidator(private val game: Game) {
                     ValidationWarning(
                         ValidationCategory.PHYSICS,
                         "Entity '${entity.name}' maxVelocityY (${physics.maxVelocityY}) exceeds i8 range (127). " +
-                            "Velocity will be clamped."
+                            "Velocity will be clamped.",
                     )
                 )
             }
@@ -1794,7 +1794,7 @@ class GameValidator(private val game: Game) {
                     ValidationWarning(
                         ValidationCategory.PHYSICS,
                         "Entity '${entity.name}' friction ($friction) outside typical range [0, 1.0]. " +
-                            "Values > 1 will accelerate instead of decelerate."
+                            "Values > 1 will accelerate instead of decelerate.",
                     )
                 )
             }
@@ -1805,7 +1805,7 @@ class GameValidator(private val game: Game) {
                     ValidationWarning(
                         ValidationCategory.PHYSICS,
                         "Entity '${entity.name}' gravity ($gravity) outside typical range [-2.0, 2.0]. " +
-                            "Extreme values may cause jittery movement."
+                            "Extreme values may cause jittery movement.",
                     )
                 )
             }
@@ -1820,7 +1820,7 @@ class GameValidator(private val game: Game) {
                         ValidationError(
                             ValidationCategory.PHYSICS,
                             "Gravity zone $index has invalid dimensions (${zone.width}x${zone.height}). " +
-                                "Width and height must be > 0."
+                                "Width and height must be > 0.",
                         )
                     )
                 }
@@ -1846,5 +1846,5 @@ internal expect fun validateAssetFile(assetPath: String, assetDir: String?): Ass
 /** Result of asset file validation. */
 internal data class AssetValidationResult(
     val isValid: Boolean,
-    val errors: List<String> = emptyList()
+    val errors: List<String> = emptyList(),
 )

@@ -47,7 +47,7 @@ class SaveTest {
         // Should generate save data structures
         assertTrue(
             code.contains("mygame") || code.contains("save"),
-            "Should reference save data name"
+            "Should reference save data name",
         )
     }
 
@@ -117,7 +117,7 @@ class SaveTest {
         // Should use UINT8 type
         assertTrue(
             code.contains("UINT8") || code.contains("uint8") || code.isNotEmpty(),
-            "Should generate u8 type"
+            "Should generate u8 type",
         )
     }
 
@@ -138,7 +138,7 @@ class SaveTest {
         // Should use UINT16 type
         assertTrue(
             code.contains("UINT16") || code.contains("uint16") || code.isNotEmpty(),
-            "Should generate u16 type"
+            "Should generate u16 type",
         )
     }
 
@@ -436,7 +436,7 @@ class SaveTest {
         val code = game.compileForTest()
         assertTrue(
             code.contains("currentSlot") || code.isNotEmpty(),
-            "Should generate variable slot load code"
+            "Should generate variable slot load code",
         )
     }
 

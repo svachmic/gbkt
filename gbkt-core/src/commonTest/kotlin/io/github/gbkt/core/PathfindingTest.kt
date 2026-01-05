@@ -28,7 +28,7 @@ class PathfindingTest {
                 height = 4,
                 walkableData = BooleanArray(16) { true },
                 weightData = IntArray(16) { 1 },
-                sourceMap = null
+                sourceMap = null,
             )
 
         assertEquals(4, grid.width)
@@ -54,7 +54,7 @@ class PathfindingTest {
                 height = 4,
                 walkableData = data,
                 weightData = weights,
-                sourceMap = null
+                sourceMap = null,
             )
 
         assertTrue(grid.isWalkableAt(0, 0))
@@ -90,7 +90,7 @@ class PathfindingTest {
                 height = 4,
                 walkableData = BooleanArray(16) { true },
                 weightData = IntArray(16) { 1 },
-                sourceMap = null
+                sourceMap = null,
             )
 
         // Out of bounds should return false
@@ -141,7 +141,7 @@ class PathfindingTest {
                 height = 8,
                 walkableData = BooleanArray(64) { true },
                 weightData = IntArray(64) { 1 },
-                sourceMap = null
+                sourceMap = null,
             )
 
         val builder = PoolPathfindingBuilder()
@@ -175,7 +175,7 @@ class PathfindingTest {
                 height = 4,
                 walkableData = data,
                 weightData = weights,
-                sourceMap = null
+                sourceMap = null,
             )
 
         assertTrue(grid.isWalkableAt(0, 0)) // data[0]

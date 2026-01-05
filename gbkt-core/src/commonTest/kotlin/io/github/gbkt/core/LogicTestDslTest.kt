@@ -72,10 +72,9 @@ class LogicTestDslTest {
 
     @Test
     fun `empty record captures no statements`() = testLogic {
-        val recorded =
-            record {
-                // Empty block
-            }
+        val recorded = record {
+            // Empty block
+        }
 
         recorded.assertCount(0)
     }
