@@ -41,11 +41,11 @@ class InputTest {
         // Button A has mask 0x10
         assertTrue(
             code.contains("0x10") || code.contains("16"),
-            "Should check A button mask (0x10)"
+            "Should check A button mask (0x10)",
         )
         assertTrue(
             code.contains("joypad") || code.contains("_joypad"),
-            "Should call joypad function"
+            "Should call joypad function",
         )
     }
 
@@ -63,7 +63,7 @@ class InputTest {
         // Button B has mask 0x20
         assertTrue(
             code.contains("0x20") || code.contains("32"),
-            "Should check B button mask (0x20)"
+            "Should check B button mask (0x20)",
         )
     }
 
@@ -82,7 +82,7 @@ class InputTest {
         // Start has mask 0x80
         assertTrue(
             code.contains("0x80") || code.contains("128"),
-            "Should check Start button mask (0x80)"
+            "Should check Start button mask (0x80)",
         )
     }
 
@@ -103,7 +103,7 @@ class InputTest {
         // Select has mask 0x40
         assertTrue(
             code.contains("0x40") || code.contains("64"),
-            "Should check Select button mask (0x40)"
+            "Should check Select button mask (0x40)",
         )
     }
 
@@ -121,7 +121,7 @@ class InputTest {
         // Left has mask 0x02
         assertTrue(
             code.contains("0x02") || code.contains("& 2") || code.contains("&2"),
-            "Should check Left direction mask (0x02)"
+            "Should check Left direction mask (0x02)",
         )
     }
 
@@ -139,7 +139,7 @@ class InputTest {
         // Right has mask 0x01
         assertTrue(
             code.contains("0x01") || code.contains("& 1") || code.contains("&1"),
-            "Should check Right direction mask (0x01)"
+            "Should check Right direction mask (0x01)",
         )
     }
 
@@ -157,7 +157,7 @@ class InputTest {
         // Up has mask 0x04
         assertTrue(
             code.contains("0x04") || code.contains("& 4") || code.contains("&4"),
-            "Should check Up direction mask (0x04)"
+            "Should check Up direction mask (0x04)",
         )
     }
 
@@ -175,7 +175,7 @@ class InputTest {
         // Down has mask 0x08
         assertTrue(
             code.contains("0x08") || code.contains("& 8") || code.contains("&8"),
-            "Should check Down direction mask (0x08)"
+            "Should check Down direction mask (0x08)",
         )
     }
 
@@ -293,7 +293,7 @@ class InputTest {
         // Pressed should compare current and previous state
         assertTrue(
             code.contains("_joypad") && code.contains("_joypad_prev"),
-            "Should compare current and previous joypad state"
+            "Should compare current and previous joypad state",
         )
     }
 
@@ -314,7 +314,7 @@ class InputTest {
         // Released should check !(current & mask) && (previous & mask)
         assertTrue(
             code.contains("_joypad") && code.contains("_joypad_prev"),
-            "Should compare current and previous joypad state for release"
+            "Should compare current and previous joypad state for release",
         )
     }
 
@@ -340,7 +340,7 @@ class InputTest {
         assertTrue(code.contains("_joypad_prev"), "Pressed should reference previous state")
         assertTrue(
             code.contains("joypad()") || code.contains("_joypad"),
-            "Held should reference current joypad state"
+            "Held should reference current joypad state",
         )
     }
 
@@ -362,7 +362,7 @@ class InputTest {
         // Should be inside the main loop
         assertTrue(
             code.contains("while") || code.contains("for(;;)"),
-            "Input check should be in main loop"
+            "Input check should be in main loop",
         )
         assertTrue(code.contains("0x10") || code.contains("16"), "Should check A button mask")
     }
@@ -471,7 +471,7 @@ class InputTest {
         // Should generate negation of direction checks
         assertTrue(
             code.contains("!") || code.contains("==") || code.contains("0"),
-            "Should generate none/stationary check"
+            "Should generate none/stationary check",
         )
     }
 
@@ -493,7 +493,7 @@ class InputTest {
         // movingLeft should check left mask (0x02)
         assertTrue(
             code.contains("0x02") || code.contains("& 2"),
-            "movingLeft should check left mask"
+            "movingLeft should check left mask",
         )
     }
 
@@ -511,7 +511,7 @@ class InputTest {
         // movingRight should check right mask (0x01)
         assertTrue(
             code.contains("0x01") || code.contains("& 1"),
-            "movingRight should check right mask"
+            "movingRight should check right mask",
         )
     }
 
@@ -632,7 +632,7 @@ class InputTest {
         // Should update previous state and read new state
         assertTrue(
             code.contains("_joypad_prev = _joypad") || code.contains("_joypad_prev=_joypad"),
-            "Should copy current to previous"
+            "Should copy current to previous",
         )
         assertTrue(code.contains("joypad()"), "Should read new joypad state")
     }

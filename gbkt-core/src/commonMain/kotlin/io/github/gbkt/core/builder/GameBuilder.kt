@@ -65,7 +65,7 @@ import io.github.gbkt.core.ui.MenuDefinition
 class GameBuilder(
     private val name: String,
     /** Injected services for DI testing and mocking. */
-    val services: GameServices = DefaultGameServices()
+    val services: GameServices = DefaultGameServices(),
 ) : GameScope() {
     private var config = GameConfig()
     private val sprites = mutableListOf<Sprite>()
@@ -371,7 +371,7 @@ class GameBuilder(
             inputBuffers = _inputBuffers.toList(),
             audioMixer = _audioMixer,
             link = _link,
-            cutscenes = _cutscenes.toList()
+            cutscenes = _cutscenes.toList(),
         )
     }
 }

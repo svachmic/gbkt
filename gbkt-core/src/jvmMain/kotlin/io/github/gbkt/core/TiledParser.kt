@@ -58,7 +58,7 @@ object TiledParser {
                 tileWidth = tileWidth,
                 tileHeight = tileHeight,
                 layers = layers,
-                tilesets = tilesets
+                tilesets = tilesets,
             )
 
         validate(map)
@@ -75,7 +75,7 @@ object TiledParser {
                     width = layerJson.getInt("width"),
                     height = layerJson.getInt("height"),
                     data = parseLayerData(layerJson.getJSONArray("data")),
-                    visible = layerJson.optBoolean("visible", true)
+                    visible = layerJson.optBoolean("visible", true),
                 )
             }
     }
@@ -104,7 +104,7 @@ object TiledParser {
                     tileWidth = tilesetJson.optInt("tilewidth", 8),
                     tileHeight = tilesetJson.optInt("tileheight", 8),
                     image = resolvedImage,
-                    columns = tilesetJson.optInt("columns", 0)
+                    columns = tilesetJson.optInt("columns", 0),
                 )
             }
     }
@@ -182,7 +182,7 @@ data class TiledMap(
     val tileWidth: Int, // Tile width in pixels (should be 8)
     val tileHeight: Int, // Tile height in pixels (should be 8)
     val layers: List<TiledLayer>,
-    val tilesets: List<TiledTileset>
+    val tilesets: List<TiledTileset>,
 ) {
     /** Get a layer by name */
     fun getLayer(name: String): TiledLayer? = layers.find { it.name == name }
@@ -197,7 +197,7 @@ data class TiledLayer(
     val width: Int, // Layer width in tiles
     val height: Int, // Layer height in tiles
     val data: List<Int>, // Tile GIDs (Global IDs)
-    val visible: Boolean
+    val visible: Boolean,
 ) {
     /** Get tile at position (x, y) */
     fun getTile(x: Int, y: Int): Int {
@@ -216,5 +216,5 @@ data class TiledTileset(
     val tileWidth: Int, // Tile width (should match map's tilewidth)
     val tileHeight: Int, // Tile height (should match map's tileheight)
     val image: String, // Path to tileset PNG (resolved relative to map)
-    val columns: Int // Number of columns in tileset image
+    val columns: Int, // Number of columns in tileset image
 )

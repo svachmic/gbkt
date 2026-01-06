@@ -53,7 +53,7 @@ class InputBufferTest {
         // Should generate decrement logic
         assertTrue(
             code.contains("if (buffer_0 > 0) buffer_0--;"),
-            "Should decrement buffer each frame"
+            "Should decrement buffer each frame",
         )
     }
 
@@ -72,7 +72,7 @@ class InputBufferTest {
         // Button A has mask 0x10
         assertTrue(
             code.contains("_joypad & 0x10") && code.contains("buffer_0 = 6"),
-            "Should detect A button press and fill buffer to 6"
+            "Should detect A button press and fill buffer to 6",
         )
     }
 
@@ -94,7 +94,7 @@ class InputBufferTest {
         // The consumed check should use the comma operator for atomic check-and-reset
         assertTrue(
             code.contains("buffer_0 > 0u && (buffer_0 = 0u, 1u)"),
-            "Consumed should generate atomic check-and-reset expression"
+            "Consumed should generate atomic check-and-reset expression",
         )
     }
 
@@ -150,7 +150,7 @@ class InputBufferTest {
         assertTrue(code.contains("(buffer_0 > 0u)"), "Active check should not include reset logic")
         assertFalse(
             code.contains("buffer_0 > 0u && (buffer_0 = 0u"),
-            "Active check should NOT have comma operator reset"
+            "Active check should NOT have comma operator reset",
         )
     }
 
@@ -228,7 +228,7 @@ class InputBufferTest {
         // Should have the combined condition
         assertTrue(
             code.contains("buffer_0 > 0u && (buffer_0 = 0u, 1u)"),
-            "Should have consumed check"
+            "Should have consumed check",
         )
         assertTrue(code.contains("grounded"), "Should have grounded check")
     }

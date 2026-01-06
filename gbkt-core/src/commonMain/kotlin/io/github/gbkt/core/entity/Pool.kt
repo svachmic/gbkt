@@ -93,7 +93,7 @@ class Pool(
     internal val animations: Map<String, Animation>,
     internal val hitbox: Hitbox?,
     internal val paletteRef: String?,
-    internal val paletteIndex: Int
+    internal val paletteIndex: Int,
 ) {
     /** Index variable name used in generated loops */
     val indexVar: String = "_${name}_i"
@@ -249,12 +249,12 @@ class TrySpawnBuilder(private val pool: Pool, private val init: PoolEntityScope.
 class PoolEntityVar(
     private val arrayName: String,
     private val indexVar: String,
-    varType: GBVar.VarType
+    varType: GBVar.VarType,
 ) :
     AssignableExpr(
         arrayName,
         varType,
-        IRPoolEntityVar(arrayName.substringBefore("_"), arrayName.substringAfter("_"), indexVar)
+        IRPoolEntityVar(arrayName.substringBefore("_"), arrayName.substringAfter("_"), indexVar),
     ) {
 
     private val indexExpr: IRExpression = IRVar(indexVar)
@@ -278,7 +278,7 @@ class PoolEntityVar(
                     IRArrayAssign(
                         arrayName,
                         indexExpr,
-                        IRBinary(ir, BinaryOp.ADD, IRLiteral(value))
+                        IRBinary(ir, BinaryOp.ADD, IRLiteral(value)),
                     )
                 )
         }
@@ -298,7 +298,7 @@ class PoolEntityVar(
                     IRArrayAssign(
                         arrayName,
                         indexExpr,
-                        IRBinary(ir, BinaryOp.SUB, IRLiteral(value))
+                        IRBinary(ir, BinaryOp.SUB, IRLiteral(value)),
                     )
                 )
         }
@@ -318,7 +318,7 @@ class PoolEntityVar(
                     IRArrayAssign(
                         arrayName,
                         indexExpr,
-                        IRBinary(ir, BinaryOp.ADD, IRLiteral(value))
+                        IRBinary(ir, BinaryOp.ADD, IRLiteral(value)),
                     )
                 )
         }
@@ -338,7 +338,7 @@ class PoolEntityVar(
                     IRArrayAssign(
                         arrayName,
                         indexExpr,
-                        IRBinary(ir, BinaryOp.SUB, IRLiteral(value))
+                        IRBinary(ir, BinaryOp.SUB, IRLiteral(value)),
                     )
                 )
         }
@@ -358,7 +358,7 @@ class PoolEntityVar(
                     IRArrayAssign(
                         arrayName,
                         indexExpr,
-                        IRBinary(ir, BinaryOp.MUL, IRLiteral(value))
+                        IRBinary(ir, BinaryOp.MUL, IRLiteral(value)),
                     )
                 )
         }
@@ -378,7 +378,7 @@ class PoolEntityVar(
                     IRArrayAssign(
                         arrayName,
                         indexExpr,
-                        IRBinary(ir, BinaryOp.DIV, IRLiteral(value))
+                        IRBinary(ir, BinaryOp.DIV, IRLiteral(value)),
                     )
                 )
         }
@@ -398,7 +398,7 @@ class PoolEntityVar(
                     IRArrayAssign(
                         arrayName,
                         indexExpr,
-                        IRBinary(ir, BinaryOp.MOD, IRLiteral(value))
+                        IRBinary(ir, BinaryOp.MOD, IRLiteral(value)),
                     )
                 )
         }
@@ -496,7 +496,7 @@ class PoolEntityScope(private val pool: Pool, private val indexVar: String) : Mo
                 IRBinary(
                     IRPoolEntityVar(pool.name, "anim_complete", indexVar),
                     BinaryOp.EQ,
-                    IRLiteral(1)
+                    IRLiteral(1),
                 )
             )
 
@@ -511,7 +511,7 @@ class PoolEntityScope(private val pool: Pool, private val indexVar: String) : Mo
             IRBinary(
                 IRPoolEntityVar(pool.name, "anim", indexVar),
                 BinaryOp.EQ,
-                IRVar("ANIM_${pool.name.uppercase()}_${animationName.uppercase()}")
+                IRVar("ANIM_${pool.name.uppercase()}_${animationName.uppercase()}"),
             )
         )
     }
@@ -532,7 +532,7 @@ class PoolEntityScope(private val pool: Pool, private val indexVar: String) : Mo
         return AssignableExpr(
             "${pool.name}_$fieldName",
             field.type,
-            IRPoolEntityVar(pool.name, fieldName, indexVar)
+            IRPoolEntityVar(pool.name, fieldName, indexVar),
         )
     }
 

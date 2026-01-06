@@ -63,11 +63,11 @@ class StateMachineCodegenTest {
         // Enter handlers should set counter values
         assertTrue(
             code.contains("counter = 1") || code.contains("counter = 1u"),
-            "Should generate enter handler for idle"
+            "Should generate enter handler for idle",
         )
         assertTrue(
             code.contains("counter = 2") || code.contains("counter = 2u"),
-            "Should generate enter handler for active"
+            "Should generate enter handler for active",
         )
     }
 
@@ -92,7 +92,7 @@ class StateMachineCodegenTest {
         // Exit handler should be in the exit switch
         assertTrue(
             code.contains("cleanup = 1") || code.contains("cleanup = 1u"),
-            "Should generate exit handler"
+            "Should generate exit handler",
         )
     }
 
@@ -117,7 +117,7 @@ class StateMachineCodegenTest {
         // Tick handler should update moveCount
         assertTrue(
             code.contains("moveCount") && code.contains("++"),
-            "Should generate tick handler"
+            "Should generate tick handler",
         )
     }
 
@@ -143,7 +143,7 @@ class StateMachineCodegenTest {
         assertTrue(code.contains("health"), "Should check health condition")
         assertTrue(
             code.contains("STATE_PLAYER_DEAD") || code.contains("_player_next"),
-            "Should transition to dead state"
+            "Should transition to dead state",
         )
     }
 
@@ -168,7 +168,7 @@ class StateMachineCodegenTest {
         assertTrue(
             code.contains("_player_state = STATE_PLAYER_IDLE") ||
                 code.contains("_player_next = STATE_PLAYER_IDLE"),
-            "Should set initial state to idle"
+            "Should set initial state to idle",
         )
         assertTrue(code.contains("_player_changed = 1"), "Should mark state as changed on start")
     }

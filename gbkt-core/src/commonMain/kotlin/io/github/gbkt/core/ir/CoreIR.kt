@@ -34,44 +34,44 @@ data class IRAssign(
     val target: String,
     val value: IRExpression,
     val op: AssignOp = AssignOp.SET,
-    override val sourceLocation: SourceLocation? = null
+    override val sourceLocation: SourceLocation? = null,
 ) : IRStatement
 
 data class IRIf(
     val condition: IRExpression,
     val then: List<IRStatement>,
     val otherwise: List<IRStatement>? = null,
-    override val sourceLocation: SourceLocation? = null
+    override val sourceLocation: SourceLocation? = null,
 ) : IRStatement
 
 data class IRWhen(
     val branches: List<WhenBranch>,
     val otherwise: List<IRStatement>? = null,
-    override val sourceLocation: SourceLocation? = null
+    override val sourceLocation: SourceLocation? = null,
 ) : IRStatement
 
 data class IRWhile(
     val condition: IRExpression,
     val body: List<IRStatement>,
-    override val sourceLocation: SourceLocation? = null
+    override val sourceLocation: SourceLocation? = null,
 ) : IRStatement
 
 data class IRFor(
     val counter: String,
     val range: IntRange,
     val body: List<IRStatement>,
-    override val sourceLocation: SourceLocation? = null
+    override val sourceLocation: SourceLocation? = null,
 ) : IRStatement
 
 data class IRCall(
     val function: String,
     val args: List<IRExpression>,
-    override val sourceLocation: SourceLocation? = null
+    override val sourceLocation: SourceLocation? = null,
 ) : IRStatement
 
 data class IRSceneChange(
     val sceneName: String,
-    override val sourceLocation: SourceLocation? = null
+    override val sourceLocation: SourceLocation? = null,
 ) : IRStatement
 
 data class IRRaw(val code: String, override val sourceLocation: SourceLocation? = null) :
@@ -88,7 +88,7 @@ data class IRArrayAssign(
     val array: String,
     val index: IRExpression,
     val value: IRExpression,
-    override val sourceLocation: SourceLocation? = null
+    override val sourceLocation: SourceLocation? = null,
 ) : IRStatement
 
 data class WhenBranch(val condition: IRExpression, val body: List<IRStatement>)
@@ -99,7 +99,7 @@ enum class AssignOp(val c: String) {
     SUB("-="),
     MUL("*="),
     AND("&="),
-    OR("|=")
+    OR("|="),
 }
 
 // =============================================================================
@@ -140,11 +140,11 @@ enum class BinaryOp(val c: String) {
     GT(">"),
     GTE(">="),
     LAND("&&"),
-    LOR("||")
+    LOR("||"),
 }
 
 enum class UnaryOp(val c: String) {
     NEG("-"),
     NOT("!"),
-    BNOT("~")
+    BNOT("~"),
 }

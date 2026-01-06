@@ -50,7 +50,7 @@ class ServicesTest {
             spriteComponent = null,
             hitboxComponent = null,
             statesComponent = null,
-            tagComponent = tags?.let { TagComponent(it) }
+            tagComponent = tags?.let { TagComponent(it) },
         )
 
     // Helper function to create a GBVar

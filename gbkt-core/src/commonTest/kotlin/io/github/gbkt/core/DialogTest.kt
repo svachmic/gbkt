@@ -182,7 +182,7 @@ class DialogTest {
         // Should contain both the speaker and the text
         assertTrue(
             code.contains("Elder") || code.contains("elder"),
-            "Should reference speaker/dialog name"
+            "Should reference speaker/dialog name",
         )
         assertTrue(code.contains("Welcome, young one."), "Should contain dialog text")
     }
@@ -220,7 +220,7 @@ class DialogTest {
         // Should generate code checking dialog state
         assertTrue(
             code.contains("npc") || code.contains("dialog"),
-            "Should reference dialog for active check"
+            "Should reference dialog for active check",
         )
     }
 

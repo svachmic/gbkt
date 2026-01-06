@@ -95,7 +95,7 @@ object dpad {
                 IRTernary(
                     buttonHeld(Button.LEFT).ir,
                     IRLiteral(-1),
-                    IRTernary(buttonHeld(Button.RIGHT).ir, IRLiteral(1), IRLiteral(0))
+                    IRTernary(buttonHeld(Button.RIGHT).ir, IRLiteral(1), IRLiteral(0)),
                 )
             )
 
@@ -106,7 +106,7 @@ object dpad {
                 IRTernary(
                     buttonHeld(Button.UP).ir,
                     IRLiteral(-1),
-                    IRTernary(buttonHeld(Button.DOWN).ir, IRLiteral(1), IRLiteral(0))
+                    IRTernary(buttonHeld(Button.DOWN).ir, IRLiteral(1), IRLiteral(0)),
                 )
             )
 
@@ -178,7 +178,7 @@ enum class Button(val mask: Int, val gbdkName: String) {
     RIGHT(0x01, "J_RIGHT"),
     LEFT(0x02, "J_LEFT"),
     UP(0x04, "J_UP"),
-    DOWN(0x08, "J_DOWN")
+    DOWN(0x08, "J_DOWN"),
 }
 
 // Internal helpers that generate IR
@@ -192,7 +192,7 @@ private fun buttonPressed(btn: Button): Condition {
         IRBinary(
             IRBinary(IRVar("_joypad"), BinaryOp.AND, IRLiteral(btn.mask)),
             BinaryOp.LAND,
-            IRUnary(UnaryOp.NOT, IRBinary(IRVar("_joypad_prev"), BinaryOp.AND, IRLiteral(btn.mask)))
+            IRUnary(UnaryOp.NOT, IRBinary(IRVar("_joypad_prev"), BinaryOp.AND, IRLiteral(btn.mask))),
         )
     )
 }
@@ -203,7 +203,7 @@ private fun buttonReleased(btn: Button): Condition {
         IRBinary(
             IRUnary(UnaryOp.NOT, IRBinary(IRVar("_joypad"), BinaryOp.AND, IRLiteral(btn.mask))),
             BinaryOp.LAND,
-            IRBinary(IRVar("_joypad_prev"), BinaryOp.AND, IRLiteral(btn.mask))
+            IRBinary(IRVar("_joypad_prev"), BinaryOp.AND, IRLiteral(btn.mask)),
         )
     )
 }

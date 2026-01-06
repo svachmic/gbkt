@@ -62,7 +62,7 @@ import io.github.gbkt.core.services.GameServices
 fun testGame(
     name: String,
     services: GameServices = DefaultGameServices(),
-    init: TestGameBuilder.() -> Unit
+    init: TestGameBuilder.() -> Unit,
 ): Unit {
     val builder = TestGameBuilder(name, services)
     GameScopeContext.withScope(builder) {
@@ -81,7 +81,7 @@ fun testGame(
 class TestGameBuilder(
     name: String,
     /** Injected services for DI testing and mocking. */
-    val services: GameServices = DefaultGameServices()
+    val services: GameServices = DefaultGameServices(),
 ) : GameScope() {
     private val gameBuilder = GameBuilder(name, services)
     private var testBlock: (TestScope.() -> Unit)? = null
@@ -92,7 +92,7 @@ class TestGameBuilder(
 
     fun sprite(
         asset: io.github.gbkt.core.assets.SpriteAsset,
-        init: SpriteBuilder.() -> Unit = {}
+        init: SpriteBuilder.() -> Unit = {},
     ): Sprite = gameBuilder.sprite(asset, init)
 
     fun scene(name: String, init: SceneBuilder.() -> Unit): SceneRef {
@@ -239,7 +239,7 @@ class TestSceneBuilder(private val sceneName: String) : GameScope() {
                 variables = variables,
                 sprites = emptyList(),
                 scenes = mapOf(sceneName to scene),
-                startScene = sceneName
+                startScene = sceneName,
             )
 
         val simulation = SimulationContext(game)

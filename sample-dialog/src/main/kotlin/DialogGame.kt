@@ -295,7 +295,7 @@ fun main() {
         |   - Choice-based responses            |
         |   - NPC interaction                   |
         +---------------------------------------+
-    """
+        """
             .trimIndent()
     )
     println()

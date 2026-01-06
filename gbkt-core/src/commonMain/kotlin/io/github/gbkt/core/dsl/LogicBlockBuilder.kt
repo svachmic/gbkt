@@ -132,7 +132,7 @@ fun logicBlock(name: String = "anonymous", block: () -> Unit): LogicBlock {
 inline fun <reified T : IRExpression> logicBlock(
     name: String,
     parameterName: String,
-    crossinline block: (T) -> Unit
+    crossinline block: (T) -> Unit,
 ): ParameterizedLogicBlock<T> {
     val placeholderName = "__param_${parameterName}_${nextPlaceholderId()}"
     val placeholder = createPlaceholder<T>(placeholderName)
@@ -172,7 +172,7 @@ inline fun <reified T1 : IRExpression, reified T2 : IRExpression> logicBlock(
     name: String,
     param1Name: String,
     param2Name: String,
-    crossinline block: (T1, T2) -> Unit
+    crossinline block: (T1, T2) -> Unit,
 ): ParameterizedLogicBlock2<T1, T2> {
     val id = nextPlaceholderId()
     val placeholder1Name = "__param_${param1Name}_$id"

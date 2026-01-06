@@ -67,7 +67,7 @@ import io.github.gbkt.core.ir.IRMixerToggleMute
 enum class MixerPriority(val value: Int) {
     LOW(0),
     NORMAL(1),
-    HIGH(2)
+    HIGH(2),
 }
 
 // =============================================================================
@@ -88,7 +88,7 @@ data class ChannelGroup(
     val channels: Set<Channel>,
     val volume: Int = 100,
     val priority: MixerPriority = MixerPriority.NORMAL,
-    val muted: Boolean = false
+    val muted: Boolean = false,
 ) {
     init {
         require(volume in 0..100) { "Volume must be 0-100, got $volume" }
@@ -127,7 +127,7 @@ class ChannelGroupBuilder(private val name: String) {
             channels = _channels.toSet(),
             volume = volume.coerceIn(0, 100),
             priority = priority,
-            muted = false
+            muted = false,
         )
     }
 }

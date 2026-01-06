@@ -47,7 +47,7 @@ class SaveTest {
         // Should generate save data structures
         assertTrue(
             code.contains("mygame") || code.contains("save"),
-            "Should reference save data name"
+            "Should reference save data name",
         )
     }
 
@@ -117,7 +117,7 @@ class SaveTest {
         // Should use UINT8 type
         assertTrue(
             code.contains("UINT8") || code.contains("uint8") || code.isNotEmpty(),
-            "Should generate u8 type"
+            "Should generate u8 type",
         )
     }
 
@@ -138,7 +138,7 @@ class SaveTest {
         // Should use UINT16 type
         assertTrue(
             code.contains("UINT16") || code.contains("uint16") || code.isNotEmpty(),
-            "Should generate u16 type"
+            "Should generate u16 type",
         )
     }
 
@@ -436,7 +436,7 @@ class SaveTest {
         val code = game.compileForTest()
         assertTrue(
             code.contains("currentSlot") || code.isNotEmpty(),
-            "Should generate variable slot load code"
+            "Should generate variable slot load code",
         )
     }
 
@@ -605,5 +605,54 @@ class SaveTest {
 
         val code = game.compileForTest()
         assertTrue(code.isNotEmpty(), "Should compile with no checksum")
+    }
+
+    // =========================================================================
+    // SAVE CONFIG VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `SaveConfig headerSize calculates correctly without magic`() {
+        val config = SaveConfig(slots = 1, checksum = Checksum.NONE, magic = null, version = 1)
+        assertEquals(2, config.headerSize) // version(1) + reserved(1)
+    }
+
+    @Test
+    fun `SaveConfig headerSize calculates correctly with magic`() {
+        val config = SaveConfig(slots = 1, checksum = Checksum.NONE, magic = "GBKT", version = 1)
+        assertEquals(6, config.headerSize) // magic(4) + version(1) + reserved(1)
+    }
+
+    @Test
+    fun `SaveData slotSize calculates correctly`() {
+        val fields =
+            listOf(
+                SaveField("score", SaveFieldType.U16, 0, 2),
+                SaveField("level", SaveFieldType.U8, 2, 1),
+            )
+        val config = SaveConfig(slots = 1, checksum = Checksum.CRC8, magic = null)
+        val saveData = SaveData("test", fields, config)
+
+        // header(2) + fields(3) + checksum(1) = 6
+        assertEquals(6, saveData.slotSize)
+        assertEquals(3, saveData.dataSize)
+    }
+
+    @Test
+    fun `SaveFieldType has correct sizes`() {
+        assertEquals(1, SaveFieldType.U8.baseSize)
+        assertEquals(2, SaveFieldType.U16.baseSize)
+        assertEquals(1, SaveFieldType.I8.baseSize)
+        assertEquals(1, SaveFieldType.FLAGS.baseSize)
+        assertEquals(1, SaveFieldType.ARRAY.baseSize)
+        assertEquals(1, SaveFieldType.STRING.baseSize)
+    }
+
+    @Test
+    fun `Checksum has correct sizes`() {
+        assertEquals(0, Checksum.NONE.size)
+        assertEquals(1, Checksum.XOR.size)
+        assertEquals(1, Checksum.CRC8.size)
+        assertEquals(2, Checksum.SUM16.size)
     }
 }

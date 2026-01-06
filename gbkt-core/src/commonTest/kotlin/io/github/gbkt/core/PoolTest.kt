@@ -91,7 +91,7 @@ class PoolTest {
 
         assertTrue(
             code.contains("BULLET_POOL_SIZE") && code.contains("8"),
-            "Should define pool size constant"
+            "Should define pool size constant",
         )
     }
 
@@ -242,7 +242,7 @@ class PoolTest {
 
         assertTrue(
             code.contains("8") && code.contains("<"),
-            "Should generate despawn condition for y < 8"
+            "Should generate despawn condition for y < 8",
         )
     }
 
@@ -265,7 +265,7 @@ class PoolTest {
 
         assertTrue(
             code.contains("bullet_hide") || code.contains("bullet_despawn"),
-            "Should call hide in despawn"
+            "Should call hide in despawn",
         )
     }
 
@@ -291,7 +291,7 @@ class PoolTest {
 
         assertTrue(
             code.contains("bullet_pool_count") && code.contains("BULLET_POOL_SIZE"),
-            "Should check if pool has space"
+            "Should check if pool has space",
         )
     }
 
@@ -315,7 +315,7 @@ class PoolTest {
 
         assertTrue(
             code.contains("bullet_pool_count") && code.contains("BULLET_POOL_SIZE"),
-            "Should check if pool is full"
+            "Should check if pool is full",
         )
     }
 
@@ -536,89 +536,89 @@ class PoolTest {
         // Verify set operations with array indexing
         assertTrue(
             code.contains("particle_x[_particle_i] = 50"),
-            "Should generate array-indexed set for x"
+            "Should generate array-indexed set for x",
         )
         assertTrue(
             code.contains("particle_y[_particle_i] = 60"),
-            "Should generate array-indexed set for y"
+            "Should generate array-indexed set for y",
         )
 
         // Verify set with expr generates array indexing
         assertTrue(
             code.contains("particle_x[_particle_i] = particle_y[_particle_i] + 10"),
-            "Should generate array-indexed set with expr"
+            "Should generate array-indexed set with expr",
         )
 
         // Verify addAssign generates array indexing with addition
         assertTrue(
             code.contains("particle_x[_particle_i] = particle_x[_particle_i] + 5"),
-            "Should generate addAssign with Int"
+            "Should generate addAssign with Int",
         )
         assertTrue(
             code.contains(
                 "particle_y[_particle_i] = particle_y[_particle_i] + particle_vel_x[_particle_i]"
             ),
-            "Should generate addAssign with Expr"
+            "Should generate addAssign with Expr",
         )
 
         // Verify subAssign generates array indexing with subtraction
         assertTrue(
             code.contains("particle_x[_particle_i] = particle_x[_particle_i] - 3"),
-            "Should generate subAssign with Int"
+            "Should generate subAssign with Int",
         )
         assertTrue(
             code.contains(
                 "particle_y[_particle_i] = particle_y[_particle_i] - particle_vel_y[_particle_i]"
             ),
-            "Should generate subAssign with Expr"
+            "Should generate subAssign with Expr",
         )
 
         // Verify plusAssign generates array indexing
         assertTrue(
             code.contains("particle_x[_particle_i] = particle_x[_particle_i] + 1"),
-            "Should generate plusAssign with Int"
+            "Should generate plusAssign with Int",
         )
 
         // Verify minusAssign generates array indexing
         assertTrue(
             code.contains("particle_x[_particle_i] = particle_x[_particle_i] - 2"),
-            "Should generate minusAssign with Int"
+            "Should generate minusAssign with Int",
         )
 
         // Verify timesAssign generates array indexing (x * 2 -> x << 1 via strength reduction)
         assertTrue(
             code.contains("particle_x[_particle_i] = particle_x[_particle_i] << 1"),
-            "Should generate timesAssign with Int (strength reduced to shift)"
+            "Should generate timesAssign with Int (strength reduced to shift)",
         )
         assertTrue(
             code.contains(
                 "particle_y[_particle_i] = particle_y[_particle_i] * particle_vel_y[_particle_i]"
             ),
-            "Should generate timesAssign with Expr"
+            "Should generate timesAssign with Expr",
         )
 
         // Verify divAssign generates array indexing (x / 2 -> x >> 1 via strength reduction)
         assertTrue(
             code.contains("particle_x[_particle_i] = particle_x[_particle_i] >> 1"),
-            "Should generate divAssign with Int (strength reduced to shift)"
+            "Should generate divAssign with Int (strength reduced to shift)",
         )
         assertTrue(
             code.contains(
                 "particle_y[_particle_i] = particle_y[_particle_i] / particle_vel_x[_particle_i]"
             ),
-            "Should generate divAssign with Expr"
+            "Should generate divAssign with Expr",
         )
 
         // Verify remAssign generates array indexing
         assertTrue(
             code.contains("particle_x[_particle_i] = particle_x[_particle_i] % 10"),
-            "Should generate remAssign with Int"
+            "Should generate remAssign with Int",
         )
         assertTrue(
             code.contains(
                 "particle_y[_particle_i] = particle_y[_particle_i] % particle_vel_y[_particle_i]"
             ),
-            "Should generate remAssign with Expr"
+            "Should generate remAssign with Expr",
         )
     }
 
@@ -652,7 +652,7 @@ class PoolTest {
         assertTrue(game.pools[0].stateFields.any { it.name == "timer" }, "Should have timer field")
         assertTrue(
             game.pools[0].stateFields.any { it.name == "damage" },
-            "Should have damage field"
+            "Should have damage field",
         )
     }
 
@@ -710,7 +710,7 @@ class PoolTest {
 
         assertTrue(
             code.contains("for") && code.contains("BULLET_POOL_SIZE"),
-            "Should iterate over pool"
+            "Should iterate over pool",
         )
     }
 
@@ -819,15 +819,15 @@ class PoolTest {
         assertTrue(code.contains("ANIM_PARTICLE_SPIN"), "Should generate animation constant")
         assertTrue(
             code.contains("particle_anim[PARTICLE_POOL_SIZE]"),
-            "Should generate animation index array"
+            "Should generate animation index array",
         )
         assertTrue(
             code.contains("particle_frame[PARTICLE_POOL_SIZE]"),
-            "Should generate frame array"
+            "Should generate frame array",
         )
         assertTrue(
             code.contains("particle_timer[PARTICLE_POOL_SIZE]"),
-            "Should generate timer array"
+            "Should generate timer array",
         )
     }
 
@@ -862,7 +862,7 @@ class PoolTest {
         assertTrue(code.contains("ANIM_ENEMY_WALK"), "Should have walk animation constant")
         assertTrue(
             code.contains("enemy_anim[_enemy_i]"),
-            "Should use indexed access for animation state"
+            "Should use indexed access for animation state",
         )
     }
 
@@ -893,12 +893,12 @@ class PoolTest {
 
         assertTrue(
             code.contains("effect_anim_complete[EFFECT_POOL_SIZE]"),
-            "Should generate animation complete flag array"
+            "Should generate animation complete flag array",
         )
         // Check that animation complete flag is used somewhere (the exact index var name may vary)
         assertTrue(
             code.contains("effect_anim_complete["),
-            "Should use animation complete flag array"
+            "Should use animation complete flag array",
         )
     }
 
@@ -919,11 +919,242 @@ class PoolTest {
 
         assertFalse(
             code.contains("bullet_anim["),
-            "Should not generate animation array for pool without animations"
+            "Should not generate animation array for pool without animations",
         )
         assertFalse(
             code.contains("bullet_frame["),
-            "Should not generate frame array for pool without animations"
+            "Should not generate frame array for pool without animations",
         )
+    }
+
+    // =========================================================================
+    // ADDITIONAL POOL EDGE CASES
+    // =========================================================================
+
+    @Test
+    fun `pool despawnWhere generates conditional bulk despawn`() {
+        val game =
+            gbGame("PoolDespawnWhereTest") {
+                val bullets =
+                    pool("bullet", size = 8) {
+                        position(0, 0)
+                        sprite(SpriteAsset("bullet.png")) { size = 4 x 4 }
+                    }
+
+                start =
+                    scene("main") {
+                        enter { bullets.despawnWhere { x isAbove 160 } }
+                        every.frame {}
+                    }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("160"), "Should check x > 160 condition")
+        assertTrue(code.contains("bullet") && code.contains("despawn"), "Should despawn bullets")
+    }
+
+    @Test
+    fun `pool isPlaying generates animation check`() {
+        val game =
+            gbGame("PoolIsPlayingTest") {
+                lateinit var walkAnim: AnimationRef
+
+                val enemies =
+                    pool("enemy", size = 4) {
+                        position(0, 0)
+                        sprite(SpriteAsset("enemy.png")) {
+                            size = 8 x 8
+                            animations { walkAnim = "walk" plays (frames(0, 1) every 4.frames) }
+                        }
+
+                        onFrame { whenever(isPlaying("walk")) { x += 1 } }
+                    }
+
+                start = scene("main") { every.frame { enemies.update() } }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(
+            code.contains("ANIM_ENEMY_WALK") || code.contains("enemy_anim"),
+            "Should check current animation",
+        )
+    }
+
+    @Test
+    fun `pool show and hide generate visibility code`() {
+        val game =
+            gbGame("PoolShowHideTest") {
+                val particles =
+                    pool("particle", size = 8) {
+                        position(0, 0)
+                        sprite(SpriteAsset("particle.png")) { size = 4 x 4 }
+
+                        onSpawn { show() }
+                        onDespawn { hide() }
+                    }
+
+                start =
+                    scene("main") {
+                        enter { particles.spawn() }
+                        every.frame { particles.update() }
+                    }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(
+            code.contains("particle_visible") || code.contains("show"),
+            "Should generate visibility code",
+        )
+    }
+
+    @Test
+    fun `pool state field with different types`() {
+        val game =
+            gbGame("PoolStateTypesTest") {
+                val entities =
+                    pool("entity", size = 4) {
+                        position(0, 0)
+
+                        state {
+                            val byteField by u8Var(0)
+                            val signedField by i8Var(-5)
+                            val wordField by u16Var(1000)
+                        }
+                    }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val fields = game.pools[0].stateFields
+
+        assertEquals(3, fields.size, "Should have 3 state fields")
+
+        val byteField = fields.find { it.name == "byteField" }
+        val signedField = fields.find { it.name == "signedField" }
+        val wordField = fields.find { it.name == "wordField" }
+
+        assertNotNull(byteField, "Should have byteField")
+        assertNotNull(signedField, "Should have signedField")
+        assertNotNull(wordField, "Should have wordField")
+
+        assertEquals(GBVar.VarType.U8, byteField.type, "byteField should be U8")
+        assertEquals(GBVar.VarType.I8, signedField.type, "signedField should be I8")
+        assertEquals(GBVar.VarType.U16, wordField.type, "wordField should be U16")
+    }
+
+    @Test
+    fun `pool field accessor generates indexed access`() {
+        val game =
+            gbGame("PoolFieldAccessTest") {
+                val entities =
+                    pool("entity", size = 4) {
+                        position(0, 0)
+
+                        state {
+                            val health by u8Var(100)
+                        }
+
+                        onFrame {
+                            this["health"] -= 1
+                            whenever(this["health"] isEqualTo 0) { despawn() }
+                        }
+                    }
+
+                start = scene("main") { every.frame { entities.update() } }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("entity_health["), "Should generate indexed access for health")
+    }
+
+    @Test
+    fun `pool multiple spawn calls in scene`() {
+        val game =
+            gbGame("PoolMultiSpawnTest") {
+                val bullets =
+                    pool("bullet", size = 16) {
+                        position(0, 0)
+                        sprite(SpriteAsset("bullet.png")) { size = 4 x 4 }
+                    }
+
+                start =
+                    scene("main") {
+                        enter {
+                            bullets.spawnAt(10, 10)
+                            bullets.spawnAt(20, 20)
+                            bullets.spawnAt(30, 30)
+                        }
+                        every.frame {}
+                    }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(
+            code.contains("10") && code.contains("20") && code.contains("30"),
+            "Should spawn at multiple positions",
+        )
+    }
+
+    @Test
+    fun `pool with hitbox generates collision code`() {
+        val game =
+            gbGame("PoolHitboxTest") {
+                val player by entity {
+                    position(80, 72)
+                    sprite(SpriteAsset("player.png")) { size = 8 x 16 }
+                }
+
+                val bullets =
+                    pool("bullet", size = 8) {
+                        position(0, 0)
+                        sprite(SpriteAsset("bullet.png")) {
+                            size = 4 x 4
+                            hitbox(0, 0, 4, 4)
+                        }
+                    }
+
+                start =
+                    scene("main") {
+                        every.frame {
+                            bullets.forEachActive { whenever(collidesWith(player)) { despawn() } }
+                        }
+                    }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(
+            code.contains("bullet") && code.contains("player"),
+            "Should have collision check",
+        )
+    }
+
+    @Test
+    fun `pool velocity fields are accessible`() {
+        val game =
+            gbGame("PoolVelocityTest") {
+                val bullets =
+                    pool("bullet", size = 8) {
+                        position(0, 0)
+                        velocity(2, -4)
+
+                        onFrame {
+                            x += velX
+                            y += velY
+                        }
+                    }
+
+                start = scene("main") { every.frame { bullets.update() } }
+            }
+
+        val code = game.compileForTest()
+
+        assertTrue(code.contains("bullet_vel_x") || code.contains("velX"), "Should have velocity X")
+        assertTrue(code.contains("bullet_vel_y") || code.contains("velY"), "Should have velocity Y")
     }
 }

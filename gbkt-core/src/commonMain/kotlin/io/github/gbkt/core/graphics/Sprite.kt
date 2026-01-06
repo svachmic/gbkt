@@ -38,7 +38,7 @@ data class SpritePosition(
     val xVarName: String,
     val yVarName: String,
     val initialX: Int,
-    val initialY: Int
+    val initialY: Int,
 )
 
 /** Hitbox definition for collision detection. Offsets are relative to sprite position. */
@@ -56,7 +56,7 @@ class Sprite(
     val paletteIndex: Int = 0, // Direct palette index 0-7 (for GBC)
     val animations: Map<String, Animation> = emptyMap(), // Sprite animations
     val hitbox: Hitbox? = null, // Collision hitbox
-    val optimizationHints: SpriteOptimizationHints? = null // Asset optimization hints
+    val optimizationHints: SpriteOptimizationHints? = null, // Asset optimization hints
 ) : AnimatedSprite {
 
     /**
@@ -162,7 +162,7 @@ class Sprite(
             paletteIndex = paletteIndex,
             animations = animations,
             hitbox = hitbox,
-            optimizationHints = optimizationHints
+            optimizationHints = optimizationHints,
         )
 
     /**
@@ -190,7 +190,7 @@ class Sprite(
             paletteIndex = paletteIndex,
             animations = animations,
             hitbox = hitbox,
-            optimizationHints = optimizationHints
+            optimizationHints = optimizationHints,
         )
     }
 
@@ -284,7 +284,7 @@ data class SpriteOptimizationHints(
     /** Tile index ranges that are intentionally unique (skip dedup analysis). */
     val uniqueRegions: List<IntRange>,
     /** Maximum expected tiles (warn if exceeded). */
-    val maxTiles: Int?
+    val maxTiles: Int?,
 )
 
 /** Builder for sprite optimization hints. */
@@ -334,7 +334,7 @@ class SpriteOptimizeBuilder {
             removeEmpty = removeEmpty,
             suppressWarnings = suppressWarnings,
             uniqueRegions = _uniqueRegions.toList(),
-            maxTiles = maxTiles
+            maxTiles = maxTiles,
         )
 }
 
@@ -366,7 +366,7 @@ class SpriteBuilder(private val asset: String, private val slot: Int) {
                 xVarName = "sprite${slot}_x",
                 yVarName = "sprite${slot}_y",
                 initialX = x,
-                initialY = y
+                initialY = y,
             )
     }
 
@@ -513,6 +513,6 @@ class SpriteBuilder(private val asset: String, private val slot: Int) {
             paletteIndex = _paletteIndex,
             animations = _animations,
             hitbox = _hitbox,
-            optimizationHints = _optimizationHints
+            optimizationHints = _optimizationHints,
         )
 }

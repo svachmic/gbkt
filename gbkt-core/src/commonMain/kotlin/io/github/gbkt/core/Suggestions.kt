@@ -71,7 +71,7 @@ object Suggestions {
     fun findSuggestions(
         input: String,
         candidates: Collection<String>,
-        maxDistance: Int = 2
+        maxDistance: Int = 2,
     ): List<String> {
         if (input.isEmpty() || candidates.isEmpty()) return emptyList()
 
@@ -94,7 +94,7 @@ object Suggestions {
     fun formatSuggestion(
         input: String,
         candidates: Collection<String>,
-        maxDistance: Int = 2
+        maxDistance: Int = 2,
     ): String {
         val suggestions = findSuggestions(input, candidates, maxDistance)
         return when {
@@ -117,7 +117,7 @@ object Suggestions {
         input: String,
         candidates: Collection<String>,
         maxSuggestions: Int = 3,
-        maxDistance: Int = 2
+        maxDistance: Int = 2,
     ): String {
         val suggestions = findSuggestions(input, candidates, maxDistance).take(maxSuggestions)
         return when {

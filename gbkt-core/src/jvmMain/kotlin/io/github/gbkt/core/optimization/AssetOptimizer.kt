@@ -66,7 +66,7 @@ object AssetOptimizer {
     fun analyze(
         game: Game,
         assetDir: File? = null,
-        config: AnalyzerConfigBuilder.() -> Unit = {}
+        config: AnalyzerConfigBuilder.() -> Unit = {},
     ): AssetReport {
         val analyzerConfig = AnalyzerConfigBuilder().apply(config).build()
         val analyzer = AssetAnalyzer(analyzerConfig)
@@ -163,7 +163,7 @@ class AnalyzerConfigBuilder {
             detectEmpty = detectEmpty,
             detectLowEntropy = detectLowEntropy,
             analyzePalette = analyzePalette,
-            analyzeCompression = analyzeCompression
+            analyzeCompression = analyzeCompression,
         )
 }
 
@@ -181,6 +181,6 @@ class ReporterConfigBuilder {
             useUnicode = useUnicode,
             showPerAsset = showPerAsset,
             showSuggestions = showSuggestions,
-            quietWhenOptimal = quietWhenOptimal
+            quietWhenOptimal = quietWhenOptimal,
         )
 }

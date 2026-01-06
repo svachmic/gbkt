@@ -93,7 +93,7 @@ fun TileMap.followSpriteWithBounds(
     minX: Int = 0,
     minY: Int = 0,
     maxX: Int = 96, // 32*8 - 160 = 96 for 32-tile wide map
-    maxY: Int = 112 // 32*8 - 144 = 112 for 32-tile tall map
+    maxY: Int = 112, // 32*8 - 144 = 112 for 32-tile tall map
 ) {
     // Calculate desired camera position
     val desiredX = spriteX - 80
@@ -108,8 +108,8 @@ fun TileMap.followSpriteWithBounds(
                 IRTernary(
                     IRBinary(desiredX.ir, BinaryOp.GT, IRLiteral(maxX)),
                     IRLiteral(maxX),
-                    desiredX.ir
-                )
+                    desiredX.ir,
+                ),
             )
         )
 
@@ -121,8 +121,8 @@ fun TileMap.followSpriteWithBounds(
                 IRTernary(
                     IRBinary(desiredY.ir, BinaryOp.GT, IRLiteral(maxY)),
                     IRLiteral(maxY),
-                    desiredY.ir
-                )
+                    desiredY.ir,
+                ),
             )
         )
 

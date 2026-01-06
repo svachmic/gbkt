@@ -42,7 +42,7 @@ class ParticlesTest {
         // Should have lifetime state field
         assertTrue(
             code.contains("spark") && code.contains("_lifetime"),
-            "Should have lifetime field"
+            "Should have lifetime field",
         )
     }
 
@@ -64,7 +64,7 @@ class ParticlesTest {
         // Should initialize lifetime to 30 on spawn
         assertTrue(
             code.contains("_lifetime") && code.contains("30"),
-            "Should initialize lifetime on spawn"
+            "Should initialize lifetime on spawn",
         )
     }
 
@@ -87,7 +87,7 @@ class ParticlesTest {
         assertTrue(
             code.contains("_lifetime") &&
                 (code.contains("- 1") || code.contains("-= 1") || code.contains("--")),
-            "Should decrement lifetime each frame"
+            "Should decrement lifetime each frame",
         )
     }
 
@@ -109,7 +109,7 @@ class ParticlesTest {
         // Should have despawn condition when lifetime == 0
         assertTrue(
             code.contains("_lifetime") && code.contains("== 0"),
-            "Should auto-despawn when lifetime reaches 0"
+            "Should auto-despawn when lifetime reaches 0",
         )
     }
 
@@ -203,7 +203,7 @@ class ParticlesTest {
         // Should have onSpawn section
         assertTrue(
             code.contains("onSpawn") || code.contains("spark_spawn"),
-            "Should have spawn logic"
+            "Should have spawn logic",
         )
     }
 
@@ -230,7 +230,7 @@ class ParticlesTest {
         // Should have the movement logic
         assertTrue(
             code.contains("spark") && code.contains("y"),
-            "Should update Y position in onFrame"
+            "Should update Y position in onFrame",
         )
     }
 
@@ -254,7 +254,7 @@ class ParticlesTest {
         // Should call hide on despawn
         assertTrue(
             code.contains("spark_despawn") && code.contains("spark_hide"),
-            "Should call hide in despawn"
+            "Should call hide in despawn",
         )
     }
 
@@ -397,7 +397,7 @@ class ParticlesTest {
         assertEquals(
             3,
             pool.stateFields.size,
-            "Should have _lifetime + scale + color = 3 state fields"
+            "Should have _lifetime + scale + color = 3 state fields",
         )
         assertTrue(pool.stateFields.any { it.name == "_lifetime" }, "Should have _lifetime")
         assertTrue(pool.stateFields.any { it.name == "scale" }, "Should have scale")
@@ -430,7 +430,7 @@ class ParticlesTest {
         // Should generate foreach loop
         assertTrue(
             code.contains("for") && code.contains("SPARK_POOL_SIZE"),
-            "Should iterate over pool"
+            "Should iterate over pool",
         )
     }
 
@@ -455,7 +455,7 @@ class ParticlesTest {
         // Should check pool count vs size
         assertTrue(
             code.contains("spark_pool_count") && code.contains("SPARK_POOL_SIZE"),
-            "Should check if pool has space"
+            "Should check if pool has space",
         )
     }
 
@@ -479,7 +479,7 @@ class ParticlesTest {
         // Should reference player position (entity vars use entityName_x format)
         assertTrue(
             code.contains("player_x") && code.contains("player_y"),
-            "Should use player position for emit"
+            "Should use player position for emit",
         )
     }
 }

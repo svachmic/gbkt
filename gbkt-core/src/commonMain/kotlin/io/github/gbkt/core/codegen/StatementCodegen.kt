@@ -171,7 +171,7 @@ private fun CodeGenerator.generateForStatement(stmt: IRFor) {
     blockWithSource(
         "for (UINT8 ${stmt.counter} = $start; ${stmt.counter} <= $end; ${stmt.counter}++)",
         stmt.sourceLocation,
-        stmt.counter
+        stmt.counter,
     ) {
         stmt.body.forEach { generateStatement(it) }
     }
@@ -186,7 +186,7 @@ private fun CodeGenerator.generateSceneChangeStatement(stmt: IRSceneChange) {
     lineWithSource(
         "_next_scene = SCENE_${stmt.sceneName.uppercase()};",
         stmt.sourceLocation,
-        stmt.sceneName
+        stmt.sceneName,
     )
     line("_scene_changed = 1;")
 }
@@ -255,7 +255,7 @@ private fun CodeGenerator.generateArrayAssign(stmt: IRArrayAssign) {
         lineWithSource(
             "GB_ARRAY_SET(${stmt.array}, $index, ${array.size}, $value);",
             stmt.sourceLocation,
-            stmt.array
+            stmt.array,
         )
     } else {
         lineWithSource("${stmt.array}[$index] = $value;", stmt.sourceLocation, stmt.array)
@@ -418,7 +418,7 @@ private fun CodeGenerator.generatePrintAt(stmt: IRPrintAt) {
 
 private fun CodeGenerator.validateSpriteAnimation(
     sprite: io.github.gbkt.core.graphics.Sprite,
-    stmt: IRAnimationPlay
+    stmt: IRAnimationPlay,
 ): io.github.gbkt.core.graphics.Animation? {
     if (!sprite.hasAnimations) {
         reportError("Sprite '${stmt.spriteName}' has no animations defined")
@@ -438,7 +438,7 @@ private fun CodeGenerator.validateSpriteAnimation(
 
 private fun CodeGenerator.validatePoolAnimation(
     pool: io.github.gbkt.core.entity.Pool,
-    stmt: IRAnimationPlay
+    stmt: IRAnimationPlay,
 ): io.github.gbkt.core.graphics.Animation? {
     if (pool.animations.isEmpty()) {
         reportError("Pool '${pool.name}' has no animations defined")
@@ -488,7 +488,7 @@ private fun CodeGenerator.generateAnimationPlay(stmt: IRAnimationPlay) {
 private fun CodeGenerator.generateSpriteAnimation(
     stmt: IRAnimationPlay,
     sprite: io.github.gbkt.core.graphics.Sprite,
-    anim: io.github.gbkt.core.graphics.Animation
+    anim: io.github.gbkt.core.graphics.Animation,
 ) {
     val animVar = "_${stmt.spriteName}_anim"
     val frameVar = "_${stmt.spriteName}_frame"
@@ -509,7 +509,7 @@ private fun CodeGenerator.generateSpriteAnimation(
 private fun CodeGenerator.generatePoolAnimation(
     stmt: IRAnimationPlay,
     pool: io.github.gbkt.core.entity.Pool,
-    anim: io.github.gbkt.core.graphics.Animation
+    anim: io.github.gbkt.core.graphics.Animation,
 ) {
     // Pool animations use the pool name (not pool_sprite) for variable naming
     val poolName = pool.name

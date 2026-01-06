@@ -48,14 +48,14 @@ enum class Heuristic {
     /** Chebyshev distance: max(|dx|, |dy|) - best for 8-way movement */
     CHEBYSHEV,
     /** Euclidean distance: sqrt(dx^2 + dy^2) - most accurate but slower */
-    EUCLIDEAN
+    EUCLIDEAN,
 }
 
 /** Configuration options for pathfinding queries. */
 data class PathOptions(
     val diagonal: Boolean = false,
     val maxDepth: Int = 64,
-    val heuristic: Heuristic = Heuristic.MANHATTAN
+    val heuristic: Heuristic = Heuristic.MANHATTAN,
 )
 
 /** Builder for configuring pathfinding options. */
@@ -125,7 +125,7 @@ class NavGrid(
     val height: Int,
     internal val walkableData: BooleanArray,
     internal val weightData: IntArray, // 0 = blocked, 1+ = movement cost
-    internal val sourceMap: TileMap?
+    internal val sourceMap: TileMap?,
 ) {
     /** Whether this grid uses weighted pathfinding. */
     val hasWeights: Boolean = weightData.any { it > 1 }
@@ -234,7 +234,7 @@ class NavGridBuilder(private val name: String) {
             val y1: Int,
             val x2: Int,
             val y2: Int,
-            val walkable: Boolean
+            val walkable: Boolean,
         ) : GridOperation()
 
         data class SetWeight(val x: Int, val y: Int, val cost: Int) : GridOperation()
@@ -244,7 +244,7 @@ class NavGridBuilder(private val name: String) {
             val y1: Int,
             val x2: Int,
             val y2: Int,
-            val cost: Int
+            val cost: Int,
         ) : GridOperation()
     }
 
@@ -594,7 +594,7 @@ internal constructor(
     private val startXExpr: IRExpression,
     private val startYExpr: IRExpression,
     private val endXExpr: IRExpression,
-    private val endYExpr: IRExpression
+    private val endYExpr: IRExpression,
 ) {
     /** Complete the path query with a navigation grid. */
     infix fun using(navGrid: NavGrid): Path {
@@ -615,7 +615,7 @@ internal constructor(
                     startY = startYExpr,
                     endX = endXExpr,
                     endY = endYExpr,
-                    options = options
+                    options = options,
                 )
             )
 
@@ -675,7 +675,7 @@ class PathFollowBuilder {
 data class PathFollowConfig(
     val speed: Int,
     val onArrive: List<IRStatement>,
-    val onBlocked: List<IRStatement>
+    val onBlocked: List<IRStatement>,
 )
 
 // =============================================================================
@@ -699,7 +699,7 @@ data class PoolPathfindingConfig(
     val navGrid: NavGrid,
     val updateInterval: FrameTiming,
     val maxDepth: Int,
-    val diagonal: Boolean
+    val diagonal: Boolean,
 )
 
 // =============================================================================
@@ -736,7 +736,7 @@ infix fun Entity.findPathTo(target: Entity): PathQuery {
         IRBinary(this.x.ir, BinaryOp.SHR, IRLiteral(3)),
         IRBinary(this.y.ir, BinaryOp.SHR, IRLiteral(3)),
         IRBinary(target.x.ir, BinaryOp.SHR, IRLiteral(3)),
-        IRBinary(target.y.ir, BinaryOp.SHR, IRLiteral(3))
+        IRBinary(target.y.ir, BinaryOp.SHR, IRLiteral(3)),
     )
 }
 
@@ -748,7 +748,7 @@ fun Entity.findPathTo(tileX: Int, tileY: Int): PathQuery {
         IRBinary(this.x.ir, BinaryOp.SHR, IRLiteral(3)),
         IRBinary(this.y.ir, BinaryOp.SHR, IRLiteral(3)),
         IRLiteral(tileX),
-        IRLiteral(tileY)
+        IRLiteral(tileY),
     )
 }
 
@@ -760,7 +760,7 @@ fun Entity.findPathTo(tileX: Expr, tileY: Expr): PathQuery {
         IRBinary(this.x.ir, BinaryOp.SHR, IRLiteral(3)),
         IRBinary(this.y.ir, BinaryOp.SHR, IRLiteral(3)),
         tileX.ir,
-        tileY.ir
+        tileY.ir,
     )
 }
 
@@ -772,7 +772,7 @@ fun findPath(fromTileX: Int, fromTileY: Int, toTileX: Int, toTileY: Int): PathQu
         IRLiteral(fromTileX),
         IRLiteral(fromTileY),
         IRLiteral(toTileX),
-        IRLiteral(toTileY)
+        IRLiteral(toTileY),
     )
 }
 
@@ -801,7 +801,7 @@ fun Entity.followPath(path: Path, init: PathFollowBuilder.() -> Unit = {}) {
                 entityYVar = "${name}_y",
                 speed = config.speed,
                 onComplete = config.onArrive,
-                onBlocked = config.onBlocked
+                onBlocked = config.onBlocked,
             )
         )
 }

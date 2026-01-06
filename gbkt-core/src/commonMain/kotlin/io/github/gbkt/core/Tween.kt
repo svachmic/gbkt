@@ -57,7 +57,7 @@ enum class Easing {
     EASE_OUT_BOUNCE,
 
     /** Elastic ease out */
-    EASE_OUT_ELASTIC
+    EASE_OUT_ELASTIC,
 }
 
 /**
@@ -97,7 +97,7 @@ fun tween(
     from: Int,
     to: Int,
     duration: FrameTiming,
-    easing: Easing = Easing.EASE_OUT
+    easing: Easing = Easing.EASE_OUT,
 ) {
     if (RecordingContext.isRecording) {
         // Extract variable type from AssignableExpr - we need to add a property for this
@@ -110,7 +110,7 @@ fun tween(
                     from = IRLiteral(from),
                     to = IRLiteral(to),
                     duration = duration.count,
-                    easing = easing
+                    easing = easing,
                 )
             )
     }
@@ -130,7 +130,7 @@ fun tween(
     from: Expr,
     to: Expr,
     duration: FrameTiming,
-    easing: Easing = Easing.EASE_OUT
+    easing: Easing = Easing.EASE_OUT,
 ) {
     if (RecordingContext.isRecording) {
         RecordingContext.require()
@@ -141,7 +141,7 @@ fun tween(
                     from = from.ir,
                     to = to.ir,
                     duration = duration.count,
-                    easing = easing
+                    easing = easing,
                 )
             )
     }

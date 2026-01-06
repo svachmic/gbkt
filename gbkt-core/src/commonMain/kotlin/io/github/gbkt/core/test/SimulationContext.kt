@@ -193,7 +193,7 @@ class SimulationContext(val game: Game) {
                         x = position.initialX,
                         y = position.initialY,
                         visible = true,
-                        currentAnimation = null
+                        currentAnimation = null,
                     )
 
                 // Register sprite position variables
@@ -206,7 +206,7 @@ class SimulationContext(val game: Game) {
                         x = 0,
                         y = 0,
                         visible = true,
-                        currentAnimation = null
+                        currentAnimation = null,
                     )
             }
         }
@@ -222,7 +222,7 @@ class SimulationContext(val game: Game) {
                     hasVelocity = pool.hasVelocity,
                     stateFields = pool.stateFields,
                     onFrameStatements = pool.onFrameStatements,
-                    despawnConditions = pool.despawnConditions
+                    despawnConditions = pool.despawnConditions,
                 )
         }
     }

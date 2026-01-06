@@ -32,7 +32,7 @@ fun IRExpression.deepCopy(substitutions: Map<String, IRExpression> = emptyMap())
             IRTernary(
                 cond.deepCopy(substitutions),
                 then.deepCopy(substitutions),
-                otherwise.deepCopy(substitutions)
+                otherwise.deepCopy(substitutions),
             )
         is IRCallExpr -> IRCallExpr(function, args.map { it.deepCopy(substitutions) })
         is IRArrayAccess -> IRArrayAccess(array, index.deepCopy(substitutions))
@@ -90,7 +90,7 @@ fun IRStatement.deepCopy(substitutions: Map<String, IRExpression> = emptyMap()):
             copy(
                 condition = condition.deepCopy(substitutions),
                 then = then.map { it.deepCopy(substitutions) },
-                otherwise = otherwise?.map { it.deepCopy(substitutions) }
+                otherwise = otherwise?.map { it.deepCopy(substitutions) },
             )
         is IRWhen ->
             copy(
@@ -98,15 +98,15 @@ fun IRStatement.deepCopy(substitutions: Map<String, IRExpression> = emptyMap()):
                     branches.map { branch ->
                         WhenBranch(
                             branch.condition.deepCopy(substitutions),
-                            branch.body.map { it.deepCopy(substitutions) }
+                            branch.body.map { it.deepCopy(substitutions) },
                         )
                     },
-                otherwise = otherwise?.map { it.deepCopy(substitutions) }
+                otherwise = otherwise?.map { it.deepCopy(substitutions) },
             )
         is IRWhile ->
             copy(
                 condition = condition.deepCopy(substitutions),
-                body = body.map { it.deepCopy(substitutions) }
+                body = body.map { it.deepCopy(substitutions) },
             )
         is IRFor -> copy(body = body.map { it.deepCopy(substitutions) })
         is IRCall -> copy(args = args.map { it.deepCopy(substitutions) })
@@ -122,12 +122,12 @@ fun IRStatement.deepCopy(substitutions: Map<String, IRExpression> = emptyMap()):
             copy(
                 x = x.deepCopy(substitutions),
                 y = y.deepCopy(substitutions),
-                initStatements = initStatements.map { it.deepCopy(substitutions) }
+                initStatements = initStatements.map { it.deepCopy(substitutions) },
             )
         is IRPoolTrySpawn ->
             copy(
                 initStatements = initStatements.map { it.deepCopy(substitutions) },
-                elseStatements = elseStatements.map { it.deepCopy(substitutions) }
+                elseStatements = elseStatements.map { it.deepCopy(substitutions) },
             )
         is IRPoolDespawn -> copy(indexExpr = indexExpr.deepCopy(substitutions))
         is IRPoolDespawnAll -> this
@@ -162,7 +162,7 @@ fun IRStatement.deepCopy(substitutions: Map<String, IRExpression> = emptyMap()):
             copy(
                 centerX = centerX.deepCopy(substitutions),
                 centerY = centerY.deepCopy(substitutions),
-                onComplete = onComplete.map { it.deepCopy(substitutions) }
+                onComplete = onComplete.map { it.deepCopy(substitutions) },
             )
         is IRComposedTransition -> this
         is IRTransitionCancel -> this
@@ -174,7 +174,7 @@ fun IRStatement.deepCopy(substitutions: Map<String, IRExpression> = emptyMap()):
         is IRSaveCopy ->
             copy(
                 fromSlot = fromSlot.deepCopy(substitutions),
-                toSlot = toSlot.deepCopy(substitutions)
+                toSlot = toSlot.deepCopy(substitutions),
             )
         is IRSaveFieldWrite -> copy(value = value.deepCopy(substitutions))
         is IRSaveArrayWrite ->

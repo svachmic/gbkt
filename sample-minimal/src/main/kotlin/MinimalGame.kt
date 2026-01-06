@@ -113,7 +113,7 @@ fun main() {
         |   - D-pad movement                    |
         |   - Boundary checking                 |
         +---------------------------------------+
-    """
+        """
             .trimIndent()
     )
     println()

@@ -53,11 +53,11 @@ class SuggestionsTest {
     fun `levenshtein distance for multiple differences`() {
         assertEquals(
             1,
-            Suggestions.levenshteinDistance("playr", "player")
+            Suggestions.levenshteinDistance("playr", "player"),
         ) // Missing 'e' = 1 insertion
         assertEquals(
             1,
-            Suggestions.levenshteinDistance("player", "plaer")
+            Suggestions.levenshteinDistance("player", "plaer"),
         ) // Missing 'y' = 1 deletion
         assertEquals(3, Suggestions.levenshteinDistance("kitten", "sitting"))
         assertEquals(3, Suggestions.levenshteinDistance("saturday", "sunday"))
@@ -113,7 +113,7 @@ class SuggestionsTest {
         val suggestions2 = Suggestions.findSuggestions("enemyyy", candidates, maxDistance = 1)
         assertFalse(
             suggestions2.contains("enemy"),
-            "Distance 2 should not match with maxDistance=1"
+            "Distance 2 should not match with maxDistance=1",
         )
 
         val suggestions3 = Suggestions.findSuggestions("enemyyy", candidates, maxDistance = 2)
@@ -136,7 +136,7 @@ class SuggestionsTest {
         assertEquals(
             "play",
             suggestions[0],
-            "Closest alphabetically should be first among equal distances"
+            "Closest alphabetically should be first among equal distances",
         )
         assertEquals("playe", suggestions[1])
         assertEquals("player", suggestions[2])

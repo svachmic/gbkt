@@ -146,7 +146,7 @@ class EntityTest {
         val code = game.compileForTest()
         assertTrue(
             code.contains("UINT16") || code.contains("uint16_t") || code.contains("300"),
-            "Should generate code with U16 type or large value"
+            "Should generate code with U16 type or large value",
         )
     }
 
@@ -339,7 +339,7 @@ class EntityTest {
 
         assertTrue(
             exception.message?.contains("no position") == true,
-            "Error should mention no position component"
+            "Error should mention no position component",
         )
     }
 
@@ -360,7 +360,7 @@ class EntityTest {
 
         assertTrue(
             exception.message?.contains("no position") == true,
-            "Error should mention no position component"
+            "Error should mention no position component",
         )
     }
 
@@ -382,7 +382,7 @@ class EntityTest {
 
         assertTrue(
             exception.message?.contains("no velocity") == true,
-            "Error should mention no velocity component"
+            "Error should mention no velocity component",
         )
     }
 
@@ -439,11 +439,11 @@ class EntityTest {
 
         assertTrue(
             code.contains("player_velX") || code.contains("player_vel_x"),
-            "Should generate velocity X variable"
+            "Should generate velocity X variable",
         )
         assertTrue(
             code.contains("player_velY") || code.contains("player_vel_y"),
-            "Should generate velocity Y variable"
+            "Should generate velocity Y variable",
         )
     }
 

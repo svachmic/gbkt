@@ -25,7 +25,7 @@ sealed class Suggestion {
     /** Duplicate tiles were found across assets. */
     data class DeduplicateTiles(
         val duplicates: List<DuplicateTileInfo>,
-        override val savings: ByteSavings
+        override val savings: ByteSavings,
     ) : Suggestion() {
         override val severity = Severity.INFO
         override val title = "Duplicate tiles detected"
@@ -39,7 +39,7 @@ sealed class Suggestion {
     /** Empty (fully transparent) tiles were found. */
     data class RemoveEmptyTiles(
         val emptyTiles: List<TileLocation>,
-        override val savings: ByteSavings
+        override val savings: ByteSavings,
     ) : Suggestion() {
         override val severity = Severity.WARNING
         override val title = "Empty tiles found"
@@ -81,7 +81,7 @@ sealed class Suggestion {
     /** Similar but not identical tiles that could potentially be merged. */
     data class MergeSimilarTiles(
         val pairs: List<SimilarTilePair>,
-        val estimatedSavings: ByteSavings
+        val estimatedSavings: ByteSavings,
     ) : Suggestion() {
         override val severity = Severity.INFO
         override val title = "Similar tiles detected"
@@ -107,7 +107,7 @@ sealed class Suggestion {
     /** Cross-asset duplicate tiles. */
     data class ShareTilesBetweenAssets(
         val sharedTiles: List<CrossAssetDuplicate>,
-        override val savings: ByteSavings
+        override val savings: ByteSavings,
     ) : Suggestion() {
         override val severity = Severity.INFO
         override val title = "Tiles shared between assets"
@@ -125,7 +125,7 @@ enum class Severity {
     /** Warning - should be addressed but not breaking. */
     WARNING,
     /** Error - significant issue that should be fixed. */
-    ERROR
+    ERROR,
 }
 
 /** Tile that appears in multiple assets. */

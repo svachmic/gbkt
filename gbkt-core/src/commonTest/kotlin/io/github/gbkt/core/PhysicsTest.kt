@@ -75,7 +75,7 @@ class PhysicsTest {
         // Check for physics world update function
         assertTrue(
             code.contains("_physics_world_update"),
-            "Should have _physics_world_update function"
+            "Should have _physics_world_update function",
         )
 
         // Check that gravity 0.5 becomes 128 in fixed-point (0.5 * 256)
@@ -84,13 +84,13 @@ class PhysicsTest {
         // Check that friction 0.9 becomes ~230 in fixed-point (0.9 * 256 = 230.4)
         assertTrue(
             code.contains("PHYSICS_FRICTION 230") || code.contains("PHYSICS_FRICTION 231"),
-            "Friction 0.9 should be ~230 in fixed-point"
+            "Friction 0.9 should be ~230 in fixed-point",
         )
 
         // Check that bounce 0.3 becomes ~77 in fixed-point (0.3 * 256 = 76.8)
         assertTrue(
             code.contains("PHYSICS_BOUNCE 77") || code.contains("PHYSICS_BOUNCE 76"),
-            "Bounce 0.3 should be ~77 in fixed-point"
+            "Bounce 0.3 should be ~77 in fixed-point",
         )
     }
 
@@ -127,11 +127,11 @@ class PhysicsTest {
         assertEquals(2, game.entities.size, "Should have 2 entities")
         assertTrue(
             game.entities.any { it.name == "player" && it.hasPhysics },
-            "Player should have physics"
+            "Player should have physics",
         )
         assertTrue(
             game.entities.any { it.name == "enemy" && it.hasPhysics },
-            "Enemy should have physics"
+            "Enemy should have physics",
         )
 
         val code = game.compileForTest()
@@ -139,7 +139,7 @@ class PhysicsTest {
         // Should have physics world update function
         assertTrue(
             code.contains("_physics_world_update"),
-            "Should have physics world update function"
+            "Should have physics world update function",
         )
 
         // Should use global gravity from physics world (PHYSICS_GRAVITY)
@@ -160,13 +160,13 @@ class PhysicsTest {
             physicsSection.contains("Physics update for player") ||
                 physicsSection.contains("_player_vel") ||
                 physicsSection.contains("PLAYER_"),
-            "Physics world update should process player entity. Section preview: ${physicsSection.take(800)}"
+            "Physics world update should process player entity. Section preview: ${physicsSection.take(800)}",
         )
         assertTrue(
             physicsSection.contains("Physics update for enemy") ||
                 physicsSection.contains("_enemy_vel") ||
                 physicsSection.contains("ENEMY_"),
-            "Physics world update should process enemy entity. Section preview: ${physicsSection.take(800)}"
+            "Physics world update should process enemy entity. Section preview: ${physicsSection.take(800)}",
         )
     }
 
@@ -212,7 +212,7 @@ class PhysicsTest {
         // Should generate collision response code
         assertTrue(
             code.contains("Collision response: player <-> enemy"),
-            "Should generate collision response code"
+            "Should generate collision response code",
         )
     }
 
@@ -232,7 +232,7 @@ class PhysicsTest {
         assertNotNull(scene, "Scene should exist")
         assertTrue(
             scene.onFrame.any { it is IRPhysicsWorldUpdate },
-            "Should emit IRPhysicsWorldUpdate in scene"
+            "Should emit IRPhysicsWorldUpdate in scene",
         )
     }
 
@@ -256,7 +256,7 @@ class PhysicsTest {
         assertNotNull(scene, "Scene should exist")
         assertTrue(
             scene.onEnter.any { it is IRCollisionResponse },
-            "Should emit IRCollisionResponse in scene"
+            "Should emit IRCollisionResponse in scene",
         )
 
         val stmt = scene.onEnter.first { it is IRCollisionResponse } as IRCollisionResponse
@@ -282,7 +282,7 @@ class PhysicsTest {
         assertTrue(
             code.contains("No entities with physics component") ||
                 !code.contains("Physics update for"),
-            "Should not have entity-specific physics code"
+            "Should not have entity-specific physics code",
         )
     }
 

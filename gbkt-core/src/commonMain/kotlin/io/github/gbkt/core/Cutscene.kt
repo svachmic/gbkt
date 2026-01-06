@@ -23,7 +23,7 @@ import io.github.gbkt.core.ir.Transition
 data class CutsceneDefinition(
     val name: String,
     val steps: List<TimelineStep>,
-    val skippable: Boolean = true
+    val skippable: Boolean = true,
 )
 
 /** Handle to a configured cutscene for use in scenes. */

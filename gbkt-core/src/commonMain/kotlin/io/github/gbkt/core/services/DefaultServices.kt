@@ -104,5 +104,5 @@ class DefaultGameServices(
     override val assets: AssetService = DefaultAssetService(),
     override val sprites: SpriteService = DefaultSpriteService(),
     override val variables: VariableService = DefaultVariableService(),
-    override val entities: EntityService = DefaultEntityService()
+    override val entities: EntityService = DefaultEntityService(),
 ) : GameServices

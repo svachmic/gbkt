@@ -161,7 +161,7 @@ class RecordedIR(val statements: List<IRStatement>) {
      */
     inline fun <reified T : IRStatement> assertEmitted(
         message: String = "Expected ${T::class.simpleName} to be emitted",
-        predicate: (T) -> Boolean = { true }
+        predicate: (T) -> Boolean = { true },
     ): RecordedIR {
         val found = statements.filterIsInstance<T>().any(predicate)
         if (!found) throw AssertionError(message)
@@ -198,7 +198,7 @@ class RecordedIR(val statements: List<IRStatement>) {
     /** Assert the first statement matches a predicate. */
     inline fun <reified T : IRStatement> assertFirst(
         message: String = "Expected first statement to be ${T::class.simpleName}",
-        predicate: (T) -> Boolean = { true }
+        predicate: (T) -> Boolean = { true },
     ): RecordedIR {
         val first =
             statements.firstOrNull() ?: throw AssertionError("Expected at least one statement")

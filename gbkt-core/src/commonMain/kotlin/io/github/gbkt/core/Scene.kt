@@ -31,7 +31,7 @@ class Scene(
     val name: String,
     val onEnter: List<IRStatement>,
     val onFrame: List<IRStatement>,
-    val onExit: List<IRStatement>
+    val onExit: List<IRStatement>,
 )
 
 @GbktDsl
@@ -153,9 +153,9 @@ class TimingBlocks(private val sceneBuilder: SceneBuilder) {
                     IRBinary(
                         IRBinary(IRVar("_frame_count"), BinaryOp.MOD, IRLiteral(n)),
                         BinaryOp.EQ,
-                        IRLiteral(0)
+                        IRLiteral(0),
                     ),
-                    recorder.statements
+                    recorder.statements,
                 )
             )
         sceneBuilder.setFrameStatements(wrapped)
@@ -175,9 +175,9 @@ class FrameInterval(private val n: Int, private val sceneBuilder: SceneBuilder) 
                     IRBinary(
                         IRBinary(IRVar("_frame_count"), BinaryOp.MOD, IRLiteral(n)),
                         BinaryOp.EQ,
-                        IRLiteral(0)
+                        IRLiteral(0),
                     ),
-                    recorder.statements
+                    recorder.statements,
                 )
             )
         sceneBuilder.setFrameStatements(wrapped)
@@ -280,7 +280,7 @@ class FrameScope(private val sceneName: String) {
     inline fun whenever(
         condition: Condition,
         noinline then: () -> Unit,
-        noinline elseBlock: () -> Unit
+        noinline elseBlock: () -> Unit,
     ) {
         val thenRecorder = StatementRecorder()
         val elseRecorder = StatementRecorder()

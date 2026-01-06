@@ -17,7 +17,7 @@ data class SimSprite(
     var visible: Boolean = true,
     var currentAnimation: String? = null,
     var animationPaused: Boolean = false,
-    var animationFrame: Int = 0
+    var animationFrame: Int = 0,
 ) {
     /** Check if sprite is playing a specific animation. */
     fun isPlayingAnimation(animationName: String): Boolean =
@@ -43,7 +43,7 @@ data class SimSprite(
         thisWidth: Int,
         thisHeight: Int,
         otherWidth: Int,
-        otherHeight: Int
+        otherHeight: Int,
     ): Boolean {
         return x < other.x + otherWidth &&
             x + thisWidth > other.x &&

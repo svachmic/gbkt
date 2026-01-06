@@ -57,7 +57,7 @@ class Entity(
     internal val hitboxComponent: HitboxComponent?,
     internal val statesComponent: StatesComponent?,
     internal val tagComponent: TagComponent?,
-    internal val physicsComponent: PhysicsComponent? = null
+    internal val physicsComponent: PhysicsComponent? = null,
 ) : Movable {
     // === Position Access ===
 

@@ -146,7 +146,7 @@ class MenuTest {
         // Should contain scene transition code
         assertTrue(
             code.contains("gameplay") || code.isNotEmpty(),
-            "Should generate scene transition on item select"
+            "Should generate scene transition on item select",
         )
     }
 
@@ -173,7 +173,7 @@ class MenuTest {
 
         assertTrue(
             code.contains("saveExists") || code.isNotEmpty(),
-            "Should generate enabled condition check"
+            "Should generate enabled condition check",
         )
     }
 
@@ -223,7 +223,7 @@ class MenuTest {
         assertTrue(code.contains("MUSIC") || code.isNotEmpty(), "Should contain toggle label")
         assertTrue(
             code.contains("musicEnabled") || code.isNotEmpty(),
-            "Should reference toggle variable"
+            "Should reference toggle variable",
         )
     }
 
@@ -317,7 +317,7 @@ class MenuTest {
                 code.contains("NORMAL") ||
                 code.contains("HARD") ||
                 code.isNotEmpty(),
-            "Should contain option choices"
+            "Should contain option choices",
         )
     }
 
@@ -451,7 +451,7 @@ class MenuTest {
         val code = game.compileForTest()
         assertTrue(
             code.contains("savedIndex") || code.isNotEmpty(),
-            "Should generate variable moveTo code"
+            "Should generate variable moveTo code",
         )
     }
 

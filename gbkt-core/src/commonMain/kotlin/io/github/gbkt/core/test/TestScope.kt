@@ -72,7 +72,7 @@ class TestScope(val simulation: SimulationContext, val input: MockInputProvider)
     inline fun advanceUntil(
         maxFrames: Int = 600,
         failOnTimeout: Boolean = true,
-        predicate: () -> Boolean
+        predicate: () -> Boolean,
     ): AdvanceResult {
         var frames = 0
         while (!predicate() && frames < maxFrames) {
@@ -92,7 +92,7 @@ class TestScope(val simulation: SimulationContext, val input: MockInputProvider)
     inline fun advanceWhile(
         maxFrames: Int = 600,
         failOnTimeout: Boolean = true,
-        predicate: () -> Boolean
+        predicate: () -> Boolean,
     ): AdvanceResult {
         return advanceUntil(maxFrames, failOnTimeout) { !predicate() }
     }
@@ -262,7 +262,7 @@ class TestScope(val simulation: SimulationContext, val input: MockInputProvider)
     fun expect(variableName: String): IntExpectation {
         return IntExpectation(
             actual = simulation.getVariable(variableName).toInt(),
-            name = variableName
+            name = variableName,
         )
     }
 

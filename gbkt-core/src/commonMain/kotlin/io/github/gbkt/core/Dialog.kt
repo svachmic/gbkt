@@ -44,7 +44,7 @@ enum class BorderStyle {
     /** Rounded corners (requires custom tiles) */
     ROUNDED,
     /** Double-line border (requires custom tiles) */
-    DOUBLE
+    DOUBLE,
 }
 
 // =============================================================================
@@ -58,13 +58,13 @@ data class DialogBoxConfig(
     val width: Int = 20, // Full screen width
     val height: Int = 4, // 4 tile rows
     val borderStyle: BorderStyle = BorderStyle.SIMPLE,
-    val padding: Int = 1 // Padding inside border for text
+    val padding: Int = 1, // Padding inside border for text
 )
 
 /** Typewriter effect configuration. */
 data class TypewriterConfig(
     val charsPerFrame: Int = 2, // Characters revealed per frame
-    val soundOnChar: String? = null // Optional SFX per character
+    val soundOnChar: String? = null, // Optional SFX per character
 )
 
 /** Portrait configuration for RPG-style dialogs. */
@@ -72,12 +72,12 @@ data class PortraitConfig(
     val asset: String,
     val width: Int = 32, // 4 tiles
     val height: Int = 32, // 4 tiles
-    val position: PortraitPosition = PortraitPosition.LEFT
+    val position: PortraitPosition = PortraitPosition.LEFT,
 )
 
 enum class PortraitPosition {
     LEFT,
-    RIGHT
+    RIGHT,
 }
 
 /** Complete dialog definition combining all configuration. */
@@ -86,7 +86,7 @@ data class DialogDefinition(
     val box: DialogBoxConfig = DialogBoxConfig(),
     val typewriter: TypewriterConfig = TypewriterConfig(),
     val portrait: PortraitConfig? = null,
-    val defaultSpeaker: String? = null
+    val defaultSpeaker: String? = null,
 )
 
 // =============================================================================
@@ -244,7 +244,7 @@ class DialogHandle internal constructor(internal val definition: DialogDefinitio
                     IRDialogChoice(
                         dialogName = definition.name,
                         options = options.toList(),
-                        resultVar = resultVar
+                        resultVar = resultVar,
                     )
                 )
         }
@@ -293,7 +293,7 @@ internal constructor(
     private val textParts: List<TextPart>,
     private var speaker: String? = null,
     private var waitForInput: Boolean = true,
-    private var autoAdvanceFrames: Int = 0
+    private var autoAdvanceFrames: Int = 0,
 ) {
     init {
         emit()
@@ -308,7 +308,7 @@ internal constructor(
                         text = textParts,
                         speaker = speaker,
                         waitForInput = waitForInput,
-                        autoAdvanceFrames = autoAdvanceFrames
+                        autoAdvanceFrames = autoAdvanceFrames,
                     )
                 )
         }

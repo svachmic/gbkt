@@ -27,7 +27,7 @@ class GBVar<T : Any>(val name: String, private var _value: T, val type: VarType)
         U8("UINT8", 1),
         U16("UINT16", 2),
         I8("INT8", 1),
-        I16("INT16", 2)
+        I16("INT16", 2),
     }
 
     var value: T
@@ -100,7 +100,7 @@ object GameScopeContext {
 open class AssignableExpr(
     val varName: String,
     val varType: GBVar.VarType,
-    override val ir: IRExpression = IRVar(varName)
+    override val ir: IRExpression = IRVar(varName),
 ) : Expr(ir) {
 
     /** Assign an integer literal */
@@ -411,7 +411,7 @@ data class GBArray(
     val name: String,
     val size: Int,
     val elementType: GBVar.VarType,
-    val initialValue: Int = 0
+    val initialValue: Int = 0,
 )
 
 /**
@@ -427,7 +427,7 @@ data class GBArray(
 class AssignableArrayElement(
     private val arrayName: String,
     private val index: IRExpression,
-    private val elementType: GBVar.VarType
+    private val elementType: GBVar.VarType,
 ) : Expr(IRArrayAccess(arrayName, index)) {
 
     /** Assign an integer value: array[i] set 5 */

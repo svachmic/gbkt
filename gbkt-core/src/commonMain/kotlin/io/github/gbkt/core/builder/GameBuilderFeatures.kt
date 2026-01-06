@@ -173,7 +173,7 @@ fun GameBuilder.camera(name: String = "main", init: CameraBuilder.() -> Unit = {
  */
 fun GameBuilder.transition(
     name: String? = null,
-    init: SceneTransitionScope.() -> Transition
+    init: SceneTransitionScope.() -> Transition,
 ): TransitionDefinition {
     val scope = SceneTransitionScope()
     val trans = scope.init()
@@ -199,7 +199,7 @@ fun GameBuilder.assets(init: AssetConfig.() -> Unit) {
  */
 fun GameBuilder.sprite(
     asset: io.github.gbkt.core.assets.SpriteAsset,
-    init: SpriteBuilder.() -> Unit = {}
+    init: SpriteBuilder.() -> Unit = {},
 ): Sprite {
     val builder = SpriteBuilder(asset.path, nextSpriteSlot())
     builder.init()
@@ -555,7 +555,7 @@ fun GameBuilder.saveData(name: String, init: SaveDataBuilder.() -> Unit): SaveDa
         setConfig(
             config.copy(
                 cartridge = Cartridge.MBC5_RAM_BATTERY,
-                ramBanks = maxOf(config.ramBanks, 1)
+                ramBanks = maxOf(config.ramBanks, 1),
             )
         )
     }

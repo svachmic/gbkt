@@ -235,7 +235,7 @@ value class GBCColor(val rgb555: Int) {
 /** Palette type - sprites and backgrounds have separate palette banks. */
 enum class PaletteType {
     SPRITE,
-    BACKGROUND
+    BACKGROUND,
 }
 
 /**
@@ -247,7 +247,7 @@ enum class PaletteType {
 enum class GBCMode {
     DISABLED,
     COMPATIBLE,
-    ONLY
+    ONLY,
 }
 
 /** A 4-color GBC palette. GBC has 8 sprite palettes and 8 background palettes. */
@@ -255,7 +255,7 @@ data class GBCPalette(
     val name: String,
     val colors: List<GBCColor>,
     val slot: Int = -1, // -1 = auto-assign, 0-7 = explicit slot
-    val type: PaletteType = PaletteType.SPRITE
+    val type: PaletteType = PaletteType.SPRITE,
 ) {
     init {
         require(colors.size == 4) { "GBC palette must have exactly 4 colors, got ${colors.size}" }

@@ -1,7 +1,7 @@
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("com.diffplug.spotless") version "6.25.0"
+    id("com.diffplug.spotless") version "8.1.0"
 }
 
 val licenseHeader = """
@@ -33,11 +33,11 @@ dependencies {
     implementation("io.github.gbkt:gbkt-core-jvm:0.1.0-SNAPSHOT")
 
     // JSON parsing for source map loading
-    implementation("org.json:json:20231013")
+    implementation("org.json:json:20251224")
 
     // Test dependencies
     testImplementation(gradleTestKit())
-    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+    testImplementation(platform("org.junit:junit-bom:6.0.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

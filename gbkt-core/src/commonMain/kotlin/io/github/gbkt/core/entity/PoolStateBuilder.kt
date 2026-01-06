@@ -49,7 +49,7 @@ class PoolStateVarDelegate(
     private val indexVar: String,
     private val type: GBVar.VarType,
     private val defaultValue: Int,
-    private val fieldRegistry: MutableList<PoolStateField>
+    private val fieldRegistry: MutableList<PoolStateField>,
 ) {
     private var accessor: AssignableExpr? = null
 
@@ -61,7 +61,7 @@ class PoolStateVarDelegate(
             AssignableExpr(
                 "${poolName}_${property.name}",
                 type,
-                IRPoolEntityVar(poolName, property.name, indexVar)
+                IRPoolEntityVar(poolName, property.name, indexVar),
             )
         return this
     }
@@ -89,7 +89,7 @@ class PoolStateBuilder(private val poolName: String) {
     inner class PoolStateDelegate(private val type: GBVar.VarType, private val defaultValue: Int) {
         operator fun provideDelegate(
             thisRef: Any?,
-            property: KProperty<*>
+            property: KProperty<*>,
         ): PoolStateFieldAccessor {
             fields.add(PoolStateField(property.name, type, defaultValue))
             return PoolStateFieldAccessor(property.name)
@@ -102,7 +102,7 @@ class PoolStateBuilder(private val poolName: String) {
             return AssignableExpr(
                 "${poolName}_$fieldName",
                 fields.find { it.name == fieldName }?.type ?: GBVar.VarType.U8,
-                IRPoolEntityVar(poolName, fieldName, "_${poolName}_i")
+                IRPoolEntityVar(poolName, fieldName, "_${poolName}_i"),
             )
         }
     }

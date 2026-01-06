@@ -49,7 +49,7 @@ class AnimationCallbackTest {
         // The onComplete callback should generate a scene change to "gameover"
         assertTrue(
             code.contains("gameover"),
-            "Generated code should contain scene change to 'gameover'. Generated:\n${code.lines().filter { it.contains("scene") || it.contains("gameover") }.joinToString("\n")}"
+            "Generated code should contain scene change to 'gameover'. Generated:\n${code.lines().filter { it.contains("scene") || it.contains("gameover") }.joinToString("\n")}",
         )
     }
 
@@ -86,7 +86,7 @@ class AnimationCallbackTest {
         // The onComplete callback should generate a scene change to "gameover"
         assertTrue(
             code.contains("gameover"),
-            "Generated code should contain scene change to 'gameover'. Generated:\n${code.lines().filter { it.contains("scene") || it.contains("gameover") }.joinToString("\n")}"
+            "Generated code should contain scene change to 'gameover'. Generated:\n${code.lines().filter { it.contains("scene") || it.contains("gameover") }.joinToString("\n")}",
         )
     }
 
@@ -123,7 +123,7 @@ class AnimationCallbackTest {
         // The onComplete callback should generate a scene change to "title"
         assertTrue(
             code.contains("title"),
-            "Generated code should contain scene change to 'title'. Generated:\n${code.lines().filter { it.contains("scene") || it.contains("title") }.joinToString("\n")}"
+            "Generated code should contain scene change to 'title'. Generated:\n${code.lines().filter { it.contains("scene") || it.contains("title") }.joinToString("\n")}",
         )
     }
 
@@ -158,7 +158,7 @@ class AnimationCallbackTest {
         // The onFrame callback should generate a scene change to "boss"
         assertTrue(
             code.contains("boss"),
-            "Generated code should contain scene change to 'boss' at frame 3. Generated:\n${code.lines().filter { it.contains("scene") || it.contains("boss") }.joinToString("\n")}"
+            "Generated code should contain scene change to 'boss' at frame 3. Generated:\n${code.lines().filter { it.contains("scene") || it.contains("boss") }.joinToString("\n")}",
         )
     }
 

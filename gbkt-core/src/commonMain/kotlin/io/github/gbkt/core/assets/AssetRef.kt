@@ -135,5 +135,5 @@ enum class AssetType {
     TILE,
     SOUND,
     MUSIC,
-    FONT
+    FONT,
 }

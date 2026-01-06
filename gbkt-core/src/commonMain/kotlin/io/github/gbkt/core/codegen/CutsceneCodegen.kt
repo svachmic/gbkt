@@ -81,7 +81,7 @@ private fun CodeGenerator.generateCutsceneUpdate(cutscene: CutsceneDefinition) {
 private fun CodeGenerator.generateTimelineStep(
     cutscene: CutsceneDefinition,
     step: TimelineStep,
-    stepIndex: Int
+    stepIndex: Int,
 ) {
     when (step) {
         is TimelineStep.Wait -> {
