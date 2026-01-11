@@ -1,6 +1,6 @@
 [versions]
 json = "20251224"
-kotest = "5.9.1"
+kotest = "6.0.7"
 coroutines = "1.9.0"
 
 [libraries]
