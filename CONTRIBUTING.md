@@ -10,9 +10,6 @@ Thank you for your interest in contributing to gbkt! This document provides guid
 
 # Run tests
 ./gradlew :gbkt-core:test
-
-# Build a sample ROM (requires GBDK-2020)
-./gradlew :sample-game:buildRom
 ```
 
 ## Project Structure
@@ -22,7 +19,7 @@ gbkt/
 ├── gbkt-core/          # Core DSL and code generation
 ├── gbkt-cli/           # Command-line interface
 ├── gbkt-gradle-plugin/ # Gradle plugin for build integration
-├── sample-*/           # Example games
+├── gbkt-intellij-plugin/ # IntelliJ IDEA plugin for DSL support
 ├── vscode-extension/   # VSCode language support
 └── context/            # Documentation
 ```
@@ -229,12 +226,35 @@ import io.github.gbkt.core.dsl.RecordingContext
 
 ### 10. Package Organization
 
-**Layered architecture (respect boundaries):**
+**Core package structure:**
 ```
-ir/       ← Pure data classes, no business logic
-dsl/      ← DSL builders, depends only on ir/
-codegen/  ← Code generation, depends on ir/ and dsl/
+gbkt-core/src/main/kotlin/io/github/gbkt/core/
+├── ir/         # Pure IR data classes, no business logic
+├── dsl/        # DSL builders and recording context
+├── builder/    # Game builder and configuration
+├── codegen/    # C code generation
+│   ├── core/       # Core codegen (expressions, statements, pools)
+│   ├── features/   # Feature codegen (audio, physics, save, tween)
+│   ├── graphics/   # Graphics codegen (animation, camera, tilemap)
+│   ├── rpg/        # RPG codegen (battle, stats, items, abilities)
+│   ├── ui/         # UI codegen (dialog, menu, cutscene)
+│   └── world/      # World codegen (floor, encounter, map objects)
+├── entity/     # Entity system and pools
+├── graphics/   # Sprites, animation, camera, tilemap
+├── collision/  # Collision detection (AABB, sweep collision)
+├── rpg/        # RPG system (characters, monsters, battles, items)
+├── world/      # World system (floors, encounters, flags, map objects)
+├── scene/      # Scene management and transitions
+├── input/      # Input handling and buffering
+├── ui/         # Menu system
+└── test/       # Simulation testing framework
 ```
+
+**Dependency rules:**
+- `ir/` ← Pure data, no dependencies on other packages
+- `dsl/` ← Depends only on `ir/`
+- `codegen/` ← Depends on `ir/`, `dsl/`, and domain packages
+- Domain packages (`rpg/`, `world/`, etc.) ← Depend on `ir/` and `dsl/`
 
 **Guidelines:**
 - Each package has a single, clear domain
@@ -438,4 +458,4 @@ Before submitting a PR, verify:
 
 - Open an issue for bugs or feature requests
 - Check existing documentation in `context/` folder
-- See `sample-*` projects for usage examples
+- See [CLAUDE.md](CLAUDE.md) for quick DSL examples and source locations

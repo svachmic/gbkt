@@ -30,16 +30,7 @@ concurrency:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            gradle-target: jvmTest linuxX64Test
-          - os: macos-latest
-            gradle-target: jvmTest macosArm64Test macosX64Test
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -57,16 +48,16 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
 
       - name: Build core modules
-        run: ./gradlew -PcoreOnly=true :gbkt-core:build :gbkt-cli:build --no-daemon
+        run: ./gradlew :gbkt-core:build :gbkt-cli:build --no-daemon
 
       - name: Run Tests
-        run: ./gradlew -PcoreOnly=true :gbkt-core:${{ matrix.gradle-target }} --no-daemon
+        run: ./gradlew :gbkt-core:test --no-daemon
 
       - name: Upload Test Reports
         if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: test-reports-${{ matrix.os }}
+          name: test-reports
           path: |
             **/build/reports/tests/
             **/build/test-results/
@@ -87,7 +78,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Check formatting
-        run: ./gradlew -PcoreOnly=true :gbkt-core:spotlessCheck :gbkt-cli:spotlessCheck --no-daemon
+        run: ./gradlew :gbkt-core:spotlessCheck :gbkt-cli:spotlessCheck --no-daemon
         continue-on-error: true
 
   version-consistency:
@@ -106,4 +97,4 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Check version consistency
-        run: ./gradlew -PcoreOnly=true checkVersionConsistency --no-daemon
+        run: ./gradlew checkVersionConsistency --no-daemon

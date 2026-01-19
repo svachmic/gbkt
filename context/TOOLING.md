@@ -341,3 +341,57 @@ The plugin uses composite builds:
   ```bash
   ./gradlew :gbkt-core:publishToMavenLocal
   ```
+
+## GBDK Troubleshooting
+
+### Installation Verification
+
+```bash
+# Check GBDK_HOME is set
+echo $GBDK_HOME
+
+# Verify lcc exists
+ls $GBDK_HOME/bin/lcc
+
+# Test compilation
+$GBDK_HOME/bin/lcc --version
+```
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| "GBDK not found" | Set GBDK_HOME or install to /opt/gbdk-2020 |
+| "Permission denied" on lcc | `chmod +x $GBDK_HOME/bin/lcc` |
+| Bank overflow errors | Reduce code/data or use banking |
+| Undefined symbols | Check generated C for typos |
+| Source map not loading | Ensure generateC ran before compileRom |
+
+### Manual Compilation
+
+If Gradle fails, try manual compilation:
+
+```bash
+# Navigate to generated code
+cd build/gbkt/generated
+
+# Compile with GBDK
+$GBDK_HOME/bin/lcc -Wa-l -Wl-m -Wl-j -o ../output/game.gb main.c
+```
+
+### Common GBDK Errors and Fixes
+
+| Error Message | Cause | Fix |
+|---------------|-------|-----|
+| `undefined identifier 'xxx'` | Variable not declared | Check DSL spelling, ensure variable is defined |
+| `type mismatch` | Wrong type assignment | Check u8/u16/i8 types in DSL |
+| `too many global variables` | Exceeded RAM limits | Use pools, reduce variable count |
+| `bank N overflow` | Too much code/data in bank | Split across banks |
+| `function too complex` | Single function too large | Split scene logic into multiple functions |
+
+### Debugging Tips
+
+1. **Check generated C first**: Review `build/gbkt/generated/main.c` for issues
+2. **Use source maps**: The `.gbkt.map` file maps C lines back to Kotlin
+3. **Start minimal**: Build with minimal DSL code, add features incrementally
+4. **Check GBDK docs**: Some errors are GBDK-specific, not gbkt issues

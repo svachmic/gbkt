@@ -10,6 +10,7 @@ out/
 .idea/
 *.iml
 .vscode/
+.intellijPlatform/
 
 # Gradle
 .gradle/
@@ -26,3 +27,12 @@ node_modules/
 
 # VSCode extension test cache
 .vscode-test/
+
+# GBDK build artifacts
+*.ihx
+*.gb
+*.gbc
+
+# Build logs
+build_output.txt
+*_output.txt

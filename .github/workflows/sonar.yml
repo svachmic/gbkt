@@ -56,7 +56,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Run Kotlin tests with coverage
-        run: ./gradlew -PcoreOnly=true :gbkt-core:jvmTest :gbkt-core:koverXmlReport --no-daemon
+        run: ./gradlew :gbkt-core:test :gbkt-core:koverXmlReport --no-daemon
 
       - name: Build VSCode extension
         working-directory: vscode-extension
@@ -65,7 +65,7 @@ jobs:
           npm run compile
 
       - name: SonarCloud Scan
-        run: ./gradlew -PcoreOnly=true sonar --no-daemon
+        run: ./gradlew  sonar --no-daemon
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1389,6 +1389,937 @@ fun `assignment generates correct IR`() {
 }
 ```
 
+## RPG Stats System
+
+gbkt provides a complete RPG stats system for turn-based games with character stats, leveling, and combat calculations.
+
+### Character Definition
+
+```kotlin
+// Define a playable character with stats and leveling
+val hero by character {
+    name("Hero")
+
+    // Base stats
+    stats {
+        hp(100)      // Health points
+        sp(50)       // Skill/magic points
+        atk(15)      // Physical attack
+        def(10)      // Physical defense
+        matk(8)      // Magic attack
+        mdef(8)      // Magic defense
+        agl(12)      // Agility (turn order)
+        acc(95)      // Accuracy (hit chance)
+        eva(5)       // Evasion
+    }
+
+    // Leveling configuration
+    level(startLevel = 1, maxLevel = 99, expCurve = ExpCurve.STANDARD)
+
+    // Level-up stat bonuses
+    onLevelUp {
+        stats.hp += 10
+        stats.sp += 3
+        stats.atk += 2
+        stats.def += 2
+    }
+}
+
+// Experience curves available:
+// ExpCurve.FLAT         - Same XP per level
+// ExpCurve.LINEAR       - Linear increase
+// ExpCurve.STANDARD     - Balanced curve (default)
+// ExpCurve.STEEP        - Slow early, fast late
+// ExpCurve.GRADUAL      - Fast early, slow late
+```
+
+### Stats Access
+
+```kotlin
+// Read stats
+val currentHp = hero.stats.hp
+val maxHp = hero.stats.maxHp
+
+// Modify stats during gameplay
+hero.stats.hp -= 10                    // Take damage
+hero.stats.hp set hero.stats.maxHp     // Full heal
+
+// Check conditions
+whenever(hero.stats.hp isBelow 20) { showLowHealthWarning() }
+whenever(hero.stats.sp isAtLeast fireball.cost) { enableFireball() }
+```
+
+### Custom Stats
+
+```kotlin
+stats {
+    // Built-in stats work as before
+    hp(100, max = 999)
+    sp(50)
+    atk(15)
+    def(10)
+
+    // Add custom stats (max 3 to preserve Game Boy memory)
+    custom("luck", "LCK", base = 10, max = 99)
+    custom("faith", "FAI", base = 5)
+    custom("charisma", base = 8, use16Bit = true)  // For values > 255
+
+    // Alias built-in stat display names
+    alias(StatType.HP, "LIFE")
+    alias(StatType.SP, "MANA")
+}
+```
+
+### Character Base Attack
+
+```kotlin
+// Define class-specific base attack
+val druidClass by character {
+    name("Druid")
+    stats { hp(80); sp(60); matk(15); mdef(12) }
+
+    baseAttack {
+        targeting(TargetingMode.SINGLE_ENEMY)
+        aspect(Aspect.NONE)
+        execute {
+            target.damage(caster.stats.matk)
+        }
+    }
+}
+
+val fighterClass by character {
+    name("Fighter")
+    stats { hp(120); atk(20); def(15) }
+
+    baseAttack {
+        targeting(TargetingMode.SINGLE_ENEMY)
+        execute {
+            target.damage(caster.stats.atk * 2)
+        }
+    }
+}
+```
+
+### Level Cap Configuration
+
+```kotlin
+val game = gbGame("MyGame") {
+    config {
+        maxLevel(50)   // Classic short game (default: 99)
+        // or maxLevel(255)  // Extended progression
+    }
+}
+```
+
+## Battle System
+
+Turn-based combat with 18 distinct battle states, multiple turn order strategies, and event callbacks.
+
+### Battle Definition
+
+```kotlin
+val combat by battle("combat") {
+    // Party configuration
+    maxPartySize(4)
+    maxEnemies(3)
+
+    // Turn order strategy
+    turnOrder(TurnOrderStrategy.SPEED_BASED)  // Agility determines order
+    // Other strategies:
+    // TurnOrderStrategy.PARTY_FIRST   - All party, then all enemies
+    // TurnOrderStrategy.ROUND_ROBIN   - Alternating party/enemy
+    // TurnOrderStrategy.RANDOM        - Random each turn
+
+    // Battle state callbacks
+    onState(BattleState.VICTORY) {
+        awardExp()
+        awardDrops()
+        scene(explorationScene)
+    }
+
+    onState(BattleState.DEFEAT) {
+        scene(gameoverScene)
+    }
+
+    onState(BattleState.FLED) {
+        scene(explorationScene)
+    }
+}
+```
+
+### Battle States
+
+```kotlin
+// 18 battle states for complete flow control:
+BattleState.INACTIVE          // Battle not active
+BattleState.INITIALIZING      // Setting up combatants
+BattleState.TURN_START        // Beginning of turn
+BattleState.PLAYER_INPUT      // Waiting for player command
+BattleState.ENEMY_AI          // AI computing action
+BattleState.TARGET_SELECT     // Player selecting target
+BattleState.ACTION_EXECUTE    // Action being performed
+BattleState.DAMAGE_DISPLAY    // Showing damage numbers
+BattleState.STATUS_CHECK      // Applying status effects
+BattleState.DEATH_CHECK       // Checking for KOs
+BattleState.TURN_END          // End of turn
+BattleState.VICTORY           // Party wins
+BattleState.DEFEAT            // Party loses
+BattleState.FLED              // Party fled successfully
+BattleState.FLEE_FAILED       // Flee attempt failed
+BattleState.LEVEL_UP          // Level up sequence
+BattleState.ITEM_DROP         // Item drop sequence
+BattleState.BATTLE_END        // Clean up and exit
+```
+
+### Battle Menu
+
+```kotlin
+val battleMenu by battleMenu("menu") {
+    position(0, 12)           // Menu position (tile coords)
+
+    // Main commands
+    commands {
+        command("Attack") { action(ActionType.ATTACK) }
+        command("Magic") { submenu(magicMenu) }
+        command("Item") { submenu(itemMenu) }
+        command("Flee") { action(ActionType.FLEE) }
+    }
+
+    // Status display configuration
+    statusDisplay {
+        showHp(true)
+        showSp(true)
+        showStatusIcons(true)
+        position(0, 0)
+    }
+}
+```
+
+### Combat Formulas
+
+```kotlin
+val combat = combatFormulas {
+    // Hit formula strategies
+    d20HitRoll(baseAC = 10)           // D&D-style: roll + ATK vs DEF + AC
+    percentageHitChance(baseChance = 80, minChance = 20, maxChance = 95, perDiff = 3)
+    agilityBasedHit(baseChance = 70)  // Hit based on AGL difference
+    alwaysHits()                       // No miss chance
+
+    // Critical hit strategies
+    criticalChance(5)                  // Flat 5% chance
+    criticalOnHighRoll(threshold = 20, dieSize = 20)  // Natural 20
+    noCriticalHits()                   // Disable crits
+    criticalMultiplier(200)            // 2x damage on crit
+
+    // Damage variance strategies
+    damageVariance(25)                 // ±12.5% variance
+    damageMultiplierRange(min = 75, max = 125)  // Lookup table
+    noVariance()                       // Exact damage
+
+    // Fumble system
+    enableFumble(threshold = 1)        // Fumble on natural 1
+}
+```
+
+### Custom Battle States
+
+```kotlin
+val game = gbGame("MyGame") {
+    // Define custom battle states beyond the 19 built-in states
+    val cutsceneState by battleState("Cutscene")
+    val animationState by battleState("Animation")
+
+    val combat by battle("combat") {
+        onState(cutsceneState) {
+            // Custom cutscene logic
+        }
+    }
+
+    scene("battle") {
+        every.frame {
+            battleTransition(cutsceneState)  // Transition to custom state
+        }
+    }
+}
+```
+
+## Item & Inventory System
+
+Complete item management with consumables, equipment, and stacking.
+
+### Item Definition
+
+```kotlin
+// Consumable item
+val potion by item {
+    name("Potion")
+    description("Restores 50 HP")
+    category(ItemCategory.CONSUMABLE)
+    maxStack(10)
+    buyPrice(50)
+    sellPrice(25)
+
+    onUse {
+        target.heal(50)
+        raw("play_sfx(SFX_HEAL);")  // Play sound effect
+    }
+}
+
+// Equipment item with stat bonuses
+val ironSword by item {
+    name("Iron Sword")
+    description("A sturdy blade")
+    category(ItemCategory.WEAPON)
+    slot(EquipSlot.WEAPON)
+    maxStack(1)  // Equipment doesn't stack
+    buyPrice(200)
+
+    // Stat bonuses when equipped
+    stats {
+        atk(+10)
+        acc(+5)
+    }
+}
+
+// Key item (non-consumable, non-equipment)
+val dungeonKey by item {
+    name("Dungeon Key")
+    description("Opens dungeon doors")
+    category(ItemCategory.KEY_ITEM)
+    maxStack(1)
+}
+```
+
+### Item Categories & Equipment Slots
+
+```kotlin
+// Item categories
+ItemCategory.CONSUMABLE   // Usable items (potions, scrolls)
+ItemCategory.WEAPON       // Equippable weapons
+ItemCategory.ARMOR        // Equippable armor
+ItemCategory.ACCESSORY    // Equippable accessories
+ItemCategory.KEY_ITEM     // Quest items
+ItemCategory.MATERIAL     // Crafting materials
+
+// Built-in equipment slots
+EquipSlot.WEAPON
+EquipSlot.OFFHAND
+EquipSlot.HEAD
+EquipSlot.BODY
+EquipSlot.ACCESSORY
+```
+
+### Custom Equipment Slots
+
+```kotlin
+val game = gbGame("MyGame") {
+    // Define custom equipment slots
+    val ringSlot by equipSlot("Ring")
+    val bootsSlot by equipSlot("Boots")
+    val glovesSlot by equipSlot("Gloves")
+
+    // Use custom slot in item definition
+    val powerRing by item {
+        name("Power Ring")
+        category(ItemCategory.EQUIPMENT)
+        equipmentSlot(ringSlot)  // Use custom slot
+        stats { atk(+5) }
+    }
+}
+```
+
+### Inventory Management
+
+```kotlin
+// Create inventory
+val inventory by inventory { maxSlots(16) }
+
+// Add items
+inventory.add(potion, 3)         // Add 3 potions
+inventory.add(ironSword)         // Add 1 item
+
+// Remove items
+inventory.remove(potion, 1)      // Remove 1 potion
+inventory.remove(potion)         // Remove all potions of this type
+
+// Query inventory
+whenever(inventory.contains(potion)) { /* has at least one */ }
+whenever(inventory.count(potion) isAtLeast 5) { /* has 5+ */ }
+whenever(inventory.isFull) { showInventoryFullMessage() }
+whenever(inventory.hasSpace) { /* can add more items */ }
+
+// Equipment
+inventory.equip(hero, ironSword)
+inventory.unequip(hero, EquipSlot.WEAPON)
+whenever(hero.isEquipped(ironSword)) { /* sword equipped */ }
+```
+
+## Ability System
+
+Define abilities with costs, targeting, and custom effects.
+
+### Ability Definition
+
+```kotlin
+// Single-target offensive ability
+val fireball by ability {
+    name("Fireball")
+    description("Deals fire damage to one enemy")
+    cost(sp = 8)
+    targeting(TargetingMode.SINGLE_ENEMY)
+    aspect(Aspect.FIRE)
+
+    execute {
+        val damage = caster.stats.matk * 2
+        target.damage(damage, Aspect.FIRE)
+    }
+}
+
+// Multi-target healing ability
+val healAll by ability {
+    name("Heal All")
+    description("Heals all party members")
+    cost(sp = 20)
+    targeting(TargetingMode.ALL_ALLIES)
+
+    execute {
+        target.heal(caster.stats.matk)
+    }
+}
+
+// Status-inflicting ability
+val poison by ability {
+    name("Poison")
+    cost(sp = 5)
+    targeting(TargetingMode.SINGLE_ENEMY)
+
+    execute {
+        target.inflictStatus(poisonEffect, duration = 5)
+    }
+}
+
+// Ability with level unlock
+val fireball by ability {
+    name("Fireball")
+    unlocksAt(level = 10)  // Unlocks at level 10
+    cost(sp = 12)
+    targeting(TargetingMode.SINGLE_ENEMY)
+    aspect(Aspect.FIRE)
+
+    execute {
+        target.damage(caster.matk * 2, Aspect.FIRE)
+    }
+}
+
+// Instant kill ability
+val quiveringPalm by ability {
+    name("Quivering Palm")
+    cost(sp = 25)
+    targeting(TargetingMode.SINGLE_ENEMY)
+
+    execute {
+        instantKill(chance = 12, ignoreImmunity = false)
+        target.damage(caster.atk)  // Fallback if instant kill fails
+    }
+}
+```
+
+### Targeting Modes
+
+```kotlin
+TargetingMode.SINGLE_ENEMY      // One enemy
+TargetingMode.ALL_ENEMIES       // All enemies
+TargetingMode.SINGLE_ALLY       // One party member
+TargetingMode.ALL_ALLIES        // All party members
+TargetingMode.SELF              // Caster only
+TargetingMode.SINGLE_ANY        // Any single target
+TargetingMode.ALL               // Everyone on battlefield
+```
+
+### Elemental Aspects
+
+```kotlin
+Aspect.NONE      // No element
+Aspect.FIRE      // Fire damage
+Aspect.ICE       // Ice damage
+Aspect.THUNDER   // Lightning damage
+Aspect.EARTH     // Earth damage
+Aspect.WIND      // Wind damage
+Aspect.WATER     // Water damage
+Aspect.LIGHT     // Light/holy damage
+Aspect.DARK      // Dark/shadow damage
+```
+
+## Monster & AI System
+
+Define monsters with stats, AI behaviors, and loot drops.
+
+### Monster Definition
+
+```kotlin
+val goblin by monster {
+    name("Goblin")
+    tier(MonsterTier.COMMON)
+
+    // Base statistics
+    baseStats {
+        hp(30)
+        atk(8)
+        def(5)
+        matk(3)
+        mdef(3)
+        agl(10)
+    }
+
+    // Elemental weaknesses/resistances
+    aspects {
+        weak(Aspect.FIRE)       // Takes 150% fire damage
+        resist(Aspect.EARTH)    // Takes 50% earth damage
+        immune(Aspect.NONE)     // (optional)
+    }
+
+    // AI behavior
+    ai {
+        // Default targeting
+        target { lowestHp() }   // Attack weakest target
+
+        // Conditional behaviors
+        whenHpBelow(25) { flee() }
+        whenAloneOnField { useAbility(desperateStrike) }
+    }
+
+    // Rewards
+    exp(15)
+    drops {
+        item(herb, chance = 30)       // 30% chance
+        item(goldCoin, chance = 50)
+        gold(10..25)                  // Random gold amount
+    }
+}
+```
+
+### Monster Tiers
+
+```kotlin
+MonsterTier.COMMON       // Regular enemies
+MonsterTier.UNCOMMON     // Slightly stronger
+MonsterTier.RARE         // Dangerous enemies
+MonsterTier.BOSS         // Boss encounters
+MonsterTier.MINIBOSS     // Mini-bosses
+MonsterTier.LEGENDARY    // Very rare, powerful
+```
+
+### AI Target Strategies
+
+```kotlin
+ai {
+    target { lowestHp() }         // Lowest HP target
+    target { highestHp() }        // Highest HP target
+    target { random() }           // Random target
+    target { lowestDef() }        // Lowest defense
+    target { frontRow() }         // Front row priority
+
+    // Conditional AI
+    whenHpBelow(50) { useAbility(heal) }
+    whenHpBelow(25) { flee() }
+    whenAloneOnField { rage() }
+    whenAllyKilled { enrage() }
+}
+```
+
+### Custom Tier Multipliers
+
+```kotlin
+// Standard tiers
+MonsterTier.COMMON       // 100% stats
+MonsterTier.UNCOMMON     // 125% stats (B tier)
+MonsterTier.RARE         // 150% stats (A tier)
+MonsterTier.BOSS         // 200% stats (S tier)
+
+// Custom tier multiplier (between standard tiers)
+val eliteGuard by monster {
+    tier(130)  // 130% potency (between B and A tier)
+    baseStats { hp(50); atk(12); def(10) }
+}
+```
+
+### Monster Death Hooks
+
+```kotlin
+val deathKnight by monster {
+    name("Death Knight")
+    baseStats { hp(150); atk(25); def(20); agl(10) }
+
+    onDeath {
+        chance(33) {
+            revive(hpPercent = 25)  // 33% chance to revive at 25% HP
+        }
+    }
+}
+
+val phoenix by monster {
+    name("Phoenix")
+    baseStats { hp(200); atk(30); def(15); agl(20) }
+
+    onDeath {
+        awardBonusExp(100)          // Award bonus EXP
+        transformTo(phoenixReborn)   // Transform into stronger form
+    }
+}
+```
+
+### Monster Hit Hooks (Phasing/Evasion)
+
+```kotlin
+val displacerBeast by monster {
+    name("Displacer Beast")
+    baseStats { hp(80); atk(20); def(15); agl(25) }
+
+    onHit {
+        // First 3 attacks are automatically evaded
+        hasEvasion {
+            decrementEvasion()
+            cancelHit()  // Prevents damage
+        }
+    }
+}
+
+val etherealGhost by monster {
+    name("Ethereal Ghost")
+    baseStats { hp(40); atk(15); def(5); agl(30) }
+
+    onHit {
+        chance(50) {
+            cancelHit()  // 50% chance to phase through attacks
+        }
+    }
+}
+
+// Hit hook methods:
+// cancelHit()              - Prevents damage from being applied
+// modifyDamage(multiplier) - Scale damage (50 = halve, 200 = double)
+// decrementEvasion()       - Decrement monster's evasion counter
+// hasEvasion { ... }       - Execute if evasion counter > 0
+```
+
+## Status Effect System
+
+Define status effects with duration, stacking, and per-turn effects.
+
+### Status Effect Definition
+
+```kotlin
+val poisonEffect by statusEffect {
+    name("Poison")
+    icon(StatusIcon.POISON)
+
+    // Duration in turns
+    duration(5)
+
+    // Stack behavior
+    stackMode(StackMode.REFRESH_DURATION)  // Reset timer on reapply
+    // Other modes:
+    // StackMode.STACK_INTENSITY  - Increase damage
+    // StackMode.NO_STACK         - Ignore new applications
+
+    // Per-turn effect
+    onTurnStart { /* triggered at turn start */ }
+    onTurnEnd {
+        // Deal damage at end of turn
+        target.damage(target.stats.maxHp / 10)
+    }
+
+    // On removal
+    onRemove { /* clean up */ }
+}
+
+// Buff example
+val attackUp by statusEffect {
+    name("ATK Up")
+    icon(StatusIcon.BUFF)
+    duration(3)
+
+    // Stat modifier while active
+    stats {
+        atk(+25)  // +25% attack
+    }
+}
+```
+
+### Stack Modes
+
+```kotlin
+StackMode.REFRESH_DURATION    // Resets duration, same intensity
+StackMode.STACK_INTENSITY     // Increases effect strength
+StackMode.STACK_DURATION      // Adds to duration
+StackMode.NO_STACK            // Ignores new applications
+```
+
+### Duration Modes
+
+```kotlin
+// Turn-based (default for RPGs)
+val poisonEffect by statusEffect {
+    duration(5)  // 5 turns
+    durationMode(EffectDurationMode.TURNS)  // Optional, default
+}
+
+// Frame-based (for action games)
+val speedBoost by statusEffect {
+    duration(180)  // 180 frames (~3 seconds at 60fps)
+    durationMode(EffectDurationMode.FRAMES)
+}
+
+// Perpetual (never expires)
+val curseEffect by statusEffect {
+    perpetual()  // Uses EffectDurationMode.PERPETUAL
+}
+```
+
+### Damage/Healing Multipliers
+
+```kotlin
+val hasteEffect by statusEffect {
+    buff()
+    duration(3)
+    doubleDamage()       // 200% damage output
+    doubleHealing()      // 200% healing output
+}
+
+// Custom percentages
+val weakenedEffect by statusEffect {
+    debuff()
+    duration(4)
+    damageMultiplier(50)     // 50% damage output
+    healingMultiplier(75)    // 75% healing output
+}
+```
+
+### Incoming Damage/Healing Modifiers
+
+```kotlin
+val barkskinEffect by statusEffect {
+    buff()
+    duration(3)
+    halveIncomingDamage()  // 50% damage taken
+}
+
+val vulnerableEffect by statusEffect {
+    debuff()
+    duration(2)
+    doubleIncomingDamage()  // 200% damage taken
+}
+
+// Custom percentages
+val protectEffect by statusEffect {
+    buff()
+    incomingDamageMultiplier(75)   // 75% damage taken
+    incomingHealingMultiplier(125) // 125% healing received
+}
+```
+
+### Hit Chance/Evasion Modifiers
+
+```kotlin
+val sleetStormEffect by statusEffect {
+    debuff()
+    duration(3)
+    reduceHitChance(50)  // -50% hit chance while active
+}
+
+val blurEffect by statusEffect {
+    buff()
+    duration(3)
+    increaseEvasion(50)  // +50% evasion (harder to hit)
+}
+
+// Raw values (-100 to +100)
+val accuracyUp by statusEffect {
+    buff()
+    hitChanceModifier(25)   // +25% hit chance
+    evasionModifier(-10)    // -10% evasion
+}
+```
+
+### Target Redirect (Confusion/Charm)
+
+```kotlin
+val confused by statusEffect {
+    debuff()
+    duration(3)
+    confuseRandomly()  // Attack any random target (ally, enemy, or self)
+}
+
+val charmed by statusEffect {
+    debuff()
+    duration(2)
+    redirectToAllies()  // Attack own allies instead of enemies
+}
+
+val selfDestructive by statusEffect {
+    debuff()
+    duration(1)
+    redirectToSelf()  // Always attack self
+}
+
+val betrayed by statusEffect {
+    debuff()
+    duration(2)
+    redirectToOpposite()  // Attack opposite side from intended
+}
+```
+
+### Action Prevention (Stun/Trip)
+
+```kotlin
+val stunEffect by statusEffect {
+    category(EffectCategory.CONDITION)
+    duration(2)
+    preventsAction()  // Causes turn skipping
+}
+
+val trippedEffect by statusEffect {
+    category(EffectCategory.CONDITION)
+    duration(1)
+    preventsAction()  // Single turn skip (trip/prone)
+}
+```
+
+## Floor & Dungeon System
+
+Multi-floor dungeon management with maps, exits, and encounter tables.
+
+### Floor Definition
+
+```kotlin
+val floor1 by floor {
+    name("Dungeon Level 1")
+    defaultPosition(5, 5)       // Starting tile
+    defaultMap("entrance")      // Starting map
+
+    // Define maps within the floor
+    map("entrance") {
+        tileset("dungeon_tiles.png")
+        size(32, 32)
+        data(entranceMapData)   // IntArray of tile indices
+
+        // Collision configuration
+        walls(0, 1, 2)          // Tile indices that block movement
+    }
+
+    map("hallway") {
+        tileset("dungeon_tiles.png")
+        size(64, 32)
+        data(hallwayMapData)
+    }
+
+    // Define exits between maps
+    exits {
+        door(from = "entrance" at 15 x 5, to = "hallway" atDest 0 x 5)
+        stairsDown(from = "hallway" at 60 x 10, to = floor2 at 5 x 5)
+    }
+
+    // Floor-specific palettes
+    palettes(0, 1, 2)
+
+    // Callbacks
+    onEnter { showMessage("You enter the dungeon...") }
+    onExit { saveProgress() }
+}
+```
+
+### Exit Types
+
+```kotlin
+// In exits {} block:
+door(from = ..., to = ...)           // Standard door
+stairsUp(from = ..., to = ...)       // Stairs going up
+stairsDown(from = ..., to = ...)     // Stairs going down
+ladder(from = ..., to = ...)         // Ladder
+portal(from = ..., to = ...)         // Teleporter
+auto(from = ..., to = ...)           // Invisible/auto-trigger
+```
+
+## Encounter System
+
+Random encounters with weighted monster tables.
+
+### Encounter Table Definition
+
+```kotlin
+val floor1Encounters = encounterTable("floor1") {
+    safeSteps(10)             // Steps before encounters possible
+    initialChance(5)          // Starting chance (out of 256)
+    incrementPerStep(3)       // Chance increase per step
+    maxChance(128)            // Maximum encounter chance
+
+    // Weighted encounter entries
+    entry(weight = 30) { +goblin }                    // Single goblin
+    entry(weight = 25) { +goblin; +goblin }           // Two goblins
+    entry(weight = 20) { +slime }                     // Single slime
+    entry(weight = 15) { +goblin; +slime }            // Mixed group
+    entry(weight = 10) { +bugbear }                   // Rare: bugbear
+}
+
+// Attach to floor
+val floor1 by floor {
+    // ... map definitions ...
+    encounters(floor1Encounters)
+}
+```
+
+## Global Flags System
+
+Persistent boolean flags organized into pages for game state tracking.
+
+### Flags Definition
+
+```kotlin
+val gameFlags by flags {
+    // Story progress flags
+    page("story") {
+        flag("metElder")
+        flag("acceptedQuest")
+        flag("foundKey")
+        flag("defeatedBoss")
+    }
+
+    // Collection flags
+    page("items") {
+        flag("hasSword")
+        flag("hasShield")
+        flag("foundTreasure1")
+        flag("foundTreasure2")
+    }
+
+    // World state
+    page("world") {
+        flag("doorUnlocked")
+        flag("bridgeBuilt")
+        flag("secretRevealed")
+    }
+}
+```
+
+### Flag Operations
+
+```kotlin
+// Set flags
+gameFlags.set("story", "metElder")
+gameFlags["story"]["acceptedQuest"] = true
+
+// Clear flags
+gameFlags.clear("story", "metElder")
+
+// Check flags
+whenever(gameFlags.isSet("story", "metElder")) {
+    showElderDialogue()
+}
+
+// Toggle
+gameFlags.toggle("world", "doorUnlocked")
+```
+
 ### Complete Example
 
 ```kotlin

@@ -42,18 +42,9 @@ git clone https://github.com/anthropics/gbkt.git
 cd gbkt
 ./gradlew build
 
-# Run a sample game (outputs C code)
-./gradlew :sample-minimal:run
-
-# Build ROM (requires GBDK-2020)
-./gradlew :sample-game:buildRom
+# Run tests
+./gradlew :gbkt-core:test
 ```
-
-**Sample projects:**
-- `sample-minimal/` — Basic movement and boundaries
-- `sample-dialog/` — Dialog and menu systems
-- `sample-save/` — SRAM persistence
-- `sample-adventure/` — Complete mini-game with enemies, coins, camera
 
 ## Why gbkt?
 
