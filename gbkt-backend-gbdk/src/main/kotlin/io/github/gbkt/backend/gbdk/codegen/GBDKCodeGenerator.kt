@@ -106,7 +106,15 @@ class GBDKCodeGenerator(internal val game: Game) {
 
     // Source map tracking
     internal var currentLine = 1
-    internal val sourceMapBuilder = SourceMapBuilder(game.name, "main.c")
+    internal val sourceMapBuilder = SourceMapBuilder(game.name, MAIN_OUTPUT_FILE)
+
+    companion object {
+        /** Main output filename for generated C code. */
+        const val MAIN_OUTPUT_FILE = "main.c"
+
+        /** Section separator comment for generated C code. */
+        const val SECTION_SEPARATOR = "// ============================================================================="
+    }
 
     // Validation error tracking - errors are collected during generation and reported at the end
     internal val validationErrors = mutableListOf<String>()
@@ -231,9 +239,9 @@ class GBDKCodeGenerator(internal val game: Game) {
     internal fun generateBankedForwardDeclarations() {
         if (bankedForwardDeclarations.isEmpty()) return
 
-        line("// =============================================================================")
+        line(SECTION_SEPARATOR)
         line("// FORWARD DECLARATIONS FOR BANKED FUNCTIONS")
-        line("// =============================================================================")
+        line(SECTION_SEPARATOR)
         line()
         for (decl in bankedForwardDeclarations) {
             line(decl)
@@ -715,7 +723,7 @@ class GBDKCodeGenerator(internal val game: Game) {
 
         val firstBankIdx = lines.indexOfFirst { it.startsWith("#pragma bank") }
         if (firstBankIdx < 0) {
-            return mapOf("main.c" to code)
+            return mapOf(MAIN_OUTPUT_FILE to code)
         }
 
         val headerLines = lines.take(firstBankIdx)
@@ -768,7 +776,7 @@ class GBDKCodeGenerator(internal val game: Game) {
             processBankedLine(lines[idx], state)
         }
 
-        files["main.c"] = state.bank0Content.toString().trimEnd() + "\n"
+        files[MAIN_OUTPUT_FILE] = state.bank0Content.toString().trimEnd() + "\n"
         for ((bank, content) in state.bankContents) {
             files["bank$bank.c"] = content.toString().trimEnd() + "\n"
         }
@@ -909,9 +917,9 @@ class GBDKCodeGenerator(internal val game: Game) {
             line("}")
         }
 
-        line("// =============================================================================")
+        line(SECTION_SEPARATOR)
         line("// DEBUG ARRAY BOUNDS CHECKING")
-        line("// =============================================================================")
+        line(SECTION_SEPARATOR)
         line("#ifdef DEBUG")
         generateArrayGetter("UINT8", "u8", "0u")
         generateArrayGetter("UINT16", "u16", "0u")
