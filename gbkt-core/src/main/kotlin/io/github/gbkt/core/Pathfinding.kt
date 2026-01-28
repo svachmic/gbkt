@@ -789,7 +789,7 @@ fun findPath(from: Entity, to: Entity): PathQuery {
 
 /** Make an entity follow a computed path. */
 fun Entity.followPath(path: Path, init: PathFollowBuilder.() -> Unit = {}) {
-    val pos = positionComponent ?: error("Entity '$name' needs position for path following")
+    positionComponent ?: error("Entity '$name' needs position for path following")
 
     val builder = PathFollowBuilder()
     builder.init()

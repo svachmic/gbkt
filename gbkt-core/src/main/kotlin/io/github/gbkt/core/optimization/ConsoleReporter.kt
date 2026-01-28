@@ -44,9 +44,7 @@ class ConsoleReporter(private val config: ReporterConfig = ReporterConfig()) {
     /** Generate report as a string (for logging/capture). */
     fun reportToString(analysis: AssetReport): String {
         val builder = StringBuilder()
-        val originalPrint = config.useColor
-
-        // Temporarily disable colors for string output
+        // Note: Colors are disabled for string output
         appendHeader(builder)
         appendSummary(builder, analysis.summary)
 

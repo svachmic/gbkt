@@ -74,7 +74,7 @@ class TileMap(
             return true // Out of bounds = blocked
         }
         val idx = tileY * widthInTiles + tileX
-        return if (idx < data.size) data[idx] > 0 else false
+        return idx < data.size && data[idx] > 0
     }
 
     /**
