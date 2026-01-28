@@ -65,9 +65,9 @@ internal fun GBDKCodeGenerator.generateMonsterSystem() {
     val monsters = game.monsters
     if (monsters.isEmpty()) return
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// MONSTER SYSTEM")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // Generate monster size constants
@@ -118,9 +118,9 @@ internal fun GBDKCodeGenerator.generateMonsterSystem() {
 
     if (monstersWithAI.isNotEmpty()) {
         setBank(codeBankMonster)
-        line("// =============================================================================")
+        line(GBDKCodeGenerator.SECTION_SEPARATOR)
         line("// MONSTER AI FUNCTIONS (BANK $codeBankMonster)")
-        line("// =============================================================================")
+        line(GBDKCodeGenerator.SECTION_SEPARATOR)
         line()
 
         for (monster in monstersWithAI) {
@@ -382,9 +382,9 @@ private fun GBDKCodeGenerator.generateMonsterHitHook(monster: Monster) {
 
 /** Generate monster action functions (basic attack, use ability, defend, flee). */
 private fun GBDKCodeGenerator.generateMonsterActionFunctions() {
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// MONSTER ACTION FUNCTIONS")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // Monster basic attack
@@ -568,9 +568,9 @@ private fun GBDKCodeGenerator.generateMonsterActionFunctions() {
 private fun GBDKCodeGenerator.generateMonsterAIDispatchBanked(variants: List<MonsterVariant>) {
     val monstersWithAI = game.monsters.filter { it.aiStatements.isNotEmpty() }
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// MONSTER AI DISPATCH (BANKED)")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     line("// Dispatch to monster-specific AI function")
@@ -624,9 +624,9 @@ private fun GBDKCodeGenerator.generateMonsterAIDispatchBanked(variants: List<Mon
 
 /** Generate AI helper functions. */
 private fun GBDKCodeGenerator.generateAIHelpers() {
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// AI HELPER FUNCTIONS")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // AI context variables (must be declared before action functions that use them)
@@ -775,9 +775,9 @@ private fun GBDKCodeGenerator.generateDeathHookHelpers() {
     val monstersWithDeathHooks = game.monsters.filter { it.onDeathStatements.isNotEmpty() }
     if (monstersWithDeathHooks.isEmpty()) return
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// DEATH HOOK HELPERS")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // Death hook context variables
@@ -824,9 +824,9 @@ private fun GBDKCodeGenerator.generateDeathHookDispatch() {
     val monstersWithDeathHooks = game.monsters.filter { it.onDeathStatements.isNotEmpty() }
     if (monstersWithDeathHooks.isEmpty()) return
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// DEATH HOOK DISPATCH")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // Generate death hook dispatch table
@@ -853,9 +853,9 @@ private fun GBDKCodeGenerator.generateHitHookHelpers() {
     val monstersWithHitHooks = game.monsters.filter { it.onHitStatements.isNotEmpty() }
     if (monstersWithHitHooks.isEmpty()) return
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// HIT HOOK HELPERS")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // Hit hook context variables
@@ -879,9 +879,9 @@ private fun GBDKCodeGenerator.generateHitHookDispatch() {
     val monstersWithHitHooks = game.monsters.filter { it.onHitStatements.isNotEmpty() }
     if (monstersWithHitHooks.isEmpty()) return
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// HIT HOOK DISPATCH")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // Generate hit hook dispatch table
@@ -1375,9 +1375,9 @@ private fun GBDKCodeGenerator.generateMonsterSpriteSystem(
     val monstersWithSprites = monsters.filter { it.spriteInfo != null }
     if (monstersWithSprites.isEmpty()) return
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// MONSTER SPRITE SYSTEM")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // Generate tile dimension constants for each monster
@@ -1485,9 +1485,9 @@ private fun GBDKCodeGenerator.generateMonsterSpriteSystem(
     line()
 
     // Forward declarations for banked monster sprite functions
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// FORWARD DECLARATIONS FOR BANKED MONSTER SPRITE FUNCTIONS")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
     line("void _render_monster(UINT8 monster_id, UINT8 x_tile, UINT8 y_tile, UINT8 tier) BANKED;")
     line("void _clear_monster(UINT8 x_tile, UINT8 y_tile, UINT8 width, UINT8 height) BANKED;")
@@ -1651,9 +1651,9 @@ private fun GBDKCodeGenerator.generateMonsterClearFunctionBanked() {
 
 /** Generate battle-specific monster sprite helpers (banked). */
 private fun GBDKCodeGenerator.generateBattleMonsterHelpersBanked() {
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// BATTLE MONSTER SPRITE HELPERS (BANKED)")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // Render all enemies in battle

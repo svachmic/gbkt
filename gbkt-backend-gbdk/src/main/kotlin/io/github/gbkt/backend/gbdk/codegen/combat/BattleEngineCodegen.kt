@@ -43,9 +43,9 @@ internal fun GBDKCodeGenerator.generateBattleEngineSystem() {
     val engines = game.battleEngines
     if (engines.isEmpty()) return
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// PLUGGABLE BATTLE ENGINE SYSTEM")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // Generate type constants
@@ -119,9 +119,9 @@ private fun GBDKCodeGenerator.generateEngineIndexConstants(engines: List<BattleE
 
 /** Generate engine configuration tables. */
 private fun GBDKCodeGenerator.generateEngineConfigTables(engines: List<BattleEngine>) {
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// ENGINE CONFIGURATION TABLES")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // Combat types
@@ -405,9 +405,9 @@ private fun GBDKCodeGenerator.generateTacticalConfig(engines: List<TacticalBattl
 
 /** Generate combat state variables. */
 private fun GBDKCodeGenerator.generateCombatStateVariables(engines: List<BattleEngine>) {
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// COMBAT STATE VARIABLES")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     val maxParty = engines.maxOfOrNull { it.maxPartySize } ?: 4
@@ -487,9 +487,9 @@ private fun GBDKCodeGenerator.generateCombatStateVariables(engines: List<BattleE
 private fun GBDKCodeGenerator.generateTurnBasedUpdate(engines: List<TurnBasedBattleEngine>) {
     if (engines.isEmpty()) return
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// TURN-BASED ENGINE UPDATE")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     line("// Process turn-based combat (call each frame)")
@@ -538,9 +538,9 @@ private fun GBDKCodeGenerator.generateTurnBasedUpdate(engines: List<TurnBasedBat
 private fun GBDKCodeGenerator.generateActiveTimeUpdate(engines: List<ActiveTimeBattleEngine>) {
     if (engines.isEmpty()) return
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// ACTIVE TIME ENGINE UPDATE")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     line("// Update ATB gauges (call each frame)")
@@ -613,9 +613,9 @@ private fun GBDKCodeGenerator.generateActiveTimeUpdate(engines: List<ActiveTimeB
 private fun GBDKCodeGenerator.generateRealTimeUpdate(engines: List<RealTimeBattleEngine>) {
     if (engines.isEmpty()) return
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// REAL-TIME ENGINE UPDATE")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     line("// Update real-time combat (call each frame)")
@@ -685,9 +685,9 @@ private fun GBDKCodeGenerator.generateRealTimeUpdate(engines: List<RealTimeBattl
 private fun GBDKCodeGenerator.generateTacticalUpdate(engines: List<TacticalBattleEngine>) {
     if (engines.isEmpty()) return
 
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// TACTICAL ENGINE UPDATE")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     line("// Calculate distance between two grid positions")
@@ -766,9 +766,9 @@ private fun GBDKCodeGenerator.generateTacticalUpdate(engines: List<TacticalBattl
 /** Generate combat dispatch function. */
 @Suppress("UNUSED_PARAMETER") // engines reserved for future multi-engine routing
 private fun GBDKCodeGenerator.generateCombatDispatchFunction(engines: List<BattleEngine>) {
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// COMBAT DISPATCH")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     line("// Update combat (routes to appropriate engine)")
@@ -845,9 +845,9 @@ private fun GBDKCodeGenerator.generateCombatDispatchFunction(engines: List<Battl
 
 /** Generate combat callbacks. */
 private fun GBDKCodeGenerator.generateCombatCallbacks(engines: List<BattleEngine>) {
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// COMBAT CALLBACKS")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     // Generate individual callbacks
@@ -965,9 +965,9 @@ private fun GBDKCodeGenerator.generateCombatCallbacks(engines: List<BattleEngine
 /** Generate combat helper functions. */
 @Suppress("UNUSED_PARAMETER") // engines reserved for future multi-engine configuration
 private fun GBDKCodeGenerator.generateCombatHelperFunctions(engines: List<BattleEngine>) {
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line("// COMBAT HELPER FUNCTIONS")
-    line("// =============================================================================")
+    line(GBDKCodeGenerator.SECTION_SEPARATOR)
     line()
 
     line("// Start combat with specified engine")
