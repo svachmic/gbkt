@@ -120,7 +120,7 @@ private fun GBDKCodeGenerator.generateMixerSetVolumeFunction(mixer: AudioMixer) 
 
 private fun GBDKCodeGenerator.generateMixerFadeUpdateFunction(mixer: AudioMixer) {
     block("void _mixer_fade_update(void)") {
-        for ((name, group) in mixer.groups) {
+        for ((name, _) in mixer.groups) {
             block("if (_mixer_${name}_fade_active)") {
                 line("_mixer_${name}_fade_timer++;")
                 block("if (_mixer_${name}_fade_timer >= _mixer_${name}_fade_duration)") {

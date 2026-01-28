@@ -82,7 +82,7 @@ private fun GBDKCodeGenerator.generateCutsceneUpdate(cutscene: CutsceneDefinitio
 private fun GBDKCodeGenerator.generateTimelineStep(
     cutscene: CutsceneDefinition,
     step: TimelineStep,
-    stepIndex: Int,
+    @Suppress("UNUSED_PARAMETER") stepIndex: Int,
 ) {
     when (step) {
         is TimelineStep.Wait -> {
