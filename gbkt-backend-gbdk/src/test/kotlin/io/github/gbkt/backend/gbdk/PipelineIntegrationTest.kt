@@ -4,12 +4,10 @@
  *
  * Copyright (c) 2026 Michal Svacha
  */
-
 package io.github.gbkt.backend.gbdk
 
 import io.github.gbkt.backend.api.BackendRegistry
 import io.github.gbkt.backend.api.GenerationOptions
-import io.github.gbkt.backend.gbdk.codegen.GBDKCodeGenerator
 import io.github.gbkt.backend.gbdk.codegen.compileForTest
 import io.github.gbkt.core.*
 import io.github.gbkt.core.builder.*
@@ -22,7 +20,6 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -48,8 +45,9 @@ class PipelineIntegrationTest {
     }
 
     private val backend
-        get() = BackendRegistry.forId("gbdk")
-            ?: error("GBDK backend not found - ensure ServiceLoader is configured")
+        get() =
+            BackendRegistry.forId("gbdk")
+                ?: error("GBDK backend not found - ensure ServiceLoader is configured")
 
     // ============================================================================
     // Minimal Game Pipeline Tests
@@ -57,37 +55,39 @@ class PipelineIntegrationTest {
 
     @Test
     fun `minimal game generates valid C code`() {
-        val game = gbGame("MinimalGame") {
-            val mainScene = scene("main") {
-                every.frame { }
+        val game =
+            gbGame("MinimalGame") {
+                val mainScene = scene("main") { every.frame {} }
+                start = mainScene
             }
-            start = mainScene
-        }
 
         val result = game.compileForTest()
 
         // Verify C code structure
         assertTrue(result.contains("#include"), "Should include headers")
         assertTrue(result.contains("void main(void)"), "Should have main function")
-        assertTrue(result.contains("SCENE_MAIN") || result.contains("main"), "Should reference main scene")
+        assertTrue(
+            result.contains("SCENE_MAIN") || result.contains("main"),
+            "Should reference main scene",
+        )
     }
 
     @Test
     fun `game with variables generates correct C declarations`() {
-        val game = gbGame("VariableGame") {
-            var score by u8Var(0)
-            var highScore by u16Var(1000)
+        val game =
+            gbGame("VariableGame") {
+                var score by u8Var(0)
+                var highScore by u16Var(1000)
 
-            val mainScene = scene("main") {
-                every.frame {
-                    score += 1
-                    whenever(score isAbove highScore) {
-                        highScore set score
+                val mainScene =
+                    scene("main") {
+                        every.frame {
+                            score += 1
+                            whenever(score isAbove highScore) { highScore set score }
+                        }
                     }
-                }
+                start = mainScene
             }
-            start = mainScene
-        }
 
         val result = game.compileForTest()
 
@@ -104,18 +104,13 @@ class PipelineIntegrationTest {
 
     @Test
     fun `game with entities generates sprite management code`() {
-        val game = gbGame("EntityGame") {
-            val player by entity {
-                position(80, 72)
-            }
+        val game =
+            gbGame("EntityGame") {
+                val player by entity { position(80, 72) }
 
-            val mainScene = scene("main") {
-                every.frame {
-                    player.x += 1
-                }
+                val mainScene = scene("main") { every.frame { player.x += 1 } }
+                start = mainScene
             }
-            start = mainScene
-        }
 
         val result = game.compileForTest()
 
@@ -129,29 +124,28 @@ class PipelineIntegrationTest {
 
     @Test
     fun `game with input handling generates joypad code`() {
-        val game = gbGame("InputGame") {
-            var playerX by u8Var(80)
+        val game =
+            gbGame("InputGame") {
+                var playerX by u8Var(80)
 
-            val mainScene = scene("main") {
-                every.frame {
-                    whenever(dpad.right) {
-                        playerX += 2
+                val mainScene =
+                    scene("main") {
+                        every.frame {
+                            whenever(dpad.right) { playerX += 2 }
+                            whenever(dpad.left) { playerX -= 2 }
+                            whenever(buttons.a.pressed) { playerX set 80 }
+                        }
                     }
-                    whenever(dpad.left) {
-                        playerX -= 2
-                    }
-                    whenever(buttons.a.pressed) {
-                        playerX set 80
-                    }
-                }
+                start = mainScene
             }
-            start = mainScene
-        }
 
         val result = game.compileForTest()
 
         // Verify input handling code
-        assertTrue(result.contains("joypad") || result.contains("J_"), "Should have joypad handling")
+        assertTrue(
+            result.contains("joypad") || result.contains("J_"),
+            "Should have joypad handling",
+        )
     }
 
     // ============================================================================
@@ -160,28 +154,30 @@ class PipelineIntegrationTest {
 
     @Test
     fun `game with multiple scenes generates transition code`() {
-        val game = gbGame("MultiSceneGame") {
-            lateinit var gameplayScene: SceneRef
-            gameplayScene = scene("gameplay") {
-                every.frame { }
-            }
+        val game =
+            gbGame("MultiSceneGame") {
+                lateinit var gameplayScene: SceneRef
+                gameplayScene = scene("gameplay") { every.frame {} }
 
-            val titleScene = scene("title") {
-                every.frame {
-                    whenever(buttons.start.pressed) {
-                        scene(gameplayScene)
+                val titleScene =
+                    scene("title") {
+                        every.frame { whenever(buttons.start.pressed) { scene(gameplayScene) } }
                     }
-                }
-            }
 
-            start = titleScene
-        }
+                start = titleScene
+            }
 
         val result = game.compileForTest()
 
         // Verify scene-related code
-        assertTrue(result.contains("title") || result.contains("SCENE_TITLE"), "Should have title scene")
-        assertTrue(result.contains("gameplay") || result.contains("SCENE_GAMEPLAY"), "Should have gameplay scene")
+        assertTrue(
+            result.contains("title") || result.contains("SCENE_TITLE"),
+            "Should have title scene",
+        )
+        assertTrue(
+            result.contains("gameplay") || result.contains("SCENE_GAMEPLAY"),
+            "Should have gameplay scene",
+        )
     }
 
     // ============================================================================
@@ -190,26 +186,20 @@ class PipelineIntegrationTest {
 
     @Test
     fun `game with collision detection generates check code`() {
-        val game = gbGame("CollisionGame") {
-            val player by entity {
-                position(80, 72)
-            }
+        val game =
+            gbGame("CollisionGame") {
+                val player by entity { position(80, 72) }
 
-            val enemy by entity {
-                position(100, 72)
-            }
+                val enemy by entity { position(100, 72) }
 
-            var collided by u8Var(0)
+                var collided by u8Var(0)
 
-            val mainScene = scene("main") {
-                every.frame {
-                    whenever(player collidesWith enemy) {
-                        collided set 1
+                val mainScene =
+                    scene("main") {
+                        every.frame { whenever(player collidesWith enemy) { collided set 1 } }
                     }
-                }
+                start = mainScene
             }
-            start = mainScene
-        }
 
         val result = game.compileForTest()
 
@@ -223,53 +213,48 @@ class PipelineIntegrationTest {
 
     @Test
     fun `complex game with all features generates complete C code`() {
-        val game = gbGame("ComplexGame") {
-            // Variables
-            var score by u16Var(0)
-            var lives by u8Var(3)
-            var posX by u8Var(80)
-            var posY by u8Var(72)
+        val game =
+            gbGame("ComplexGame") {
+                // Variables
+                var score by u16Var(0)
+                var lives by u8Var(3)
+                var posX by u8Var(80)
+                var posY by u8Var(72)
 
-            // Entities
-            val player by entity {
-                position(80, 72)
-            }
+                // Entities
+                val player by entity { position(80, 72) }
 
-            // Multiple scenes
-            lateinit var gameplayScene: SceneRef
-            lateinit var gameoverScene: SceneRef
+                // Multiple scenes
+                lateinit var gameplayScene: SceneRef
+                lateinit var gameoverScene: SceneRef
 
-            gameplayScene = scene("gameplay") {
-                enter {
-                    score set 0
-                    lives set 3
-                }
-                every.frame {
-                    // Input handling using variables
-                    whenever(dpad.right) { posX += 2 }
-                    whenever(dpad.left) { posX -= 2 }
-                    whenever(dpad.up) { posY -= 2 }
-                    whenever(dpad.down) { posY += 2 }
+                gameplayScene =
+                    scene("gameplay") {
+                        enter {
+                            score set 0
+                            lives set 3
+                        }
+                        every.frame {
+                            // Input handling using variables
+                            whenever(dpad.right) { posX += 2 }
+                            whenever(dpad.left) { posX -= 2 }
+                            whenever(dpad.up) { posY -= 2 }
+                            whenever(dpad.down) { posY += 2 }
 
-                    // Score increment
-                    score += 1
-                }
-            }
-
-            gameoverScene = scene("gameover") {
-                every.frame { }
-            }
-
-            val titleScene = scene("title") {
-                every.frame {
-                    whenever(buttons.start.pressed) {
-                        scene(gameplayScene)
+                            // Score increment
+                            score += 1
+                        }
                     }
-                }
-            }
 
-            start = titleScene
-        }
+                gameoverScene = scene("gameover") { every.frame {} }
+
+                val titleScene =
+                    scene("title") {
+                        every.frame { whenever(buttons.start.pressed) { scene(gameplayScene) } }
+                    }
+
+                start = titleScene
+            }
 
         val result = game.compileForTest()
 
@@ -292,12 +277,11 @@ class PipelineIntegrationTest {
 
     @Test
     fun `backend validates game before generation`() {
-        val game = gbGame("ValidGame") {
-            val mainScene = scene("main") {
-                every.frame { }
+        val game =
+            gbGame("ValidGame") {
+                val mainScene = scene("main") { every.frame {} }
+                start = mainScene
             }
-            start = mainScene
-        }
 
         val validationResult = backend.validate(game)
         assertTrue(validationResult.isValid, "Valid game should pass validation")
@@ -305,17 +289,13 @@ class PipelineIntegrationTest {
 
     @Test
     fun `generation with options succeeds`() {
-        val game = gbGame("OptionsGame") {
-            val mainScene = scene("main") {
-                every.frame { }
+        val game =
+            gbGame("OptionsGame") {
+                val mainScene = scene("main") { every.frame {} }
+                start = mainScene
             }
-            start = mainScene
-        }
 
-        val options = GenerationOptions(
-            sourceMap = true,
-            optimizationLevel = 0
-        )
+        val options = GenerationOptions(sourceMap = true, optimizationLevel = 0)
 
         val result = backend.generate(game, options)
 

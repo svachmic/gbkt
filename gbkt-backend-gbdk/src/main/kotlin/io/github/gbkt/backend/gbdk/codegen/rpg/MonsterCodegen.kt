@@ -209,8 +209,8 @@ private fun GBDKCodeGenerator.collectVariantsFromEncounters(): List<MonsterVaria
 }
 
 /**
- * Generate constants and drop table data for a single monster.
- * AI functions and hooks are generated separately in monster banks.
+ * Generate constants and drop table data for a single monster. AI functions and hooks are generated
+ * separately in monster banks.
  */
 private fun GBDKCodeGenerator.generateMonsterDataConstants(monster: Monster) {
     val monsterName = monster.id.uppercase()

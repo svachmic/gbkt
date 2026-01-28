@@ -160,37 +160,48 @@ class GBDKCodeGenerator(internal val game: Game) {
     // =========================================================================
 
     /** Banking configuration from game config. */
-    private val bankConfig get() = game.config.banking
+    private val bankConfig
+        get() = game.config.banking
 
     /** Bank for menu/UI code. */
-    internal val codeBankMenu get() = bankConfig.menuBank
+    internal val codeBankMenu
+        get() = bankConfig.menuBank
 
     /** Bank for exploration/map code. */
-    internal val codeBankExploration get() = bankConfig.explorationBank
+    internal val codeBankExploration
+        get() = bankConfig.explorationBank
 
     /** Bank for scene lifecycle code (enter, frame, exit handlers). */
-    internal val codeBankScene get() = bankConfig.sceneBank
+    internal val codeBankScene
+        get() = bankConfig.sceneBank
 
     /** Bank for battle system state machine and turn management. */
-    internal val codeBankBattle get() = bankConfig.battleBank
+    internal val codeBankBattle
+        get() = bankConfig.battleBank
 
     /** Bank for combat mechanics (damage, abilities, status effects). */
-    internal val codeBankCombat get() = bankConfig.battleBank // Same bank as battle
+    internal val codeBankCombat
+        get() = bankConfig.battleBank // Same bank as battle
 
     /** Bank for encounter system (random battles, encounter tables). */
-    internal val codeBankEncounter get() = bankConfig.explorationBank // Same bank as exploration
+    internal val codeBankEncounter
+        get() = bankConfig.explorationBank // Same bank as exploration
 
     /** Bank for monster definitions (AI, stats, item drops) - first half. */
-    internal val codeBankMonster get() = bankConfig.monsterBank1
+    internal val codeBankMonster
+        get() = bankConfig.monsterBank1
 
     /** Bank for monster definitions (AI, stats, item drops) - second half. */
-    internal val codeBankMonster2 get() = bankConfig.monsterBank2
+    internal val codeBankMonster2
+        get() = bankConfig.monsterBank2
 
     /** Bank for floor/zone data. */
-    internal val codeBankFloor get() = bankConfig.floorDataBank
+    internal val codeBankFloor
+        get() = bankConfig.floorDataBank
 
     /** Bank for sound effects. */
-    internal val codeBankSound get() = bankConfig.soundBank
+    internal val codeBankSound
+        get() = bankConfig.soundBank
 
     // Forward declarations for banked functions (collected during generation)
     internal val bankedForwardDeclarations = mutableListOf<String>()

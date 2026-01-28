@@ -4,7 +4,6 @@
  *
  * Copyright (c) 2026 Michal Svacha
  */
-
 package io.github.gbkt.backend.gbdk
 
 import io.github.gbkt.backend.api.BackendRegistry
@@ -48,8 +47,7 @@ class CodegenBenchmarkTest {
     }
 
     private val backend
-        get() = BackendRegistry.forId("gbdk")
-            ?: error("GBDK backend not found")
+        get() = BackendRegistry.forId("gbdk") ?: error("GBDK backend not found")
 
     // ============================================================================
     // Benchmark: Minimal Game
@@ -66,9 +64,7 @@ class CodegenBenchmarkTest {
         }
 
         // Measure
-        val results = (1..measureIterations).map {
-            benchmarkPipeline { createMinimalGame() }
-        }
+        val results = (1..measureIterations).map { benchmarkPipeline { createMinimalGame() } }
 
         printBenchmarkResults("Minimal Game", results)
     }
@@ -88,9 +84,7 @@ class CodegenBenchmarkTest {
         }
 
         // Measure
-        val results = (1..measureIterations).map {
-            benchmarkPipeline { createMediumGame() }
-        }
+        val results = (1..measureIterations).map { benchmarkPipeline { createMediumGame() } }
 
         printBenchmarkResults("Medium Game", results)
     }
@@ -110,14 +104,15 @@ class CodegenBenchmarkTest {
         for (count in entityCounts) {
             val result = benchmarkPipeline { createGameWithEntities(count) }
             println(
-                "%8d | %8.2f | %15.2f | %12.2f | %10.2f | %d bytes".format(
-                    count,
-                    result.dslTimeNs / 1_000_000.0,
-                    result.validationTimeNs / 1_000_000.0,
-                    result.codegenTimeNs / 1_000_000.0,
-                    result.totalTimeNs / 1_000_000.0,
-                    result.codeSize
-                )
+                "%8d | %8.2f | %15.2f | %12.2f | %10.2f | %d bytes"
+                    .format(
+                        count,
+                        result.dslTimeNs / 1_000_000.0,
+                        result.validationTimeNs / 1_000_000.0,
+                        result.codegenTimeNs / 1_000_000.0,
+                        result.totalTimeNs / 1_000_000.0,
+                        result.codeSize,
+                    )
             )
         }
     }
@@ -133,14 +128,15 @@ class CodegenBenchmarkTest {
         for (count in sceneCounts) {
             val result = benchmarkPipeline { createGameWithScenes(count) }
             println(
-                "%6d | %8.2f | %15.2f | %12.2f | %10.2f | %d bytes".format(
-                    count,
-                    result.dslTimeNs / 1_000_000.0,
-                    result.validationTimeNs / 1_000_000.0,
-                    result.codegenTimeNs / 1_000_000.0,
-                    result.totalTimeNs / 1_000_000.0,
-                    result.codeSize
-                )
+                "%6d | %8.2f | %15.2f | %12.2f | %10.2f | %d bytes"
+                    .format(
+                        count,
+                        result.dslTimeNs / 1_000_000.0,
+                        result.validationTimeNs / 1_000_000.0,
+                        result.codegenTimeNs / 1_000_000.0,
+                        result.totalTimeNs / 1_000_000.0,
+                        result.codeSize,
+                    )
             )
         }
     }
@@ -154,7 +150,7 @@ class CodegenBenchmarkTest {
         val validationTimeNs: Long,
         val codegenTimeNs: Long,
         val totalTimeNs: Long,
-        val codeSize: Int
+        val codeSize: Int,
     )
 
     private fun benchmarkPipeline(gameFactory: () -> Game): BenchmarkResult {
@@ -162,14 +158,10 @@ class CodegenBenchmarkTest {
         var codeSize = 0
 
         // Measure DSL recording
-        val dslTime = measureNanoTime {
-            game = gameFactory()
-        }
+        val dslTime = measureNanoTime { game = gameFactory() }
 
         // Measure validation
-        val validationTime = measureNanoTime {
-            backend.validate(game!!)
-        }
+        val validationTime = measureNanoTime { backend.validate(game!!) }
 
         // Measure code generation
         val codegenTime = measureNanoTime {
@@ -182,7 +174,7 @@ class CodegenBenchmarkTest {
             validationTimeNs = validationTime,
             codegenTimeNs = codegenTime,
             totalTimeNs = dslTime + validationTime + codegenTime,
-            codeSize = codeSize
+            codeSize = codeSize,
         )
     }
 
@@ -201,11 +193,10 @@ class CodegenBenchmarkTest {
         println("DSL Recording:   %.2f ms (avg)".format(avgDsl / 1_000_000.0))
         println("Validation:      %.2f ms (avg)".format(avgValidation / 1_000_000.0))
         println("Code Generation: %.2f ms (avg)".format(avgCodegen / 1_000_000.0))
-        println("Total Pipeline:  %.2f ms (avg), %.2f ms (min), %.2f ms (max)".format(
-            avgTotal / 1_000_000.0,
-            minTotal / 1_000_000.0,
-            maxTotal / 1_000_000.0
-        ))
+        println(
+            "Total Pipeline:  %.2f ms (avg), %.2f ms (min), %.2f ms (max)"
+                .format(avgTotal / 1_000_000.0, minTotal / 1_000_000.0, maxTotal / 1_000_000.0)
+        )
         println("Generated Code:  %.0f bytes (avg)".format(avgCodeSize))
         println()
     }
@@ -214,76 +205,60 @@ class CodegenBenchmarkTest {
     // Game Factories
     // ============================================================================
 
-    private fun createMinimalGame(): Game = gbGame("MinimalGame") {
-        val mainScene = scene("main") {
-            every.frame { }
-        }
-        start = mainScene
-    }
-
-    private fun createMediumGame(): Game = gbGame("MediumGame") {
-        var score by u16Var(0)
-        var lives by u8Var(3)
-        var posX by u8Var(80)
-        var posY by u8Var(72)
-
-        val player by entity {
-            position(80, 72)
+    private fun createMinimalGame(): Game =
+        gbGame("MinimalGame") {
+            val mainScene = scene("main") { every.frame {} }
+            start = mainScene
         }
 
-        lateinit var gameplayScene: SceneRef
-        lateinit var gameoverScene: SceneRef
+    private fun createMediumGame(): Game =
+        gbGame("MediumGame") {
+            var score by u16Var(0)
+            var lives by u8Var(3)
+            var posX by u8Var(80)
+            var posY by u8Var(72)
 
-        gameplayScene = scene("gameplay") {
-            every.frame {
-                whenever(dpad.right) { posX += 2 }
-                whenever(dpad.left) { posX -= 2 }
-                whenever(dpad.up) { posY -= 2 }
-                whenever(dpad.down) { posY += 2 }
+            val player by entity { position(80, 72) }
 
-                score += 1
-            }
-        }
+            lateinit var gameplayScene: SceneRef
+            lateinit var gameoverScene: SceneRef
 
-        gameoverScene = scene("gameover") {
-            every.frame { }
-        }
+            gameplayScene =
+                scene("gameplay") {
+                    every.frame {
+                        whenever(dpad.right) { posX += 2 }
+                        whenever(dpad.left) { posX -= 2 }
+                        whenever(dpad.up) { posY -= 2 }
+                        whenever(dpad.down) { posY += 2 }
 
-        val titleScene = scene("title") {
-            every.frame {
-                whenever(buttons.start.pressed) {
-                    scene(gameplayScene)
+                        score += 1
+                    }
                 }
-            }
+
+            gameoverScene = scene("gameover") { every.frame {} }
+
+            val titleScene =
+                scene("title") {
+                    every.frame { whenever(buttons.start.pressed) { scene(gameplayScene) } }
+                }
+
+            start = titleScene
         }
 
-        start = titleScene
-    }
+    private fun createGameWithEntities(count: Int): Game =
+        gbGame("EntityGame$count") {
+            repeat(count) { i -> entity { position(i * 10, i * 10) } }
 
-    private fun createGameWithEntities(count: Int): Game = gbGame("EntityGame$count") {
-        repeat(count) { i ->
-            entity {
-                position(i * 10, i * 10)
-            }
+            val mainScene = scene("main") { every.frame {} }
+            start = mainScene
         }
 
-        val mainScene = scene("main") {
-            every.frame { }
-        }
-        start = mainScene
-    }
+    private fun createGameWithScenes(count: Int): Game =
+        gbGame("SceneGame$count") {
+            val firstScene = scene("scene0") { every.frame {} }
 
-    private fun createGameWithScenes(count: Int): Game = gbGame("SceneGame$count") {
-        val firstScene = scene("scene0") {
-            every.frame { }
-        }
+            repeat(count - 1) { i -> scene("scene${i + 1}") { every.frame {} } }
 
-        repeat(count - 1) { i ->
-            scene("scene${i + 1}") {
-                every.frame { }
-            }
+            start = firstScene
         }
-
-        start = firstScene
-    }
 }
