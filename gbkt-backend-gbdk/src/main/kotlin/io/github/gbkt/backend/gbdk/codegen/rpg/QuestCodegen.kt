@@ -630,8 +630,8 @@ private fun GBDKCodeGenerator.generateRewardCode(reward: QuestReward) {
         is QuestReward.StatBonus -> {
             line("// Grant stat bonus: ${reward.statId} +${reward.amount}")
             // Stat bonuses are applied to all characters or the primary character
-            val characters = game.characters.ifEmpty { null }
-            if (characters != null && characters.isNotEmpty()) {
+            val characters = game.characters
+            if (characters.isNotEmpty()) {
                 val character = characters.first()
                 val prefix = character.name.lowercase()
                 val statName = reward.statId.lowercase()

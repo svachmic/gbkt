@@ -1515,10 +1515,8 @@ private fun GBDKCodeGenerator.generateMonsterSpriteSystem(
 /** Generate palette lookup table for monster tier variations. */
 private fun GBDKCodeGenerator.generateMonsterPaletteLookup(
     monsters: List<Monster>,
-    variants: List<MonsterVariant>,
+    @Suppress("UNUSED_PARAMETER") variants: List<MonsterVariant>,
 ) {
-    val totalCount = monsters.size + variants.size
-
     line("// Default palette lookup by tier (can be overridden per monster)")
     line("static const UINT8 _tier_default_palette[4] = {")
     indent++

@@ -917,7 +917,7 @@ private fun GBDKCodeGenerator.generateBattleUpdate(stmt: IRBattleUpdate) {
 /** Generate battle action execution function (banked - called once per action). */
 private fun GBDKCodeGenerator.generateActionExecutionFunctionBanked(
     name: String,
-    system: IRBattleSystem,
+    @Suppress("UNUSED_PARAMETER") system: IRBattleSystem,
 ) {
     line("// Execute the queued battle action")
     line("void _${name}_execute_action(void) BANKED {")

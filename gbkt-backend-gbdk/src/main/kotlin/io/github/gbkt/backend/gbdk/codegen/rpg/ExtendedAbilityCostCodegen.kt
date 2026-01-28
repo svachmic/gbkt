@@ -308,7 +308,7 @@ private fun GBDKCodeGenerator.generateExtendedCostCheckFunction(abilities: List<
         }
 
         // Check each resource cost
-        for ((index, cost) in ext.baseCosts.withIndex()) {
+        for (cost in ext.baseCosts) {
             when (cost) {
                 is ResourceCost.SP -> {
                     line("if (_party_get_stat(char_idx, STAT_SP) < ${cost.amount}u) return 0u;")
