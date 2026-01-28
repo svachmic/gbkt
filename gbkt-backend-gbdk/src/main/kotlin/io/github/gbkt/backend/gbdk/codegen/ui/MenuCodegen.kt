@@ -80,7 +80,7 @@ internal fun GBDKCodeGenerator.countMenuItems(items: List<MenuItem>): Int {
             is MenuItem.Toggle -> count++
             is MenuItem.Slider -> count++
             is MenuItem.Option -> count++
-            is MenuItem.Separator -> {} // Don't count separators
+            is MenuItem.Separator -> Unit // Don't count separators
             is MenuItem.Conditional -> count += countMenuItems(item.items)
         }
     }
@@ -393,7 +393,7 @@ private fun GBDKCodeGenerator.generateMenuSelectFunction(menu: MenuDefinition) {
                     // These are handled by left/right, not A button
                     itemIndex++
                 }
-                is MenuItem.Separator -> {}
+                is MenuItem.Separator -> Unit // Visual-only, no action
                 is MenuItem.Conditional -> {
                     // Handle conditional menu item selection
                     val condExpr = generateExpr(item.condition)
@@ -434,10 +434,8 @@ private fun GBDKCodeGenerator.generateMenuSelectFunction(menu: MenuDefinition) {
                                 // These are handled by left/right, not A button
                                 itemIndex++
                             }
-                            is MenuItem.Separator -> {}
-                            is MenuItem.Conditional -> {
-                                // Nested conditionals not supported
-                            }
+                            is MenuItem.Separator -> Unit // Visual-only
+                            is MenuItem.Conditional -> Unit // Nested conditionals not supported
                         }
                     }
                 }
@@ -574,7 +572,10 @@ private fun GBDKCodeGenerator.generateMenuTickFunction(menu: MenuDefinition) {
 }
 
 @Suppress("UNUSED_PARAMETER") // itemCount reserved for future bounds checking
-private fun GBDKCodeGenerator.generateMenuLeftRightHandling(menu: MenuDefinition, itemCount: Int) {
+private fun GBDKCodeGenerator.generateMenuLeftRightHandling(
+    menu: MenuDefinition,
+    @Suppress("unused") itemCount: Int,
+) {
     val name = menu.name
 
     // Check for sliders/options at any level (including inside conditionals)
@@ -634,7 +635,7 @@ private fun GBDKCodeGenerator.generateMenuLeftRightHandling(menu: MenuDefinition
             }
             is MenuItem.Action,
             is MenuItem.Toggle -> itemIndex++
-            is MenuItem.Separator -> {}
+            is MenuItem.Separator -> Unit // No special handling for separators
             is MenuItem.Conditional -> {
                 // Handle sliders/options inside conditional blocks
                 val condExpr = generateExpr(item.condition)
@@ -682,7 +683,7 @@ private fun GBDKCodeGenerator.generateMenuLeftRightHandling(menu: MenuDefinition
                         }
                         is MenuItem.Action,
                         is MenuItem.Toggle -> itemIndex++
-                        is MenuItem.Separator -> {}
+                        is MenuItem.Separator -> Unit // No special handling for separators
                         is MenuItem.Conditional -> {
                             // Nested conditionals not supported for simplicity
                         }
@@ -739,7 +740,7 @@ private fun GBDKCodeGenerator.generateMenuLeftRightHandling(menu: MenuDefinition
             }
             is MenuItem.Action,
             is MenuItem.Toggle -> itemIndex++
-            is MenuItem.Separator -> {}
+            is MenuItem.Separator -> Unit // No special handling for separators
             is MenuItem.Conditional -> {
                 // Handle sliders/options inside conditional blocks
                 val condExpr = generateExpr(item.condition)
@@ -787,7 +788,7 @@ private fun GBDKCodeGenerator.generateMenuLeftRightHandling(menu: MenuDefinition
                         }
                         is MenuItem.Action,
                         is MenuItem.Toggle -> itemIndex++
-                        is MenuItem.Separator -> {}
+                        is MenuItem.Separator -> Unit // No special handling for separators
                         is MenuItem.Conditional -> {
                             // Nested conditionals not supported for simplicity
                         }

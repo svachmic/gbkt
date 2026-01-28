@@ -845,17 +845,16 @@ class GameValidator(internal val game: Game) {
         // Validate sprite assets
         game.sprites.forEach { sprite ->
             val assetPath = sprite.asset
-            if (assetPath.isNotEmpty()) {
-                val validationResult = validateAssetFile(assetPath, game.assetDir)
-                if (!validationResult.isValid) {
-                    validationResult.errors.forEach { error ->
-                        errors.add(
-                            ValidationError(
-                                ValidationCategory.ASSET_FILE,
-                                "Asset '${sprite.name}' ($assetPath): $error",
-                            )
+            if (assetPath.isEmpty()) return@forEach
+            val validationResult = validateAssetFile(assetPath, game.assetDir)
+            if (!validationResult.isValid) {
+                validationResult.errors.forEach { error ->
+                    errors.add(
+                        ValidationError(
+                            ValidationCategory.ASSET_FILE,
+                            "Asset '${sprite.name}' ($assetPath): $error",
                         )
-                    }
+                    )
                 }
             }
         }

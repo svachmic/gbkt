@@ -108,7 +108,7 @@ private fun GBDKCodeGenerator.generateSaveChecksumFunction(save: SaveData) {
                 line("return sum;")
             }
         }
-        Checksum.NONE -> {}
+        Checksum.NONE -> Unit // No checksum function needed
     }
     line()
 }

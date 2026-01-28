@@ -434,11 +434,11 @@ object AssetPipeline {
 }
 
 /** Extension to load sprite and get both the Sprite object and tile data. */
-@Suppress("UnusedParameter") // palette reserved for future color remapping
+@Suppress("UnusedParameter", "UNUSED_PARAMETER") // palette reserved for future color remapping
 fun loadSpriteWithTiles(
     path: String,
     slot: Int,
-    palette: IntArray = AssetPipeline.DEFAULT_PALETTE,
+    @Suppress("unused") palette: IntArray = AssetPipeline.DEFAULT_PALETTE,
 ): Pair<Sprite, AssetPipeline.SpriteSheet> {
     val sheet = AssetPipeline.loadSprite(path)
     val sprite =

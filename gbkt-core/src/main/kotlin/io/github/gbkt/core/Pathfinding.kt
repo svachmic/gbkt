@@ -634,8 +634,8 @@ internal constructor(private val query: PathQuery, private val navGrid: NavGrid)
 }
 
 // Allow chaining: path using navGrid configure { diagonal = true }
-@Suppress("UnusedParameter") // Reserved for future post-configuration support
-infix fun Path.configure(init: PathOptionsBuilder.() -> Unit): Path {
+@Suppress("UnusedParameter", "UNUSED_PARAMETER") // Reserved for future post-configuration support
+infix fun Path.configure(@Suppress("unused") init: PathOptionsBuilder.() -> Unit): Path {
     // For post-configuration, we would need to re-emit the IR
     // For now, configuration must happen during the query
     return this

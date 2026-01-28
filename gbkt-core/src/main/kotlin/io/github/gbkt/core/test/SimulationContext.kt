@@ -529,8 +529,8 @@ class SimulationContext(val game: Game) {
         }
     }
 
-    @Suppress("UnusedParameter") // Stub for rendering calls not simulated
-    private fun executeCall(stmt: IRCall) {
+    @Suppress("UnusedParameter", "UNUSED_PARAMETER") // Stub for rendering calls not simulated
+    private fun executeCall(@Suppress("unused") stmt: IRCall) {
         // Function calls are generally side-effect-free in Game Boy context
         // They're typically just for rendering which we don't simulate
     }
@@ -557,8 +557,11 @@ class SimulationContext(val game: Game) {
         }
     }
 
-    @Suppress("UnusedParameter") // Duration not simulated, executes immediately
-    private fun executeTransition(durationFrames: Int, onComplete: List<IRStatement>) {
+    @Suppress("UnusedParameter", "UNUSED_PARAMETER") // Duration not simulated, executes immediately
+    private fun executeTransition(
+        @Suppress("unused") durationFrames: Int,
+        onComplete: List<IRStatement>,
+    ) {
         transitionActive = true
         // In simulation, transitions complete immediately (we don't wait)
         // Execute onComplete immediately for testing
