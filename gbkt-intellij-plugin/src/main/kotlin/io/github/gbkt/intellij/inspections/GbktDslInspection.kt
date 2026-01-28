@@ -30,7 +30,6 @@ import io.github.gbkt.intellij.quickfix.CreateVariableQuickFix
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtFunctionLiteral
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
-import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtVisitorVoid
 
 /**

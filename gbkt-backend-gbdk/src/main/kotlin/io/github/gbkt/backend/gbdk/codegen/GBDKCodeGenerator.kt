@@ -216,7 +216,6 @@ class GBDKCodeGenerator(internal val game: Game) {
      */
     internal fun bankedBlock(bank: Int, header: String, body: () -> Unit) {
         // Record forward declaration for bank 0
-        val funcName = header.substringBefore("(").trim().substringAfterLast(" ")
         bankedForwardDeclarations.add("$header BANKED;")
 
         // Switch to target bank and generate function

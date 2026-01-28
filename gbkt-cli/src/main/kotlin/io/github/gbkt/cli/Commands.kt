@@ -117,7 +117,7 @@ fun handleBuild(args: List<String>) {
 }
 
 @Suppress("UnusedParameter") // Reserved for future flags
-fun handleRun(args: List<String>) {
+fun handleRun(@Suppress("UNUSED_PARAMETER") args: List<String>) {
     println("Running emulator...")
 
     // Check if gradlew exists

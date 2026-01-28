@@ -24,7 +24,6 @@ import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtPsiFactory
 
 /**
  * Quick fix that creates a new entity definition.
@@ -40,7 +39,6 @@ class CreateEntityQuickFix(private val entityName: String) : LocalQuickFix {
 
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
         val file = descriptor.psiElement.containingFile as? KtFile ?: return
-        val psiFactory = KtPsiFactory(project)
 
         // Template for new entity with TODO placeholders for user customization
         // Uses minimal template - user adds components as needed
