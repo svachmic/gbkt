@@ -669,7 +669,8 @@ private fun GBDKCodeGenerator.generateRewardCode(reward: QuestReward) {
 
 /** Generate quest tracker display helpers. */
 private fun GBDKCodeGenerator.generateTrackerHelpers() {
-    val tracker = game.questTracker ?: return
+    // Return early if no quest tracker configured
+    if (game.questTracker == null) return
 
     line("// =============================================================================")
     line("// QUEST TRACKER")

@@ -481,7 +481,6 @@ private fun GBDKCodeGenerator.generateApplyEffect(stmt: IRApplyStatusEffect) {
             is EffectDuration.UntilBattleEnd -> DURATION_UNTIL_BATTLE_END
             is EffectDuration.Permanent -> DURATION_PERMANENT
         }
-    val isFrameBased = stmt.duration is EffectDuration.Frames
     val maxStacks = stmt.maxStacks.coerceIn(1, 99)
     val maxDuration = durationValue * 2 // For STACK_DURATION mode
 

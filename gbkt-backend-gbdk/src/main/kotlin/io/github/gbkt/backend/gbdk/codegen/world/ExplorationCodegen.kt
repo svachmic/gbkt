@@ -105,7 +105,6 @@ private fun GBDKCodeGenerator.generateMovementStateConstants() {
 /** Generate exploration system definition. */
 private fun GBDKCodeGenerator.generateExplorationDefinition(exploration: Exploration) {
     val name = exploration.id
-    val nameUpper = name.uppercase()
 
     line("// -----------------------------------------------------------------------------")
     line("// Exploration System: $name")
@@ -476,7 +475,7 @@ private fun GBDKCodeGenerator.generateCollisionCheck(exploration: Exploration) {
                 indent++
                 line("switch (_current_map) {")
                 indent++
-                for ((mapIndex, entry) in mapsWithAttrs.entries.withIndex()) {
+                for (entry in mapsWithAttrs.entries) {
                     val (mapName, _) = entry
                     line("case ${zone.maps.keys.indexOf(mapName)}u: {")
                     indent++
