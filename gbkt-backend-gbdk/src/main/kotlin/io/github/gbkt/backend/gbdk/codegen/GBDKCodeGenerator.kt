@@ -113,7 +113,8 @@ class GBDKCodeGenerator(internal val game: Game) {
         const val MAIN_OUTPUT_FILE = "main.c"
 
         /** Section separator comment for generated C code. */
-        const val SECTION_SEPARATOR = "// ============================================================================="
+        const val SECTION_SEPARATOR =
+            "// ============================================================================="
     }
 
     // Validation error tracking - errors are collected during generation and reported at the end
