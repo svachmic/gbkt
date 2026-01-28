@@ -1,0 +1,365 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+
+const namespaces = require('../assets/strings');
+
+/**
+ * List of direct substitutions to perform on input strings. Makes it easy to
+ * reference special font tiles, etc.
+ */
+const DirectSubstitutions = {
+  ':elipsis:': 0xE0,
+  ':regen:': 0xFB,
+  ':atk:': 0xDD,
+  ':gil:': 0xA4,
+  ':soulcoin:': 0xA5,
+  ':arrow:': 0xA6,
+  ':lquo:': 0xA2,
+  ':rquo:': 0xA3,
+};
+
+const params = {
+  '%damage': {
+    code: '%u',
+    max: 4,
+  },
+  '%aspect': {
+    code: '%s',
+    max: 5,
+  },
+  '%monster': {
+    code: '%s',
+    max: 9,
+  },
+  '%c': {
+    code: '%c',
+    max: 1
+  },
+  '%exp': {
+    code: '%u',
+    max: 3
+  },
+  '%level': {
+    code: '%u',
+    max: 2
+  },
+  '%1u': {
+    code: '%u',
+    max: 1
+  }
+};
+
+function encodeString(namespace, key, str, debugOn=false) {
+  function debug(...args) {
+    if (!debugOn) return;
+    args.unshift('debug>')
+    console.log.apply(console, args);
+  }
+
+  if (str.length == 0) {
+    debug('Empty string.')
+    return '';
+  }
+
+
+  debug('Parsing:', str);
+
+  str = str.replace(/\.\.\./g, ':elipsis:');
+
+  const maxLineLength = 18;
+  const maxTokenLength = 18;
+  const maxStringLength = maxLineLength * 5;
+
+  // Break the string down into a series of tokens
+  let tokens = str.match(/([ ]+)|([%][a-z]+)|(:[a-z-]+:)|([\n\f])|([^\s]+)/g);
+
+  function expandMatch(input, regex) {
+    function recur(str) {
+      if (!str) return [];
+
+      const match = str.match(regex);
+      if (!match || match[0] == str)
+        return [ str ];
+
+      const { index } = match;
+      const [ text ] = match;
+      const length = text.length;
+      return [].concat(
+        recur(str.substring(0, index)),
+        recur(str.substring(index, index + length)),
+        recur(str.substring(index + length))
+      )
+    }
+    return recur(input);
+  }
+
+  // Recursively expand postfix and prefix subs and params
+  tokens = tokens.map(token => {
+    return expandMatch(token, /:[a-z-]+:/);
+  }).flat(1).map(token => {
+    return expandMatch(token, /[%][a-z]+/);
+  }).flat(1);
+
+  debug(tokens);
+
+  // Generate a list of intermediate representations for the tokens
+  function addIMR(k) {
+    debug('IMR generated:', k)
+    imr.push(k);
+  }
+
+  const imr = [];
+
+  tokens.forEach(token => {
+    if (token.match(/^%/)) {
+      const param = params[token];
+      if (!param) {
+        const msg = `Encountered unknown parameter '${token}'`;
+        debug(`${msg}, throwing`)
+        throw new Error(`${namespace}.${key} ${msg}`);
+      }
+      const { code, max } = param;
+      addIMR({ type: 'param', token, encoded: code, length: max })
+      return;
+    }
+
+    if (token.match(/[:][a-z-]+[:]/) && DirectSubstitutions[token]) {
+      const delta = DirectSubstitutions[token] - 0x80;
+      const hex = (delta < 0 ? delta + 0xFF : delta).toString(16);
+      addIMR({
+        type: 'sub',
+        token,
+        encoded:  `\\x${hex.length < 2 ? `0${hex}` : hex}`,
+        length: 1
+      });
+      return;
+    }
+
+    if (token.match(/[\n]/)) {
+      addIMR({ type: 'control', token, encoded: '\\n', length: 1 });
+      return;
+    }
+
+    if (token.match(/[\f]/)) {
+      addIMR({ type: 'control', token, encoded: '\\f', length: 1 });
+      return;
+    }
+
+    while(token.length > maxTokenLength) {
+      const left = token.substring(0, maxTokenLength - 1) + '-';
+      addIMR({
+        type: 'text',
+        token: left,
+        length: left.length,
+        encoded: left
+      });
+      token = token.substring(maxTokenLength - 1);
+    }
+
+    if (token.length > 0) {
+      addIMR({
+        type: 'text',
+        token,
+        encoded: token,
+        length: token.length,
+      });
+    }
+  });
+
+  let result = '';
+  let currentLineLen = 0;
+  let totalLen = 0;
+
+  function addLength(n) {
+    totalLen += n;
+    currentLineLen += n;
+    debug('Total length updated:', totalLen);
+    if (totalLen > maxStringLength) {
+      debug('Maximum string length exceeded, throwing');
+      throw new Error(`${namespace}.${key} exceeds ${maxStringLength} chars.`);
+    }
+  }
+
+  imr.forEach(rep => {
+    debug('Compiling IMR', rep);
+
+    // Don't try to line-wrap on a newline character.
+    if (rep.encoded == "\\n") {
+      currentLineLen = 0;
+      result += '\\n';
+      addLength(1);
+      return;
+    }
+
+    if (currentLineLen + rep.length > maxLineLength) {
+      debug('Line length exceeded, adding \\n');
+      currentLineLen = 0;
+      result += '\\n';
+      addLength(1);
+    }
+    addLength(rep.length);
+    result += rep.encoded;
+  })
+
+  return result
+    .replace(/[']/g, "\\'")
+    .replace(/["]/g, '\\"')
+    .replace(/[\\]n[ ]/g, '\\n');
+}
+
+function varName(ns, key) {
+  return `str_${ns}_${key}`;
+}
+
+function escapeString(s) {
+  const codes = [
+    { code: '\n', replace: '\\n' },
+    { code: '\f', replace: '\\f' },
+    { code: '\r', replace: '\\r' },
+    { code: '\t', replace: '\\t' },
+    { code: '\v', replace: '\\v' },
+    { code: '\b', replace: '\\b' },
+  ];
+  codes.forEach(({ code, replace }) => {
+    s = s.replace(RegExp(code, 'g'), replace);
+  });
+  return s;
+}
+
+class Header {
+  constructor () {
+    this.variables = [];
+  }
+
+  get filename() {
+    return 'strings.h'
+  }
+
+  get path() {
+    return path.resolve('src/', this.filename)
+  }
+
+  add(ns, key, value) {
+    this.variables.push({ varName: varName(ns, key), value })
+  }
+
+  extern(variable) {
+    const { varName, value } = variable;
+    return [
+      '',
+      '/**',
+      ` * "${escapeString(value)}"`,
+      ' */',
+      `extern const char ${varName}[];`,
+    ].join('\n');
+  }
+
+  get headerConst() {
+    return '_GAME_STRINGS_H';
+  }
+
+  get contents() {
+    return [
+      '/*',
+      ` * ${this.filename}`,
+      ` * Extern references for encoded string values across all namespaces.`,
+      ' */',
+      `#ifndef ${this.headerConst}`,
+      `#define ${this.headerConst}`,
+      this.variables.map(v => this.extern(v)).join('\n'),
+      '',
+      '#endif',
+      ''
+    ].join('\n');
+  }
+}
+
+class SourceFile {
+  constructor(name, bank) {
+    this.name = name;
+    this.bank = bank;
+    this.entries = [];
+  }
+
+  get filename() {
+    const bank = this.bank < 10 ? `0${this.bank}` : this.bank;
+    return `strings_${this.name}.bank${bank}.c`;
+  }
+
+  get path() {
+    return path.resolve('data/', this.filename);
+  }
+
+  add(key, value) {
+    const parsed = encodeString(this.name, key, value);
+    this.entries.push({ key, value, parsed });
+  }
+
+  var(key) {
+    return varName(this.name, key);
+  }
+
+  def(entry) {
+    const { key, value, parsed } = entry;
+    return [
+      `const char ${this.var(key)}[] = "${parsed}";`,
+    ].join('\n')
+  }
+
+  get contents() {
+    const now = new Date();
+    return [
+      '/*',
+      ` * ${this.filename}`,
+      ` * Encoded string values for the "${this.name}" namespace.`,
+      ' */',
+      '',
+      `#pragma bank ${this.bank}`,
+      '',
+      this.entries.map(entry => this.def(entry)).join('\n'),
+      ''
+    ].join('\n')
+  }
+}
+
+function writeFile(path, contents, type) {
+  console.log(`Writing strings ${type} file: ${path}`)
+  fs.writeFileSync(path, contents);
+}
+
+function main() {
+  const header = new Header();
+  Object.keys(namespaces).forEach(name => {
+    const { strings, bank } = namespaces[name];
+    const source = new SourceFile(name, bank)
+    Object.keys(strings).forEach(key => {
+      header.add(name, key, strings[key]);
+      source.add(key, strings[key]);
+    })
+    writeFile(source.path, source.contents, 'source');
+  });
+  writeFile(header.path, header.contents, 'header');
+}
+
+function testParse(str) {
+  const parsed = encodeString('test', 'key', str, true)
+  console.log('+--+--+--+--+--+--');
+  console.log(str);
+  console.log('+--+--+--+--+--+--');
+  console.log(parsed.replace('\\n', '\n'));
+  console.log('+--+--+--+--+--+--');
+}
+
+
+function test() {
+  // testParse("Kobold %c attacks with a stone axe...")
+  testParse(':regen:Mend');
+  // testParse(namespaces.battle.strings.kobold_axe);
+  // testParse(namespaces.battle.strings.monster_attack);
+  // testParse(namespaces.battle.strings.player_magic_miss);
+}
+
+main();
+// test();

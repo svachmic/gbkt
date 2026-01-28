@@ -56,6 +56,18 @@ abstract class GbktExtension @Inject constructor(objects: ObjectFactory) {
     abstract val gbdkHome: Property<String>
 
     /**
+     * Target platform for code generation.
+     *
+     * Available targets depend on backends on the classpath. With gbkt-backend-gbdk:
+     * - "gbc" (default): Game Boy Color
+     * - "gb": Original Game Boy (DMG)
+     *
+     * The backend is discovered via ServiceLoader. Make sure gbkt-backend-gbdk is in your
+     * dependencies for GB/GBC support.
+     */
+    abstract val target: Property<String>
+
+    /**
      * Game definition in format "package.ClassName::propertyName".
      *
      * Example: "sample.RunnerGameKt::runnerGame"

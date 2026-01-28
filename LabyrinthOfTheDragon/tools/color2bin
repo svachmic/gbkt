@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const { PNG } = require('pngjs');
+const { updateManifest } = require('./common')
+
+const argv = process.argv.slice(2);
+const [inputPath, outputPath] = argv
+
+if (argv.length < 2) {
+  console.error('usage: color2bin <input-png> <output-bin>');
+  process.exit(1);
+}
+
+fs.createReadStream(inputPath)
+  .pipe(new PNG())
+  .on('parsed', function () {
+    parseColors(this, inputPath, outputPath)
+  })
+  .on('error', (err) => {
+    console.error(`Error processing the PNG: ${err.message}`);
+    process.exit(1);
+  });
+
+async function parseColors (image, input, output) {
+  // Parse the image and find all distinct colors
+  const {width, height, data} = image
+  const colorSet = new Set();
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      colorSet.add(
+        [r, g, b].map(c => Math.floor(c / 8.0)).join(',')
+      );
+    }
+  }
+
+  // Compile the colors into GBC binary 15-bit color data
+  const colors = new Uint16Array(Array.from(colorSet).map(rgb => {
+    const [r, g, b] = rgb.split(',').map(s => parseInt(s));
+    return r | (g << 5) | (b << 10) & 0xEFFF;
+  }));
+
+  // Update the manifest to include data about the file
+  await updateManifest(output, { inputPath: input, colors: colors.length })
+
+  // Write the binary output file
+  fs.writeFileSync(outputPath, Buffer.from(colors.buffer));
+  const numColors = `${colors.length} colors`
+  console.log(`color2bin: data written ${outputPath} (${numColors})`);
+}

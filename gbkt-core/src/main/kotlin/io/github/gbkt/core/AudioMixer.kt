@@ -96,7 +96,7 @@ data class ChannelGroup(
     }
 
     /** Get the group's ID (index) for code generation */
-    internal var id: Int = -1
+    var id: Int = -1
 }
 
 // =============================================================================

@@ -6,13 +6,13 @@
  */
 package io.github.gbkt.gradle.tasks
 
+import io.github.gbkt.gradle.internal.BackendReflection
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.gradle.workers.WorkAction
@@ -35,14 +35,17 @@ abstract class GenerateCTask @Inject constructor(private val workerExecutor: Wor
     /** Game definition in format "package.ClassName::propertyName". */
     @get:Input abstract val gameSpec: Property<String>
 
+    /** Target platform for code generation (e.g., "gbc", "gb"). */
+    @get:Input @get:Optional abstract val target: Property<String>
+
     /** Directory containing sprite assets for the asset pipeline. */
     @get:InputDirectory
     @get:Optional
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val assetDirectory: DirectoryProperty
 
-    /** Output C file location. */
-    @get:OutputFile abstract val outputCFile: RegularFileProperty
+    /** Output directory for generated C files (one per bank). */
+    @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
     /** Runtime classpath containing compiled classes and gbkt-core. */
     @get:Classpath abstract val runtimeClasspath: ConfigurableFileCollection
@@ -108,7 +111,7 @@ abstract class GenerateCTask @Inject constructor(private val workerExecutor: Wor
         val (className, propertyName) = parts
 
         // Ensure output directory exists
-        outputCFile.get().asFile.parentFile.mkdirs()
+        outputDir.get().asFile.mkdirs()
 
         // Use worker with classpath isolation to load user code
         val workQueue = workerExecutor.classLoaderIsolation { classpath.from(runtimeClasspath) }
@@ -116,7 +119,8 @@ abstract class GenerateCTask @Inject constructor(private val workerExecutor: Wor
             this.className.set(className)
             this.propertyName.set(propertyName)
             this.assetDir.set(assetDirectory.orNull?.asFile?.absolutePath)
-            this.outputFile.set(outputCFile.get().asFile)
+            this.outputDir.set(this@GenerateCTask.outputDir.get().asFile)
+            this.target.set(this@GenerateCTask.target.getOrElse("gbc"))
 
             // Optimization settings
             this.optimizationEnabled.set(this@GenerateCTask.optimizationEnabled.getOrElse(true))
@@ -139,7 +143,8 @@ interface GenerateCParams : WorkParameters {
     val className: Property<String>
     val propertyName: Property<String>
     val assetDir: Property<String>
-    val outputFile: Property<File>
+    val outputDir: Property<File>
+    val target: Property<String>
 
     // Optimization settings
     val optimizationEnabled: Property<Boolean>
@@ -160,7 +165,8 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
         val className = parameters.className.get()
         val propertyName = parameters.propertyName.get()
         val assetDir = parameters.assetDir.orNull
-        val outputFile = parameters.outputFile.get()
+        val outputDir = parameters.outputDir.get()
+        val target = parameters.target.getOrElse("gbc")
 
         try {
             // Load the class containing the game definition
@@ -196,39 +202,35 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
                 getter.invoke(null)
                     ?: throw GradleException("Game property '$propertyName' returned null")
 
-            // Get the Game class and find compileWithAssets function
+            // Get the Game class
             val gameClass = game::class.java
 
-            // Try to find and call compileWithAssets
-            val code =
-                try {
-                    // Look for the compileWithAssets function in io.github.gbkt.core package
-                    val compileWithAssetsClass =
-                        Class.forName("io.github.gbkt.core.AssetPipelineKt")
-                    val compileWithAssets =
-                        compileWithAssetsClass.getMethod(
-                            "compileWithAssets",
-                            gameClass,
-                            String::class.java
-                        )
-                    compileWithAssets.invoke(null, game, assetDir) as String
-                } catch (e: ClassNotFoundException) {
-                    // Fallback to Game.compile() if AssetPipeline is not available
-                    val compileMethod =
-                        gameClass.getMethod(
-                            "compile",
-                            Boolean::class.javaPrimitiveType,
-                            Boolean::class.javaPrimitiveType
-                        )
-                    compileMethod.invoke(game, true, false) as String
-                }
+            // Use multi-file generation to split code by bank
+            // GBDK-2020 doesn't support multiple #pragma bank directives in a single file
+            @Suppress("UNCHECKED_CAST")
+            val files: Map<String, String> =
+                generateWithBackendRegistry(game, target)
+                    ?: throw GradleException(
+                        """
+                        |No backend found for target '$target'.
+                        |Make sure gbkt-backend-gbdk is on the classpath.
+                        """
+                            .trimMargin()
+                    )
 
-            // Write the generated code to output file
-            outputFile.writeText(code)
+            // Write each generated file to output directory
+            var totalLines = 0
+            files.forEach { (filename, content) ->
+                val outputFile = File(outputDir, filename)
+                outputFile.writeText(content)
+                totalLines += content.lines().size
+                println("Generated: $filename (${content.lines().size} lines)")
+            }
 
-            // Generate and write source map
+            // Generate and write source map for main.c
             try {
-                val codeGenClass = Class.forName("io.github.gbkt.core.CodeGenerator")
+                val codeGenClass =
+                    Class.forName("io.github.gbkt.backend.gbdk.codegen.GBDKCodeGenerator")
                 val constructor = codeGenClass.getConstructor(gameClass)
                 val codeGen = constructor.newInstance(game)
 
@@ -240,20 +242,19 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
                 val toJsonMethod = sourceMap::class.java.getMethod("toJson")
                 val sourceMapJson = toJsonMethod.invoke(sourceMap) as String
 
-                val sourceMapFile = File(outputFile.parentFile, "${outputFile.name}.gbkt.map")
+                val sourceMapFile = File(outputDir, "main.c.gbkt.map")
                 sourceMapFile.writeText(sourceMapJson)
                 println("Generated source map: ${sourceMapFile.absolutePath}")
             } catch (e: Exception) {
                 // Source map generation is optional - don't fail the build
-                // But warn the user since error messages won't map to Kotlin source
                 System.err.println("WARNING: Source map not generated: ${e.message}")
                 System.err.println(
                     "WARNING: Compiler errors will reference C line numbers, not Kotlin source."
                 )
             }
 
-            println("Generated ${code.lines().size} lines of C code")
-            println("Output: ${outputFile.absolutePath}")
+            println("Generated ${files.size} C files ($totalLines total lines)")
+            println("Output directory: ${outputDir.absolutePath}")
 
             // Run asset optimization analysis if enabled
             if (parameters.optimizationEnabled.getOrElse(true)) {
@@ -276,6 +277,55 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
             )
         } catch (e: Exception) {
             throw GradleException("Failed to generate C code: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Try to generate using BackendRegistry (gbkt-backend-api).
+     *
+     * This method uses [io.github.gbkt.gradle.internal.BackendReflection] to interact with the
+     * backend API via reflection. Reflection is required because the worker runs with the user's
+     * classpath (via classloader isolation), which is separate from the plugin's compile-time
+     * classpath.
+     *
+     * @return Generated files map, or null if backend API unavailable
+     */
+    private fun generateWithBackendRegistry(game: Any, target: String): Map<String, String>? {
+        return try {
+            // Discover available backends
+            val backends = BackendReflection.discoverBackends()
+            if (backends.isNullOrEmpty()) {
+                println("No backends discovered via ServiceLoader")
+                return null
+            }
+
+            // Find backend for target platform
+            val backend = BackendReflection.findBackendForTarget(target)
+            if (backend == null) {
+                val availableIds = backends.map { BackendReflection.getBackendId(it) }
+                println("No backend found for target '$target', available: $availableIds")
+                return null
+            }
+
+            println("Using backend: ${BackendReflection.getBackendDisplayName(backend)}")
+
+            // Validate the game before generation
+            val validationResult = BackendReflection.validateGame(backend, game)
+            validationResult.printDiagnostics()
+            validationResult.throwIfInvalid()
+
+            // Generate code
+            val generationResult = BackendReflection.generateCode(backend, game)
+            generationResult.getFilesOrThrow()
+        } catch (e: ClassNotFoundException) {
+            // BackendRegistry not available
+            null
+        } catch (e: org.gradle.api.GradleException) {
+            // Re-throw Gradle exceptions (validation/generation failures)
+            throw e
+        } catch (e: Exception) {
+            println("WARNING: Backend generation failed: ${e.message}")
+            null
         }
     }
 
@@ -302,7 +352,7 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
                     parameters.detectEmpty.getOrElse(true), // detectEmpty
                     parameters.detectLowEntropy.getOrElse(true), // detectLowEntropy
                     true, // analyzePalette
-                    true // analyzeCompression
+                    true, // analyzeCompression
                 )
 
             // Create AssetAnalyzer
@@ -344,7 +394,7 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
                     useUnicode, // useUnicode
                     parameters.optimizationVerbose.getOrElse(false), // showPerAsset
                     true, // showSuggestions
-                    parameters.optimizationQuietWhenOptimal.getOrElse(true) // quietWhenOptimal
+                    parameters.optimizationQuietWhenOptimal.getOrElse(true), // quietWhenOptimal
                 )
 
             // Create reporter and generate report

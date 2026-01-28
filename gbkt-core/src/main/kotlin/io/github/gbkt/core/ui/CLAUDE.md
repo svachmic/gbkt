@@ -145,5 +145,5 @@ scene("title") {
 ## Related Modules
 
 - `ir/MenuIR.kt` - Menu IR nodes
-- `codegen/ui/MenuCodegen.kt` - Menu code generation
+- `gbkt-backend-gbdk/.../codegen/ui/MenuCodegen.kt` - Menu code generation (in backend)
 - `rpg/BattleMenu.kt` - Battle-specific menu system

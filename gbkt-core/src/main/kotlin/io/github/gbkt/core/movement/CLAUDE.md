@@ -138,4 +138,4 @@ To add a new movement type:
 3. Create builder class extending `MovementControllerBuilder`
 4. Add delegate class in `MovementControllerExtensions.kt`
 5. Add `GameBuilder` extension function
-6. Add codegen in `codegen/features/MovementControllerCodegen.kt`
+6. Add codegen in `gbkt-backend-gbdk/.../codegen/features/MovementControllerCodegen.kt`

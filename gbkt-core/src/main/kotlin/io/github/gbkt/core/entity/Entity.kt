@@ -437,6 +437,36 @@ class Entity(
 
     val hasCombat: Boolean
         get() = combatComponent != null
+
+    // === Configuration Access (for codegen) ===
+
+    /**
+     * The hitbox configuration, if any. Returns the entity's hitbox from the hitbox component, or
+     * from the sprite if present.
+     */
+    val hitbox: Hitbox?
+        get() = hitboxComponent?.hitbox ?: spriteComponent?.sprite?.effectiveHitbox
+
+    /**
+     * The position component configuration, or null if entity has no position. Provides access to
+     * variable names and initial values for codegen.
+     */
+    val positionConfig: PositionComponent?
+        get() = positionComponent
+
+    /**
+     * The physics component configuration, or null if entity has no physics. Provides access to
+     * gravity, friction, velocity limits for codegen.
+     */
+    val physicsConfig: PhysicsComponent?
+        get() = physicsComponent
+
+    /**
+     * The combat component configuration, or null if entity has no combat. Provides access to HP,
+     * attack power, defense, and combat callbacks for codegen.
+     */
+    val combatConfig: CombatComponent?
+        get() = combatComponent
 }
 
 // =============================================================================

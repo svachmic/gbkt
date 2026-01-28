@@ -123,9 +123,9 @@ class NavGrid(
     val name: String,
     val width: Int,
     val height: Int,
-    internal val walkableData: BooleanArray,
-    internal val weightData: IntArray, // 0 = blocked, 1+ = movement cost
-    internal val sourceMap: TileMap?,
+    val walkableData: BooleanArray,
+    val weightData: IntArray, // 0 = blocked, 1+ = movement cost
+    val sourceMap: TileMap?,
 ) {
     /** Whether this grid uses weighted pathfinding. */
     val hasWeights: Boolean = weightData.any { it > 1 }

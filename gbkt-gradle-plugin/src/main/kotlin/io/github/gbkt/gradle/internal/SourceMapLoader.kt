@@ -17,7 +17,7 @@ data class ParsedSourceMapping(
     val kotlinLine: Int,
     val kotlinColumn: Int = 0,
     val symbol: String? = null,
-    val snippet: String? = null
+    val snippet: String? = null,
 )
 
 /** Represents a loaded source map. */
@@ -25,7 +25,7 @@ data class ParsedSourceMap(
     val version: String,
     val gameName: String,
     val cFile: String,
-    val mappings: List<ParsedSourceMapping>
+    val mappings: List<ParsedSourceMapping>,
 ) {
     /**
      * Find the Kotlin source location for a given C line number. Returns the closest mapping if
@@ -81,7 +81,7 @@ object SourceMapLoader {
                         symbol =
                             mappingObj.optString("symbol", null).takeIf { !it.isNullOrEmpty() },
                         snippet =
-                            mappingObj.optString("snippet", null).takeIf { !it.isNullOrEmpty() }
+                            mappingObj.optString("snippet", null).takeIf { !it.isNullOrEmpty() },
                     )
                 mappings.add(mapping)
             }
@@ -90,7 +90,7 @@ object SourceMapLoader {
         } catch (e: Exception) {
             logger.debug(
                 "Failed to parse source map ${sourceMapFile.absolutePath}: ${e.message}",
-                e
+                e,
             )
             return null
         }

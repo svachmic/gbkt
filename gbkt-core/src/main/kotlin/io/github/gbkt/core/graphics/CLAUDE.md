@@ -239,5 +239,5 @@ val playerPalette = palette("player") {
 
 - `ir/SystemIR.kt` - Palette and screen IR nodes
 - `ir/Transitions.kt` - Transition IR nodes
-- `codegen/graphics/` - Graphics code generation
+- `gbkt-backend-gbdk/.../codegen/graphics/` - Graphics code generation (in backend)
 - `entity/Entity.kt` - Entities with sprite components

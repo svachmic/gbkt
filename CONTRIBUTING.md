@@ -16,12 +16,13 @@ Thank you for your interest in contributing to gbkt! This document provides guid
 
 ```
 gbkt/
-├── gbkt-core/          # Core DSL and code generation
-├── gbkt-cli/           # Command-line interface
-├── gbkt-gradle-plugin/ # Gradle plugin for build integration
+├── gbkt-core/            # Core DSL and IR
+├── gbkt-backend-api/     # Backend contract interface
+├── gbkt-backend-gbdk/    # Game Boy/GBC code generation
+├── gbkt-cli/             # Command-line interface
+├── gbkt-gradle-plugin/   # Gradle plugin for build integration
 ├── gbkt-intellij-plugin/ # IntelliJ IDEA plugin for DSL support
-├── vscode-extension/   # VSCode language support
-└── context/            # Documentation
+└── context/              # Documentation
 ```
 
 ---
@@ -232,13 +233,6 @@ gbkt-core/src/main/kotlin/io/github/gbkt/core/
 ├── ir/         # Pure IR data classes, no business logic
 ├── dsl/        # DSL builders and recording context
 ├── builder/    # Game builder and configuration
-├── codegen/    # C code generation
-│   ├── core/       # Core codegen (expressions, statements, pools)
-│   ├── features/   # Feature codegen (audio, physics, save, tween)
-│   ├── graphics/   # Graphics codegen (animation, camera, tilemap)
-│   ├── rpg/        # RPG codegen (battle, stats, items, abilities)
-│   ├── ui/         # UI codegen (dialog, menu, cutscene)
-│   └── world/      # World codegen (floor, encounter, map objects)
 ├── entity/     # Entity system and pools
 ├── graphics/   # Sprites, animation, camera, tilemap
 ├── collision/  # Collision detection (AABB, sweep collision)
@@ -250,11 +244,12 @@ gbkt-core/src/main/kotlin/io/github/gbkt/core/
 └── test/       # Simulation testing framework
 ```
 
-**Dependency rules:**
+**Dependency rules (gbkt-core):**
 - `ir/` ← Pure data, no dependencies on other packages
 - `dsl/` ← Depends only on `ir/`
-- `codegen/` ← Depends on `ir/`, `dsl/`, and domain packages
 - Domain packages (`rpg/`, `world/`, etc.) ← Depend on `ir/` and `dsl/`
+
+**Note:** Code generation (`codegen/`) is in `gbkt-backend-gbdk`, not `gbkt-core`. Backends depend on core, not the other way around.
 
 **Guidelines:**
 - Each package has a single, clear domain

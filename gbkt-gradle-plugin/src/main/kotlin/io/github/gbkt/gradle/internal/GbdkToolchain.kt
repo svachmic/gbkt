@@ -137,21 +137,21 @@ object GbdkToolchain {
                     "/opt/homebrew/gbdk-2020",
                     "/opt/gbdk-2020",
                     "$userHome/gbdk-2020",
-                    "$userHome/dev/gbdk-2020"
+                    "$userHome/dev/gbdk-2020",
                 )
             isWindows() ->
                 listOf(
                     "C:\\gbdk-2020",
                     "C:\\Program Files\\gbdk-2020",
                     "C:\\Program Files (x86)\\gbdk-2020",
-                    "${System.getenv("USERPROFILE")}\\gbdk-2020"
+                    "${System.getenv("USERPROFILE")}\\gbdk-2020",
                 )
             else ->
                 listOf( // Linux and others
                     "/usr/local/gbdk-2020",
                     "/opt/gbdk-2020",
                     "$userHome/gbdk-2020",
-                    "$userHome/dev/gbdk-2020"
+                    "$userHome/dev/gbdk-2020",
                 )
         }
     }

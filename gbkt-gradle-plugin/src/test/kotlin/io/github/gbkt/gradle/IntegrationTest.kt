@@ -54,7 +54,7 @@ class IntegrationTest {
                     mavenCentral()
                 }
             }
-        """
+            """
                 .trimIndent()
         )
     }
@@ -83,7 +83,7 @@ class IntegrationTest {
         assertTrue(cFile.readText().isNotEmpty(), "C code should not be empty")
         assertTrue(
             cFile.readText().contains("void main(void)"),
-            "C code should contain main function"
+            "C code should contain main function",
         )
     }
 
@@ -108,7 +108,7 @@ class IntegrationTest {
         // Verify sprite-related code is present
         assertTrue(
             cCode.contains("player") || cCode.contains("sprite"),
-            "C code should contain sprite references"
+            "C code should contain sprite references",
         )
     }
 
@@ -116,7 +116,7 @@ class IntegrationTest {
     @DisabledIfEnvironmentVariable(
         named = "CI",
         matches = "true",
-        disabledReason = "Requires GBDK installation"
+        disabledReason = "Requires GBDK installation",
     )
     fun `end-to-end game compiles to ROM when GBDK is available`() {
         createMinimalGameFixture()
@@ -134,7 +134,7 @@ class IntegrationTest {
                 // GBDK not available - this is expected if GBDK is not installed
                 assertTrue(
                     e.message?.contains("GBDK") == true || e.message?.contains("lcc") == true,
-                    "Should indicate GBDK-related issue: ${e.message}"
+                    "Should indicate GBDK-related issue: ${e.message}",
                 )
                 return
             }
@@ -164,11 +164,11 @@ class IntegrationTest {
         assertTrue(cCode.contains("#include"), "Should include headers")
         assertTrue(
             cCode.contains("void main(void)") || cCode.contains("int main("),
-            "Should have main function"
+            "Should have main function",
         )
         assertTrue(
             cCode.count { it == '{' } == cCode.count { it == '}' },
-            "Braces should be balanced"
+            "Braces should be balanced",
         )
     }
 
@@ -195,7 +195,7 @@ class IntegrationTest {
             result.output.contains("Warning") ||
                 result.output.contains("not found") ||
                 result.output.contains("Asset"),
-            "Should warn about missing assets"
+            "Should warn about missing assets",
         )
     }
 
@@ -215,7 +215,7 @@ class IntegrationTest {
         assertEquals(TaskOutcome.SUCCESS, result.task(":generateC")?.outcome)
         assertTrue(
             result.output.contains("Warning") || result.output.contains("not found"),
-            "Should warn about missing sprite file"
+            "Should warn about missing sprite file",
         )
     }
 
@@ -238,7 +238,7 @@ class IntegrationTest {
             result.output.contains("dimension") ||
                 result.output.contains("multiple of 8") ||
                 result.task(":generateC")?.outcome == TaskOutcome.SUCCESS,
-            "Should handle invalid dimensions appropriately"
+            "Should handle invalid dimensions appropriately",
         )
     }
 
@@ -295,7 +295,7 @@ class IntegrationTest {
         assertTrue(
             result.output.contains("Incremental") ||
                 result.output.contains("Processing: player.png"),
-            "Should process incrementally or show processing message"
+            "Should process incrementally or show processing message",
         )
     }
 
@@ -320,15 +320,15 @@ class IntegrationTest {
         // Verify task order
         assertTrue(
             output.contains("compileKotlin") || output.contains(":compileKotlin"),
-            "Should include compileKotlin"
+            "Should include compileKotlin",
         )
         assertTrue(
             output.contains("generateC") || output.contains(":generateC"),
-            "Should include generateC"
+            "Should include generateC",
         )
         assertTrue(
             output.contains("compileRom") || output.contains(":compileRom"),
-            "Should include compileRom"
+            "Should include compileRom",
         )
     }
 
@@ -348,11 +348,11 @@ class IntegrationTest {
         val output = result.output
         assertTrue(
             output.contains("compileKotlin") || output.contains(":compileKotlin"),
-            "generateC should depend on compileKotlin"
+            "generateC should depend on compileKotlin",
         )
         assertTrue(
             output.contains("processAssets") || output.contains(":processAssets"),
-            "generateC should depend on processAssets when assets are configured"
+            "generateC should depend on processAssets when assets are configured",
         )
     }
 
@@ -425,7 +425,7 @@ class IntegrationTest {
         val outcome1 = result1.task(":generateC")?.outcome
         assertTrue(
             outcome1 == TaskOutcome.SUCCESS || outcome1 == TaskOutcome.FROM_CACHE,
-            "First build should succeed or come from cache, but was: $outcome1"
+            "First build should succeed or come from cache, but was: $outcome1",
         )
 
         // Clean and rebuild - should get from cache
@@ -446,7 +446,7 @@ class IntegrationTest {
         val outcome2 = result2.task(":generateC")?.outcome
         assertTrue(
             outcome2 == TaskOutcome.SUCCESS || outcome2 == TaskOutcome.FROM_CACHE,
-            "Rebuild should succeed or be retrieved from cache, but was: $outcome2"
+            "Rebuild should succeed or be retrieved from cache, but was: $outcome2",
         )
     }
 
@@ -491,7 +491,7 @@ class IntegrationTest {
             result.output.contains("Class not found") ||
                 result.output.contains("Could not find") ||
                 result.output.contains("NoClassDefFoundError"),
-            "Should fail with clear error message about missing class"
+            "Should fail with clear error message about missing class",
         )
     }
 
@@ -513,7 +513,7 @@ class IntegrationTest {
                 }
                 start = mainScene
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -529,7 +529,7 @@ class IntegrationTest {
             result.output.contains("Could not find game property") ||
                 result.output.contains("NoSuchMethodException") ||
                 result.output.contains("testGame"),
-            "Should fail with clear error message about missing property"
+            "Should fail with clear error message about missing property",
         )
     }
 
@@ -551,7 +551,7 @@ class IntegrationTest {
             }
 
             dependencies {
-                implementation("io.github.gbkt:gbkt-core-jvm:0.1.0-SNAPSHOT")
+                implementation("io.github.gbkt:gbkt-core:0.1.0-SNAPSHOT")
             }
 
             kotlin {
@@ -563,7 +563,7 @@ class IntegrationTest {
                 assets("src/main/resources/sprites")
                 outputName.set("game")
             }
-        """
+            """
                 .trimIndent()
         )
     }
@@ -576,6 +576,7 @@ class IntegrationTest {
             package test
 
             import io.github.gbkt.core.*
+            import io.github.gbkt.core.ir.*
 
             val testGame = gbGame("TestGame") {
                 var score by u8Var(0)
@@ -588,7 +589,7 @@ class IntegrationTest {
 
                 start = mainScene
             }
-        """
+            """
                 .trimIndent()
         )
     }
@@ -601,6 +602,8 @@ class IntegrationTest {
             package test
 
             import io.github.gbkt.core.*
+            import io.github.gbkt.core.ir.*
+            import io.github.gbkt.core.builder.*
             import io.github.gbkt.core.assets.SpriteAsset
 
             val testGame = gbGame("TestGame") {
@@ -617,7 +620,7 @@ class IntegrationTest {
 
                 start = mainScene
             }
-        """
+            """
                 .trimIndent()
         )
     }
@@ -630,6 +633,10 @@ class IntegrationTest {
             package test
 
             import io.github.gbkt.core.*
+            import io.github.gbkt.core.ir.*
+            import io.github.gbkt.core.builder.*
+            import io.github.gbkt.core.input.*
+            import io.github.gbkt.core.collision.*
             import io.github.gbkt.core.assets.SpriteAsset
 
             val testGame = gbGame("TestGame") {
@@ -690,7 +697,7 @@ class IntegrationTest {
 
                 start = titleScene
             }
-        """
+            """
                 .trimIndent()
         )
     }
@@ -699,7 +706,7 @@ class IntegrationTest {
         filename: String,
         width: Int,
         height: Int,
-        color: Color = Color.WHITE
+        color: Color = Color.WHITE,
     ) {
         val spriteFile = File(resourcesDir, filename)
         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)

@@ -123,6 +123,6 @@ Collision calculations use 8.8 fixed-point for precision:
 
 ## Related Modules
 
-- `codegen/features/CollisionCodegen.kt` - Collision code generation
+- `gbkt-backend-gbdk/.../codegen/features/CollisionCodegen.kt` - Collision code generation (in backend)
 - `entity/EntityComponents.kt` - Hitbox component definition
 - `ir/CoreIR.kt` - Collision-related IR nodes

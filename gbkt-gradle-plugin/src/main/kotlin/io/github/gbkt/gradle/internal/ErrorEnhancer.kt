@@ -12,7 +12,7 @@ import java.io.File
 data class EnhancedError(
     val originalError: GbdkError,
     val kotlinLocation: ParsedSourceMapping?,
-    val suggestion: String?
+    val suggestion: String?,
 )
 
 /** Enhances GBDK compiler errors with source map mappings and suggestions. */
@@ -73,7 +73,7 @@ object ErrorEnhancer {
             EnhancedError(
                 originalError = error,
                 kotlinLocation = kotlinLocation,
-                suggestion = suggestion
+                suggestion = suggestion,
             )
         }
     }
@@ -82,7 +82,7 @@ object ErrorEnhancer {
     private fun generateSuggestion(
         errorMessage: String,
         cLine: Int?,
-        kotlinLocation: ParsedSourceMapping?
+        kotlinLocation: ParsedSourceMapping?,
     ): String? {
         val suggestions = mutableListOf<String>()
 

@@ -39,5 +39,11 @@ class GbktCompletionContributor : CompletionContributor() {
 
         // Register builder method completion
         extend(CompletionType.BASIC, PlatformPatterns.psiElement(), GbktBuilderCompletionProvider())
+
+        // Register type-aware completion for enum values
+        extend(CompletionType.BASIC, PlatformPatterns.psiElement(), GbktTypeAwareCompletionProvider())
+
+        // Register property chain completion for dot expressions
+        extend(CompletionType.BASIC, PlatformPatterns.psiElement(), GbktPropertyChainCompletionProvider())
     }
 }

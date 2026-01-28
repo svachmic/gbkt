@@ -34,37 +34,118 @@ import io.github.gbkt.core.validation.validateIRReferences
 // GAME VALIDATION
 // =============================================================================
 
+/** Validation message severity levels. */
+enum class ValidationSeverity {
+    /** Informational message, doesn't indicate a problem. */
+    INFO,
+
+    /** Warning that doesn't prevent compilation. */
+    WARNING,
+
+    /** Error that prevents compilation. */
+    ERROR,
+}
+
+/** A validation message with severity and optional location. */
+data class ValidationMessage(
+    /** The message text. */
+    val message: String,
+
+    /** Severity level. */
+    val severity: ValidationSeverity,
+
+    /** Optional location reference (file:line, scene name, etc.). */
+    val location: String? = null,
+
+    /** Optional suggestion for fixing the issue. */
+    val suggestion: String? = null,
+
+    /**
+     * Optional category for domain-specific categorization. This allows validation consumers to
+     * filter/group messages by type.
+     */
+    val category: String? = null,
+)
+
 /** Validation result containing all errors and warnings found. */
 data class ValidationResult(
-    val errors: List<ValidationError>,
-    val warnings: List<ValidationWarning>,
-) {
-    val isValid: Boolean
-        get() = errors.isEmpty()
+    /** Whether validation passed (no errors). */
+    val isValid: Boolean,
 
+    /** Validation errors that prevent compilation. */
+    val errors: List<ValidationMessage> = emptyList(),
+
+    /** Warnings that don't prevent compilation but may indicate issues. */
+    val warnings: List<ValidationMessage> = emptyList(),
+
+    /** Informational messages (e.g., optimization suggestions). */
+    val info: List<ValidationMessage> = emptyList(),
+) {
+    /** Total number of messages across all severity levels. */
+    val messageCount: Int
+        get() = errors.size + warnings.size + info.size
+
+    /** Throw ValidationException if this result has errors. */
     fun throwIfInvalid() {
-        if (errors.isNotEmpty()) {
-            val message = buildString {
-                appendLine("Game validation failed with ${errors.size} error(s):")
-                errors.forEachIndexed { i, error ->
-                    appendLine("  ${i + 1}. [${error.category}] ${error.message}")
-                }
-                if (warnings.isNotEmpty()) {
-                    appendLine()
-                    appendLine("Additionally, ${warnings.size} warning(s):")
-                    warnings.forEachIndexed { i, warning ->
-                        appendLine("  ${i + 1}. [${warning.category}] ${warning.message}")
-                    }
-                }
-            }
-            throw ValidationException(message, errors, warnings)
+        if (!isValid) {
+            throw ValidationException(this)
         }
+    }
+
+    companion object {
+        /** A successful validation with no messages. */
+        val SUCCESS = ValidationResult(isValid = true)
+
+        /** Create a failed result with a single error. */
+        fun error(message: String, location: String? = null, category: String? = null) =
+            ValidationResult(
+                isValid = false,
+                errors =
+                    listOf(
+                        ValidationMessage(
+                            message,
+                            ValidationSeverity.ERROR,
+                            location,
+                            category = category,
+                        )
+                    ),
+            )
+
+        /** Create a successful result with warnings. */
+        fun withWarnings(warnings: List<ValidationMessage>) =
+            ValidationResult(isValid = true, warnings = warnings)
     }
 }
 
-data class ValidationError(val category: ValidationCategory, val message: String)
+/**
+ * Validation error with category information.
+ *
+ * This is a convenience wrapper for internal use that includes the validation category.
+ */
+data class ValidationError(val category: ValidationCategory, val message: String) {
+    /** Convert to a ValidationMessage for the unified API. */
+    fun toMessage(): ValidationMessage =
+        ValidationMessage(
+            message = message,
+            severity = ValidationSeverity.ERROR,
+            category = category.name,
+        )
+}
 
-data class ValidationWarning(val category: ValidationCategory, val message: String)
+/**
+ * Validation warning with category information.
+ *
+ * This is a convenience wrapper for internal use that includes the validation category.
+ */
+data class ValidationWarning(val category: ValidationCategory, val message: String) {
+    /** Convert to a ValidationMessage for the unified API. */
+    fun toMessage(): ValidationMessage =
+        ValidationMessage(
+            message = message,
+            severity = ValidationSeverity.WARNING,
+            category = category.name,
+        )
+}
 
 enum class ValidationCategory {
     OAM_LIMIT,
@@ -85,11 +166,18 @@ enum class ValidationCategory {
     PHYSICS,
 }
 
-class ValidationException(
-    message: String,
-    val errors: List<ValidationError>,
-    val warnings: List<ValidationWarning>,
-) : RuntimeException(message)
+/** Exception thrown when validation fails. */
+class ValidationException(val result: ValidationResult) :
+    RuntimeException(
+        buildString {
+            append("Validation failed with ${result.errors.size} error(s)")
+            result.errors.forEach { append("\n  - [${it.category ?: ""}] ${it.message}") }
+            if (result.warnings.isNotEmpty()) {
+                append("\n\nAdditionally, ${result.warnings.size} warning(s):")
+                result.warnings.forEach { append("\n  - [${it.category ?: ""}] ${it.message}") }
+            }
+        }
+    )
 
 /** Validates a game definition for common issues. */
 @Suppress("LargeClass", "TooManyFunctions") // Validation requires comprehensive checks
@@ -124,7 +212,12 @@ class GameValidator(internal val game: Game) {
         validateArrayBounds()
         validatePhysics()
 
-        return ValidationResult(errors.toList(), warnings.toList())
+        // Convert internal error/warning lists to unified ValidationResult
+        return ValidationResult(
+            isValid = errors.isEmpty(),
+            errors = errors.map { it.toMessage() },
+            warnings = warnings.map { it.toMessage() },
+        )
     }
 
     /** Validate OAM sprite limit (40 hardware sprites max). */

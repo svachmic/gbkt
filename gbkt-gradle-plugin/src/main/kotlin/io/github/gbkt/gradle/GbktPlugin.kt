@@ -52,6 +52,7 @@ class GbktPlugin : Plugin<Project> {
         extension.debug.convention(true)
         extension.compilerFlags.convention(emptyList())
         extension.gbcMode.convention("DISABLED")
+        extension.target.convention("gbc")
 
         // Emulator defaults
         extension.emulator.args.convention(emptyList())
@@ -99,7 +100,7 @@ class GbktPlugin : Plugin<Project> {
                 |  gbkt {
                 |      game("package.ClassName::propertyName")
                 |  }
-            """
+                """
                     .trimMargin()
             )
             return
@@ -114,7 +115,7 @@ class GbktPlugin : Plugin<Project> {
                 """
                 |gbkt: Cannot find 'main' source set.
                 |Make sure you have applied the 'kotlin("jvm")' plugin.
-            """
+                """
                     .trimMargin()
             )
         }
@@ -149,16 +150,16 @@ class GbktPlugin : Plugin<Project> {
                 extension.generateAssets.packageName.orNull
                     ?: throw GradleException(
                         """
-                    |gbkt: generateAssets.packageName is required when generateAssets.enabled is true.
-                    |
-                    |Configure in build.gradle.kts:
-                    |  gbkt {
-                    |      generateAssets {
-                    |          enabled.set(true)
-                    |          packageName.set("com.example.mygame")
-                    |      }
-                    |  }
-                """
+                        |gbkt: generateAssets.packageName is required when generateAssets.enabled is true.
+                        |
+                        |Configure in build.gradle.kts:
+                        |  gbkt {
+                        |      generateAssets {
+                        |          enabled.set(true)
+                        |          packageName.set("com.example.mygame")
+                        |      }
+                        |  }
+                        """
                             .trimMargin()
                     )
 
@@ -193,7 +194,7 @@ class GbktPlugin : Plugin<Project> {
                 val srcDirs = kotlinSourceSet.javaClass.getMethod("srcDir", Any::class.java)
                 srcDirs.invoke(
                     kotlinSourceSet,
-                    project.layout.buildDirectory.dir("generated/source/gbkt/main/kotlin")
+                    project.layout.buildDirectory.dir("generated/source/gbkt/main/kotlin"),
                 )
             } else {
                 // Fallback: add to java source set
@@ -213,8 +214,9 @@ class GbktPlugin : Plugin<Project> {
                 dependsOn(processAssets)
 
                 gameSpec.set(extension.game)
+                target.set(extension.target)
                 assetDirectory.set(extension.assetDirectory)
-                outputCFile.set(project.layout.buildDirectory.file("gbkt/generated/main.c"))
+                outputDir.set(project.layout.buildDirectory.dir("gbkt/generated"))
                 this.runtimeClasspath.from(runtimeClasspath)
 
                 // Wire processed assets directory
@@ -243,7 +245,7 @@ class GbktPlugin : Plugin<Project> {
                         project.provider { GbdkToolchain.find(null).absolutePath }
                     )
                 )
-                cSourceFile.set(generateC.flatMap { it.outputCFile })
+                cSourceDir.set(generateC.flatMap { it.outputDir })
                 compilerFlags.set(extension.compilerFlags)
                 generateDebugFiles.set(extension.debug)
                 gbcMode.set(extension.gbcMode)
@@ -279,14 +281,8 @@ class GbktPlugin : Plugin<Project> {
                 project.tasks.register<CopyGeneratedCTask>("copyGeneratedC") {
                     dependsOn(generateC)
 
-                    sourceCFile.set(generateC.flatMap { it.outputCFile })
-
-                    // Source map file is next to C file with .gbkt.map extension
-                    val buildDir = project.layout.buildDirectory
-                    sourceMapFile.set(buildDir.file("gbkt/generated/main.c.gbkt.map"))
-
+                    sourceCDir.set(generateC.flatMap { it.outputDir })
                     outputDir.set(extension.output.cOutputDir)
-
                     copySourceMaps.set(extension.output.keepSourceMaps)
                 }
 

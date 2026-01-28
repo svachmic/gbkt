@@ -37,7 +37,7 @@ class GbktPluginTest {
                     mavenCentral()
                 }
             }
-        """
+            """
                 .trimIndent()
         )
     }
@@ -55,7 +55,7 @@ class GbktPluginTest {
                 mavenLocal()
                 mavenCentral()
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -82,7 +82,7 @@ class GbktPluginTest {
                 mavenLocal()
                 mavenCentral()
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -95,7 +95,7 @@ class GbktPluginTest {
 
         assertTrue(
             result.output.contains("No game defined") || result.output.contains("tasks"),
-            "Should warn about missing game or at least list tasks"
+            "Should warn about missing game or at least list tasks",
         )
     }
 
@@ -118,7 +118,7 @@ class GbktPluginTest {
                 outputName.set("mygame")
                 debug.set(false)
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -132,7 +132,7 @@ class GbktPluginTest {
         // If the extension configuration is valid, task creation succeeds
         assertTrue(
             result.output.contains("generateC") || result.output.contains("buildRom"),
-            "Should have generateC or buildRom task when game is configured"
+            "Should have generateC or buildRom task when game is configured",
         )
     }
 
@@ -160,7 +160,7 @@ class GbktPluginTest {
                     lowEntropyThreshold.set(0.3f)
                 }
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -192,7 +192,7 @@ class GbktPluginTest {
             gbkt {
                 game("com.example.Game::myGame")
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -223,7 +223,7 @@ class GbktPluginTest {
             gbkt {
                 game("com.example.Game::myGame")
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -241,7 +241,7 @@ class GbktPluginTest {
             output.contains("generateC") ||
                 output.contains("compileKotlin") ||
                 output.contains("buildRom"),
-            "Task dependency chain should be visible in dry-run"
+            "Task dependency chain should be visible in dry-run",
         )
     }
 
@@ -262,7 +262,7 @@ class GbktPluginTest {
             gbkt {
                 game("com.example.Game::myGame")
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -293,7 +293,7 @@ class GbktPluginTest {
             gbkt {
                 game("com.example.Game::myGame")
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -309,7 +309,7 @@ class GbktPluginTest {
         val output = result.output
         assertTrue(
             output.contains("buildRom") && output.contains("runEmulator"),
-            "runEmulator should depend on buildRom"
+            "runEmulator should depend on buildRom",
         )
     }
 
@@ -336,7 +336,7 @@ class GbktPluginTest {
                     liveReload.set(false)
                 }
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -350,7 +350,7 @@ class GbktPluginTest {
         // Extension configuration should parse without errors
         assertTrue(
             result.output.contains("runEmulator"),
-            "Emulator configuration should work without errors"
+            "Emulator configuration should work without errors",
         )
     }
 
@@ -376,7 +376,7 @@ class GbktPluginTest {
                     args.set(listOf("-s", "2"))
                 }
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -390,7 +390,7 @@ class GbktPluginTest {
         // Extension configuration should parse without errors
         assertTrue(
             result.output.isNotEmpty(),
-            "Build should complete successfully with default liveReload"
+            "Build should complete successfully with default liveReload",
         )
     }
 }

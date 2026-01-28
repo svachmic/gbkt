@@ -39,7 +39,7 @@ class ValidationTest {
 
         // Should have a warning about approaching OAM limit
         assertTrue(
-            result.warnings.any { it.category == ValidationCategory.OAM_LIMIT },
+            result.warnings.any { it.category == ValidationCategory.OAM_LIMIT.name },
             "Should warn when approaching OAM limit",
         )
     }
@@ -58,7 +58,7 @@ class ValidationTest {
 
         // Should have an error for exceeding OAM limit
         assertTrue(
-            result.errors.any { it.category == ValidationCategory.OAM_LIMIT },
+            result.errors.any { it.category == ValidationCategory.OAM_LIMIT.name },
             "Should error when exceeding OAM limit. Errors: ${result.errors}",
         )
         assertFalse(result.isValid, "Should be invalid")
@@ -79,7 +79,7 @@ class ValidationTest {
 
         // Should have an error for empty state machine
         assertTrue(
-            result.errors.any { it.category == ValidationCategory.STATE_MACHINE },
+            result.errors.any { it.category == ValidationCategory.STATE_MACHINE.name },
             "Should error on empty state machine. Errors: ${result.errors}",
         )
     }
@@ -102,7 +102,7 @@ class ValidationTest {
         // Should have an error for invalid transition target
         assertTrue(
             result.errors.any {
-                it.category == ValidationCategory.STATE_MACHINE &&
+                it.category == ValidationCategory.STATE_MACHINE.name &&
                     it.message.contains("nonexistent")
             },
             "Should error on invalid transition target. Errors: ${result.errors}",
@@ -130,7 +130,7 @@ class ValidationTest {
         // Should have a warning for unreachable state
         assertTrue(
             result.warnings.any {
-                it.category == ValidationCategory.STATE_MACHINE &&
+                it.category == ValidationCategory.STATE_MACHINE.name &&
                     it.message.contains("unreachable")
             },
             "Should warn about unreachable states. Warnings: ${result.warnings}",
@@ -246,7 +246,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.any { it.category == ValidationCategory.OAM_LIMIT },
+            result.errors.any { it.category == ValidationCategory.OAM_LIMIT.name },
             "Should count pool sprites towards OAM limit. Errors: ${result.errors}",
         )
     }
@@ -272,7 +272,8 @@ class ValidationTest {
 
         assertTrue(
             result.errors.any {
-                it.category == ValidationCategory.DUPLICATE_NAME && it.message.contains("score")
+                it.category == ValidationCategory.DUPLICATE_NAME.name &&
+                    it.message.contains("score")
             },
             "Should detect duplicate variable names. Errors: ${result.errors}",
         )
@@ -296,7 +297,8 @@ class ValidationTest {
 
         assertTrue(
             result.errors.any {
-                it.category == ValidationCategory.DUPLICATE_NAME && it.message.contains("player")
+                it.category == ValidationCategory.DUPLICATE_NAME.name &&
+                    it.message.contains("player")
             },
             "Should detect duplicate sprite names. Errors: ${result.errors}",
         )
@@ -327,7 +329,7 @@ class ValidationTest {
         val result = game.validate()
         // Valid palette should pass
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.GBC_COLOR },
+            result.errors.none { it.category == ValidationCategory.GBC_COLOR.name },
             "Valid GBC palette should not have color errors. Errors: ${result.errors}",
         )
     }
@@ -347,7 +349,8 @@ class ValidationTest {
         // Should have a warning about being at the limit
         assertTrue(
             result.warnings.any {
-                it.category == ValidationCategory.OAM_LIMIT && it.message.contains("at OAM limit")
+                it.category == ValidationCategory.OAM_LIMIT.name &&
+                    it.message.contains("at OAM limit")
             },
             "Should warn when at OAM limit. Warnings: ${result.warnings}",
         )
@@ -370,7 +373,7 @@ class ValidationTest {
 
         assertTrue(
             result.errors.any {
-                it.category == ValidationCategory.OAM_LIMIT &&
+                it.category == ValidationCategory.OAM_LIMIT.name &&
                     it.message.contains("huge") &&
                     it.message.contains("exceeds OAM limit")
             },
@@ -669,7 +672,7 @@ class ValidationTest {
 
         assertTrue(
             result.errors.any {
-                it.category == ValidationCategory.PHYSICS && it.message.contains("mass")
+                it.category == ValidationCategory.PHYSICS.name && it.message.contains("mass")
             },
             "Should error on zero mass. Errors: ${result.errors}",
         )
@@ -696,7 +699,7 @@ class ValidationTest {
 
         assertTrue(
             result.errors.any {
-                it.category == ValidationCategory.PHYSICS && it.message.contains("mass")
+                it.category == ValidationCategory.PHYSICS.name && it.message.contains("mass")
             },
             "Should error on negative mass. Errors: ${result.errors}",
         )
@@ -723,7 +726,7 @@ class ValidationTest {
 
         assertTrue(
             result.warnings.any {
-                it.category == ValidationCategory.PHYSICS && it.message.contains("maxVelocity")
+                it.category == ValidationCategory.PHYSICS.name && it.message.contains("maxVelocity")
             },
             "Should warn on excessive velocity. Warnings: ${result.warnings}",
         )
@@ -750,7 +753,7 @@ class ValidationTest {
 
         assertTrue(
             result.warnings.any {
-                it.category == ValidationCategory.PHYSICS && it.message.contains("friction")
+                it.category == ValidationCategory.PHYSICS.name && it.message.contains("friction")
             },
             "Should warn on unusual friction. Warnings: ${result.warnings}",
         )
@@ -777,7 +780,7 @@ class ValidationTest {
 
         assertTrue(
             result.warnings.any {
-                it.category == ValidationCategory.PHYSICS && it.message.contains("gravity")
+                it.category == ValidationCategory.PHYSICS.name && it.message.contains("gravity")
             },
             "Should warn on extreme gravity. Warnings: ${result.warnings}",
         )
@@ -805,11 +808,11 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.PHYSICS },
+            result.errors.none { it.category == ValidationCategory.PHYSICS.name },
             "Valid physics should have no errors. Errors: ${result.errors}",
         )
         assertTrue(
-            result.warnings.none { it.category == ValidationCategory.PHYSICS },
+            result.warnings.none { it.category == ValidationCategory.PHYSICS.name },
             "Valid physics should have no warnings. Warnings: ${result.warnings}",
         )
     }
@@ -836,7 +839,7 @@ class ValidationTest {
 
         assertTrue(
             result.errors.any {
-                it.category == ValidationCategory.TWEEN && it.message.contains("duration")
+                it.category == ValidationCategory.TWEEN.name && it.message.contains("duration")
             },
             "Should error on zero duration. Errors: ${result.errors}",
         )
@@ -860,7 +863,7 @@ class ValidationTest {
 
         assertTrue(
             result.errors.any {
-                it.category == ValidationCategory.TWEEN && it.message.contains("bounds")
+                it.category == ValidationCategory.TWEEN.name && it.message.contains("bounds")
             },
             "Should error on U8 value out of range. Errors: ${result.errors}",
         )
@@ -884,7 +887,7 @@ class ValidationTest {
 
         assertTrue(
             result.errors.any {
-                it.category == ValidationCategory.TWEEN && it.message.contains("bounds")
+                it.category == ValidationCategory.TWEEN.name && it.message.contains("bounds")
             },
             "Should error on I8 value out of range. Errors: ${result.errors}",
         )
@@ -913,7 +916,7 @@ class ValidationTest {
 
         assertTrue(
             result.warnings.any {
-                it.category == ValidationCategory.TWEEN && it.message.contains("large")
+                it.category == ValidationCategory.TWEEN.name && it.message.contains("large")
             },
             "Should warn on large tween range. Warnings: ${result.warnings}",
         )
@@ -942,7 +945,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.TWEEN },
+            result.errors.none { it.category == ValidationCategory.TWEEN.name },
             "Valid tween should have no errors. Errors: ${result.errors}",
         )
     }
@@ -970,7 +973,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.ARRAY_BOUNDS },
+            result.errors.none { it.category == ValidationCategory.ARRAY_BOUNDS.name },
             "Valid array access should have no errors. Errors: ${result.errors}",
         )
     }
@@ -993,7 +996,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.ARRAY_BOUNDS },
+            result.errors.none { it.category == ValidationCategory.ARRAY_BOUNDS.name },
             "Array access at boundaries should pass. Errors: ${result.errors}",
         )
     }
@@ -1058,7 +1061,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.GBC_COLOR },
+            result.errors.none { it.category == ValidationCategory.GBC_COLOR.name },
             "Valid palette should have no color errors. Errors: ${result.errors}",
         )
     }
@@ -1092,7 +1095,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.GBC_COLOR },
+            result.errors.none { it.category == ValidationCategory.GBC_COLOR.name },
             "Multiple valid palettes should have no errors. Errors: ${result.errors}",
         )
     }
@@ -1140,7 +1143,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.DUPLICATE_NAME },
+            result.errors.none { it.category == ValidationCategory.DUPLICATE_NAME.name },
             "Unique scene names should have no duplicate errors. Errors: ${result.errors}",
         )
     }
@@ -1166,7 +1169,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.SCENE_REFERENCE },
+            result.errors.none { it.category == ValidationCategory.SCENE_REFERENCE.name },
             "Valid scene references should have no errors. Errors: ${result.errors}",
         )
     }
@@ -1248,7 +1251,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.ANIMATION_REFERENCE },
+            result.errors.none { it.category == ValidationCategory.ANIMATION_REFERENCE.name },
             "Valid animation references should have no errors. Errors: ${result.errors}",
         )
     }
@@ -1273,7 +1276,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.SPRITE_REFERENCE },
+            result.errors.none { it.category == ValidationCategory.SPRITE_REFERENCE.name },
             "Valid sprite references should have no errors. Errors: ${result.errors}",
         )
     }
@@ -1338,7 +1341,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.GBC_COLOR },
+            result.errors.none { it.category == ValidationCategory.GBC_COLOR.name },
             "Palette with auto slot should have no errors. Errors: ${result.errors}",
         )
     }
@@ -1400,7 +1403,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET.name },
             "Should warn about VRAM tile usage. Warnings: ${result.warnings}",
         )
     }
@@ -1427,7 +1430,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET.name },
             "Should warn when animated sprites exceed VRAM. Warnings: ${result.warnings}",
         )
     }
@@ -1444,7 +1447,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.warnings.none { it.category == ValidationCategory.MEMORY_BUDGET },
+            result.warnings.none { it.category == ValidationCategory.MEMORY_BUDGET.name },
             "Small sprite count should not warn. Warnings: ${result.warnings}",
         )
     }
@@ -1462,7 +1465,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET.name },
             "Should warn about WRAM usage at 5200 bytes. Warnings: ${result.warnings}",
         )
     }
@@ -1479,7 +1482,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            result.errors.any { it.category == ValidationCategory.MEMORY_BUDGET.name },
             "Should error when WRAM exceeded. Errors: ${result.errors}",
         )
     }
@@ -1495,11 +1498,11 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.MEMORY_BUDGET },
+            result.errors.none { it.category == ValidationCategory.MEMORY_BUDGET.name },
             "Small pool should not error. Errors: ${result.errors}",
         )
         assertTrue(
-            result.warnings.none { it.category == ValidationCategory.MEMORY_BUDGET },
+            result.warnings.none { it.category == ValidationCategory.MEMORY_BUDGET.name },
             "Small pool should not warn. Warnings: ${result.warnings}",
         )
     }
@@ -1524,7 +1527,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET.name },
             "Combined pools should trigger WRAM warning. Warnings: ${result.warnings}",
         )
     }
@@ -1550,7 +1553,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET.name },
             "State machines should be included in WRAM calculation. Warnings: ${result.warnings}",
         )
     }
@@ -1579,7 +1582,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET },
+            result.warnings.any { it.category == ValidationCategory.MEMORY_BUDGET.name },
             "Save data should be included in WRAM calculation. Warnings: ${result.warnings}",
         )
     }
@@ -1596,7 +1599,9 @@ class ValidationTest {
 
         val memoryMessage =
             requireNotNull(
-                result.errors.find { it.category == ValidationCategory.MEMORY_BUDGET }?.message,
+                result.errors
+                    .find { it.category == ValidationCategory.MEMORY_BUDGET.name }
+                    ?.message,
                 { "Should have MEMORY_BUDGET error" },
             )
         assertTrue(
@@ -1635,7 +1640,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.any { it.category == ValidationCategory.PALETTE_LIMIT },
+            result.errors.any { it.category == ValidationCategory.PALETTE_LIMIT.name },
             "Should error when exceeding 8 sprite palettes. Errors: ${result.errors}",
         )
     }
@@ -1666,7 +1671,7 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.any { it.category == ValidationCategory.PALETTE_LIMIT },
+            result.errors.any { it.category == ValidationCategory.PALETTE_LIMIT.name },
             "Should error when exceeding 8 background palettes. Errors: ${result.errors}",
         )
     }
@@ -1705,8 +1710,171 @@ class ValidationTest {
         val result = game.validate()
 
         assertTrue(
-            result.errors.none { it.category == ValidationCategory.PALETTE_LIMIT },
+            result.errors.none { it.category == ValidationCategory.PALETTE_LIMIT.name },
             "8 palettes of each type should not error. Errors: ${result.errors}",
         )
+    }
+
+    // =========================================================================
+    // SPRITE CONFIGURATION VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `valid sprite size 8x8 passes validation`() {
+        val game =
+            gbGame("test") {
+                sprite(SpriteAsset("player.png")) {
+                    size = 8 x 8
+                    position(80, 72)
+                }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val result = game.validate()
+
+        assertTrue(result.isValid, "8x8 sprite should be valid. Errors: ${result.errors}")
+    }
+
+    @Test
+    fun `valid sprite size 8x16 passes validation`() {
+        val game =
+            gbGame("test") {
+                sprite(SpriteAsset("player.png")) {
+                    size = 8 x 16
+                    position(80, 72)
+                }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val result = game.validate()
+
+        assertTrue(result.isValid, "8x16 sprite should be valid. Errors: ${result.errors}")
+    }
+
+    // =========================================================================
+    // ENTITY VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `entity without position can still be created`() {
+        val game =
+            gbGame("test") {
+                val trigger by entity {
+                    // No components - just a logical entity
+                }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val result = game.validate()
+
+        // Empty entity should be valid (no components required)
+        assertTrue(
+            result.isValid,
+            "Entity without components should be valid. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `entity with all valid components passes validation`() {
+        val game =
+            gbGame("test") {
+                val player by entity {
+                    position(80, 72)
+                    velocity(0, 0)
+                    hitbox(0, 0, 8, 16)
+                    sprite(SpriteAsset("player.png")) { size = 8 x 16 }
+                }
+
+                start = scene("main") { every.frame {} }
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.isValid,
+            "Entity with valid components should pass. Errors: ${result.errors}",
+        )
+    }
+
+    // =========================================================================
+    // SCENE TRANSITION VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `scene transition to existing scene passes validation`() {
+        val game =
+            gbGame("test") {
+                val mainScene = scene("main") { every.frame {} }
+                val pauseScene = scene("pause") { every.frame {} }
+
+                start = mainScene
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.errors.none { it.category == ValidationCategory.SCENE_REFERENCE.name },
+            "Transition to existing scene should be valid. Errors: ${result.errors}",
+        )
+    }
+
+    // =========================================================================
+    // COMBINED RESOURCE VALIDATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `game with multiple resource types passes validation`() {
+        val game =
+            gbGame("test") {
+                // Variables
+                var score by u8Var(0)
+                var lives by u8Var(3)
+
+                // Entity with sprite
+                val player by entity {
+                    position(80, 72)
+                    sprite(SpriteAsset("player.png")) { size = 8 x 16 }
+                }
+
+                // State machine
+                states("playerState") {
+                    state("idle") { on(score isAbove 0) { goto("moving") } }
+                    state("moving") { on(lives isEqualTo 0) { goto("idle") } }
+                }
+
+                // Multiple scenes
+                val gameplay = scene("gameplay") { every.frame { score += 1 } }
+                val pause = scene("pause") { every.frame {} }
+
+                start = gameplay
+            }
+
+        val result = game.validate()
+
+        assertTrue(
+            result.isValid,
+            "Game with multiple resources should be valid. Errors: ${result.errors}",
+        )
+    }
+
+    @Test
+    fun `validation result contains all categories checked`() {
+        val game =
+            gbGame("test") {
+                var score by u8Var(0)
+                sprite(SpriteAsset("player.png")) { position(80, 72) }
+
+                start = scene("main") { every.frame { score += 1 } }
+            }
+
+        val result = game.validate()
+
+        // Validation should complete without exception
+        assertNotNull(result, "Validation result should not be null")
+        assertNotNull(result.errors, "Errors list should not be null")
+        assertNotNull(result.warnings, "Warnings list should not be null")
     }
 }

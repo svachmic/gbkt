@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.core.builder
 
+import io.github.gbkt.core.BankingConfig
 import io.github.gbkt.core.Cartridge
 import io.github.gbkt.core.GameConfig
 import io.github.gbkt.core.dsl.GbktDsl
@@ -28,6 +29,71 @@ class AssetConfig {
 }
 
 /**
+ * Builder for ROM bank allocation configuration.
+ *
+ * Usage:
+ * ```kotlin
+ * config {
+ *     banking {
+ *         menuBank = 1
+ *         explorationBank = 2
+ *         battleBank = 3
+ *         monsterBank1 = 6
+ *         monsterBank2 = 7
+ *     }
+ * }
+ * ```
+ *
+ * Default values match the original LabyrinthOfTheDragon banking layout.
+ */
+@GbktDsl
+class BankingConfigBuilder {
+    /** Bank for UI, title, menus. */
+    var menuBank = 1
+
+    /** Bank for map, exploration code. */
+    var explorationBank = 2
+
+    /** Bank for battle system, items. */
+    var battleBank = 3
+
+    /** Bank for player management. */
+    var playerBank = 4
+
+    /** Bank for stats, leveling. */
+    var statsBank = 5
+
+    /** Bank for monster AI (first half). */
+    var monsterBank1 = 6
+
+    /** Bank for monster AI (second half). */
+    var monsterBank2 = 7
+
+    /** Bank for floor definitions. */
+    var floorDataBank = 8
+
+    /** Bank for scene handlers. */
+    var sceneBank = 10
+
+    /** Bank for sound effects. */
+    var soundBank = 30
+
+    fun build() =
+        BankingConfig(
+            menuBank = menuBank,
+            explorationBank = explorationBank,
+            battleBank = battleBank,
+            playerBank = playerBank,
+            statsBank = statsBank,
+            monsterBank1 = monsterBank1,
+            monsterBank2 = monsterBank2,
+            floorDataBank = floorDataBank,
+            sceneBank = sceneBank,
+            soundBank = soundBank,
+        )
+}
+
+/**
  * Builder for game hardware configuration.
  *
  * Usage:
@@ -38,6 +104,10 @@ class AssetConfig {
  *     ramBanks = 1
  *     gbcSupport = true
  *     gbcMode = GBCMode.COMPATIBLE
+ *     banking {
+ *         sceneBank = 10
+ *         battleBank = 11
+ *     }
  * }
  * ```
  */
@@ -48,6 +118,7 @@ class ConfigBuilder {
     var ramBanks = 0
     var gbcSupport = false
     var gbcMode = GBCMode.COMPATIBLE
+    private var bankingBuilder: BankingConfigBuilder? = null
 
     /**
      * Maximum level for all characters.
@@ -103,6 +174,23 @@ class ConfigBuilder {
      */
     var pathMaxLength = 32
 
+    /**
+     * Configure ROM bank allocation for code sections.
+     *
+     * Usage:
+     * ```kotlin
+     * banking {
+     *     sceneBank = 10
+     *     battleBank = 11
+     *     monsterBank1 = 6
+     *     monsterBank2 = 7
+     * }
+     * ```
+     */
+    fun banking(init: BankingConfigBuilder.() -> Unit) {
+        bankingBuilder = BankingConfigBuilder().apply(init)
+    }
+
     fun build(): GameConfig {
         require(maxLevel in 1..255) { "Max level must be 1-255, got: $maxLevel" }
         require(maxPartySize in 1..16) { "Max party size must be 1-16, got: $maxPartySize" }
@@ -115,18 +203,19 @@ class ConfigBuilder {
         require(pathMaxLength in 4..128) { "Path max length must be 4-128, got: $pathMaxLength" }
 
         return GameConfig(
-            cartridge,
-            romBanks,
-            ramBanks,
-            gbcSupport,
-            gbcMode,
-            maxLevel,
-            maxPartySize,
-            maxEnemies,
-            maxTweens,
-            animationQueueSize,
-            astarMaxNodes,
-            pathMaxLength,
+            cartridge = cartridge,
+            romBanks = romBanks,
+            ramBanks = ramBanks,
+            gbcSupport = gbcSupport,
+            gbcMode = gbcMode,
+            maxLevel = maxLevel,
+            maxPartySize = maxPartySize,
+            maxEnemies = maxEnemies,
+            maxTweens = maxTweens,
+            animationQueueSize = animationQueueSize,
+            astarMaxNodes = astarMaxNodes,
+            pathMaxLength = pathMaxLength,
+            banking = bankingBuilder?.build() ?: BankingConfig(),
         )
     }
 }

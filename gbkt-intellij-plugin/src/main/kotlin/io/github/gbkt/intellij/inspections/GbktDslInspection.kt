@@ -16,12 +16,21 @@
 package io.github.gbkt.intellij.inspections
 
 import com.intellij.codeInspection.LocalInspectionTool
+import com.intellij.codeInspection.LocalQuickFix
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElementVisitor
 import io.github.gbkt.intellij.lang.GbktDslVisitor
+import io.github.gbkt.intellij.quickfix.ClampValueQuickFix
+import io.github.gbkt.intellij.quickfix.CreateCharacterQuickFix
+import io.github.gbkt.intellij.quickfix.CreateEntityQuickFix
+import io.github.gbkt.intellij.quickfix.CreateMonsterQuickFix
+import io.github.gbkt.intellij.quickfix.CreateSceneQuickFix
+import io.github.gbkt.intellij.quickfix.CreateVariableQuickFix
 import org.jetbrains.kotlin.psi.KtCallExpression
+import org.jetbrains.kotlin.psi.KtFunctionLiteral
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
+import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtVisitorVoid
 
 /**
@@ -87,6 +96,15 @@ class GbktDslInspection : LocalInspectionTool() {
         analysis.cameras.forEach { names.add(it.name) }
         analysis.variables.forEach { names.add(it.name) }
         analysis.flags.forEach { names.add(it.name) }
+        // RPG definitions
+        analysis.characters.forEach { names.add(it.name) }
+        analysis.monsters.forEach { names.add(it.name) }
+        analysis.abilities.forEach { names.add(it.name) }
+        analysis.items.forEach { names.add(it.name) }
+        analysis.floors.forEach { names.add(it.name) }
+        analysis.battles.forEach { names.add(it.name) }
+        analysis.inventories.forEach { names.add(it.name) }
+        analysis.statusEffects.forEach { names.add(it.name) }
         return names
     }
 
@@ -133,41 +151,43 @@ class GbktDslInspection : LocalInspectionTool() {
         holder: ProblemsHolder,
     ) {
         val args = expression.valueArguments
+        // Use centralized constraints from ClampValueQuickFix for consistency
+        val constraints = ClampValueQuickFix.Companion.Constraints
 
         when (callee) {
             "position" -> {
-                // Check if position values are within GB screen bounds (0-255 for coordinates)
+                // Check if position values are within GB screen bounds
                 if (args.size >= 2) {
-                    checkIntArg(args[0], 0, 255, "X coordinate", holder)
-                    checkIntArg(args[1], 0, 255, "Y coordinate", holder)
+                    checkIntArgRange(args[0], constraints.SCREEN_X, "X coordinate", holder)
+                    checkIntArgRange(args[1], constraints.SCREEN_Y, "Y coordinate", holder)
                 }
             }
             "size" -> {
                 // Sprite size must be 8x8, 8x16, 16x8, or 16x16
                 if (args.size >= 2) {
-                    val validSizes = listOf(8, 16)
-                    checkIntArgInSet(args[0], validSizes, "Sprite width", holder)
-                    checkIntArgInSet(args[1], validSizes, "Sprite height", holder)
+                    checkIntArgInSet(args[0], constraints.SPRITE_SIZE, "Sprite width", holder)
+                    checkIntArgInSet(args[1], constraints.SPRITE_SIZE, "Sprite height", holder)
                 }
             }
             "maxHp",
             "attackPower",
             "defense" -> {
-                // Stats typically use u8 (0-255) or u16 (0-65535)
+                // Stats typically use u16 (0-65535)
                 if (args.isNotEmpty()) {
-                    checkIntArg(args[0], 0, 65535, callee, holder)
+                    checkIntArgRange(args[0], constraints.U16_RANGE, callee, holder)
                 }
             }
             "invincibilityFrames" -> {
                 // Frame counts are typically u8
                 if (args.isNotEmpty()) {
-                    checkIntArg(args[0], 0, 255, "Invincibility frames", holder)
+                    checkIntArgRange(args[0], constraints.U8_RANGE, "Invincibility frames", holder)
                 }
             }
-            "palette" -> {
+            "palette",
+            "paletteIndex" -> {
                 // Palette index must be 0-7 (8 palettes on GBC)
                 if (args.isNotEmpty()) {
-                    checkIntArg(args[0], 0, 7, "Palette index", holder)
+                    checkIntArgRange(args[0], constraints.PALETTE_INDEX, "Palette index", holder)
                 }
             }
         }
@@ -188,6 +208,30 @@ class GbktDslInspection : LocalInspectionTool() {
                 expr,
                 "$name must be between $min and $max (got $value)",
                 ProblemHighlightType.GENERIC_ERROR,
+                ClampValueQuickFix(value, min, max, name),
+            )
+        }
+    }
+
+    /**
+     * Checks an integer argument against an IntRange constraint.
+     * Uses centralized constraints from ClampValueQuickFix.Constraints.
+     */
+    private fun checkIntArgRange(
+        arg: org.jetbrains.kotlin.psi.KtValueArgument,
+        range: IntRange,
+        name: String,
+        holder: ProblemsHolder,
+    ) {
+        val expr = arg.getArgumentExpression() ?: return
+        val value = expr.text.toIntOrNull() ?: return
+
+        if (value !in range) {
+            holder.registerProblem(
+                expr,
+                "$name must be between ${range.first} and ${range.last} (got $value)",
+                ProblemHighlightType.GENERIC_ERROR,
+                ClampValueQuickFix(value, range.first, range.last, name),
             )
         }
     }
@@ -223,23 +267,80 @@ class GbktDslInspection : LocalInspectionTool() {
         // Skip common Kotlin/stdlib names
         if (name in COMMON_KOTLIN_NAMES) return
 
+        // Skip common gbkt-core types and imports
+        if (name in GBKT_CORE_TYPES) return
+
         // Skip if it's a definition itself
         if (isDefinitionSite(expression)) return
+
+        // Skip if it's a lambda parameter (e.g., { target -> target.damage() })
+        if (isLambdaParameter(expression, name)) return
 
         // Check if this looks like a reference to a DSL element
         // Only flag as error if it's used in a DSL context (e.g., passed to a DSL function)
         val parent = expression.parent
         if (parent is KtCallExpression) {
             val parentCallee = parent.calleeExpression?.text
-            if (parentCallee in ENTITY_CONSUMING_FUNCTIONS && name !in definedNames) {
-                // This might be an undefined entity reference
-                // But only warn, don't error, since it could be defined elsewhere
-                holder.registerProblem(
-                    expression,
-                    "Possible undefined reference: '$name'. Make sure it's defined in this file or imported.",
-                    ProblemHighlightType.WEAK_WARNING,
-                )
+            if (parentCallee != null && name !in definedNames) {
+                // Determine appropriate quick fixes based on context
+                val quickFixes = getQuickFixesForContext(parentCallee, name)
+
+                if (quickFixes.isNotEmpty()) {
+                    holder.registerProblem(
+                        expression,
+                        "Possible undefined reference: '$name'. Make sure it's defined in this file or imported.",
+                        ProblemHighlightType.WEAK_WARNING,
+                        *quickFixes.toTypedArray(),
+                    )
+                } else if (parentCallee in ENTITY_CONSUMING_FUNCTIONS) {
+                    // Fallback for entity-consuming functions without specific quick fixes
+                    holder.registerProblem(
+                        expression,
+                        "Possible undefined reference: '$name'. Make sure it's defined in this file or imported.",
+                        ProblemHighlightType.WEAK_WARNING,
+                        CreateEntityQuickFix(name),
+                    )
+                }
             }
+        }
+    }
+
+    /**
+     * Returns appropriate quick fixes based on the context function.
+     */
+    private fun getQuickFixesForContext(callee: String, name: String): List<LocalQuickFix> {
+        return when (callee) {
+            // Entity-consuming functions
+            "collidesWith", "overlaps", "follow", "damage", "heal" -> listOf(CreateEntityQuickFix(name))
+
+            // Scene-consuming functions
+            "scene", "transition", "goto" -> listOf(CreateSceneQuickFix(name))
+
+            // Party/character-consuming functions
+            "addToParty", "removeFromParty", "equipTo" -> listOf(
+                CreateCharacterQuickFix(name),
+                CreateEntityQuickFix(name),
+            )
+
+            // Monster-consuming functions (encounters, battle setup)
+            "entry", "addEnemy", "spawnMonster" -> listOf(
+                CreateMonsterQuickFix(name),
+            )
+
+            // Could be variable or entity
+            "isEqualTo", "isGreaterThan", "isLessThan", "isAtLeast", "isAtMost" -> listOf(
+                CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U8),
+                CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U16),
+                CreateEntityQuickFix(name),
+            )
+
+            // Arithmetic operations - likely variables
+            "set", "add", "subtract" -> listOf(
+                CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U8),
+                CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U16),
+            )
+
+            else -> emptyList()
         }
     }
 
@@ -247,6 +348,26 @@ class GbktDslInspection : LocalInspectionTool() {
         val parent = expression.parent
         return parent is org.jetbrains.kotlin.psi.KtProperty &&
             parent.nameIdentifier?.text == expression.getReferencedName()
+    }
+
+    /**
+     * Checks if the reference is to a lambda parameter.
+     * Example: `execute { target -> target.damage() }` - "target" is a lambda parameter.
+     */
+    private fun isLambdaParameter(expression: KtNameReferenceExpression, name: String): Boolean {
+        // Walk up the tree to find enclosing lambda expressions
+        var current: com.intellij.psi.PsiElement? = expression.parent
+        while (current != null) {
+            if (current is KtFunctionLiteral) {
+                // Check if this lambda has a parameter with the given name
+                val parameters = current.valueParameters
+                if (parameters.any { it.name == name }) {
+                    return true
+                }
+            }
+            current = current.parent
+        }
+        return false
     }
 
     companion object {
@@ -277,6 +398,51 @@ class GbktDslInspection : LocalInspectionTool() {
                 "Math",
                 "kotlin",
                 "java",
+            )
+
+        /**
+         * Common gbkt-core types that are imported automatically or commonly used.
+         * These should not trigger "undefined reference" warnings.
+         */
+        private val GBKT_CORE_TYPES =
+            setOf(
+                // Input system
+                "dpad",
+                "buttons",
+                "screen",
+                // Asset types
+                "SpriteAsset",
+                "TilesetAsset",
+                "PaletteAsset",
+                "SoundAsset",
+                "MusicAsset",
+                // Enums
+                "EquipSlot",
+                "ItemCategory",
+                "TargetingMode",
+                "Aspect",
+                "MonsterTier",
+                "TurnOrderStrategy",
+                "StackMode",
+                "MovementStyle",
+                "Easing",
+                "Team",
+                "BattleState",
+                // Common references
+                "context",
+                "caster",
+                "target",
+                "player",
+                "enemy",
+                // Frame/duration helpers
+                "frames",
+                "seconds",
+                // Common DSL receivers
+                "stats",
+                "combat",
+                "sprite",
+                "position",
+                "velocity",
             )
     }
 }

@@ -73,7 +73,7 @@ The plugin searches in order:
 | [context/DSL_REFERENCE.md](context/DSL_REFERENCE.md) | Look up DSL syntax for variables, entities, scenes, dialogs, menus, saves, camera, collision, RPG |
 | [context/DEVELOPER_EXPERIENCE.md](context/DEVELOPER_EXPERIENCE.md) | Add new IR nodes, DSL constructs, extend the framework |
 | [context/LOCALIZATION.md](context/LOCALIZATION.md) | Localize game strings using GNU gettext .po files, bank allocation, table schema validation |
-| [context/TOOLING.md](context/TOOLING.md) | Work with asset pipeline, GBC palettes, Gradle plugin, VSCode extension, IntelliJ plugin |
+| [context/TOOLING.md](context/TOOLING.md) | Work with asset pipeline, GBC palettes, Gradle plugin, IntelliJ plugin |
 | [context/ROADMAP.md](context/ROADMAP.md) | Check what's implemented, planned, or in progress |
 
 ## Common Tasks Routing
@@ -85,7 +85,7 @@ The plugin searches in order:
 | Add a new IR node type | DEVELOPER_EXPERIENCE.md → "Adding IR Nodes" |
 | Understand the compilation pipeline | ARCHITECTURE.md → "Data Flow" |
 | Fix/add asset processing | TOOLING.md → "Asset Pipeline" |
-| Add VSCode/IntelliJ extension features | TOOLING.md → "VSCode Extension" / "IntelliJ Plugin" |
+| Add IntelliJ extension features | TOOLING.md → "IntelliJ Plugin" |
 | Add/edit localized strings | LOCALIZATION.md → "PO File Format" |
 | Migrate from strings.js | LOCALIZATION.md → "Migration from strings.js" |
 
@@ -367,16 +367,79 @@ See [context/LOCALIZATION.md](context/LOCALIZATION.md) for complete guide.
 - `dpad.any` / `dpad.none`: Check if any/no direction held
 - `moving` / `stationary`: Aliases for dpad.any/none
 
+## Multi-Module Architecture
+
+gbkt uses a multi-module architecture separating the core DSL/IR library from platform-specific backends and tooling:
+
+```
+gbkt/
+├── gbkt-core/            # DSL, IR, all game constructs (platform-agnostic)
+├── gbkt-backend-api/     # Backend contract (CodegenBackend interface)
+├── gbkt-backend-gbdk/    # Game Boy/GBC backend (implements backend-api)
+├── gbkt-gradle-plugin/   # Build integration (composite build)
+├── gbkt-cli/             # Command-line tool
+└── gbkt-intellij-plugin/ # IDE support
+```
+
+### Module Dependency Graph
+
+```
+                         ┌─────────────────┐
+                         │   gbkt-core     │  (DSL + IR + game constructs)
+                         └────────┬────────┘
+                                  │
+                 ┌────────────────┼────────────────┐
+                 │                │                │
+                 ▼                ▼                ▼
+        ┌────────────────┐ ┌───────────┐ ┌─────────────────┐
+        │gbkt-backend-api│ │ gbkt-cli  │ │gbkt-gradle-plugin│
+        └───────┬────────┘ └───────────┘ └─────────────────┘
+                │
+      ┌─────────┼─────────┐
+      │         │         │
+      ▼         ▼         ▼
+  ┌───────┐ ┌───────┐ ┌───────┐
+  │ gbdk  │ │  gba  │ │  ...  │  (Future backends)
+  │(GB/GBC)│ │(Future)│ │       │
+  └───────┘ └───────┘ └───────┘
+```
+
+### Adding New Backends
+
+New target platforms (GBA, NES, etc.) are added as sibling modules to `gbkt-backend-gbdk`:
+
+```kotlin
+// gbkt-backend-gba/src/.../GBABackend.kt
+class GBABackend : CodegenBackend {
+    override val name = "gba"
+    override val targetProfile = GBAProfile  // 240x160, 32KB IWRAM, etc.
+
+    override fun validate(game: Game) = // Check GBA constraints
+    override fun generate(game: Game) = // Generate libtonc/libgba C code
+}
+```
+
+Backends are discovered via ServiceLoader. Users select the target in their build:
+```kotlin
+// build.gradle.kts
+gbkt {
+    target("gba")  // Uses gbkt-backend-gba
+}
+```
+
 ## Key Source Locations
 
 | Component | Path |
 |-----------|------|
-| DSL builders | `gbkt-core/src/main/kotlin/io/github/gbkt/core/dsl/` |
+| **Core Module** | |
 | IR nodes | `gbkt-core/src/main/kotlin/io/github/gbkt/core/ir/` |
-| Code generation | `gbkt-core/src/main/kotlin/io/github/gbkt/core/codegen/` |
-| ↳ Core codegen | `gbkt-core/src/main/kotlin/io/github/gbkt/core/codegen/core/` |
-| ↳ RPG codegen | `gbkt-core/src/main/kotlin/io/github/gbkt/core/codegen/rpg/` |
-| ↳ World codegen | `gbkt-core/src/main/kotlin/io/github/gbkt/core/codegen/world/` |
+| Constraints | `gbkt-core/src/main/kotlin/io/github/gbkt/core/constraints/` |
+| DSL builders | `gbkt-core/src/main/kotlin/io/github/gbkt/core/dsl/` |
+| **GBDK Backend** | |
+| Code generation | `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/` |
+| ↳ Core codegen | `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/core/` |
+| ↳ RPG codegen | `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/rpg/` |
+| ↳ World codegen | `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/world/` |
 | Entity system | `gbkt-core/src/main/kotlin/io/github/gbkt/core/entity/` |
 | RPG system | `gbkt-core/src/main/kotlin/io/github/gbkt/core/rpg/` |
 | World/dungeon | `gbkt-core/src/main/kotlin/io/github/gbkt/core/world/` |
@@ -384,9 +447,14 @@ See [context/LOCALIZATION.md](context/LOCALIZATION.md) for complete guide.
 | Game flow | `gbkt-core/src/main/kotlin/io/github/gbkt/core/flow/` |
 | Input system | `gbkt-core/src/main/kotlin/io/github/gbkt/core/input/` |
 | Collision system | `gbkt-core/src/main/kotlin/io/github/gbkt/core/collision/` |
+| **Backend API** | |
+| Backend interface | `gbkt-backend-api/src/main/kotlin/io/github/gbkt/backend/api/` |
+| **GBDK Backend** | |
+| Target profiles | `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/profiles/` |
+| GBDK backend | `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/` |
+| **Tooling** | |
 | Gradle plugin | `gbkt-gradle-plugin/` |
 | CLI tool | `gbkt-cli/` |
-| VSCode extension | `vscode-extension/` |
 | IntelliJ plugin | `gbkt-intellij-plugin/` |
 
 See [context/DSL_REFERENCE.md](context/DSL_REFERENCE.md) for complete syntax reference.
@@ -414,7 +482,7 @@ Each module has a CLAUDE.md with detailed documentation:
 | Entity | `gbkt-core/.../entity/CLAUDE.md` | Entity/component system |
 | RPG | `gbkt-core/.../rpg/CLAUDE.md` | Stats, battles, abilities |
 | World | `gbkt-core/.../world/CLAUDE.md` | Floors, encounters, flags |
-| Codegen | `gbkt-core/.../codegen/CLAUDE.md` | C code generation |
+| Codegen | `gbkt-backend-gbdk/.../codegen/CLAUDE.md` | GBDK C code generation |
 | Collision | `gbkt-core/.../collision/CLAUDE.md` | Collision detection |
 | Combat | `gbkt-core/.../combat/CLAUDE.md` | Battle engine core |
 | Movement | `gbkt-core/.../movement/CLAUDE.md` | Entity movement controller |
@@ -448,3 +516,79 @@ The `detekt.yml` excludes certain rules for specific packages. These are deliber
 3. **Domain-Driven Modeling**: RPG types model the problem domain (stats, abilities, effects). Long parameter lists reflect domain complexity, not poor design.
 
 4. **Generated Code is Different**: Code generators produce output for machines. Human readability of generated C code matters less than correctness.
+
+### Why gbkt-core is Monolithic (Sealed Interface Constraint)
+
+**TL;DR:** Kotlin's sealed interfaces prevent splitting IR types across modules. All IR nodes must live in the same module as their sealed base interfaces.
+
+#### The Constraint
+
+```kotlin
+// In gbkt-core
+sealed interface IRStatement { ... }
+sealed interface IRExpression { ... }
+
+// These MUST be in the same module as the sealed interfaces:
+data class IRAssign(...) : IRStatement
+data class IRBinary(...) : IRExpression
+// ... 30+ other IR node types
+```
+
+Kotlin enforces that **all implementations of a sealed interface must be in the same module**. This enables exhaustive `when` matching in codegen:
+
+```kotlin
+// Compiler guarantees all cases are handled
+when (stmt) {
+    is IRAssign -> generateAssign(stmt)
+    is IRIf -> generateIf(stmt)
+    is IRWhile -> generateWhile(stmt)
+    // ... no 'else' needed - compiler knows all subtypes
+}
+```
+
+#### What This Means
+
+1. **IR nodes cannot be extracted** to a separate `gbkt-ir-core` module
+2. **DSL types that use IR** (like `Expr`, `AssignableExpr`) must stay with IR
+3. **Domain-specific IR nodes** (RPG, graphics, etc.) must stay in gbkt-core
+
+#### The Architecture Decision
+
+We accept gbkt-core as a cohesive unit containing:
+- All IR node types (sealed hierarchies)
+- DSL recording context and variables
+- Domain constructs (RPG, graphics, scenes, etc.)
+- Code generation
+
+**This is not a problem.** The module boundaries that matter are:
+- **gbkt-core** - Platform-agnostic game definition
+- **gbkt-backend-*** - Platform-specific code generation
+- **Tooling** - Build integration, CLI, IDE plugins
+
+#### What Modularization IS Achieved
+
+| Module | Purpose | Value |
+|--------|---------|-------|
+| `gbkt-core` | All game DSL and IR | Single dependency for game authors |
+| `gbkt-backend-api` | Backend contract | Allows swappable backends |
+| `gbkt-backend-gbdk` | GB/GBC codegen | Isolated platform code |
+| `gbkt-gradle-plugin` | Build tooling | Separate from library |
+| `gbkt-cli` | CLI tool | Alternative to Gradle |
+
+#### Future Extensibility
+
+If we ever need to support user-defined IR nodes (unlikely), options include:
+1. Make `IRStatement`/`IRExpression` non-sealed (loses exhaustive matching)
+2. Use a visitor pattern instead of sealed hierarchies
+3. Keep domain IR in core, allow extension via `IRRaw` escape hatch
+
+For now, the current architecture scales well and provides clean separation where it matters: **game definition vs code generation vs tooling**.
+
+### Backend Responsibilities
+
+Backends (like `GBDKBackend`) are responsible for:
+1. **validate()** - Check that a game fits target constraints (sprite limits, memory, etc.)
+2. **generate()** - Produce platform-specific source code (C for GBDK)
+
+Backends are **not** responsible for:
+- **Compilation** - Invoking external toolchains (lcc, devkitPro) belongs in the Gradle plugin or CLI. This separation keeps backends as pure Kotlin libraries while compilation has access to toolchain paths, caching, and exec operations.

@@ -545,25 +545,31 @@ fun loadTileMap(
 }
 
 /**
- * Compile a game with automatic asset processing.
+ * Process game assets and return a new Game with the processed data.
  *
- * Usage: val code = compileWithAssets(myGame, "src/main/resources/sprites")
+ * Usage:
+ * ```
+ * val gameWithAssets = processAssets(myGame, "src/main/resources/sprites")
+ * val code = GBDKBackend.forGameBoyColor().generate(gameWithAssets).files["main.c"]
+ * ```
  *
  * This will:
  * 1. Find all sprite PNG files in the asset directory
  * 2. Convert them to GB tile format
  * 3. Load and convert Tiled map files
- * 4. Include the tile/map data in the generated C code
+ * 4. Return a new Game with the processed tile/map data
+ *
+ * @return A new Game with processed assets
  */
-fun compileWithAssets(game: Game, assetDir: String? = game.assetDir): String {
+fun processAssets(game: Game, assetDir: String? = game.assetDir): Game {
     if (assetDir == null) {
-        return game.compile()
+        return game
     }
 
     val dir = File(assetDir)
     if (!dir.exists() || !dir.isDirectory) {
         println("Warning: Asset directory not found: $assetDir")
-        return game.compile()
+        return game
     }
 
     // Convert each sprite's asset to tile data (deduplicate by asset path)
@@ -856,8 +862,30 @@ fun compileWithAssets(game: Game, assetDir: String? = game.assetDir): String {
             balanceTables = balanceTable,
         )
 
-    return gameWithAssets.compile(warnOnValidationErrors = true)
+    return gameWithAssets
 }
+
+/**
+ * Deprecated: Use [processAssets] and then call the backend to generate code.
+ *
+ * Migration example:
+ * ```
+ * // Old:
+ * val code = compileWithAssets(game, assetDir)
+ *
+ * // New:
+ * val gameWithAssets = processAssets(game, assetDir)
+ * val result = GBDKBackend.forGameBoyColor().generate(gameWithAssets)
+ * val code = result.files["main.c"]
+ * ```
+ */
+@Deprecated(
+    message = "Use processAssets() and GBDKBackend.generate() instead",
+    replaceWith = ReplaceWith("processAssets(game, assetDir)"),
+)
+@Suppress("UNUSED_PARAMETER")
+fun compileWithAssets(game: Game, assetDir: String? = game.assetDir): Game =
+    processAssets(game, assetDir)
 
 /**
  * Generate a simple test sprite PNG programmatically. Useful for testing without requiring actual

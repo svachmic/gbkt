@@ -94,7 +94,7 @@ abstract class DebugEmulatorTask @Inject constructor() : DefaultTask() {
                 "/usr/local/bin/mgba-qt",
                 "/usr/local/bin/mgba",
                 // Flatpak
-                "/var/lib/flatpak/exports/bin/io.mgba.mGBA"
+                "/var/lib/flatpak/exports/bin/io.mgba.mGBA",
             )
 
         for (path in candidates) {

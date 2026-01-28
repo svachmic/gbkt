@@ -1,0 +1,122 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const { PNG } = require('pngjs');
+const { updateManifest } = require('./common')
+
+/**
+ * Standard color palette for PNGs containing 2BPP data. This is a little rigid,
+ * but PNGs are pretty useful for image editing in multiple programs, and I'd
+ * like to keep things consistent across all of the assets for the game.
+ */
+const StandardPalette = new Map()
+StandardPalette.set('FFFFFF', 0)
+StandardPalette.set('AAAAAA', 1)
+StandardPalette.set('555555', 2)
+StandardPalette.set('000000', 3)
+
+/**
+ * Converts integer RGB values to a hex code.
+ * @param {number} r Red value.
+ * @param {number} g Green value.
+ * @param {number} b Blue value.
+ * @returns A hex code for the color based on the rgb components.
+ */
+function rgbToHex (r, g, b) {
+  return [r, g, b].map(v => {
+    let hex = v.toString(16).toUpperCase()
+    return hex.length < 2 ? `0${hex}` : hex;
+  }).join('')
+}
+
+/**
+ * Converts an RGB value into a 2BPP color index.
+ * @param {number} r Red value.
+ * @param {number} g Green value.
+ * @param {number} b Blue value.
+ * @return {number} The 2BPP index for the color.
+ * @throws {Error} If the RGB value does not correspond to a color in the
+ *  standard palette.
+ */
+function get2BPPColorIndex(r, g, b) {
+  const hex = rgbToHex(r, g, b)
+  if (!StandardPalette.has(hex)) {
+    throw new Error(`Encountered Invalid Color: ${hex}`)
+  }
+  return StandardPalette.get(hex)
+}
+
+/**
+ * Converts an 8x8 pixel tile at a given tile column and row in the image.
+ * @param {Image} image PNGJS image containing tile data.
+ * @param {number} tx The tile's x-index.
+ * @param {number} ty The tile's y-index.
+ * @returns {Array} An array containing the 2BPP binary data for the tile.
+ */
+function getTileBytes(image, tx, ty) {
+  // Map the image's colors to 2bpp values and arrange the tile in a 2d array
+  const tile = [];
+  for (let y = 0; y < 8; y++) {
+    tile.push([])
+    for (let x = 0; x < 8; x++) {
+      const idx = ((ty * 8 + y) * image.width + (tx * 8 + x)) * 4;
+      const r = image.data[idx];
+      const g = image.data[idx + 1];
+      const b = image.data[idx + 2];
+      tile[tile.length - 1].push(get2BPPColorIndex(r, g, b))
+    }
+  }
+  // Convert the 2d array into 2 bytes of GB 2BPP binary data
+  const bytes = []
+  tile.forEach(row => {
+    let low = 0;
+    let high = 0;
+    row.forEach(c => {
+      low = (low << 1) | (c & 1)
+      high = (high << 1) | (c >> 1)
+    })
+    bytes.push(low)
+    bytes.push(high)
+  })
+  return bytes
+}
+
+const argv = process.argv.slice(2)
+if (argv.length < 2) {
+  console.log('Usage: png2bin <input-png-file> <output-file>')
+}
+const [inputFilePath, outputFilePath] = argv
+
+fs.createReadStream(inputFilePath)
+  .pipe(new PNG())
+  .on('parsed', async function () {
+    if (this.width % 8 !== 0) {
+      throw new Error(`Image width (${this.width}) is not a multiple of 8.`)
+    }
+
+    if (this.height % 8 !== 0) {
+      throw new Error(`Image height (${this.height}) is not a multiple of 8`)
+    }
+
+    const dimensions = `${this.width}px x ${this.height}px`
+    const tileCount = this.width * this.height / 64
+    const input = `${inputFilePath} (${dimensions})`
+    const output = `${outputFilePath} (${tileCount} tiles)`
+    console.log(`png2bin ${input} -> ${output}`)
+
+    const bytes = []
+    for (let ty = 0; ty < this.height / 8; ty++)
+    for (let tx = 0; tx < this.width / 8; tx++) {
+      getTileBytes(this, tx, ty).forEach(b => bytes.push(b))
+    }
+
+    updateManifest(outputFilePath, {
+      inputPath: inputFilePath,
+      tiles: tileCount
+    });
+
+    fs.writeFileSync(outputFilePath, new Uint8Array(bytes));
+  })
+  .on('error', (err) => {
+    console.error(`Error reading the PNG file: ${err.message}`);
+  });

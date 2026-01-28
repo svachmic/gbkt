@@ -137,10 +137,10 @@ val poison by statusEffect {
 
 ## Remaining TODOs
 
-- `ExplorationCodegen.kt:521` - Sprite position interpolation during movement
+- `gbkt-backend-gbdk/.../ExplorationCodegen.kt:521` - Sprite position interpolation during movement
 
 ## Related Modules
 
-- `codegen/rpg/` - Code generation for RPG systems
+- `gbkt-backend-gbdk/.../codegen/rpg/` - Code generation for RPG systems (in backend)
 - `ir/` - IR nodes for RPG (AbilityIR, StatsIR, etc.)
 - `entity/CombatComponents.kt` - Combat-related entity components

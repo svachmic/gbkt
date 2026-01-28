@@ -265,12 +265,12 @@ internal constructor(
     val name: String,
     val maxPartySize: Int,
     val maxEnemies: Int,
-    internal val stateCallbacks: Map<BattleState, List<IRStatement>>,
-    internal val onVictory: List<IRStatement>,
-    internal val onDefeat: List<IRStatement>,
-    internal val onFlee: List<IRStatement>,
-    internal val fleeChanceBase: Int,
-    internal val fleeChancePerAgility: Int,
+    val stateCallbacks: Map<BattleState, List<IRStatement>>,
+    val onVictory: List<IRStatement>,
+    val onDefeat: List<IRStatement>,
+    val onFlee: List<IRStatement>,
+    val fleeChanceBase: Int,
+    val fleeChancePerAgility: Int,
     /** Presentation configuration for visual feedback */
     val presentation: BattlePresentationConfig = BattlePresentationConfig(),
 )

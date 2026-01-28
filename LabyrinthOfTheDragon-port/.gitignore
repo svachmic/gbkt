@@ -1,0 +1,31 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Generated files
+generated/
+*.gbc
+*.gb
+*.map
+*.sym
+
+# GBDK build artifacts
+obj/
+*.o
+*.lst
+*.asm
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*~

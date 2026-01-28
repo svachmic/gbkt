@@ -135,6 +135,10 @@
         <projectService
             serviceImplementation="io.github.gbkt.intellij.sdk.GbktSdkService"/>
 
+        <!-- Project Service for C code generation -->
+        <projectService
+            serviceImplementation="io.github.gbkt.intellij.codegen.GbktCodegenService"/>
+
         <!-- Application Service for global settings -->
         <applicationService
             serviceImplementation="io.github.gbkt.intellij.settings.GbktSettings"/>
@@ -192,6 +196,10 @@
         <annotator
             language="Kotlin"
             implementationClass="io.github.gbkt.intellij.highlighting.GbktDslAnnotator"/>
+
+        <!-- Rename refactoring support for gbkt DSL elements -->
+        <renamePsiElementProcessor
+            implementation="io.github.gbkt.intellij.refactoring.GbktRenamePsiElementProcessor"/>
 
         <!-- Module Type for gbkt projects -->
         <moduleType

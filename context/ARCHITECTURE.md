@@ -7,7 +7,7 @@ Kotlin DSL → Recording Context → IR Tree → C Code
 ```
 
 `RecordingContext` captures DSL operations as IR nodes instead of executing them.
-`CodeGenerator` traverses the IR tree and emits GBDK-compatible C code.
+`GBDKCodeGenerator` (in `gbkt-backend-gbdk`) traverses the IR tree and emits GBDK-compatible C code.
 
 ---
 
@@ -54,9 +54,9 @@ Kotlin DSL → Recording Context → IR Tree → C Code
 | `GameConfig.kt` | Game configuration |
 | `GameBuilderFeatures.kt` | Feature registration |
 
-**Code Generation** (`gbkt-core/src/main/kotlin/io/github/gbkt/core/codegen/`)
+**Code Generation** (`gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/`)
 
-Organized into subdirectories:
+Code generation is **platform-specific** and lives in backend modules. The GBDK backend generates GBDK-2020 compatible C code. This is organized into subdirectories:
 
 | Directory | Files | Purpose |
 |-----------|-------|---------|
@@ -184,7 +184,7 @@ Organized into subdirectories:
 | `IRExpression` | Sealed interface for all expression IR nodes |
 | `StatementRecorder` | Collects IR nodes during recording |
 | `GameBuilder` | Main DSL entry point |
-| `CodeGenerator` | Converts IR tree to C string |
+| `GBDKCodeGenerator` | Converts IR tree to GBDK C code (in `gbkt-backend-gbdk`) |
 
 ---
 
@@ -244,9 +244,9 @@ Operations emit IR nodes to StatementRecorder
     ↓
 GameBuilder.build() → Game object
     ↓
-game.compile() → CodeGenerator.generate()
+GBDKBackend.generate(game) → GBDKCodeGenerator
     ↓
-C code string
+C code string (GBDK-compatible)
 ```
 
 ---
@@ -267,10 +267,12 @@ C code string
    }
    ```
 
-3. **Add emission** in appropriate codegen file in `codegen/` subdirectory:
+3. **Add emission** in appropriate codegen file in the backend module:
    ```kotlin
-   // codegen/features/MyFeatureCodegen.kt or relevant codegen file
+   // gbkt-backend-gbdk/.../codegen/features/MyFeatureCodegen.kt
    is IRMyFeature -> line("my_feature(\"${stmt.param}\");")
    ```
+
+**Note:** Code generation is platform-specific. IR nodes are defined in `gbkt-core` (platform-agnostic), while code emission is in backend modules like `gbkt-backend-gbdk`.
 
 See [DEVELOPER_EXPERIENCE.md](DEVELOPER_EXPERIENCE.md) for detailed patterns.

@@ -7,7 +7,14 @@
 package io.github.gbkt.core
 
 /**
- * Source location in Kotlin DSL code. Links generated C code back to its origin in the Kotlin DSL.
+ * A location in source code for sourcemap generation.
+ *
+ * This is the pure data type used by IR nodes to track their origin in Kotlin DSL code.
+ *
+ * @property file The source file path
+ * @property line The line number (1-based)
+ * @property column The column number (1-based, 0 means unspecified)
+ * @property snippet Optional source code snippet for context
  */
 data class SourceLocation(
     val file: String,
@@ -15,14 +22,6 @@ data class SourceLocation(
     val column: Int = 0,
     val snippet: String? = null,
 ) {
-    companion object {
-        /**
-         * Capture current source location using platform-specific stack trace. Returns null if
-         * location cannot be determined.
-         */
-        fun capture(): SourceLocation? = captureSourceLocation()
-    }
-
     override fun toString(): String = "$file:$line" + if (column > 0) ":$column" else ""
 }
 

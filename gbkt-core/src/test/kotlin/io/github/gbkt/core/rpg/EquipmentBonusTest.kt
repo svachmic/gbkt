@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.core.rpg
 
+import io.github.gbkt.core.compileForTest
 import io.github.gbkt.core.gbGame
 import kotlin.test.Test
 import kotlin.test.assertEquals

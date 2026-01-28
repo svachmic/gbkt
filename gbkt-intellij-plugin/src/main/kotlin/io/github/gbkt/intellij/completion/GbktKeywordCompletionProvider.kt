@@ -19,9 +19,12 @@ import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionProvider
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.psi.PsiComment
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ProcessingContext
 import io.github.gbkt.intellij.GbktIcons
 import io.github.gbkt.intellij.highlighting.GbktKeywords
+import org.jetbrains.kotlin.psi.KtStringTemplateExpression
 
 /**
  * Provides completion for top-level gbkt DSL keywords.
@@ -41,6 +44,11 @@ class GbktKeywordCompletionProvider : CompletionProvider<CompletionParameters>()
     ) {
         val file = parameters.originalFile
         if (!file.name.endsWith(".gbkt.kts")) return
+
+        // Skip completion inside strings and comments for performance
+        val position = parameters.position
+        if (PsiTreeUtil.getParentOfType(position, KtStringTemplateExpression::class.java) != null) return
+        if (PsiTreeUtil.getParentOfType(position, PsiComment::class.java) != null) return
 
         // Add top-level DSL functions
         for (keyword in GbktKeywords.TOP_LEVEL_FUNCTIONS) {

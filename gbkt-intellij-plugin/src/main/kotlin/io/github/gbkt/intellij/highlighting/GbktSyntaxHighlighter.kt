@@ -107,6 +107,7 @@ object GbktKeywords {
     /** Top-level DSL entry points. */
     val TOP_LEVEL_FUNCTIONS =
         setOf(
+            // Core
             "gbGame",
             "scene",
             "entity",
@@ -114,17 +115,28 @@ object GbktKeywords {
             "camera",
             "stats",
             "flags",
+            // Variables
             "u8Var",
             "u16Var",
             "i8Var",
             "i16Var",
             "u8Array",
             "u16Array",
+            "i8Array",
+            "i16Array",
+            // RPG
+            "character",
             "monster",
             "ability",
             "item",
             "floor",
             "encounterTable",
+            "battle",
+            "inventory",
+            "statusEffect",
+            "exploration",
+            "gameFlow",
+            // Systems
             "save",
             "config",
             "assets",
@@ -135,6 +147,7 @@ object GbktKeywords {
             "physics",
             "inputBuffer",
             "transition",
+            "tween",
         )
 
     /** Control flow keywords. */
@@ -266,6 +279,7 @@ object GbktKeywords {
     /** Lifecycle callbacks. */
     val LIFECYCLE =
         setOf(
+            // Scene lifecycle
             "enter",
             "exit",
             "tick",
@@ -275,12 +289,28 @@ object GbktKeywords {
             "quarterSecond",
             "on",
             "goto",
+            // Battle lifecycle
             "onVictory",
             "onDefeat",
-            "onUse",
-            "onInteract",
+            "onState",
             "onTurnStart",
             "onTurnEnd",
+            "onDamage",
+            "onHeal",
+            "onDeath",
+            // Item/ability lifecycle
+            "onUse",
+            "onEquip",
+            "onUnequip",
+            // World/exploration lifecycle
+            "onInteract",
+            "onStep",
+            "onBlocked",
+            "onEncounter",
+            // Character lifecycle
+            "onLevelUp",
+            "onStatusApply",
+            "onStatusRemove",
         )
 
     /** Important types. */

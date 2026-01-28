@@ -15,6 +15,7 @@ import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -33,10 +34,10 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
     /** Path to GBDK installation directory. */
     @get:Input abstract val gbdkHome: Property<String>
 
-    /** Input C source file to compile. */
-    @get:InputFile
+    /** Input directory containing C source files to compile (one per bank). */
+    @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val cSourceFile: RegularFileProperty
+    abstract val cSourceDir: DirectoryProperty
 
     /** Additional compiler flags for lcc. */
     @get:Input @get:Optional abstract val compilerFlags: ListProperty<String>
@@ -65,8 +66,27 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
     fun compile() {
         val gbdkDir = File(gbdkHome.get())
         val lcc = GbdkToolchain.getLcc(gbdkDir)
-        val sourceFile = cSourceFile.get().asFile
+        val sourceDir = cSourceDir.get().asFile
         val romFile = outputRom.get().asFile
+
+        // Find all .c source files in the directory
+        val sourceFiles =
+            sourceDir
+                .listFiles { file -> file.extension == "c" }
+                ?.sortedBy { file ->
+                    // Sort with main.c first, then by bank number
+                    when {
+                        file.name == "main.c" -> 0
+                        file.name.startsWith("bank") -> {
+                            file.name.removePrefix("bank").removeSuffix(".c").toIntOrNull() ?: 999
+                        }
+                        else -> 1000
+                    }
+                } ?: emptyList()
+
+        if (sourceFiles.isEmpty()) {
+            throw GradleException("No C source files found in ${sourceDir.absolutePath}")
+        }
 
         // Ensure output directory exists
         romFile.parentFile.mkdirs()
@@ -105,10 +125,11 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
         args.add("-o")
         args.add(romFile.absolutePath)
 
-        // Input source file
-        args.add(sourceFile.absolutePath)
+        // Add all source files (main.c first, then bank files)
+        sourceFiles.forEach { file -> args.add(file.absolutePath) }
 
-        logger.lifecycle("Compiling ROM: ${sourceFile.name} -> ${romFile.name}")
+        logger.lifecycle("Compiling ROM: ${sourceFiles.size} source files -> ${romFile.name}")
+        sourceFiles.forEach { file -> logger.info("  - ${file.name}") }
         logger.info("GBDK: ${gbdkDir.absolutePath}")
         logger.info("Command: ${lcc.absolutePath} ${args.joinToString(" ")}")
 
@@ -145,10 +166,14 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
                         }
                         .trim()
 
+                // Use main.c as the primary source file for error enhancement
+                val mainSourceFile =
+                    sourceFiles.firstOrNull { it.name == "main.c" } ?: sourceFiles.first()
+
                 // Try to enhance errors with source map
                 val errorMessage =
                     try {
-                        enhanceErrorMessage(combinedOutput, sourceFile)
+                        enhanceErrorMessage(combinedOutput, mainSourceFile)
                     } catch (e: Exception) {
                         // If enhancement fails, fall back to basic error message
                         logger.warn("Source map error enhancement failed: ${e.message}")
@@ -156,7 +181,7 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
                             "Error locations may not map to Kotlin source. Check generated C code."
                         )
                         logger.info("Full exception: ", e)
-                        buildBasicErrorMessage(combinedOutput, sourceFile, result.exitValue)
+                        buildBasicErrorMessage(combinedOutput, mainSourceFile, result.exitValue)
                     }
 
                 throw GradleException(errorMessage)
@@ -238,7 +263,7 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
     private fun buildBasicErrorMessage(
         compilerOutput: String,
         sourceFile: File,
-        exitCode: Int
+        exitCode: Int,
     ): String {
         return buildString {
             appendLine("GBDK compilation failed (exit code: $exitCode)")

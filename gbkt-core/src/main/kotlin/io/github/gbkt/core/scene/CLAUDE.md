@@ -208,4 +208,4 @@ class Scene(
 - `dsl/RecordingContext.kt` - Records scene logic as IR
 - `builder/GameBuilder.kt` - Registers scenes with game
 - `graphics/Camera.kt` - Camera transitions
-- `codegen/core/SceneCodegen.kt` - Scene code generation
+- `gbkt-backend-gbdk/.../codegen/core/SceneCodegen.kt` - Scene code generation (in backend)

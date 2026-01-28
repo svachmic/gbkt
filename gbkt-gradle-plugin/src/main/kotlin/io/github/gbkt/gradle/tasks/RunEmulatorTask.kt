@@ -170,7 +170,7 @@ abstract class RunEmulatorTask @Inject constructor(private val execOperations: E
                 "/opt/homebrew/bin/mgba",
                 // Qt version (Homebrew)
                 "/usr/local/bin/mgba-qt",
-                "/opt/homebrew/bin/mgba-qt"
+                "/opt/homebrew/bin/mgba-qt",
             )
 
         for (path in paths) {
@@ -220,7 +220,7 @@ abstract class RunEmulatorTask @Inject constructor(private val execOperations: E
                 "/var/lib/flatpak/exports/bin/io.mgba.mGBA",
                 "${System.getProperty("user.home")}/.local/share/flatpak/exports/bin/io.mgba.mGBA",
                 // Snap
-                "/snap/bin/mgba"
+                "/snap/bin/mgba",
             )
 
         for (path in paths) {
@@ -239,7 +239,7 @@ abstract class RunEmulatorTask @Inject constructor(private val execOperations: E
                 "C:\\Program Files\\mGBA\\mGBA.exe",
                 "C:\\Program Files (x86)\\mGBA\\mGBA.exe",
                 "${System.getenv("LOCALAPPDATA")}\\mGBA\\mGBA.exe",
-                "${System.getenv("USERPROFILE")}\\scoop\\apps\\mgba\\current\\mGBA.exe"
+                "${System.getenv("USERPROFILE")}\\scoop\\apps\\mgba\\current\\mGBA.exe",
             )
 
         for (path in paths) {
@@ -321,7 +321,7 @@ abstract class RunEmulatorTask @Inject constructor(private val execOperations: E
                 // Project root scripts directory
                 File(project.rootProject.projectDir, "scripts/live-reload.lua"),
                 // Current project scripts directory
-                File(project.projectDir, "scripts/live-reload.lua")
+                File(project.projectDir, "scripts/live-reload.lua"),
             )
 
         for (candidate in candidates) {
@@ -453,50 +453,50 @@ abstract class RunEmulatorTask @Inject constructor(private val execOperations: E
             when {
                 osName.contains("mac") ->
                     """
-                |Installation options for macOS:
-                |
-                |  1. Download from official website:
-                |     https://mgba.io/downloads.html
-                |     Install mGBA.app to /Applications
-                |
-                |  2. Using Homebrew:
-                |     brew install mgba
-            """
+                    |Installation options for macOS:
+                    |
+                    |  1. Download from official website:
+                    |     https://mgba.io/downloads.html
+                    |     Install mGBA.app to /Applications
+                    |
+                    |  2. Using Homebrew:
+                    |     brew install mgba
+                    """
                         .trimMargin()
                 osName.contains("linux") ->
                     """
-                |Installation options for Linux:
-                |
-                |  1. Using apt (Debian/Ubuntu):
-                |     sudo apt install mgba-qt
-                |
-                |  2. Using dnf (Fedora):
-                |     sudo dnf install mgba-qt
-                |
-                |  3. Using Flatpak:
-                |     flatpak install flathub io.mgba.mGBA
-                |
-                |  4. Download from official website:
-                |     https://mgba.io/downloads.html
-            """
+                    |Installation options for Linux:
+                    |
+                    |  1. Using apt (Debian/Ubuntu):
+                    |     sudo apt install mgba-qt
+                    |
+                    |  2. Using dnf (Fedora):
+                    |     sudo dnf install mgba-qt
+                    |
+                    |  3. Using Flatpak:
+                    |     flatpak install flathub io.mgba.mGBA
+                    |
+                    |  4. Download from official website:
+                    |     https://mgba.io/downloads.html
+                    """
                         .trimMargin()
                 osName.contains("windows") ->
                     """
-                |Installation options for Windows:
-                |
-                |  1. Download from official website:
-                |     https://mgba.io/downloads.html
-                |     Extract to C:\Program Files\mGBA
-                |
-                |  2. Using Scoop:
-                |     scoop install mgba
-            """
+                    |Installation options for Windows:
+                    |
+                    |  1. Download from official website:
+                    |     https://mgba.io/downloads.html
+                    |     Extract to C:\Program Files\mGBA
+                    |
+                    |  2. Using Scoop:
+                    |     scoop install mgba
+                    """
                         .trimMargin()
                 else ->
                     """
-                |Download mGBA from:
-                |  https://mgba.io/downloads.html
-            """
+                    |Download mGBA from:
+                    |  https://mgba.io/downloads.html
+                    """
                         .trimMargin()
             }
 

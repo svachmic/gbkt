@@ -1,0 +1,1515 @@
+# Labyrinth of the Dragon Game Strings
+# This is the translation template - copy this file to create new translations.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Labyrinth of the Dragon\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-18T20:06:02.699143+01:00\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+
+#. @bank 0
+#. misc namespace (35 strings)
+
+#. @bank 0
+msgctxt "misc"
+msgid "empty"
+msgstr ""
+
+msgctxt "misc"
+msgid "physical"
+msgstr ""
+
+msgctxt "misc"
+msgid "magical"
+msgstr ""
+
+msgctxt "misc"
+msgid "earth"
+msgstr ""
+
+msgctxt "misc"
+msgid "water"
+msgstr ""
+
+msgctxt "misc"
+msgid "air"
+msgstr ""
+
+msgctxt "misc"
+msgid "fire"
+msgstr ""
+
+msgctxt "misc"
+msgid "light"
+msgstr ""
+
+msgctxt "misc"
+msgid "dark"
+msgstr ""
+
+msgctxt "misc"
+msgid "potion"
+msgstr ""
+
+msgctxt "misc"
+msgid "remedy"
+msgstr ""
+
+msgctxt "misc"
+msgid "ether"
+msgstr ""
+
+msgctxt "misc"
+msgid "atk_up_potion"
+msgstr ""
+
+msgctxt "misc"
+msgid "def_up_potion"
+msgstr ""
+
+msgctxt "misc"
+msgid "elixir"
+msgstr ""
+
+msgctxt "misc"
+msgid "regen_pot"
+msgstr ""
+
+msgctxt "misc"
+msgid "haste_pot"
+msgstr ""
+
+msgctxt "misc"
+msgid "dummy"
+msgstr ""
+
+msgctxt "misc"
+msgid "kobold"
+msgstr ""
+
+msgctxt "misc"
+msgid "goblin"
+msgstr ""
+
+msgctxt "misc"
+msgid "zombie"
+msgstr ""
+
+msgctxt "misc"
+msgid "bugbear"
+msgstr ""
+
+msgctxt "misc"
+msgid "owlbear"
+msgstr ""
+
+msgctxt "misc"
+msgid "gelatinous_cube"
+msgstr ""
+
+msgctxt "misc"
+msgid "displacer_beast"
+msgstr ""
+
+msgctxt "misc"
+msgid "will_o_wisp"
+msgstr ""
+
+msgctxt "misc"
+msgid "death_knight"
+msgstr ""
+
+msgctxt "misc"
+msgid "mind_flayer"
+msgstr ""
+
+msgctxt "misc"
+msgid "beholder"
+msgstr ""
+
+msgctxt "misc"
+msgid "dragon"
+msgstr ""
+
+msgctxt "misc"
+msgid "druid_short"
+msgstr ""
+
+msgctxt "misc"
+msgid "fighter_short"
+msgstr ""
+
+msgctxt "misc"
+msgid "monk_short"
+msgstr ""
+
+msgctxt "misc"
+msgid "sorcerer_short"
+msgstr ""
+
+msgctxt "misc"
+msgid "monster_miss_evaded"
+msgstr ""
+
+#. @bank 0
+#. ability namespace (28 strings)
+
+#. @bank 0
+msgctxt "ability"
+msgid "druid_poison_spray"
+msgstr ""
+
+msgctxt "ability"
+msgid "druid_cure_wounds"
+msgstr ""
+
+msgctxt "ability"
+msgid "druid_bark_skin"
+msgstr ""
+
+msgctxt "ability"
+msgid "druid_lightning"
+msgstr ""
+
+msgctxt "ability"
+msgid "druid_heal"
+msgstr ""
+
+msgctxt "ability"
+msgid "druid_insect_plague"
+msgstr ""
+
+msgctxt "ability"
+msgid "druid_regen"
+msgstr ""
+
+msgctxt "ability"
+msgid "fighter_attack"
+msgstr ""
+
+msgctxt "ability"
+msgid "fighter_second_wind"
+msgstr ""
+
+msgctxt "ability"
+msgid "fighter_action_surge"
+msgstr ""
+
+msgctxt "ability"
+msgid "fighter_cleave"
+msgstr ""
+
+msgctxt "ability"
+msgid "fighter_trip_attack"
+msgstr ""
+
+msgctxt "ability"
+msgid "fighter_menace"
+msgstr ""
+
+msgctxt "ability"
+msgid "fighter_indomitable"
+msgstr ""
+
+msgctxt "ability"
+msgid "monk_attack"
+msgstr ""
+
+msgctxt "ability"
+msgid "monk_evasion"
+msgstr ""
+
+msgctxt "ability"
+msgid "monk_open_palm"
+msgstr ""
+
+msgctxt "ability"
+msgid "monk_still_mind"
+msgstr ""
+
+msgctxt "ability"
+msgid "monk_flurry"
+msgstr ""
+
+msgctxt "ability"
+msgid "monk_diamond_body"
+msgstr ""
+
+msgctxt "ability"
+msgid "monk_quivering_palm"
+msgstr ""
+
+msgctxt "ability"
+msgid "sorc_attack"
+msgstr ""
+
+msgctxt "ability"
+msgid "sorc_darkness"
+msgstr ""
+
+msgctxt "ability"
+msgid "sorc_fireball"
+msgstr ""
+
+msgctxt "ability"
+msgid "sorc_haste"
+msgstr ""
+
+msgctxt "ability"
+msgid "sorc_sleetstorm"
+msgstr ""
+
+msgctxt "ability"
+msgid "sorc_disintegrate"
+msgstr ""
+
+msgctxt "ability"
+msgid "sorc_wild_magic"
+msgstr ""
+
+#. @bank 3
+#. battle namespace (21 strings)
+
+#. @bank 3
+msgctxt "battle"
+msgid "monster_scared_frozen"
+msgstr ""
+
+msgctxt "battle"
+msgid "monster_paralyzed"
+msgstr ""
+
+msgctxt "battle"
+msgid "monster_poison_death"
+msgstr ""
+
+msgctxt "battle"
+msgid "monster_confuse_attack_self"
+msgstr ""
+
+msgctxt "battle"
+msgid "monster_confuse_attack_other"
+msgstr ""
+
+msgctxt "battle"
+msgid "monster_confuse_stupor"
+msgstr ""
+
+msgctxt "battle"
+msgid "monster_lies_prone"
+msgstr ""
+
+msgctxt "battle"
+msgid "monster_gets_up"
+msgstr ""
+
+msgctxt "battle"
+msgid "monster_ice_slip"
+msgstr ""
+
+msgctxt "battle"
+msgid "player_flee_attempt"
+msgstr ""
+
+msgctxt "battle"
+msgid "player_flee_success"
+msgstr ""
+
+msgctxt "battle"
+msgid "player_flee_failure"
+msgstr ""
+
+msgctxt "battle"
+msgid "player_scared"
+msgstr ""
+
+msgctxt "battle"
+msgid "player_prone"
+msgstr ""
+
+msgctxt "battle"
+msgid "player_get_up"
+msgstr ""
+
+msgctxt "battle"
+msgid "player_paralyzed"
+msgstr ""
+
+msgctxt "battle"
+msgid "player_confused_attack"
+msgstr ""
+
+msgctxt "battle"
+msgid "player_confused_mumble"
+msgstr ""
+
+msgctxt "battle"
+msgid "victory"
+msgstr ""
+
+msgctxt "battle"
+msgid "victory_no_xp"
+msgstr ""
+
+msgctxt "battle"
+msgid "level_up"
+msgstr ""
+
+#. @bank 4
+#. player namespace (50 strings)
+
+#. @bank 4
+msgctxt "player"
+msgid "miss"
+msgstr ""
+
+msgctxt "player"
+msgid "hit"
+msgstr ""
+
+msgctxt "player"
+msgid "hit_immune"
+msgstr ""
+
+msgctxt "player"
+msgid "hit_resist"
+msgstr ""
+
+msgctxt "player"
+msgid "hit_vuln"
+msgstr ""
+
+msgctxt "player"
+msgid "hit_crit"
+msgstr ""
+
+msgctxt "player"
+msgid "heal_hp"
+msgstr ""
+
+msgctxt "player"
+msgid "heal_crit"
+msgstr ""
+
+msgctxt "player"
+msgid "heal_fumble"
+msgstr ""
+
+msgctxt "player"
+msgid "miss_all"
+msgstr ""
+
+msgctxt "player"
+msgid "poison_spray"
+msgstr ""
+
+msgctxt "player"
+msgid "cure_wounds"
+msgstr ""
+
+msgctxt "player"
+msgid "bark_skin"
+msgstr ""
+
+msgctxt "player"
+msgid "lightning"
+msgstr ""
+
+msgctxt "player"
+msgid "heal"
+msgstr ""
+
+msgctxt "player"
+msgid "heal_complete"
+msgstr ""
+
+msgctxt "player"
+msgid "insect_plague"
+msgstr ""
+
+msgctxt "player"
+msgid "regen"
+msgstr ""
+
+msgctxt "player"
+msgid "fighter_attack"
+msgstr ""
+
+msgctxt "player"
+msgid "second_wind"
+msgstr ""
+
+msgctxt "player"
+msgid "action_surge"
+msgstr ""
+
+msgctxt "player"
+msgid "cleave"
+msgstr ""
+
+msgctxt "player"
+msgid "trip_attack"
+msgstr ""
+
+msgctxt "player"
+msgid "trip_attack_hit"
+msgstr ""
+
+msgctxt "player"
+msgid "menace"
+msgstr ""
+
+msgctxt "player"
+msgid "indomitable"
+msgstr ""
+
+msgctxt "player"
+msgid "monk_attack"
+msgstr ""
+
+msgctxt "player"
+msgid "monk_evasion"
+msgstr ""
+
+msgctxt "player"
+msgid "monk_open_palm"
+msgstr ""
+
+msgctxt "player"
+msgid "monk_open_palm_trip"
+msgstr ""
+
+msgctxt "player"
+msgid "monk_still_mind"
+msgstr ""
+
+msgctxt "player"
+msgid "monk_still_mind_post"
+msgstr ""
+
+msgctxt "player"
+msgid "monk_flurry_of_blows"
+msgstr ""
+
+msgctxt "player"
+msgid "monk_diamond_body"
+msgstr ""
+
+msgctxt "player"
+msgid "monk_quivering_palm"
+msgstr ""
+
+msgctxt "player"
+msgid "monk_quivering_kill"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_magic_missile_one"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_magic_missile"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_darkness"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_fireball"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_haste"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_sleetstorm"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_disintegrate"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_disintegrate_kill"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_wild_magic"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_wild_magic_fizzle"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_wild_magic_fireball"
+msgstr ""
+
+msgctxt "player"
+msgid "sorc_wild_magic_sleetstorm"
+msgstr ""
+
+msgctxt "player"
+msgid "displacer_beast_phase"
+msgstr ""
+
+msgctxt "player"
+msgid "deathknight_revive"
+msgstr ""
+
+#. @bank 2
+#. maps namespace (16 strings)
+
+#. @bank 2
+msgctxt "maps"
+msgid "chest_locked"
+msgstr ""
+
+msgctxt "maps"
+msgid "chest_open"
+msgstr ""
+
+msgctxt "maps"
+msgid "chest_key_locked"
+msgstr ""
+
+msgctxt "maps"
+msgid "chest_unlock_key"
+msgstr ""
+
+msgctxt "maps"
+msgid "get_magic_key"
+msgstr ""
+
+msgctxt "maps"
+msgid "get_torch"
+msgstr ""
+
+msgctxt "maps"
+msgid "already_has_torch"
+msgstr ""
+
+msgctxt "maps"
+msgid "lever_stuck"
+msgstr ""
+
+msgctxt "maps"
+msgid "lever_one_way"
+msgstr ""
+
+msgctxt "maps"
+msgid "door_locked"
+msgstr ""
+
+msgctxt "maps"
+msgid "door_locked_key"
+msgstr ""
+
+msgctxt "maps"
+msgid "door_unlock_key"
+msgstr ""
+
+msgctxt "maps"
+msgid "sconce_lit_no_torch"
+msgstr ""
+
+msgctxt "maps"
+msgid "sconce_no_torch"
+msgstr ""
+
+msgctxt "maps"
+msgid "sconce_torch_not_lit"
+msgstr ""
+
+msgctxt "maps"
+msgid "boss_not_yet"
+msgstr ""
+
+#. @bank 2
+#. floor_test namespace (10 strings)
+
+#. @bank 2
+msgctxt "floor_test"
+msgid "metal_skull"
+msgstr ""
+
+msgctxt "floor_test"
+msgid "glowing_eyes"
+msgstr ""
+
+msgctxt "floor_test"
+msgid "click"
+msgstr ""
+
+msgctxt "floor_test"
+msgid "creak"
+msgstr ""
+
+msgctxt "floor_test"
+msgid "groan"
+msgstr ""
+
+msgctxt "floor_test"
+msgid "chest_click"
+msgstr ""
+
+msgctxt "floor_test"
+msgid "no_back"
+msgstr ""
+
+msgctxt "floor_test"
+msgid "door_opens"
+msgstr ""
+
+msgctxt "floor_test"
+msgid "growl"
+msgstr ""
+
+msgctxt "floor_test"
+msgid "healed"
+msgstr ""
+
+#. @bank 2
+#. floor1 namespace (7 strings)
+
+#. @bank 2
+msgctxt "floor1"
+msgid "sign_monster_no_fire"
+msgstr ""
+
+msgctxt "floor1"
+msgid "sign_empty_chest"
+msgstr ""
+
+msgctxt "floor1"
+msgid "sign_tunnel_cave_in"
+msgstr ""
+
+msgctxt "floor1"
+msgid "sign_skull_out_of_place"
+msgstr ""
+
+msgctxt "floor1"
+msgid "sign_hidden_passage_hint"
+msgstr ""
+
+msgctxt "floor1"
+msgid "sign_missing_elite"
+msgstr ""
+
+msgctxt "floor1"
+msgid "boss_defeated"
+msgstr ""
+
+#. @bank 2
+#. floor2 namespace (5 strings)
+
+#. @bank 2
+msgctxt "floor2"
+msgid "sign_items_room"
+msgstr ""
+
+msgctxt "floor2"
+msgid "sign_levers"
+msgstr ""
+
+msgctxt "floor2"
+msgid "door_opens"
+msgstr ""
+
+msgctxt "floor2"
+msgid "elite_msg"
+msgstr ""
+
+msgctxt "floor2"
+msgid "boss_msg"
+msgstr ""
+
+#. @bank 2
+#. floor3 namespace (4 strings)
+
+#. @bank 2
+msgctxt "floor3"
+msgid "choose_wisely"
+msgstr ""
+
+msgctxt "floor3"
+msgid "brains"
+msgstr ""
+
+msgctxt "floor3"
+msgid "boss"
+msgstr ""
+
+msgctxt "floor3"
+msgid "boss_not_yet"
+msgstr ""
+
+#. @bank 2
+#. floor4 namespace (3 strings)
+
+#. @bank 2
+msgctxt "floor4"
+msgid "elite_attack"
+msgstr ""
+
+msgctxt "floor4"
+msgid "boss"
+msgstr ""
+
+msgctxt "floor4"
+msgid "boss_not_yet"
+msgstr ""
+
+#. @bank 2
+#. floor5 namespace (5 strings)
+
+#. @bank 2
+msgctxt "floor5"
+msgid "demands"
+msgstr ""
+
+msgctxt "floor5"
+msgid "secrets"
+msgstr ""
+
+msgctxt "floor5"
+msgid "elite_attack"
+msgstr ""
+
+msgctxt "floor5"
+msgid "boss"
+msgstr ""
+
+msgctxt "floor5"
+msgid "boss_not_yet"
+msgstr ""
+
+#. @bank 2
+#. floor6 namespace (3 strings)
+
+#. @bank 2
+msgctxt "floor6"
+msgid "elite_attack"
+msgstr ""
+
+msgctxt "floor6"
+msgid "boss"
+msgstr ""
+
+msgctxt "floor6"
+msgid "boss_not_yet"
+msgstr ""
+
+#. @bank 2
+#. floor7 namespace (4 strings)
+
+#. @bank 2
+msgctxt "floor7"
+msgid "riddle"
+msgstr ""
+
+msgctxt "floor7"
+msgid "elite_attack"
+msgstr ""
+
+msgctxt "floor7"
+msgid "boss"
+msgstr ""
+
+msgctxt "floor7"
+msgid "boss_not_yet"
+msgstr ""
+
+#. @bank 2
+#. floor8 namespace (4 strings)
+
+#. @bank 2
+msgctxt "floor8"
+msgid "boss"
+msgstr ""
+
+msgctxt "floor8"
+msgid "elite"
+msgstr ""
+
+msgctxt "floor8"
+msgid "healing_mirror"
+msgstr ""
+
+msgctxt "floor8"
+msgid "healing_mirror_none"
+msgstr ""
+
+#. @bank 2
+#. floor_common namespace (10 strings)
+
+#. @bank 2
+msgctxt "floor_common"
+msgid "growl"
+msgstr ""
+
+msgctxt "floor_common"
+msgid "light_fires"
+msgstr ""
+
+msgctxt "floor_common"
+msgid "missing"
+msgstr ""
+
+msgctxt "floor_common"
+msgid "no_return"
+msgstr ""
+
+msgctxt "floor_common"
+msgid "steve_jobs"
+msgstr ""
+
+msgctxt "floor_common"
+msgid "tbd"
+msgstr ""
+
+msgctxt "floor_common"
+msgid "new_ability"
+msgstr ""
+
+msgctxt "floor_common"
+msgid "fight_me"
+msgstr ""
+
+msgctxt "floor_common"
+msgid "love"
+msgstr ""
+
+msgctxt "floor_common"
+msgid "strange_wind"
+msgstr ""
+
+#. @bank 2
+#. gain_ability namespace (0 strings)
+
+#. @bank 2
+#. chest_item namespace (16 strings)
+
+#. @bank 2
+msgctxt "chest_item"
+msgid "2pot_1eth"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "1pot"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "1pots"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "haste_pot"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "regen_pot"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "3regen"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "2pots"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "1eth"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "1eths"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "1remedy"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "3potions"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "3ethers"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "1elixir"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "1atkup_1defup"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "3elixirs"
+msgstr ""
+
+msgctxt "chest_item"
+msgid "3haste"
+msgstr ""
+
+#. @bank 3
+#. items namespace (10 strings)
+
+#. @bank 3
+msgctxt "items"
+msgid "use_potion"
+msgstr ""
+
+msgctxt "items"
+msgid "use_ether_sp"
+msgstr ""
+
+msgctxt "items"
+msgid "use_ether_mp"
+msgstr ""
+
+msgctxt "items"
+msgid "use_remedy"
+msgstr ""
+
+msgctxt "items"
+msgid "use_atkup"
+msgstr ""
+
+msgctxt "items"
+msgid "use_defup"
+msgstr ""
+
+msgctxt "items"
+msgid "use_elixir"
+msgstr ""
+
+msgctxt "items"
+msgid "use_regen"
+msgstr ""
+
+msgctxt "items"
+msgid "use_haste"
+msgstr ""
+
+msgctxt "items"
+msgid "use_failed"
+msgstr ""
+
+#. @bank 6
+#. monster namespace (61 strings)
+
+#. @bank 6
+msgctxt "monster"
+msgid "flee"
+msgstr ""
+
+msgctxt "monster"
+msgid "flee_failure"
+msgstr ""
+
+msgctxt "monster"
+msgid "flee_success"
+msgstr ""
+
+msgctxt "monster"
+msgid "attack"
+msgstr ""
+
+msgctxt "monster"
+msgid "miss"
+msgstr ""
+
+msgctxt "monster"
+msgid "magic_miss"
+msgstr ""
+
+msgctxt "monster"
+msgid "hit"
+msgstr ""
+
+msgctxt "monster"
+msgid "hit_aspect"
+msgstr ""
+
+msgctxt "monster"
+msgid "hit_immune"
+msgstr ""
+
+msgctxt "monster"
+msgid "hit_resist"
+msgstr ""
+
+msgctxt "monster"
+msgid "hit_vuln"
+msgstr ""
+
+msgctxt "monster"
+msgid "hit_crit"
+msgstr ""
+
+msgctxt "monster"
+msgid "hit_barkskin"
+msgstr ""
+
+msgctxt "monster"
+msgid "does_nothing"
+msgstr ""
+
+msgctxt "monster"
+msgid "dummy_pre"
+msgstr ""
+
+msgctxt "monster"
+msgid "dummy_post_heal"
+msgstr ""
+
+msgctxt "monster"
+msgid "kobold_axe"
+msgstr ""
+
+msgctxt "monster"
+msgid "kobold_fire"
+msgstr ""
+
+msgctxt "monster"
+msgid "kobold_dazed"
+msgstr ""
+
+msgctxt "monster"
+msgid "kobold_does_nothing"
+msgstr ""
+
+msgctxt "monster"
+msgid "kobold_miss"
+msgstr ""
+
+msgctxt "monster"
+msgid "kobold_get_up"
+msgstr ""
+
+msgctxt "monster"
+msgid "goblin_nose_pick"
+msgstr ""
+
+msgctxt "monster"
+msgid "goblin_attack"
+msgstr ""
+
+msgctxt "monster"
+msgid "goblin_acid_arrow"
+msgstr ""
+
+msgctxt "monster"
+msgid "zombie_brains"
+msgstr ""
+
+msgctxt "monster"
+msgid "zombie_bite_miss"
+msgstr ""
+
+msgctxt "monster"
+msgid "zombie_bite_hit"
+msgstr ""
+
+msgctxt "monster"
+msgid "zombie_slam"
+msgstr ""
+
+msgctxt "monster"
+msgid "bugbear_for_hruggek"
+msgstr ""
+
+msgctxt "monster"
+msgid "bugbear_for_hruggek_hit"
+msgstr ""
+
+msgctxt "monster"
+msgid "bugbear_for_hruggek_miss"
+msgstr ""
+
+msgctxt "monster"
+msgid "bugbear_javelin"
+msgstr ""
+
+msgctxt "monster"
+msgid "bugbead_club"
+msgstr ""
+
+msgctxt "monster"
+msgid "owlbear_pounce"
+msgstr ""
+
+msgctxt "monster"
+msgid "owlbear_pounce_topple"
+msgstr ""
+
+msgctxt "monster"
+msgid "owlbear_pounce_miss"
+msgstr ""
+
+msgctxt "monster"
+msgid "owlbear_multi"
+msgstr ""
+
+msgctxt "monster"
+msgid "owlbear_beak"
+msgstr ""
+
+msgctxt "monster"
+msgid "gcube_search"
+msgstr ""
+
+msgctxt "monster"
+msgid "gcube_paralyze"
+msgstr ""
+
+msgctxt "monster"
+msgid "gcube_poison"
+msgstr ""
+
+msgctxt "monster"
+msgid "gcube_engulf_fail"
+msgstr ""
+
+msgctxt "monster"
+msgid "gcube_attack"
+msgstr ""
+
+msgctxt "monster"
+msgid "displacer_beast_tentacle"
+msgstr ""
+
+msgctxt "monster"
+msgid "displacer_beast_2hit"
+msgstr ""
+
+msgctxt "monster"
+msgid "displacer_beast_1hit"
+msgstr ""
+
+msgctxt "monster"
+msgid "displacer_beast_miss"
+msgstr ""
+
+msgctxt "monster"
+msgid "will_o_wisp_lightning"
+msgstr ""
+
+msgctxt "monster"
+msgid "will_o_wisp_scare"
+msgstr ""
+
+msgctxt "monster"
+msgid "will_o_wisp_scare_hit"
+msgstr ""
+
+msgctxt "monster"
+msgid "will_o_wisp_scare_miss"
+msgstr ""
+
+msgctxt "monster"
+msgid "will_o_wisp_siphon"
+msgstr ""
+
+msgctxt "monster"
+msgid "will_o_wisp_siphon_hit"
+msgstr ""
+
+msgctxt "monster"
+msgid "will_o_wisp_hit"
+msgstr ""
+
+msgctxt "monster"
+msgid "deathknight_attack"
+msgstr ""
+
+msgctxt "monster"
+msgid "deathknight_hit1"
+msgstr ""
+
+msgctxt "monster"
+msgid "deathknight_hit2"
+msgstr ""
+
+msgctxt "monster"
+msgid "deathknight_hellfire"
+msgstr ""
+
+msgctxt "monster"
+msgid "deathknight_hellfire_hit"
+msgstr ""
+
+msgctxt "monster"
+msgid "deathknight_hellfire_miss"
+msgstr ""
+
+#. @bank 7
+#. monster2 namespace (34 strings)
+
+#. @bank 7
+msgctxt "monster2"
+msgid "does_nothing"
+msgstr ""
+
+msgctxt "monster2"
+msgid "monster_miss"
+msgstr ""
+
+msgctxt "monster2"
+msgid "mindflayer_mind_blast"
+msgstr ""
+
+msgctxt "monster2"
+msgid "mindflayer_mind_blast_miss"
+msgstr ""
+
+msgctxt "monster2"
+msgid "mindflayer_mind_blast_hit"
+msgstr ""
+
+msgctxt "monster2"
+msgid "mindflayer_tentacle"
+msgstr ""
+
+msgctxt "monster2"
+msgid "mindflayer_extract_brain"
+msgstr ""
+
+msgctxt "monster2"
+msgid "mindflayer_extract_brain_hit"
+msgstr ""
+
+msgctxt "monster2"
+msgid "beholder_bite"
+msgstr ""
+
+msgctxt "monster2"
+msgid "beholder_shoot_ray"
+msgstr ""
+
+msgctxt "monster2"
+msgid "beholder_ray_paralyze"
+msgstr ""
+
+msgctxt "monster2"
+msgid "beholder_ray_fear"
+msgstr ""
+
+msgctxt "monster2"
+msgid "beholder_ray_slow"
+msgstr ""
+
+msgctxt "monster2"
+msgid "beholder_ray_necro"
+msgstr ""
+
+msgctxt "monster2"
+msgid "beholder_ray_trip"
+msgstr ""
+
+msgctxt "monster2"
+msgid "beholder_ray_death"
+msgstr ""
+
+msgctxt "monster2"
+msgid "beholder_ray_miss"
+msgstr ""
+
+msgctxt "monster2"
+msgid "beholder_bite_miss"
+msgstr ""
+
+msgctxt "monster2"
+msgid "beholder_ray_resist"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_attack"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_miss"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_hit_triple"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_hit_double"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_hit_single"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_legendary_tail"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_legendary_tail_miss"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_legendary_wing"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_legendary_wing_miss"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_legendary_wing_hit"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_fright"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_fright_miss"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_fright_hit"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_fire_breath"
+msgstr ""
+
+msgctxt "monster2"
+msgid "dragon_fire_breath_miss"
+msgstr ""
+
+#. @bank 1
+#. credits namespace (29 strings)
+
+#. @bank 1
+msgctxt "credits"
+msgid "story1_1"
+msgstr ""
+
+msgctxt "credits"
+msgid "story1_2"
+msgstr ""
+
+msgctxt "credits"
+msgid "story1_3"
+msgstr ""
+
+msgctxt "credits"
+msgid "story1_4"
+msgstr ""
+
+msgctxt "credits"
+msgid "story2_1"
+msgstr ""
+
+msgctxt "credits"
+msgid "story2_2"
+msgstr ""
+
+msgctxt "credits"
+msgid "story2_3"
+msgstr ""
+
+msgctxt "credits"
+msgid "story2_4"
+msgstr ""
+
+msgctxt "credits"
+msgid "story3_1"
+msgstr ""
+
+msgctxt "credits"
+msgid "story3_2"
+msgstr ""
+
+msgctxt "credits"
+msgid "story3_3"
+msgstr ""
+
+msgctxt "credits"
+msgid "story3_4"
+msgstr ""
+
+msgctxt "credits"
+msgid "developed_by"
+msgstr ""
+
+msgctxt "credits"
+msgid "programming"
+msgstr ""
+
+msgctxt "credits"
+msgid "game_design"
+msgstr ""
+
+msgctxt "credits"
+msgid "monster_art"
+msgstr ""
+
+msgctxt "credits"
+msgid "title_art"
+msgstr ""
+
+msgctxt "credits"
+msgid "dungeon_art"
+msgstr ""
+
+msgctxt "credits"
+msgid "neshacker"
+msgstr ""
+
+msgctxt "credits"
+msgid "ryan"
+msgstr ""
+
+msgctxt "credits"
+msgid "tommy"
+msgstr ""
+
+msgctxt "credits"
+msgid "mono"
+msgstr ""
+
+msgctxt "credits"
+msgid "ledu"
+msgstr ""
+
+msgctxt "credits"
+msgid "patreon"
+msgstr ""
+
+msgctxt "credits"
+msgid "nh_patreon"
+msgstr ""
+
+msgctxt "credits"
+msgid "nh_patreon2"
+msgstr ""
+
+msgctxt "credits"
+msgid "nh_patreon3"
+msgstr ""
+
+msgctxt "credits"
+msgid "thank_you"
+msgstr ""
+
+msgctxt "credits"
+msgid "for_playing"
+msgstr ""
+

@@ -7,6 +7,7 @@
 package io.github.gbkt.core.dsl
 
 import io.github.gbkt.core.SourceLocation
+import io.github.gbkt.core.captureSourceLocation
 import io.github.gbkt.core.ir.IRArrayAssign
 import io.github.gbkt.core.ir.IRAssign
 import io.github.gbkt.core.ir.IRCall
@@ -80,7 +81,7 @@ class StatementRecorder {
     fun emit(stmt: IRStatement) {
         val stmtWithLocation =
             if (stmt.sourceLocation == null) {
-                stmt.withSourceLocation(SourceLocation.capture())
+                stmt.withSourceLocation(captureSourceLocation())
             } else {
                 stmt
             }
@@ -141,5 +142,5 @@ fun IRStatement.withSourceLocation(location: SourceLocation?): IRStatement {
  */
 @RawCodeEscapeHatch
 fun raw(code: String) {
-    RecordingContext.require().emit(IRRaw(code, sourceLocation = SourceLocation.capture()))
+    RecordingContext.require().emit(IRRaw(code, sourceLocation = captureSourceLocation()))
 }

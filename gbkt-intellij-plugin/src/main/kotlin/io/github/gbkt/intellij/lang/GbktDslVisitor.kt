@@ -56,6 +56,30 @@ class GbktDslVisitor : PsiRecursiveElementVisitor() {
     /** Flag definitions. */
     val flags = mutableListOf<DslDefinition>()
 
+    /** Character definitions (RPG). */
+    val characters = mutableListOf<DslDefinition>()
+
+    /** Monster definitions (RPG). */
+    val monsters = mutableListOf<DslDefinition>()
+
+    /** Ability definitions (RPG). */
+    val abilities = mutableListOf<DslDefinition>()
+
+    /** Item definitions (RPG). */
+    val items = mutableListOf<DslDefinition>()
+
+    /** Floor/dungeon definitions (RPG). */
+    val floors = mutableListOf<DslDefinition>()
+
+    /** Battle definitions (RPG). */
+    val battles = mutableListOf<DslDefinition>()
+
+    /** Inventory definitions (RPG). */
+    val inventories = mutableListOf<DslDefinition>()
+
+    /** Status effect definitions (RPG). */
+    val statusEffects = mutableListOf<DslDefinition>()
+
     /** All DSL call expressions (for validation). */
     val allDslCalls = mutableListOf<DslCall>()
 
@@ -99,6 +123,23 @@ class GbktDslVisitor : PsiRecursiveElementVisitor() {
                 "u16Array" -> {
                     variables.add(DslDefinition(name, DslType.ARRAY, property, delegateExpression))
                 }
+                // RPG definitions
+                "character" ->
+                    characters.add(DslDefinition(name, DslType.CHARACTER, property, delegateExpression))
+                "monster" ->
+                    monsters.add(DslDefinition(name, DslType.MONSTER, property, delegateExpression))
+                "ability" ->
+                    abilities.add(DslDefinition(name, DslType.ABILITY, property, delegateExpression))
+                "item" ->
+                    items.add(DslDefinition(name, DslType.ITEM, property, delegateExpression))
+                "floor" ->
+                    floors.add(DslDefinition(name, DslType.FLOOR, property, delegateExpression))
+                "battle" ->
+                    battles.add(DslDefinition(name, DslType.BATTLE, property, delegateExpression))
+                "inventory" ->
+                    inventories.add(DslDefinition(name, DslType.INVENTORY, property, delegateExpression))
+                "statusEffect" ->
+                    statusEffects.add(DslDefinition(name, DslType.STATUS_EFFECT, property, delegateExpression))
             }
         }
     }
@@ -168,6 +209,15 @@ class GbktDslVisitor : PsiRecursiveElementVisitor() {
         VARIABLE,
         ARRAY,
         FLAGS,
+        // RPG types
+        CHARACTER,
+        MONSTER,
+        ABILITY,
+        ITEM,
+        FLOOR,
+        BATTLE,
+        INVENTORY,
+        STATUS_EFFECT,
     }
 
     /** A DSL definition (entity, scene, variable, etc.). */

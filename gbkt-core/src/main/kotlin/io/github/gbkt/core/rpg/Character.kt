@@ -70,9 +70,9 @@ import kotlin.reflect.KProperty
  */
 class Character(
     val name: String,
-    internal val entity: Entity,
-    internal val characterStats: CharacterStats?,
-    internal val levelingConfig: LevelingConfig? = null,
+    val entity: Entity,
+    val characterStats: CharacterStats?,
+    val levelingConfig: LevelingConfig? = null,
     /** Equipment tracking for this character */
     val equipment: CharacterEquipment? = null,
     /** Elemental aspect profile (resistances/weaknesses) */

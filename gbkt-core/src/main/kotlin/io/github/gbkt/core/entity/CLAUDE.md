@@ -124,6 +124,6 @@ val count = enemies.activeCount
 
 ## Related Modules
 
-- `codegen/core/PoolCodegen.kt` - Pool code generation
+- `gbkt-backend-gbdk/.../codegen/core/PoolCodegen.kt` - Pool code generation (in backend)
 - `ir/CoreIR.kt` - Entity-related IR nodes
 - `graphics/Sprite.kt` - Sprite component details

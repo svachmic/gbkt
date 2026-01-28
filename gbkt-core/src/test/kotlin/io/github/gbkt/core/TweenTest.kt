@@ -145,7 +145,7 @@ class TweenTest {
                     }
             }
 
-        val code = game.compile()
+        val code = game.compileForTest()
 
         // Should contain tween data structures
         assertTrue(code.contains("_tween_active"), "Should generate tween active array")
@@ -183,7 +183,7 @@ class TweenTest {
                     }
             }
 
-        val code = game.compile()
+        val code = game.compileForTest()
 
         // Should successfully compile without errors and use INT16 for signed math
         assertTrue(
@@ -218,7 +218,7 @@ class TweenTest {
                     }
             }
 
-        val code = game.compile()
+        val code = game.compileForTest()
 
         // Should contain LINEAR table (always included)
         assertTrue(code.contains("easing_linear[256]"), "Should generate linear lookup table")
@@ -259,7 +259,7 @@ class TweenTest {
                     }
             }
 
-        val code = game.compile()
+        val code = game.compileForTest()
         assertTrue(code.contains("startX"), "Should reference startX variable")
         assertTrue(code.contains("endX"), "Should reference endX variable")
     }

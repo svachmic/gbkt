@@ -85,8 +85,8 @@ data class GravityZone(
  * ```
  */
 class PhysicsWorld internal constructor(val name: String, val config: PhysicsWorldConfig) {
-    internal val collisionPairs = mutableListOf<Pair<String, String>>()
-    internal val gravityZones = mutableListOf<GravityZone>()
+    val collisionPairs = mutableListOf<Pair<String, String>>()
+    val gravityZones = mutableListOf<GravityZone>()
 
     /**
      * Update physics world - applies physics to all tagged entities and handles collisions. Must be

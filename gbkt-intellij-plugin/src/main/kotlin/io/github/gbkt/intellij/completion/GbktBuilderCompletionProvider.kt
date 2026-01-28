@@ -18,13 +18,23 @@ package io.github.gbkt.intellij.completion
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionProvider
 import com.intellij.codeInsight.completion.CompletionResultSet
+import com.intellij.codeInsight.completion.PrioritizedLookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.icons.AllIcons
+import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiManager
+import com.intellij.psi.search.FileTypeIndex
+import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ProcessingContext
+import io.github.gbkt.intellij.GbktFileType
 import io.github.gbkt.intellij.GbktIcons
+import io.github.gbkt.intellij.lang.GbktDslVisitor
 import org.jetbrains.kotlin.psi.KtCallExpression
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtLambdaExpression
+import org.jetbrains.kotlin.psi.KtStringTemplateExpression
 
 /**
  * Provides context-aware completion for builder methods inside DSL blocks.
@@ -48,19 +58,155 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
 
         val position = parameters.position
 
+        // Skip completion inside strings and comments for performance
+        if (PsiTreeUtil.getParentOfType(position, KtStringTemplateExpression::class.java) != null) return
+        if (PsiTreeUtil.getParentOfType(position, PsiComment::class.java) != null) return
+
+        // Check if we're in an entity-consuming context (collidesWith, follow, etc.)
+        val callContext = findCallContext(position)
+        if (callContext != null && callContext in ENTITY_REFERENCE_FUNCTIONS) {
+            addEntityReferenceSuggestions(file, result)
+            return
+        }
+
+        // Check if we're in a scene-consuming context
+        if (callContext != null && callContext in SCENE_REFERENCE_FUNCTIONS) {
+            addSceneReferenceSuggestions(file, result)
+            return
+        }
+
         // Find the context using PSI traversal (preferred) or fallback to text-based
         val builderContext =
             findBuilderContextPsi(position) ?: findBuilderContextText(file.text, parameters.offset)
 
-        // Add suggestions based on context
+        // Add suggestions based on context with higher priority for context-specific items
         val suggestions = getContextSuggestions(builderContext)
         for ((keyword, description) in suggestions) {
-            result.addElement(
-                LookupElementBuilder.create(keyword)
-                    .withIcon(GbktIcons.FILE)
-                    .withTypeText(description)
-                    .withTailText(getTailText(keyword), true)
-            )
+            val element = LookupElementBuilder.create(keyword)
+                .withIcon(GbktIcons.FILE)
+                .withTypeText(description)
+                .withTailText(getTailText(keyword), true)
+
+            // Context-specific suggestions get higher priority
+            val prioritized = if (builderContext.isNotEmpty()) {
+                PrioritizedLookupElement.withPriority(element, 100.0)
+            } else {
+                element
+            }
+            result.addElement(prioritized)
+        }
+    }
+
+    /**
+     * Finds the immediate call context (e.g., "collidesWith" when completing inside its argument).
+     */
+    private fun findCallContext(position: PsiElement): String? {
+        var current: PsiElement? = position.parent
+
+        while (current != null) {
+            if (current is KtCallExpression) {
+                val calleeName = current.calleeExpression?.text
+                if (calleeName != null) {
+                    return calleeName
+                }
+            }
+            // Don't traverse too far up - stop at lambda boundaries
+            if (current is KtLambdaExpression) break
+            current = current.parent
+        }
+
+        return null
+    }
+
+    /**
+     * Adds entity reference suggestions from all defined entities across the project.
+     * Searches all .gbkt.kts files, not just the current file.
+     */
+    private fun addEntityReferenceSuggestions(file: com.intellij.psi.PsiFile, result: CompletionResultSet) {
+        val project = file.project
+        val addedNames = mutableSetOf<String>()
+
+        // Search all gbkt files in the project
+        val gbktFiles = FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
+
+        for (virtualFile in gbktFiles) {
+            val psiFile = PsiManager.getInstance(project).findFile(virtualFile) as? KtFile ?: continue
+            val analysis = GbktDslVisitor.analyze(psiFile)
+
+            // Add entities
+            for (entity in analysis.entities) {
+                if (addedNames.add(entity.name)) {
+                    val sourceFile = if (virtualFile != file.virtualFile) {
+                        " - ${virtualFile.name}"
+                    } else {
+                        ""
+                    }
+                    result.addElement(
+                        LookupElementBuilder.create(entity.name)
+                            .withIcon(AllIcons.Nodes.Class)
+                            .withTypeText("Entity")
+                            .withTailText("$sourceFile", true)
+                    )
+                }
+            }
+
+            // Also add characters and monsters (common entity-like references)
+            for (character in analysis.characters) {
+                if (addedNames.add(character.name)) {
+                    val sourceFile = if (virtualFile != file.virtualFile) " - ${virtualFile.name}" else ""
+                    result.addElement(
+                        LookupElementBuilder.create(character.name)
+                            .withIcon(AllIcons.Nodes.Class)
+                            .withTypeText("Character")
+                            .withTailText("$sourceFile", true)
+                    )
+                }
+            }
+
+            for (monster in analysis.monsters) {
+                if (addedNames.add(monster.name)) {
+                    val sourceFile = if (virtualFile != file.virtualFile) " - ${virtualFile.name}" else ""
+                    result.addElement(
+                        LookupElementBuilder.create(monster.name)
+                            .withIcon(AllIcons.Nodes.Class)
+                            .withTypeText("Monster")
+                            .withTailText("$sourceFile", true)
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Adds scene reference suggestions from all defined scenes across the project.
+     * Searches all .gbkt.kts files, not just the current file.
+     */
+    private fun addSceneReferenceSuggestions(file: com.intellij.psi.PsiFile, result: CompletionResultSet) {
+        val project = file.project
+        val addedNames = mutableSetOf<String>()
+
+        // Search all gbkt files in the project
+        val gbktFiles = FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
+
+        for (virtualFile in gbktFiles) {
+            val psiFile = PsiManager.getInstance(project).findFile(virtualFile) as? KtFile ?: continue
+            val analysis = GbktDslVisitor.analyze(psiFile)
+
+            for (scene in analysis.scenes) {
+                if (addedNames.add(scene.name)) {
+                    val sourceFile = if (virtualFile != file.virtualFile) {
+                        " - ${virtualFile.name}"
+                    } else {
+                        ""
+                    }
+                    result.addElement(
+                        LookupElementBuilder.create(scene.name)
+                            .withIcon(AllIcons.Nodes.Module)
+                            .withTypeText("Scene")
+                            .withTailText("$sourceFile", true)
+                    )
+                }
+            }
         }
     }
 
@@ -132,6 +278,25 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
     }
 
     companion object {
+        /** Functions that take entity references as arguments. */
+        private val ENTITY_REFERENCE_FUNCTIONS = setOf(
+            "collidesWith",
+            "overlaps",
+            "follow",
+            "damage",
+            "heal",
+            "moveTo",
+            "lookAt",
+            "distanceTo",
+        )
+
+        /** Functions that take scene references as arguments. */
+        private val SCENE_REFERENCE_FUNCTIONS = setOf(
+            "scene",
+            "transition",
+            "goto",
+        )
+
         /** Known builder names for PSI-based context detection */
         private val BUILDER_NAMES =
             setOf(

@@ -66,7 +66,7 @@ abstract class ProcessAssetsTask @Inject constructor() : DefaultTask() {
     private fun processIncrementally(
         inputChanges: InputChanges,
         outDir: File,
-        manifest: MutableMap<String, AssetEntry>
+        manifest: MutableMap<String, AssetEntry>,
     ) {
         inputChanges.getFileChanges(assetDirectory).forEach { change ->
             if (change.fileType == FileType.DIRECTORY) return@forEach
@@ -118,14 +118,14 @@ abstract class ProcessAssetsTask @Inject constructor() : DefaultTask() {
             AssetEntry(
                 name = file.nameWithoutExtension,
                 hash = file.readBytes().contentHashCode(),
-                lastModified = file.lastModified()
+                lastModified = file.lastModified(),
             )
     }
 
     private fun removeProcessedSprite(
         file: File,
         outDir: File,
-        manifest: MutableMap<String, AssetEntry>
+        manifest: MutableMap<String, AssetEntry>,
     ) {
         val markerFile = File(outDir, "${file.nameWithoutExtension}.processed")
         if (markerFile.exists()) {
@@ -148,7 +148,7 @@ abstract class ProcessAssetsTask @Inject constructor() : DefaultTask() {
                             AssetEntry(
                                 parts[0],
                                 parts[1].toIntOrNull() ?: 0,
-                                parts[2].toLongOrNull() ?: 0
+                                parts[2].toLongOrNull() ?: 0,
                             )
                     } else null
                 }

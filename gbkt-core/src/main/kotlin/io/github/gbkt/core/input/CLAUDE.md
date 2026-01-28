@@ -130,4 +130,4 @@ _joypad = joypad();
 
 - `dsl/Conditionals.kt` - `whenever` integrates with input
 - `test/InputMocking.kt` - Mock input for testing
-- `codegen/core/MainCodegen.kt` - Input variable generation
+- `gbkt-backend-gbdk/.../codegen/core/MainCodegen.kt` - Input variable generation (in backend)

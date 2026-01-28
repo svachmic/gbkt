@@ -7,6 +7,9 @@ on:
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
+      - 'gbkt-backend-api/**'
+      - 'gbkt-backend-gbdk/**'
+      - 'gbkt-bom/**'
       - '**.kt'
       - '**.kts'
   pull_request:
@@ -15,6 +18,9 @@ on:
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
+      - 'gbkt-backend-api/**'
+      - 'gbkt-backend-gbdk/**'
+      - 'gbkt-bom/**'
       - '**.kt'
       - '**.kts'
   schedule:
@@ -46,6 +52,6 @@ jobs:
           languages: java-kotlin
 
       - name: Build
-        run: ./gradlew  :gbkt-core:build :gbkt-cli:build
+        run: ./gradlew :gbkt-core:build :gbkt-cli:build :gbkt-backend-api:build :gbkt-backend-gbdk:build
 
       - uses: github/codeql-action/analyze@v4

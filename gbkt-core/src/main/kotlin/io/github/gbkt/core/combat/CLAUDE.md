@@ -107,4 +107,4 @@ To add a new combat type:
 3. Create builder class extending `BattleEngineBuilder`
 4. Add delegate class in `BattleEngineExtensions.kt`
 5. Add `GameBuilder` extension function
-6. Add codegen in `codegen/combat/BattleEngineCodegen.kt`
+6. Add codegen in `gbkt-backend-gbdk/.../codegen/combat/BattleEngineCodegen.kt`

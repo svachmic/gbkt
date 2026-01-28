@@ -244,7 +244,9 @@ This design is a core architectural decision that enables the Kotlin-to-C compil
 
 ## Related Modules
 
-- `dsl/` - Recording context that captures IR
-- `codegen/` - Transforms IR to C code
-- `codegen/core/ExpressionCodegen.kt` - Expression to C
-- `codegen/core/StatementCodegen.kt` - Statement to C
+- `gbkt-core/.../dsl/` - Recording context that captures IR
+- `gbkt-backend-gbdk/.../codegen/` - Transforms IR to GBDK C code (in backend module)
+- `gbkt-backend-gbdk/.../codegen/core/ExpressionCodegen.kt` - Expression to C
+- `gbkt-backend-gbdk/.../codegen/core/StatementCodegen.kt` - Statement to C
+
+**Note:** Code generation is platform-specific and lives in backend modules, not in `gbkt-core`. The IR nodes defined here are platform-agnostic.

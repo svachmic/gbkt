@@ -10,7 +10,6 @@ import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 
@@ -34,19 +33,10 @@ import org.gradle.api.tasks.*
  */
 abstract class CopyGeneratedCTask @Inject constructor() : DefaultTask() {
 
-    /** The source C file to copy. */
-    @get:InputFile
+    /** The source directory containing generated C files. */
+    @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val sourceCFile: RegularFileProperty
-
-    /**
-     * Optional source map file to copy alongside the C file. Source maps enable mapping from
-     * generated C code back to Kotlin DSL.
-     */
-    @get:InputFile
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val sourceMapFile: RegularFileProperty
+    abstract val sourceCDir: DirectoryProperty
 
     /** Output directory for copied files. */
     @get:OutputDirectory abstract val outputDir: DirectoryProperty
@@ -62,18 +52,21 @@ abstract class CopyGeneratedCTask @Inject constructor() : DefaultTask() {
     @TaskAction
     fun copy() {
         val outDir = outputDir.get().asFile
+        val srcDir = sourceCDir.get().asFile
         outDir.mkdirs()
 
-        // Copy C file
-        val cFile = sourceCFile.get().asFile
-        val destCFile = File(outDir, cFile.name)
-        cFile.copyTo(destCFile, overwrite = true)
-        logger.lifecycle("Copied generated C: ${destCFile.absolutePath}")
+        // Copy all C files
+        val cFiles = srcDir.listFiles { file -> file.extension == "c" } ?: emptyArray()
+        cFiles.forEach { cFile ->
+            val destCFile = File(outDir, cFile.name)
+            cFile.copyTo(destCFile, overwrite = true)
+            logger.lifecycle("Copied generated C: ${destCFile.absolutePath}")
+        }
 
-        // Copy source map if enabled and exists
+        // Copy source maps if enabled
         if (copySourceMaps.getOrElse(true)) {
-            val mapFile = sourceMapFile.orNull?.asFile
-            if (mapFile != null && mapFile.exists()) {
+            val mapFiles = srcDir.listFiles { file -> file.extension == "map" } ?: emptyArray()
+            mapFiles.forEach { mapFile ->
                 val destMapFile = File(outDir, mapFile.name)
                 mapFile.copyTo(destMapFile, overwrite = true)
                 logger.lifecycle("Copied source map: ${destMapFile.absolutePath}")

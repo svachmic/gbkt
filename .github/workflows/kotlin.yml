@@ -7,6 +7,10 @@ on:
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
+      - 'gbkt-backend-api/**'
+      - 'gbkt-backend-gbdk/**'
+      - 'gbkt-bom/**'
+      - 'buildSrc/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'gradle.properties'
@@ -18,6 +22,10 @@ on:
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
+      - 'gbkt-backend-api/**'
+      - 'gbkt-backend-gbdk/**'
+      - 'gbkt-bom/**'
+      - 'buildSrc/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'gradle.properties'
@@ -47,11 +55,11 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
 
-      - name: Build core modules
-        run: ./gradlew :gbkt-core:build :gbkt-cli:build --no-daemon
+      - name: Build all modules
+        run: ./gradlew :gbkt-core:build :gbkt-cli:build :gbkt-backend-api:build :gbkt-backend-gbdk:build --no-daemon
 
       - name: Run Tests
-        run: ./gradlew :gbkt-core:test --no-daemon
+        run: ./gradlew :gbkt-core:test :gbkt-backend-gbdk:test --no-daemon
 
       - name: Upload Test Reports
         if: failure()

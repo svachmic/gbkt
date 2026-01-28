@@ -42,6 +42,13 @@ class GbktToolWindowFactory : ToolWindowFactory, DumbAware {
             ContentFactory.getInstance().createContent(buildLogPanel, "Build Log", false)
         toolWindow.contentManager.addContent(buildLogContent)
 
+        // C Code Preview tab
+        // Note: CCodePreviewPanel implements Disposable and registers itself with the project
+        val cCodePreview = CCodePreviewPanel(project)
+        val cCodeContent =
+            ContentFactory.getInstance().createContent(cCodePreview, "C Preview", false)
+        toolWindow.contentManager.addContent(cCodeContent)
+
         // Asset Pipeline tab
         val assetPipeline = AssetPipelineDashboard(project)
         val pipelineContent =

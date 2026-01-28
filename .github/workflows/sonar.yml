@@ -7,7 +7,10 @@ on:
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
-      - 'vscode-extension/src/**'
+      - 'gbkt-backend-api/**'
+      - 'gbkt-backend-gbdk/**'
+      - 'gbkt-bom/**'
+      - 'buildSrc/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'gradle.properties'
@@ -19,7 +22,10 @@ on:
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
-      - 'vscode-extension/src/**'
+      - 'gbkt-backend-api/**'
+      - 'gbkt-backend-gbdk/**'
+      - 'gbkt-bom/**'
+      - 'buildSrc/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'gradle.properties'
@@ -45,24 +51,11 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: vscode-extension/package-lock.json
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Run Kotlin tests with coverage
         run: ./gradlew :gbkt-core:test :gbkt-core:koverXmlReport --no-daemon
-
-      - name: Build VSCode extension
-        working-directory: vscode-extension
-        run: |
-          npm ci
-          npm run compile
 
       - name: SonarCloud Scan
         run: ./gradlew  sonar --no-daemon

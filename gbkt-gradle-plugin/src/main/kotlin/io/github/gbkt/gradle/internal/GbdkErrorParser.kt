@@ -15,7 +15,7 @@ data class GbdkError(
     val line: Int?,
     val column: Int?,
     val message: String,
-    val rawLine: String
+    val rawLine: String,
 )
 
 /**
@@ -37,7 +37,7 @@ object GbdkErrorParser {
     private val ERROR_LINE_PATTERN =
         Pattern.compile(
             "^(.*?):(\\d+)(?::(\\d+))?\\s*:\\s*(error|warning|fatal error|note)\\s*:\\s*(.+)$",
-            Pattern.CASE_INSENSITIVE
+            Pattern.CASE_INSENSITIVE,
         )
 
     // Pattern: error/warning: message (no file/line)
@@ -76,7 +76,7 @@ object GbdkErrorParser {
                             line = lineNum,
                             column = column,
                             message = message,
-                            rawLine = trimmed
+                            rawLine = trimmed,
                         )
                     )
                 }
@@ -96,7 +96,7 @@ object GbdkErrorParser {
                             line = null,
                             column = null,
                             message = message,
-                            rawLine = trimmed
+                            rawLine = trimmed,
                         )
                     )
                 }

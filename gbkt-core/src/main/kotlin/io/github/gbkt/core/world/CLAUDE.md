@@ -207,7 +207,7 @@ encounters {
 
 ## Related Modules
 
-- `codegen/world/` - World code generation (ZoneCodegen, FloorCodegen)
+- `gbkt-backend-gbdk/.../codegen/world/` - World code generation (in backend)
 - `ir/FlagsIR.kt` - Flag-related IR nodes
 - `exploration/Exploration.kt` - Exploration controller
 - `rpg/Monster.kt` - Monster definitions for encounters

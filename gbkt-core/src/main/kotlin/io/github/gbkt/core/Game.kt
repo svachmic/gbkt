@@ -124,7 +124,7 @@ data class CompiledMapData(
 
 /** The compiled game, ready for code generation. */
 class Game(
-    val name: String,
+    override val name: String,
     val config: GameConfig,
     val variables: List<GBVar<*>>,
     val arrays: List<GBArray> = emptyList(),
@@ -182,44 +182,39 @@ class Game(
     val tileAttributes: List<ExtensibleTileAttributeDefinition> = emptyList(),
     val stringTable: io.github.gbkt.core.ir.StringTable? = null,
     val balanceTables: io.github.gbkt.core.ir.BalanceTable? = null,
-) {
-    /**
-     * Compile the game to C code.
-     *
-     * Always validates the game before compilation and throws [ValidationException] if validation
-     * fails. Use [compileWithValidation] if you need access to the validation result.
-     *
-     * @param warnOnValidationErrors If true, collects warnings instead of throwing. Useful during
-     *   development.
-     * @return The generated C code
-     * @throws ValidationException if validation fails and warnOnValidationErrors is false
-     */
-    fun compile(warnOnValidationErrors: Boolean = false): String {
-        val result = GameValidator(this).validate()
-        if (!result.isValid && !warnOnValidationErrors) {
-            result.throwIfInvalid()
-        }
-        return CodeGenerator(this).generate()
-    }
+) : GameIR
 
-    /** Compile with validation, returning both code and validation result. */
-    fun compileWithValidation(): Pair<String, ValidationResult> {
-        val result = GameValidator(this).validate()
-        val code = CodeGenerator(this).generate()
-        return code to result
-    }
-
-    /**
-     * Compile without validation. FOR TESTING ONLY.
-     *
-     * This method skips all safety validation and should only be used in unit tests that need to
-     * test code generation in isolation without setting up valid game assets.
-     *
-     * Production code should always use [compile] which validates the game first.
-     */
-    @Suppress("unused") // Used extensively in tests
-    internal fun compileForTest(): String = CodeGenerator(this).generate()
-}
+/**
+ * Configuration for ROM bank allocation.
+ *
+ * Controls which ROM banks are used for different code sections. Default values match the original
+ * LabyrinthOfTheDragon banking layout.
+ *
+ * Bank 0 (HOME) is always reserved for frequently-called code and interrupt handlers.
+ *
+ * @property menuBank Bank for UI, title, menus (default: 1)
+ * @property explorationBank Bank for map, exploration code (default: 2)
+ * @property battleBank Bank for battle system, items (default: 3)
+ * @property playerBank Bank for player management (default: 4)
+ * @property statsBank Bank for stats, leveling (default: 5)
+ * @property monsterBank1 Bank for monster AI (first half) (default: 6)
+ * @property monsterBank2 Bank for monster AI (second half) (default: 7)
+ * @property floorDataBank Bank for floor definitions (default: 8)
+ * @property sceneBank Bank for scene handlers (default: 10)
+ * @property soundBank Bank for sound effects (default: 30)
+ */
+data class BankingConfig(
+    val menuBank: Int = 1,
+    val explorationBank: Int = 2,
+    val battleBank: Int = 3,
+    val playerBank: Int = 4,
+    val statsBank: Int = 5,
+    val monsterBank1: Int = 6,
+    val monsterBank2: Int = 7,
+    val floorDataBank: Int = 8,
+    val sceneBank: Int = 10,
+    val soundBank: Int = 30,
+)
 
 data class GameConfig(
     val cartridge: Cartridge = Cartridge.ROM_ONLY,
@@ -241,6 +236,8 @@ data class GameConfig(
     val astarMaxNodes: Int = 64,
     /** Maximum path length in tiles (4-128). */
     val pathMaxLength: Int = 32,
+    /** ROM bank allocation for code sections. */
+    val banking: BankingConfig = BankingConfig(),
 )
 
 enum class Cartridge(val gbdk: String) {

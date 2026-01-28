@@ -4,15 +4,15 @@ How to extend and develop the gbkt framework.
 
 ## Adding a New IR Node Type
 
-1. Add sealed class/interface in `ir/` directory (in `CoreIR.kt` or a new domain-specific IR file)
-2. Add emission case in the appropriate `codegen/` file
+1. Add sealed class/interface in `gbkt-core/.../ir/` directory (in `CoreIR.kt` or a new domain-specific IR file)
+2. Add emission case in the appropriate backend codegen file (e.g., `gbkt-backend-gbdk/.../codegen/`)
 
 Example:
 ```kotlin
-// ir/MyFeatureIR.kt (or add to existing IR file)
+// gbkt-core/.../ir/MyFeatureIR.kt (or add to existing IR file)
 data class IRMyNewStatement(val param: String) : IRStatement
 
-// codegen/features/MyFeatureCodegen.kt (or relevant codegen file)
+// gbkt-backend-gbdk/.../codegen/features/MyFeatureCodegen.kt
 is IRMyNewStatement -> emit("my_function(${stmt.param});")
 ```
 
@@ -69,7 +69,7 @@ enum class StatType {
 fun luck(value: Int) { stats[StatType.LUCK] = value }
 ```
 
-3. Add codegen in `StatsCodegen.kt` to generate the C variable.
+3. Add codegen in `gbkt-backend-gbdk/.../codegen/rpg/StatsCodegen.kt` to generate the C variable.
 
 ### Adding a New Ability Effect
 
@@ -85,7 +85,7 @@ fun drainLife(percent: Int) {
 }
 ```
 
-3. Add codegen handler in `ActionExecutionCodegen.kt`:
+3. Add codegen handler in `gbkt-backend-gbdk/.../codegen/rpg/ActionExecutionCodegen.kt`:
 ```kotlin
 is IRDrainLife -> {
     line("// Drain ${stmt.percent}% of damage as HP")
@@ -104,7 +104,7 @@ fun onCrit(init: StatusEffectScope.() -> Unit) {
 }
 ```
 
-2. Add codegen in `StatusEffectCodegen.kt` to call the effect hook.
+2. Add codegen in `gbkt-backend-gbdk/.../codegen/rpg/StatusEffectCodegen.kt` to call the effect hook.
 
 ### Adding a New Monster AI Behavior
 
@@ -119,7 +119,7 @@ fun whenPartyHasStatus(status: StatusEffectDefinition, init: MonsterAIScope.() -
 }
 ```
 
-2. Add codegen in `BattleCodegen.kt` to check the condition during AI phase.
+2. Add codegen in `gbkt-backend-gbdk/.../codegen/rpg/BattleCodegen.kt` to check the condition during AI phase.
 
 ### Adding a New Turn Order Strategy
 
@@ -131,7 +131,7 @@ enum class TurnOrderStrategy {
 }
 ```
 
-2. Implement in `TurnOrderCodegen.kt`:
+2. Implement in `gbkt-backend-gbdk/.../codegen/rpg/TurnOrderCodegen.kt`:
 ```kotlin
 TurnOrderStrategy.CTB -> {
     // Generate CTB gauge and turn calculation
