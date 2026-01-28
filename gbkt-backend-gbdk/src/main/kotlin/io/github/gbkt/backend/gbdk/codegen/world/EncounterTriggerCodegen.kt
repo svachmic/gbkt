@@ -759,6 +759,7 @@ private fun GBDKCodeGenerator.generateWaveTriggerCheck(triggers: List<WaveBasedT
 }
 
 /** Generate trigger dispatch function. */
+@Suppress("UNUSED_PARAMETER") // triggers reserved for future trigger-specific routing
 private fun GBDKCodeGenerator.generateTriggerDispatchFunction(triggers: List<EncounterTrigger>) {
     line("// =============================================================================")
     line("// TRIGGER DISPATCH")
@@ -856,6 +857,7 @@ private fun GBDKCodeGenerator.generateTriggerCallbacks(triggers: List<EncounterT
 }
 
 /** Generate trigger helper functions. */
+@Suppress("UNUSED_PARAMETER") // triggers reserved for future trigger configuration
 private fun GBDKCodeGenerator.generateTriggerHelperFunctions(triggers: List<EncounterTrigger>) {
     line("// =============================================================================")
     line("// TRIGGER HELPER FUNCTIONS")

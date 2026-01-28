@@ -358,6 +358,7 @@ private fun GBDKCodeGenerator.generateIndexMappingTables(controllers: List<Movem
 }
 
 /** Generate movement state variables. */
+@Suppress("UNUSED_PARAMETER") // controllers reserved for per-controller state configuration
 private fun GBDKCodeGenerator.generateMovementStateVariables(
     controllers: List<MovementController>
 ) {

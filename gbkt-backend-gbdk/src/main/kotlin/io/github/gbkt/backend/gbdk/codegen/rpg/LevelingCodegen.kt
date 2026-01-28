@@ -315,6 +315,7 @@ private fun GBDKCodeGenerator.generateLevelingFunctions(
 }
 
 /** Generate a level-up statement, substituting _levelup_char placeholder. */
+@Suppress("UNUSED_PARAMETER") // characterName reserved for future character-specific transforms
 private fun GBDKCodeGenerator.generateLevelUpStatement(stmt: IRStatement, characterName: String) {
     // For now, just call generateStatement for the transformed statement
     // The _levelup_char substitution is handled by a dedicated mechanism

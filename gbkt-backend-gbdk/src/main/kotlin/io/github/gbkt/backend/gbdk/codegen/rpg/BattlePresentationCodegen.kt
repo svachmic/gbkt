@@ -186,6 +186,7 @@ private fun GBDKCodeGenerator.generatePresentationVariables(
 }
 
 /** Generate message display system. */
+@Suppress("UNUSED_PARAMETER") // pres reserved for future message styling configuration
 private fun GBDKCodeGenerator.generateMessageSystem(name: String, pres: BattlePresentationConfig) {
     line("// Show battle message")
     line("static void _${name}_show_message(const char* msg) {")
@@ -220,6 +221,7 @@ private fun GBDKCodeGenerator.generateMessageSystem(name: String, pres: BattlePr
 }
 
 /** Generate damage number display system. */
+@Suppress("UNUSED_PARAMETER") // pres reserved for future damage display customization
 private fun GBDKCodeGenerator.generateDamageNumberSystem(
     name: String,
     pres: BattlePresentationConfig,

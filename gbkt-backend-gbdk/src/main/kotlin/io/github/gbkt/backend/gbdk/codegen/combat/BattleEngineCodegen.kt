@@ -764,6 +764,7 @@ private fun GBDKCodeGenerator.generateTacticalUpdate(engines: List<TacticalBattl
 }
 
 /** Generate combat dispatch function. */
+@Suppress("UNUSED_PARAMETER") // engines reserved for future multi-engine routing
 private fun GBDKCodeGenerator.generateCombatDispatchFunction(engines: List<BattleEngine>) {
     line("// =============================================================================")
     line("// COMBAT DISPATCH")
@@ -962,6 +963,7 @@ private fun GBDKCodeGenerator.generateCombatCallbacks(engines: List<BattleEngine
 }
 
 /** Generate combat helper functions. */
+@Suppress("UNUSED_PARAMETER") // engines reserved for future multi-engine configuration
 private fun GBDKCodeGenerator.generateCombatHelperFunctions(engines: List<BattleEngine>) {
     line("// =============================================================================")
     line("// COMBAT HELPER FUNCTIONS")

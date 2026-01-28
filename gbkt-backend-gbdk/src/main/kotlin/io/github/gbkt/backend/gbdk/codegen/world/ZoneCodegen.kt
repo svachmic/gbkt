@@ -384,6 +384,7 @@ private fun GBDKCodeGenerator.generateZoneStateVariables() {
 }
 
 /** Generate zone navigation functions. */
+@Suppress("UNUSED_PARAMETER") // zones reserved for future zone-specific navigation
 private fun GBDKCodeGenerator.generateZoneNavigationFunctions(zones: List<Zone>) {
     line("// =============================================================================")
     line("// ZONE NAVIGATION FUNCTIONS")
@@ -545,6 +546,7 @@ private fun GBDKCodeGenerator.generateZoneNavigationFunctions(zones: List<Zone>)
 }
 
 /** Generate floor exit checking function. */
+@Suppress("UNUSED_PARAMETER") // zones reserved for future zone-specific exit handling
 private fun GBDKCodeGenerator.generateFloorCheckExits(zones: List<Zone>) {
     line("// =============================================================================")
     line("// FLOOR EXIT CHECKING")

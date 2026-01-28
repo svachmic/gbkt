@@ -292,6 +292,7 @@ private fun GBDKCodeGenerator.generatePartyInitFunctions() {
 }
 
 /** Generate combat bridge functions. */
+@Suppress("UNUSED_PARAMETER") // maxCombatants reserved for future array bounds configuration
 private fun GBDKCodeGenerator.generateCombatBridgeFunctions(maxCombatants: Int) {
     line("// -----------------------------------------------------------------------------")
     line("// Combat Bridge Functions")

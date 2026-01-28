@@ -573,6 +573,7 @@ private fun GBDKCodeGenerator.generateMenuTickFunction(menu: MenuDefinition) {
     line()
 }
 
+@Suppress("UNUSED_PARAMETER") // itemCount reserved for future bounds checking
 private fun GBDKCodeGenerator.generateMenuLeftRightHandling(menu: MenuDefinition, itemCount: Int) {
     val name = menu.name
 

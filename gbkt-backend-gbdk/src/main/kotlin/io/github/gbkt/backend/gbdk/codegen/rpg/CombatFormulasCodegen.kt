@@ -320,6 +320,7 @@ private fun GBDKCodeGenerator.generateDamageVariance(strategy: DamageVarianceStr
 }
 
 /** Generate fumble check function. */
+@Suppress("UNUSED_PARAMETER") // threshold used via COMBAT_FUMBLE_THRESHOLD constant
 private fun GBDKCodeGenerator.generateFumbleCheck(threshold: Int) {
     line("// Fumble check function")
     line("static UINT8 _combat_last_roll = 0u; // Stores last hit roll for fumble check")
@@ -333,6 +334,7 @@ private fun GBDKCodeGenerator.generateFumbleCheck(threshold: Int) {
 }
 
 /** Generate critical multiplier function. */
+@Suppress("UNUSED_PARAMETER") // multiplier used via COMBAT_CRIT_MULTIPLIER constant
 private fun GBDKCodeGenerator.generateCritMultiplier(multiplier: Int) {
     line("// Apply critical multiplier to damage")
     line("static inline UINT16 _combat_apply_crit(UINT16 damage) {")

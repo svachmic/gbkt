@@ -47,6 +47,7 @@ internal fun GBDKCodeGenerator.generateFlagsSystem() {
 }
 
 /** Generate the flags storage array. */
+@Suppress("UNUSED_PARAMETER") // flags reserved for future dynamic storage sizing
 private fun GBDKCodeGenerator.generateFlagsStorage(flags: GlobalFlags) {
     line("// Global flags array (256 flags = 32 bytes)")
     line("static UINT8 _game_flags[32] = {0};")
