@@ -87,25 +87,24 @@ class GbktDslInspection : LocalInspectionTool() {
         }
     }
 
-    private fun collectDefinedNames(analysis: GbktDslVisitor): Set<String> {
-        val names = mutableSetOf<String>()
-        analysis.entities.forEach { names.add(it.name) }
-        analysis.scenes.forEach { names.add(it.name) }
-        analysis.dialogs.forEach { names.add(it.name) }
-        analysis.cameras.forEach { names.add(it.name) }
-        analysis.variables.forEach { names.add(it.name) }
-        analysis.flags.forEach { names.add(it.name) }
-        // RPG definitions
-        analysis.characters.forEach { names.add(it.name) }
-        analysis.monsters.forEach { names.add(it.name) }
-        analysis.abilities.forEach { names.add(it.name) }
-        analysis.items.forEach { names.add(it.name) }
-        analysis.floors.forEach { names.add(it.name) }
-        analysis.battles.forEach { names.add(it.name) }
-        analysis.inventories.forEach { names.add(it.name) }
-        analysis.statusEffects.forEach { names.add(it.name) }
-        return names
-    }
+    private fun collectDefinedNames(analysis: GbktDslVisitor): Set<String> =
+        buildSet {
+            analysis.entities.forEach { add(it.name) }
+            analysis.scenes.forEach { add(it.name) }
+            analysis.dialogs.forEach { add(it.name) }
+            analysis.cameras.forEach { add(it.name) }
+            analysis.variables.forEach { add(it.name) }
+            analysis.flags.forEach { add(it.name) }
+            // RPG definitions
+            analysis.characters.forEach { add(it.name) }
+            analysis.monsters.forEach { add(it.name) }
+            analysis.abilities.forEach { add(it.name) }
+            analysis.items.forEach { add(it.name) }
+            analysis.floors.forEach { add(it.name) }
+            analysis.battles.forEach { add(it.name) }
+            analysis.inventories.forEach { add(it.name) }
+            analysis.statusEffects.forEach { add(it.name) }
+        }
 
     private fun checkContextRequirements(
         expression: KtCallExpression,

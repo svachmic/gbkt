@@ -72,6 +72,7 @@ object GbktNestedPropertyNavigator {
         }
 
         // Navigate into the nested blocks
+        @Suppress("kotlin:S6524") // Mutable list required for building results
         val results = mutableListOf<PsiElement>()
         results.add(rootDefinition.element)
 
@@ -110,29 +111,27 @@ object GbktNestedPropertyNavigator {
      * Extracts the property chain as a list of names.
      * "hero.stats.hp" → ["hero", "stats", "hp"]
      */
-    private fun extractPropertyChain(dotExpression: KtDotQualifiedExpression): List<String> {
-        val chain = mutableListOf<String>()
-
-        fun traverse(expr: org.jetbrains.kotlin.psi.KtExpression) {
-            when (expr) {
-                is KtDotQualifiedExpression -> {
-                    traverse(expr.receiverExpression)
-                    val selector = expr.selectorExpression
-                    if (selector is KtNameReferenceExpression) {
-                        chain.add(selector.getReferencedName())
-                    } else if (selector is KtCallExpression) {
-                        selector.calleeExpression?.text?.let { chain.add(it) }
+    private fun extractPropertyChain(dotExpression: KtDotQualifiedExpression): List<String> =
+        buildList {
+            fun traverse(expr: org.jetbrains.kotlin.psi.KtExpression) {
+                when (expr) {
+                    is KtDotQualifiedExpression -> {
+                        traverse(expr.receiverExpression)
+                        val selector = expr.selectorExpression
+                        if (selector is KtNameReferenceExpression) {
+                            add(selector.getReferencedName())
+                        } else if (selector is KtCallExpression) {
+                            selector.calleeExpression?.text?.let { add(it) }
+                        }
+                    }
+                    is KtNameReferenceExpression -> {
+                        add(expr.getReferencedName())
                     }
                 }
-                is KtNameReferenceExpression -> {
-                    chain.add(expr.getReferencedName())
-                }
             }
-        }
 
-        traverse(dotExpression)
-        return chain
-    }
+            traverse(dotExpression)
+        }
 
     /**
      * Finds the root definition (entity, character, scene, etc.).

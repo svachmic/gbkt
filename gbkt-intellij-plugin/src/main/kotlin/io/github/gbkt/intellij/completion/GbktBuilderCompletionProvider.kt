@@ -122,6 +122,7 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
      * Adds entity reference suggestions from all defined entities across the project.
      * Searches all .gbkt.kts files, not just the current file.
      */
+    @Suppress("kotlin:S6524") // Mutable set required for deduplication during iteration
     private fun addEntityReferenceSuggestions(file: com.intellij.psi.PsiFile, result: CompletionResultSet) {
         val project = file.project
         val addedNames = mutableSetOf<String>()
@@ -181,6 +182,7 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
      * Adds scene reference suggestions from all defined scenes across the project.
      * Searches all .gbkt.kts files, not just the current file.
      */
+    @Suppress("kotlin:S6524") // Mutable set required for deduplication during iteration
     private fun addSceneReferenceSuggestions(file: com.intellij.psi.PsiFile, result: CompletionResultSet) {
         val project = file.project
         val addedNames = mutableSetOf<String>()
