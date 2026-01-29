@@ -95,9 +95,8 @@ class IntExpectation(private val actual: Int, private val name: String) {
 
 /** Expectation builder for sprite state. */
 class SpriteExpectation(nullableSprite: SimSprite?) {
-    private val sprite: SimSprite = requireNotNull(nullableSprite) {
-        "Expected sprite to exist, but it was null"
-    }
+    private val sprite: SimSprite =
+        requireNotNull(nullableSprite) { "Expected sprite to exist, but it was null" }
     private val name: String
         get() = sprite.name
 
@@ -189,9 +188,8 @@ class SpriteExpectation(nullableSprite: SimSprite?) {
 
 /** Expectation builder for pool state. */
 class PoolExpectation(nullablePool: SimPool?) {
-    private val pool: SimPool = requireNotNull(nullablePool) {
-        "Expected pool to exist, but it was null"
-    }
+    private val pool: SimPool =
+        requireNotNull(nullablePool) { "Expected pool to exist, but it was null" }
     private val name: String
         get() = pool.name
 

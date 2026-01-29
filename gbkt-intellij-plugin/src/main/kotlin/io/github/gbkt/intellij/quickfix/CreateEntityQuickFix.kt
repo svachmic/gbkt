@@ -28,8 +28,8 @@ import org.jetbrains.kotlin.psi.KtFile
 /**
  * Quick fix that creates a new entity definition.
  *
- * When an undefined entity reference is detected, this quick fix offers to create
- * a new entity definition at the appropriate location in the file.
+ * When an undefined entity reference is detected, this quick fix offers to create a new entity
+ * definition at the appropriate location in the file.
  */
 class CreateEntityQuickFix(private val entityName: String) : LocalQuickFix {
 
@@ -44,7 +44,8 @@ class CreateEntityQuickFix(private val entityName: String) : LocalQuickFix {
         // Uses minimal template - user adds components as needed
         // Default position is centered on screen (80, 72)
         val defaults = ClampValueQuickFix.Companion.Defaults
-        val template = """
+        val template =
+            """
 
 val $entityName by entity {
     // TODO: Set initial position
@@ -59,7 +60,9 @@ val $entityName by entity {
         WriteCommandAction.runWriteCommandAction(project) {
             // Find a good insertion point - after other entity definitions or at top level
             val insertionPoint = findInsertionPoint(file)
-            val document = PsiDocumentManager.getInstance(project).getDocument(file) ?: return@runWriteCommandAction
+            val document =
+                PsiDocumentManager.getInstance(project).getDocument(file)
+                    ?: return@runWriteCommandAction
 
             val insertOffset: Int
             if (insertionPoint != null) {
@@ -74,13 +77,15 @@ val $entityName by entity {
             PsiDocumentManager.getInstance(project).commitDocument(document)
 
             // Position cursor inside the new block (after "position(")
-            positionCursorInNewEntity(project, file, insertOffset + template.indexOf("position(") + "position(".length)
+            positionCursorInNewEntity(
+                project,
+                file,
+                insertOffset + template.indexOf("position(") + "position(".length,
+            )
         }
     }
 
-    /**
-     * Positions the cursor at the specified offset and scrolls the editor.
-     */
+    /** Positions the cursor at the specified offset and scrolls the editor. */
     private fun positionCursorInNewEntity(project: Project, file: KtFile, offset: Int) {
         val virtualFile = file.virtualFile ?: return
         val fileEditor = FileEditorManager.getInstance(project).getSelectedEditor(virtualFile)
@@ -96,8 +101,9 @@ val $entityName by entity {
         val declarations = file.declarations
 
         // First, look for the last entity definition
-        val lastEntity = declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtProperty>()
-            .lastOrNull { property ->
+        val lastEntity =
+            declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtProperty>().lastOrNull {
+                property ->
                 val delegate = property.delegateExpression
                 delegate is org.jetbrains.kotlin.psi.KtCallExpression &&
                     delegate.calleeExpression?.text == "entity"

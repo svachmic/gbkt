@@ -87,24 +87,23 @@ class GbktDslInspection : LocalInspectionTool() {
         }
     }
 
-    private fun collectDefinedNames(analysis: GbktDslVisitor): Set<String> =
-        buildSet {
-            analysis.entities.forEach { add(it.name) }
-            analysis.scenes.forEach { add(it.name) }
-            analysis.dialogs.forEach { add(it.name) }
-            analysis.cameras.forEach { add(it.name) }
-            analysis.variables.forEach { add(it.name) }
-            analysis.flags.forEach { add(it.name) }
-            // RPG definitions
-            analysis.characters.forEach { add(it.name) }
-            analysis.monsters.forEach { add(it.name) }
-            analysis.abilities.forEach { add(it.name) }
-            analysis.items.forEach { add(it.name) }
-            analysis.floors.forEach { add(it.name) }
-            analysis.battles.forEach { add(it.name) }
-            analysis.inventories.forEach { add(it.name) }
-            analysis.statusEffects.forEach { add(it.name) }
-        }
+    private fun collectDefinedNames(analysis: GbktDslVisitor): Set<String> = buildSet {
+        analysis.entities.forEach { add(it.name) }
+        analysis.scenes.forEach { add(it.name) }
+        analysis.dialogs.forEach { add(it.name) }
+        analysis.cameras.forEach { add(it.name) }
+        analysis.variables.forEach { add(it.name) }
+        analysis.flags.forEach { add(it.name) }
+        // RPG definitions
+        analysis.characters.forEach { add(it.name) }
+        analysis.monsters.forEach { add(it.name) }
+        analysis.abilities.forEach { add(it.name) }
+        analysis.items.forEach { add(it.name) }
+        analysis.floors.forEach { add(it.name) }
+        analysis.battles.forEach { add(it.name) }
+        analysis.inventories.forEach { add(it.name) }
+        analysis.statusEffects.forEach { add(it.name) }
+    }
 
     private fun checkContextRequirements(
         expression: KtCallExpression,
@@ -192,8 +191,8 @@ class GbktDslInspection : LocalInspectionTool() {
     }
 
     /**
-     * Checks an integer argument against an IntRange constraint.
-     * Uses centralized constraints from ClampValueQuickFix.Constraints.
+     * Checks an integer argument against an IntRange constraint. Uses centralized constraints from
+     * ClampValueQuickFix.Constraints.
      */
     private fun checkIntArgRange(
         arg: org.jetbrains.kotlin.psi.KtValueArgument,
@@ -283,40 +282,51 @@ class GbktDslInspection : LocalInspectionTool() {
         }
     }
 
-    /**
-     * Returns appropriate quick fixes based on the context function.
-     */
+    /** Returns appropriate quick fixes based on the context function. */
     private fun getQuickFixesForContext(callee: String, name: String): List<LocalQuickFix> {
         return when (callee) {
             // Entity-consuming functions
-            "collidesWith", "overlaps", "follow", "damage", "heal" -> listOf(CreateEntityQuickFix(name))
+            "collidesWith",
+            "overlaps",
+            "follow",
+            "damage",
+            "heal" -> listOf(CreateEntityQuickFix(name))
 
             // Scene-consuming functions
-            "scene", "transition", "goto" -> listOf(CreateSceneQuickFix(name))
+            "scene",
+            "transition",
+            "goto" -> listOf(CreateSceneQuickFix(name))
 
             // Party/character-consuming functions
-            "addToParty", "removeFromParty", "equipTo" -> listOf(
-                CreateCharacterQuickFix(name),
-                CreateEntityQuickFix(name),
-            )
+            "addToParty",
+            "removeFromParty",
+            "equipTo" -> listOf(CreateCharacterQuickFix(name), CreateEntityQuickFix(name))
 
             // Monster-consuming functions (encounters, battle setup)
-            "entry", "addEnemy", "spawnMonster" -> listOf(
-                CreateMonsterQuickFix(name),
-            )
+            "entry",
+            "addEnemy",
+            "spawnMonster" -> listOf(CreateMonsterQuickFix(name))
 
             // Could be variable or entity
-            "isEqualTo", "isGreaterThan", "isLessThan", "isAtLeast", "isAtMost" -> listOf(
-                CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U8),
-                CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U16),
-                CreateEntityQuickFix(name),
-            )
+            "isEqualTo",
+            "isGreaterThan",
+            "isLessThan",
+            "isAtLeast",
+            "isAtMost" ->
+                listOf(
+                    CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U8),
+                    CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U16),
+                    CreateEntityQuickFix(name),
+                )
 
             // Arithmetic operations - likely variables
-            "set", "add", "subtract" -> listOf(
-                CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U8),
-                CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U16),
-            )
+            "set",
+            "add",
+            "subtract" ->
+                listOf(
+                    CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U8),
+                    CreateVariableQuickFix(name, CreateVariableQuickFix.VariableType.U16),
+                )
 
             else -> emptyList()
         }
@@ -329,18 +339,19 @@ class GbktDslInspection : LocalInspectionTool() {
     }
 
     /**
-     * Checks if the reference is to a lambda parameter.
-     * Example: `execute { target -> target.damage() }` - "target" is a lambda parameter.
+     * Checks if the reference is to a lambda parameter. Example: `execute { target ->
+     * target.damage() }` - "target" is a lambda parameter.
      */
     private fun isLambdaParameter(expression: KtNameReferenceExpression, name: String): Boolean {
         // Walk up the tree to find enclosing lambda expressions
         var current: com.intellij.psi.PsiElement? = expression.parent
         while (current != null) {
-            if (current is KtFunctionLiteral) {
-                // Check if this lambda has a parameter with the given name
-                if (current.valueParameters.toList().any { it.name == name }) {
-                    return true
-                }
+            // Check if this is a lambda with a parameter matching the given name
+            if (
+                current is KtFunctionLiteral &&
+                    current.valueParameters.toList().any { it.name == name }
+            ) {
+                return true
             }
             current = current.parent
         }
@@ -378,8 +389,8 @@ class GbktDslInspection : LocalInspectionTool() {
             )
 
         /**
-         * Common gbkt-core types that are imported automatically or commonly used.
-         * These should not trigger "undefined reference" warnings.
+         * Common gbkt-core types that are imported automatically or commonly used. These should not
+         * trigger "undefined reference" warnings.
          */
         private val GBKT_CORE_TYPES =
             setOf(

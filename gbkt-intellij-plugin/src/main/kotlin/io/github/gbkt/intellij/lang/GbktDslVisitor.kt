@@ -125,21 +125,28 @@ class GbktDslVisitor : PsiRecursiveElementVisitor() {
                 }
                 // RPG definitions
                 "character" ->
-                    characters.add(DslDefinition(name, DslType.CHARACTER, property, delegateExpression))
+                    characters.add(
+                        DslDefinition(name, DslType.CHARACTER, property, delegateExpression)
+                    )
                 "monster" ->
                     monsters.add(DslDefinition(name, DslType.MONSTER, property, delegateExpression))
                 "ability" ->
-                    abilities.add(DslDefinition(name, DslType.ABILITY, property, delegateExpression))
-                "item" ->
-                    items.add(DslDefinition(name, DslType.ITEM, property, delegateExpression))
+                    abilities.add(
+                        DslDefinition(name, DslType.ABILITY, property, delegateExpression)
+                    )
+                "item" -> items.add(DslDefinition(name, DslType.ITEM, property, delegateExpression))
                 "floor" ->
                     floors.add(DslDefinition(name, DslType.FLOOR, property, delegateExpression))
                 "battle" ->
                     battles.add(DslDefinition(name, DslType.BATTLE, property, delegateExpression))
                 "inventory" ->
-                    inventories.add(DslDefinition(name, DslType.INVENTORY, property, delegateExpression))
+                    inventories.add(
+                        DslDefinition(name, DslType.INVENTORY, property, delegateExpression)
+                    )
                 "statusEffect" ->
-                    statusEffects.add(DslDefinition(name, DslType.STATUS_EFFECT, property, delegateExpression))
+                    statusEffects.add(
+                        DslDefinition(name, DslType.STATUS_EFFECT, property, delegateExpression)
+                    )
             }
         }
     }

@@ -51,7 +51,8 @@ class GbktGotoDeclarationHandler : GotoDeclarationHandler {
                 ?: return null
 
         // Check if this is part of a dot-qualified expression (e.g., player.x or hero.stats.hp)
-        val dotExpression = PsiTreeUtil.getParentOfType(reference, KtDotQualifiedExpression::class.java)
+        val dotExpression =
+            PsiTreeUtil.getParentOfType(reference, KtDotQualifiedExpression::class.java)
         if (dotExpression != null) {
             // Use nested property navigator for chain resolution
             val chainResults = GbktNestedPropertyNavigator.resolvePropertyChain(dotExpression, file)
@@ -81,8 +82,7 @@ class GbktGotoDeclarationHandler : GotoDeclarationHandler {
     }
 
     /**
-     * Extracts the receiver name from a dot-qualified expression.
-     * For "player.x", returns "player".
+     * Extracts the receiver name from a dot-qualified expression. For "player.x", returns "player".
      * For "player.stats.hp", returns "player".
      */
     private fun extractReceiverName(dotExpression: KtDotQualifiedExpression): String? {
@@ -110,9 +110,10 @@ class GbktGotoDeclarationHandler : GotoDeclarationHandler {
         val project = file.project
         val virtualFiles =
             com.intellij.psi.search.FileTypeIndex.getFiles(
-                io.github.gbkt.intellij.GbktFileType,
-                com.intellij.psi.search.GlobalSearchScope.projectScope(project),
-            ).toList()
+                    io.github.gbkt.intellij.GbktFileType,
+                    com.intellij.psi.search.GlobalSearchScope.projectScope(project),
+                )
+                .toList()
 
         for (virtualFile in virtualFiles) {
             if (virtualFile == file.virtualFile) continue // Skip current file

@@ -59,7 +59,8 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
         val position = parameters.position
 
         // Skip completion inside strings and comments for performance
-        if (PsiTreeUtil.getParentOfType(position, KtStringTemplateExpression::class.java) != null) return
+        if (PsiTreeUtil.getParentOfType(position, KtStringTemplateExpression::class.java) != null)
+            return
         if (PsiTreeUtil.getParentOfType(position, PsiComment::class.java) != null) return
 
         // Check if we're in an entity-consuming context (collidesWith, follow, etc.)
@@ -82,17 +83,19 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
         // Add suggestions based on context with higher priority for context-specific items
         val suggestions = getContextSuggestions(builderContext)
         for ((keyword, description) in suggestions) {
-            val element = LookupElementBuilder.create(keyword)
-                .withIcon(GbktIcons.FILE)
-                .withTypeText(description)
-                .withTailText(getTailText(keyword), true)
+            val element =
+                LookupElementBuilder.create(keyword)
+                    .withIcon(GbktIcons.FILE)
+                    .withTypeText(description)
+                    .withTailText(getTailText(keyword), true)
 
             // Context-specific suggestions get higher priority
-            val prioritized = if (builderContext.isNotEmpty()) {
-                PrioritizedLookupElement.withPriority(element, 100.0)
-            } else {
-                element
-            }
+            val prioritized =
+                if (builderContext.isNotEmpty()) {
+                    PrioritizedLookupElement.withPriority(element, 100.0)
+                } else {
+                    element
+                }
             result.addElement(prioritized)
         }
     }
@@ -119,29 +122,35 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
     }
 
     /**
-     * Adds entity reference suggestions from all defined entities across the project.
-     * Searches all .gbkt.kts files, not just the current file.
+     * Adds entity reference suggestions from all defined entities across the project. Searches all
+     * .gbkt.kts files, not just the current file.
      */
     @Suppress("kotlin:S6524") // Mutable set required for deduplication during iteration
-    private fun addEntityReferenceSuggestions(file: com.intellij.psi.PsiFile, result: CompletionResultSet) {
+    private fun addEntityReferenceSuggestions(
+        file: com.intellij.psi.PsiFile,
+        result: CompletionResultSet,
+    ) {
         val project = file.project
         val addedNames = mutableSetOf<String>()
 
         // Search all gbkt files in the project
-        val gbktFiles = FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
+        val gbktFiles =
+            FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
 
         for (virtualFile in gbktFiles) {
-            val psiFile = PsiManager.getInstance(project).findFile(virtualFile) as? KtFile ?: continue
+            val psiFile =
+                PsiManager.getInstance(project).findFile(virtualFile) as? KtFile ?: continue
             val analysis = GbktDslVisitor.analyze(psiFile)
 
             // Add entities
             for (entity in analysis.entities) {
                 if (addedNames.add(entity.name)) {
-                    val sourceFile = if (virtualFile != file.virtualFile) {
-                        " - ${virtualFile.name}"
-                    } else {
-                        ""
-                    }
+                    val sourceFile =
+                        if (virtualFile != file.virtualFile) {
+                            " - ${virtualFile.name}"
+                        } else {
+                            ""
+                        }
                     result.addElement(
                         LookupElementBuilder.create(entity.name)
                             .withIcon(AllIcons.Nodes.Class)
@@ -154,7 +163,8 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
             // Also add characters and monsters (common entity-like references)
             for (character in analysis.characters) {
                 if (addedNames.add(character.name)) {
-                    val sourceFile = if (virtualFile != file.virtualFile) " - ${virtualFile.name}" else ""
+                    val sourceFile =
+                        if (virtualFile != file.virtualFile) " - ${virtualFile.name}" else ""
                     result.addElement(
                         LookupElementBuilder.create(character.name)
                             .withIcon(AllIcons.Nodes.Class)
@@ -166,7 +176,8 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
 
             for (monster in analysis.monsters) {
                 if (addedNames.add(monster.name)) {
-                    val sourceFile = if (virtualFile != file.virtualFile) " - ${virtualFile.name}" else ""
+                    val sourceFile =
+                        if (virtualFile != file.virtualFile) " - ${virtualFile.name}" else ""
                     result.addElement(
                         LookupElementBuilder.create(monster.name)
                             .withIcon(AllIcons.Nodes.Class)
@@ -179,28 +190,34 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
     }
 
     /**
-     * Adds scene reference suggestions from all defined scenes across the project.
-     * Searches all .gbkt.kts files, not just the current file.
+     * Adds scene reference suggestions from all defined scenes across the project. Searches all
+     * .gbkt.kts files, not just the current file.
      */
     @Suppress("kotlin:S6524") // Mutable set required for deduplication during iteration
-    private fun addSceneReferenceSuggestions(file: com.intellij.psi.PsiFile, result: CompletionResultSet) {
+    private fun addSceneReferenceSuggestions(
+        file: com.intellij.psi.PsiFile,
+        result: CompletionResultSet,
+    ) {
         val project = file.project
         val addedNames = mutableSetOf<String>()
 
         // Search all gbkt files in the project
-        val gbktFiles = FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
+        val gbktFiles =
+            FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
 
         for (virtualFile in gbktFiles) {
-            val psiFile = PsiManager.getInstance(project).findFile(virtualFile) as? KtFile ?: continue
+            val psiFile =
+                PsiManager.getInstance(project).findFile(virtualFile) as? KtFile ?: continue
             val analysis = GbktDslVisitor.analyze(psiFile)
 
             for (scene in analysis.scenes) {
                 if (addedNames.add(scene.name)) {
-                    val sourceFile = if (virtualFile != file.virtualFile) {
-                        " - ${virtualFile.name}"
-                    } else {
-                        ""
-                    }
+                    val sourceFile =
+                        if (virtualFile != file.virtualFile) {
+                            " - ${virtualFile.name}"
+                        } else {
+                            ""
+                        }
                     result.addElement(
                         LookupElementBuilder.create(scene.name)
                             .withIcon(AllIcons.Nodes.Module)
@@ -281,23 +298,20 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
 
     companion object {
         /** Functions that take entity references as arguments. */
-        private val ENTITY_REFERENCE_FUNCTIONS = setOf(
-            "collidesWith",
-            "overlaps",
-            "follow",
-            "damage",
-            "heal",
-            "moveTo",
-            "lookAt",
-            "distanceTo",
-        )
+        private val ENTITY_REFERENCE_FUNCTIONS =
+            setOf(
+                "collidesWith",
+                "overlaps",
+                "follow",
+                "damage",
+                "heal",
+                "moveTo",
+                "lookAt",
+                "distanceTo",
+            )
 
         /** Functions that take scene references as arguments. */
-        private val SCENE_REFERENCE_FUNCTIONS = setOf(
-            "scene",
-            "transition",
-            "goto",
-        )
+        private val SCENE_REFERENCE_FUNCTIONS = setOf("scene", "transition", "goto")
 
         /** Known builder names for PSI-based context detection */
         private val BUILDER_NAMES =

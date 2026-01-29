@@ -366,8 +366,8 @@ class QuestBuilder(private val questId: String) {
                 val resolvedOrder = dependsOn?.let { resolvedOrders[it] }
 
                 when {
-                    // No dependency - use explicit order or 0
-                    dependsOn == null -> {
+                    // No dependency or invalid dependency - use explicit order or 0
+                    dependsOn == null || !idToBuilder.containsKey(dependsOn) -> {
                         resolvedOrders[builder.getId()] = builder.getExplicitSequenceOrder()
                         iterator.remove()
                     }
@@ -376,12 +376,7 @@ class QuestBuilder(private val questId: String) {
                         resolvedOrders[builder.getId()] = resolvedOrder + 1
                         iterator.remove()
                     }
-                    // Invalid dependency - treat as no dependency
-                    !idToBuilder.containsKey(dependsOn) -> {
-                        resolvedOrders[builder.getId()] = builder.getExplicitSequenceOrder()
-                        iterator.remove()
-                    }
-                    // Otherwise, dependency not yet resolved - try again next iteration
+                // Otherwise, dependency not yet resolved - try again next iteration
                 }
             }
         }

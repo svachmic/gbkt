@@ -153,18 +153,15 @@ private fun GameValidator.validateArrayBoundsInStatements(
                     knownBounds,
                 )
             }
-            is IRPoolSpawn, is IRPoolSpawnAt -> {
-                val initStatements = when (stmt) {
-                    is IRPoolSpawn -> stmt.initStatements
-                    is IRPoolSpawnAt -> stmt.initStatements
-                    else -> return
-                }
-                validateArrayBoundsInStatements(
-                    initStatements,
-                    context,
-                    arrayBounds,
-                    knownBounds,
-                )
+            is IRPoolSpawn,
+            is IRPoolSpawnAt -> {
+                val initStatements =
+                    when (stmt) {
+                        is IRPoolSpawn -> stmt.initStatements
+                        is IRPoolSpawnAt -> stmt.initStatements
+                        else -> return
+                    }
+                validateArrayBoundsInStatements(initStatements, context, arrayBounds, knownBounds)
             }
             is IRPoolTrySpawn -> {
                 validateArrayBoundsInStatements(

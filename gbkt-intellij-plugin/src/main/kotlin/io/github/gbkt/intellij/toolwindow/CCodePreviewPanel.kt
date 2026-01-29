@@ -23,9 +23,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.KeyboardShortcut
-import java.awt.event.InputEvent
-import java.awt.event.KeyEvent
-import javax.swing.KeyStroke
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.EditorSettings
@@ -49,11 +46,14 @@ import io.github.gbkt.intellij.codegen.GbktCodegenService
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout
+import java.awt.event.InputEvent
+import java.awt.event.KeyEvent
 import java.io.File
 import javax.swing.Box
 import javax.swing.JCheckBox
 import javax.swing.JPanel
 import javax.swing.JProgressBar
+import javax.swing.KeyStroke
 import javax.swing.SwingConstants
 
 /**
@@ -75,11 +75,12 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
     private val editor: EditorEx
     private val statusLabel = JBLabel("Ready")
     private val autoRefreshCheckbox = JCheckBox("Auto-refresh on save", false)
-    private val progressBar = JProgressBar().apply {
-        isIndeterminate = true
-        isVisible = false
-        preferredSize = Dimension(100, 16)
-    }
+    private val progressBar =
+        JProgressBar().apply {
+            isIndeterminate = true
+            isVisible = false
+            preferredSize = Dimension(100, 16)
+        }
     private var messageBusConnection: MessageBusConnection? = null
     private var isDisposed = false
 
@@ -88,12 +89,14 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
         Disposer.register(project, this)
 
         // Create editor for C code display
-        editor = EditorFactory.getInstance().createEditor(
-            editorDocument,
-            project,
-            FileTypeManager.getInstance().getFileTypeByExtension("c"),
-            true // read-only
-        ) as EditorEx
+        editor =
+            EditorFactory.getInstance()
+                .createEditor(
+                    editorDocument,
+                    project,
+                    FileTypeManager.getInstance().getFileTypeByExtension("c"),
+                    true, // read-only
+                ) as EditorEx
 
         configureEditor()
         setupMouseListener()
@@ -123,13 +126,15 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
     }
 
     private fun setupMouseListener() {
-        editor.addEditorMouseListener(object : EditorMouseListener {
-            override fun mouseClicked(event: EditorMouseEvent) {
-                if (event.mouseEvent.clickCount == 2) {
-                    navigateToSource(event)
+        editor.addEditorMouseListener(
+            object : EditorMouseListener {
+                override fun mouseClicked(event: EditorMouseEvent) {
+                    if (event.mouseEvent.clickCount == 2) {
+                        navigateToSource(event)
+                    }
                 }
             }
-        })
+        )
     }
 
     private fun navigateToSource(event: EditorMouseEvent) {
@@ -149,28 +154,32 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
             val sourceFile = File(projectPath, sourceLocation.file).canonicalFile
 
             // Security check: Ensure the resolved path is within the project directory
-            // This prevents path traversal attacks via malicious source maps (e.g., "../../etc/passwd")
-            if (!sourceFile.canonicalPath.startsWith(projectDir.canonicalPath + File.separator) &&
-                sourceFile.canonicalPath != projectDir.canonicalPath
+            // This prevents path traversal attacks via malicious source maps (e.g.,
+            // "../../etc/passwd")
+            if (
+                !sourceFile.canonicalPath.startsWith(projectDir.canonicalPath + File.separator) &&
+                    sourceFile.canonicalPath != projectDir.canonicalPath
             ) {
                 return@executeOnPooledThread // Path traversal attempt, silently ignore
             }
 
             if (!sourceFile.exists()) return@executeOnPooledThread
 
-            val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(sourceFile)
-                ?: return@executeOnPooledThread
+            val virtualFile =
+                LocalFileSystem.getInstance().findFileByIoFile(sourceFile)
+                    ?: return@executeOnPooledThread
 
             // Navigate to the source location on EDT
             ApplicationManager.getApplication().invokeLater {
                 if (isDisposed) return@invokeLater
 
-                val descriptor = OpenFileDescriptor(
-                    project,
-                    virtualFile,
-                    sourceLocation.line - 1, // 0-based for editor
-                    sourceLocation.column
-                )
+                val descriptor =
+                    OpenFileDescriptor(
+                        project,
+                        virtualFile,
+                        sourceLocation.line - 1, // 0-based for editor
+                        sourceLocation.column,
+                    )
                 FileEditorManager.getInstance(project).openEditor(descriptor, true)
             }
         }
@@ -179,14 +188,15 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
     private fun createToolbar(): JPanel {
         val toolbarPanel = JPanel(BorderLayout())
 
-        val actionGroup = DefaultActionGroup().apply {
-            add(RefreshAction())
-            add(CancelAction())
-            addSeparator()
-        }
+        val actionGroup =
+            DefaultActionGroup().apply {
+                add(RefreshAction())
+                add(CancelAction())
+                addSeparator()
+            }
 
-        val toolbar: ActionToolbar = ActionManager.getInstance()
-            .createActionToolbar("CCodePreview", actionGroup, true)
+        val toolbar: ActionToolbar =
+            ActionManager.getInstance().createActionToolbar("CCodePreview", actionGroup, true)
         toolbar.targetComponent = this
 
         val leftPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
@@ -213,7 +223,9 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
             updateEditorContent(cachedCode)
             updateStatus("Loaded from cache", false)
         } else {
-            updateEditorContent("// No generated C code available.\n// Click 'Refresh' to generate.")
+            updateEditorContent(
+                "// No generated C code available.\n// Click 'Refresh' to generate."
+            )
             updateStatus("No cached content", false)
         }
     }
@@ -229,36 +241,37 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
         updateStatus("Generating C code...", true)
         progressBar.isVisible = true
 
-        codegenService.generateAsync(forceRegenerate = true).thenAccept { result ->
-            ApplicationManager.getApplication().invokeLater {
-                if (isDisposed) return@invokeLater
+        codegenService
+            .generateAsync(forceRegenerate = true)
+            .thenAccept { result ->
+                ApplicationManager.getApplication().invokeLater {
+                    if (isDisposed) return@invokeLater
 
-                progressBar.isVisible = false
-                if (result.success && result.cCode != null) {
-                    updateEditorContent(result.cCode)
-                    updateStatus("Generated in ${result.generationTimeMs}ms", false)
-                } else {
-                    val errorMsg = result.errorMessage ?: "Unknown error"
-                    updateEditorContent("// Generation failed:\n// $errorMsg")
-                    updateStatus("Generation failed", false)
+                    progressBar.isVisible = false
+                    if (result.success && result.cCode != null) {
+                        updateEditorContent(result.cCode)
+                        updateStatus("Generated in ${result.generationTimeMs}ms", false)
+                    } else {
+                        val errorMsg = result.errorMessage ?: "Unknown error"
+                        updateEditorContent("// Generation failed:\n// $errorMsg")
+                        updateStatus("Generation failed", false)
+                    }
                 }
             }
-        }.exceptionally { error ->
-            ApplicationManager.getApplication().invokeLater {
-                if (isDisposed) return@invokeLater
+            .exceptionally { error ->
+                ApplicationManager.getApplication().invokeLater {
+                    if (isDisposed) return@invokeLater
 
-                progressBar.isVisible = false
-                updateEditorContent("// Error: ${error.message}")
-                updateStatus("Error: ${error.message}", false)
+                    progressBar.isVisible = false
+                    updateEditorContent("// Error: ${error.message}")
+                    updateStatus("Error: ${error.message}", false)
+                }
+                null
             }
-            null
-        }
     }
 
     private fun updateEditorContent(content: String) {
-        ApplicationManager.getApplication().runWriteAction {
-            editorDocument.setText(content)
-        }
+        ApplicationManager.getApplication().runWriteAction { editorDocument.setText(content) }
     }
 
     private fun updateStatus(message: String, isWorking: Boolean) {
@@ -290,7 +303,7 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
                         }
                     }
                 }
-            }
+            },
         )
     }
 
@@ -306,14 +319,15 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
         }
     }
 
-    private inner class RefreshAction : AnAction(
-        "Refresh",
-        "Regenerate C code from DSL (Ctrl+Shift+G)",
-        AllIcons.Actions.Refresh
-    ) {
+    private inner class RefreshAction :
+        AnAction("Refresh", "Regenerate C code from DSL (Ctrl+Shift+G)", AllIcons.Actions.Refresh) {
         init {
             // Register Ctrl+Shift+G as keyboard shortcut for refresh
-            val keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.CTRL_DOWN_MASK or InputEvent.SHIFT_DOWN_MASK)
+            val keyStroke =
+                KeyStroke.getKeyStroke(
+                    KeyEvent.VK_G,
+                    InputEvent.CTRL_DOWN_MASK or InputEvent.SHIFT_DOWN_MASK,
+                )
             val shortcut = KeyboardShortcut(keyStroke, null)
             registerCustomShortcutSet({ arrayOf(shortcut) }, this@CCodePreviewPanel)
         }
@@ -327,11 +341,8 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
         }
     }
 
-    private inner class CancelAction : AnAction(
-        "Cancel",
-        "Cancel current C code generation",
-        AllIcons.Actions.Cancel
-    ) {
+    private inner class CancelAction :
+        AnAction("Cancel", "Cancel current C code generation", AllIcons.Actions.Cancel) {
         override fun actionPerformed(e: AnActionEvent) {
             if (codegenService.cancelGeneration()) {
                 progressBar.isVisible = false

@@ -28,8 +28,8 @@ import org.jetbrains.kotlin.psi.KtFile
 /**
  * Quick fix that creates a new scene definition.
  *
- * When an undefined scene reference is detected, this quick fix offers to create
- * a new scene definition at the appropriate location in the file.
+ * When an undefined scene reference is detected, this quick fix offers to create a new scene
+ * definition at the appropriate location in the file.
  */
 class CreateSceneQuickFix(private val sceneName: String) : LocalQuickFix {
 
@@ -42,7 +42,8 @@ class CreateSceneQuickFix(private val sceneName: String) : LocalQuickFix {
 
         // Template for new scene using the preferred delegate pattern
         // The property name becomes the scene name via Kotlin's delegation
-        val template = """
+        val template =
+            """
 
 val $sceneName by scene {
     enter {
@@ -62,7 +63,9 @@ val $sceneName by scene {
         WriteCommandAction.runWriteCommandAction(project) {
             // Find a good insertion point - after other scene definitions or at top level
             val insertionPoint = findInsertionPoint(file)
-            val document = PsiDocumentManager.getInstance(project).getDocument(file) ?: return@runWriteCommandAction
+            val document =
+                PsiDocumentManager.getInstance(project).getDocument(file)
+                    ?: return@runWriteCommandAction
 
             val insertOffset: Int
             if (insertionPoint != null) {
@@ -77,14 +80,15 @@ val $sceneName by scene {
             PsiDocumentManager.getInstance(project).commitDocument(document)
 
             // Position cursor inside the enter block (after "// Initialize scene" comment)
-            val enterBlockOffset = insertOffset + template.indexOf("// Initialize scene") + "// Initialize scene".length
+            val enterBlockOffset =
+                insertOffset +
+                    template.indexOf("// Initialize scene") +
+                    "// Initialize scene".length
             positionCursor(project, file, enterBlockOffset)
         }
     }
 
-    /**
-     * Positions the cursor at the specified offset and scrolls the editor.
-     */
+    /** Positions the cursor at the specified offset and scrolls the editor. */
     private fun positionCursor(project: Project, file: KtFile, offset: Int) {
         val virtualFile = file.virtualFile ?: return
         val fileEditor = FileEditorManager.getInstance(project).getSelectedEditor(virtualFile)
@@ -99,8 +103,9 @@ val $sceneName by scene {
         val declarations = file.declarations
 
         // First, look for the last scene definition
-        val lastScene = declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtProperty>()
-            .lastOrNull { property ->
+        val lastScene =
+            declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtProperty>().lastOrNull {
+                property ->
                 val delegate = property.delegateExpression
                 delegate is org.jetbrains.kotlin.psi.KtCallExpression &&
                     delegate.calleeExpression?.text == "scene"
@@ -109,8 +114,11 @@ val $sceneName by scene {
         if (lastScene != null) return lastScene
 
         // Look for scene() call expressions at top level
-        val lastSceneCall = declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtCallExpression>()
-            .lastOrNull { call -> call.calleeExpression?.text == "scene" }
+        val lastSceneCall =
+            declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtCallExpression>().lastOrNull {
+                call ->
+                call.calleeExpression?.text == "scene"
+            }
 
         if (lastSceneCall != null) return lastSceneCall as? org.jetbrains.kotlin.psi.KtDeclaration
 

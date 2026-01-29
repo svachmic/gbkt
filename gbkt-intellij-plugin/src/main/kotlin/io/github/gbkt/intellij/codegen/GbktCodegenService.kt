@@ -50,14 +50,8 @@ class GbktCodegenService(private val project: Project) {
     )
 
     /** Source map for mapping C lines to Kotlin sources. */
-    data class SourceMap(
-        val mappings: Map<Int, SourceLocation>,
-    ) {
-        data class SourceLocation(
-            val file: String,
-            val line: Int,
-            val column: Int = 0,
-        )
+    data class SourceMap(val mappings: Map<Int, SourceLocation>) {
+        data class SourceLocation(val file: String, val line: Int, val column: Int = 0)
     }
 
     private var lastResult: CodegenResult? = null
@@ -69,14 +63,13 @@ class GbktCodegenService(private val project: Project) {
     private val isGeneratingFlag = AtomicBoolean(false)
 
     /** Current process handler for cancellation support. */
-    @Volatile
-    private var currentProcessHandler: OSProcessHandler? = null
+    @Volatile private var currentProcessHandler: OSProcessHandler? = null
 
     /**
      * Generates C code asynchronously using Gradle.
      *
-     * This method is thread-safe. If generation is already in progress, the returned
-     * future will complete exceptionally with an IllegalStateException.
+     * This method is thread-safe. If generation is already in progress, the returned future will
+     * complete exceptionally with an IllegalStateException.
      *
      * @param forceRegenerate If true, ignores any cached result
      * @return CompletableFuture with the generation result
@@ -90,14 +83,15 @@ class GbktCodegenService(private val project: Project) {
         }
 
         // Thread-safe check-and-set for generation flag
-        val canGenerate = generationLock.withLock {
-            if (isGeneratingFlag.get()) {
-                false
-            } else {
-                isGeneratingFlag.set(true)
-                true
+        val canGenerate =
+            generationLock.withLock {
+                if (isGeneratingFlag.get()) {
+                    false
+                } else {
+                    isGeneratingFlag.set(true)
+                    true
+                }
             }
-        }
 
         if (!canGenerate) {
             future.completeExceptionally(IllegalStateException("Generation already in progress"))
@@ -120,23 +114,17 @@ class GbktCodegenService(private val project: Project) {
         return future
     }
 
-    /**
-     * Gets the last generated C code, or null if not available.
-     */
+    /** Gets the last generated C code, or null if not available. */
     fun getLastCCode(): String? {
         return lastResult?.cCode ?: readCachedCCode()
     }
 
-    /**
-     * Gets the last source map, or null if not available.
-     */
+    /** Gets the last source map, or null if not available. */
     fun getLastSourceMap(): SourceMap? {
         return lastResult?.sourceMap ?: readCachedSourceMap()
     }
 
-    /**
-     * Clears the cached generation result.
-     */
+    /** Clears the cached generation result. */
     fun clearCache() {
         lastResult = null
     }
@@ -145,20 +133,23 @@ class GbktCodegenService(private val project: Project) {
         val startTime = System.currentTimeMillis()
 
         return try {
-            val projectPath = project.basePath ?: return CodegenResult(
-                success = false,
-                cCode = null,
-                sourceMap = null,
-                errorMessage = "Project path not found",
-                generationTimeMs = 0,
-            )
+            val projectPath =
+                project.basePath
+                    ?: return CodegenResult(
+                        success = false,
+                        cCode = null,
+                        sourceMap = null,
+                        errorMessage = "Project path not found",
+                        generationTimeMs = 0,
+                    )
 
             // Determine the Gradle wrapper path
-            val gradleWrapper = if (System.getProperty("os.name").lowercase().contains("win")) {
-                File(projectPath, "gradlew.bat")
-            } else {
-                File(projectPath, "gradlew")
-            }
+            val gradleWrapper =
+                if (System.getProperty("os.name").lowercase().contains("win")) {
+                    File(projectPath, "gradlew.bat")
+                } else {
+                    File(projectPath, "gradlew")
+                }
 
             if (!gradleWrapper.exists()) {
                 return CodegenResult(
@@ -171,9 +162,10 @@ class GbktCodegenService(private val project: Project) {
             }
 
             // Build command
-            val commandLine = GeneralCommandLine(gradleWrapper.absolutePath, "generateC", "--quiet")
-                .withWorkDirectory(projectPath)
-                .withEnvironment(System.getenv())
+            val commandLine =
+                GeneralCommandLine(gradleWrapper.absolutePath, "generateC", "--quiet")
+                    .withWorkDirectory(projectPath)
+                    .withEnvironment(System.getenv())
 
             val outputBuilder = StringBuilder()
             val errorBuilder = StringBuilder()
@@ -181,15 +173,17 @@ class GbktCodegenService(private val project: Project) {
             val handler = OSProcessHandler(commandLine)
             currentProcessHandler = handler
 
-            handler.addProcessListener(object : ProcessAdapter() {
-                override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                    if (outputType.toString().contains("STDERR")) {
-                        errorBuilder.append(event.text)
-                    } else {
-                        outputBuilder.append(event.text)
+            handler.addProcessListener(
+                object : ProcessAdapter() {
+                    override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                        if (outputType.toString().contains("STDERR")) {
+                            errorBuilder.append(event.text)
+                        } else {
+                            outputBuilder.append(event.text)
+                        }
                     }
                 }
-            })
+            )
 
             handler.startNotify()
 
@@ -203,8 +197,9 @@ class GbktCodegenService(private val project: Project) {
                     success = false,
                     cCode = null,
                     sourceMap = null,
-                    errorMessage = "Generation timed out after ${timeoutMs / 1000} seconds. " +
-                        "Try running './gradlew generateC' manually to diagnose the issue.",
+                    errorMessage =
+                        "Generation timed out after ${timeoutMs / 1000} seconds. " +
+                            "Try running './gradlew generateC' manually to diagnose the issue.",
                     generationTimeMs = timeoutMs,
                 )
             }
@@ -217,7 +212,8 @@ class GbktCodegenService(private val project: Project) {
                     success = false,
                     cCode = null,
                     sourceMap = null,
-                    errorMessage = "Gradle generateC failed (exit code $exitCode):\n${errorBuilder}",
+                    errorMessage =
+                        "Gradle generateC failed (exit code $exitCode):\n${errorBuilder}",
                     generationTimeMs = elapsedTime,
                 )
             }
@@ -268,8 +264,8 @@ class GbktCodegenService(private val project: Project) {
      *
      * Format: Each line is `cLine:sourceFile:sourceLine[:column]`
      *
-     * Note: Windows paths contain colons (e.g., C:\path\file.kt), so we parse
-     * carefully by working from both ends of the line.
+     * Note: Windows paths contain colons (e.g., C:\path\file.kt), so we parse carefully by working
+     * from both ends of the line.
      */
     private fun parseSourceMap(content: String): SourceMap {
         val mappings = mutableMapOf<Int, SourceMap.SourceLocation>()
@@ -278,11 +274,8 @@ class GbktCodegenService(private val project: Project) {
             if (line.isBlank() || line.startsWith("#")) continue
 
             val parsed = parseSourceMapLine(line) ?: continue
-            mappings[parsed.cLine] = SourceMap.SourceLocation(
-                parsed.sourceFile,
-                parsed.sourceLine,
-                parsed.column
-            )
+            mappings[parsed.cLine] =
+                SourceMap.SourceLocation(parsed.sourceFile, parsed.sourceLine, parsed.column)
         }
 
         return SourceMap(mappings)
@@ -324,14 +317,15 @@ class GbktCodegenService(private val project: Project) {
 
         return if (secondLastColonIdx != -1) {
             // Might have column - check if the segment between colons is a number
-            val potentialSourceLine = beforeLastColon.substring(secondLastColonIdx + 1).toIntOrNull()
+            val potentialSourceLine =
+                beforeLastColon.substring(secondLastColonIdx + 1).toIntOrNull()
             if (potentialSourceLine != null) {
                 // Format: cLine:path:sourceLine:column
                 ParsedMapping(
                     cLine = cLine,
                     sourceFile = beforeLastColon.substring(0, secondLastColonIdx),
                     sourceLine = potentialSourceLine,
-                    column = lastNumber
+                    column = lastNumber,
                 )
             } else {
                 // The segment between colons isn't a number, so no column
@@ -340,7 +334,7 @@ class GbktCodegenService(private val project: Project) {
                     cLine = cLine,
                     sourceFile = beforeLastColon,
                     sourceLine = lastNumber,
-                    column = 0
+                    column = 0,
                 )
             }
         } else {
@@ -349,7 +343,7 @@ class GbktCodegenService(private val project: Project) {
                 cLine = cLine,
                 sourceFile = beforeLastColon,
                 sourceLine = lastNumber,
-                column = 0
+                column = 0,
             )
         }
     }
@@ -361,9 +355,7 @@ class GbktCodegenService(private val project: Project) {
         val column: Int,
     )
 
-    /**
-     * Checks if C code generation is currently in progress.
-     */
+    /** Checks if C code generation is currently in progress. */
     fun isGenerating(): Boolean = isGeneratingFlag.get()
 
     /**

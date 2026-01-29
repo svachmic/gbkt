@@ -458,12 +458,14 @@ private fun GameValidator.validateIRReferencesInStatements(
                     )
                 }
             }
-            is IRWhile, is IRFor -> {
-                val body = when (stmt) {
-                    is IRWhile -> stmt.body
-                    is IRFor -> stmt.body
-                    else -> return
-                }
+            is IRWhile,
+            is IRFor -> {
+                val body =
+                    when (stmt) {
+                        is IRWhile -> stmt.body
+                        is IRFor -> stmt.body
+                        else -> return
+                    }
                 validateIRReferencesInStatements(
                     body,
                     context,
@@ -473,14 +475,18 @@ private fun GameValidator.validateIRReferencesInStatements(
                     knownDialogs,
                 )
             }
-            is IRTransitionFadeOut, is IRTransitionFadeIn, is IRTransitionWipe, is IRTransitionIris -> {
-                val onComplete = when (stmt) {
-                    is IRTransitionFadeOut -> stmt.onComplete
-                    is IRTransitionFadeIn -> stmt.onComplete
-                    is IRTransitionWipe -> stmt.onComplete
-                    is IRTransitionIris -> stmt.onComplete
-                    else -> return
-                }
+            is IRTransitionFadeOut,
+            is IRTransitionFadeIn,
+            is IRTransitionWipe,
+            is IRTransitionIris -> {
+                val onComplete =
+                    when (stmt) {
+                        is IRTransitionFadeOut -> stmt.onComplete
+                        is IRTransitionFadeIn -> stmt.onComplete
+                        is IRTransitionWipe -> stmt.onComplete
+                        is IRTransitionIris -> stmt.onComplete
+                        else -> return
+                    }
                 validateIRReferencesInStatements(
                     onComplete,
                     context,
@@ -490,7 +496,7 @@ private fun GameValidator.validateIRReferencesInStatements(
                     knownDialogs,
                 )
             }
-            else -> Unit  // No nested statements or references to validate
+            else -> Unit // No nested statements or references to validate
         }
     }
 }

@@ -212,11 +212,12 @@ class BankAllocator(
                 }
             }
 
-            val bank = checkNotNull(assignedBank) {
-                "Cannot allocate namespace '${namespace.name}' ($size bytes). " +
-                    "All string banks (${stringStartBank}-${stringEndBank - 1}) are full. " +
-                    "Total string data: ${stringTable.totalSizeBytes} bytes."
-            }
+            val bank =
+                checkNotNull(assignedBank) {
+                    "Cannot allocate namespace '${namespace.name}' ($size bytes). " +
+                        "All string banks (${stringStartBank}-${stringEndBank - 1}) are full. " +
+                        "Total string data: ${stringTable.totalSizeBytes} bytes."
+                }
 
             allocatedNamespaces.add(namespace.copy(bank = bank))
             stringBankUsage[bank] = bankUsageLocal[bank] ?: 0

@@ -28,8 +28,8 @@ import org.jetbrains.kotlin.psi.KtFile
 /**
  * Quick fix that creates a new character definition.
  *
- * When an undefined character reference is detected, this quick fix offers to create
- * a new character definition at the appropriate location in the file.
+ * When an undefined character reference is detected, this quick fix offers to create a new
+ * character definition at the appropriate location in the file.
  */
 class CreateCharacterQuickFix(private val characterName: String) : LocalQuickFix {
 
@@ -41,7 +41,8 @@ class CreateCharacterQuickFix(private val characterName: String) : LocalQuickFix
         val file = descriptor.psiElement.containingFile as? KtFile ?: return
 
         val defaults = ClampValueQuickFix.Companion.Defaults
-        val template = """
+        val template =
+            """
 
 val $characterName by character {
     name("${characterName.replaceFirstChar { it.uppercase() }}")
@@ -65,7 +66,9 @@ val $characterName by character {
 
         WriteCommandAction.runWriteCommandAction(project) {
             val insertionPoint = findInsertionPoint(file)
-            val document = PsiDocumentManager.getInstance(project).getDocument(file) ?: return@runWriteCommandAction
+            val document =
+                PsiDocumentManager.getInstance(project).getDocument(file)
+                    ?: return@runWriteCommandAction
 
             val insertOffset: Int
             if (insertionPoint != null) {
@@ -98,8 +101,9 @@ val $characterName by character {
         val declarations = file.declarations
 
         // Find the last character definition
-        val lastCharacter = declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtProperty>()
-            .lastOrNull { property ->
+        val lastCharacter =
+            declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtProperty>().lastOrNull {
+                property ->
                 val delegate = property.delegateExpression
                 delegate is org.jetbrains.kotlin.psi.KtCallExpression &&
                     delegate.calleeExpression?.text == "character"

@@ -47,7 +47,8 @@ class GbktKeywordCompletionProvider : CompletionProvider<CompletionParameters>()
 
         // Skip completion inside strings and comments for performance
         val position = parameters.position
-        if (PsiTreeUtil.getParentOfType(position, KtStringTemplateExpression::class.java) != null) return
+        if (PsiTreeUtil.getParentOfType(position, KtStringTemplateExpression::class.java) != null)
+            return
         if (PsiTreeUtil.getParentOfType(position, PsiComment::class.java) != null) return
 
         // Add top-level DSL functions

@@ -209,10 +209,11 @@ class AssetAnalyzer(private val config: AnalyzerConfig = AnalyzerConfig()) {
         // Build duplicate info
         val duplicates =
             if (config.detectDuplicates) {
-                tileMap.entries
+                tileMap
+                    .mapValues { it.value.toList() }
+                    .entries
                     .filter { it.value.size > 1 }
-                    .map { (hash, mutableLocations) ->
-                        val locations = mutableLocations.toList()
+                    .map { (hash, locations) ->
                         val firstTile = sheet.tiles[locations.first().tileIndex]
                         DuplicateTileInfo(firstTile, locations, hash)
                     }

@@ -25,7 +25,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import io.github.gbkt.intellij.build.GradleRunner
-import io.github.gbkt.intellij.sdk.EmulatorType
 import io.github.gbkt.intellij.sdk.GbktSdkService
 import java.io.IOException
 import java.util.concurrent.CountDownLatch

@@ -239,27 +239,30 @@ class GameValidator(internal val game: Game) {
 
         // Check for overflow or near-overflow conditions
         when {
-            worstCaseTotal > MAX_OAM_SPRITES -> errors.add(
-                ValidationError(
-                    ValidationCategory.OAM_LIMIT,
-                    "Game exceeds OAM limit: $worstCaseTotal sprites possible (max $MAX_OAM_SPRITES). " +
-                        "Breakdown: Direct sprites: ${game.sprites.size}, Entity sprites: $entitySprites, " +
-                        "Pool slots: $poolSprites, Particle sprites: $particleSprites",
+            worstCaseTotal > MAX_OAM_SPRITES ->
+                errors.add(
+                    ValidationError(
+                        ValidationCategory.OAM_LIMIT,
+                        "Game exceeds OAM limit: $worstCaseTotal sprites possible (max $MAX_OAM_SPRITES). " +
+                            "Breakdown: Direct sprites: ${game.sprites.size}, Entity sprites: $entitySprites, " +
+                            "Pool slots: $poolSprites, Particle sprites: $particleSprites",
+                    )
                 )
-            )
-            worstCaseTotal == MAX_OAM_SPRITES -> warnings.add(
-                ValidationWarning(
-                    ValidationCategory.OAM_LIMIT,
-                    "Game is at OAM limit: $worstCaseTotal sprites (max $MAX_OAM_SPRITES). " +
-                        "Any additional sprites will cause overflow.",
+            worstCaseTotal == MAX_OAM_SPRITES ->
+                warnings.add(
+                    ValidationWarning(
+                        ValidationCategory.OAM_LIMIT,
+                        "Game is at OAM limit: $worstCaseTotal sprites (max $MAX_OAM_SPRITES). " +
+                            "Any additional sprites will cause overflow.",
+                    )
                 )
-            )
-            worstCaseTotal > MAX_OAM_SPRITES - 5 -> warnings.add(
-                ValidationWarning(
-                    ValidationCategory.OAM_LIMIT,
-                    "Game is close to OAM limit: $worstCaseTotal sprites possible (max $MAX_OAM_SPRITES)",
+            worstCaseTotal > MAX_OAM_SPRITES - 5 ->
+                warnings.add(
+                    ValidationWarning(
+                        ValidationCategory.OAM_LIMIT,
+                        "Game is close to OAM limit: $worstCaseTotal sprites possible (max $MAX_OAM_SPRITES)",
+                    )
                 )
-            )
         }
 
         // Check individual pools for overflow

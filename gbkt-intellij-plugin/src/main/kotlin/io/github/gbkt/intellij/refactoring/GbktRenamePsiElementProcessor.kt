@@ -50,8 +50,10 @@ class GbktRenamePsiElementProcessor : RenamePsiElementProcessor() {
 
         // Check if it's a DSL definition (has a delegate expression with known DSL function)
         val delegateExpression = element.delegateExpression ?: return false
-        val callee = (delegateExpression as? org.jetbrains.kotlin.psi.KtCallExpression)
-            ?.calleeExpression?.text
+        val callee =
+            (delegateExpression as? org.jetbrains.kotlin.psi.KtCallExpression)
+                ?.calleeExpression
+                ?.text
 
         return callee in DSL_DEFINITION_FUNCTIONS
     }
@@ -59,7 +61,7 @@ class GbktRenamePsiElementProcessor : RenamePsiElementProcessor() {
     override fun findReferences(
         element: PsiElement,
         searchScope: SearchScope,
-        searchInCommentsAndStrings: Boolean
+        searchInCommentsAndStrings: Boolean,
     ): MutableCollection<PsiReference> {
         val references = mutableListOf<PsiReference>()
 
@@ -69,17 +71,18 @@ class GbktRenamePsiElementProcessor : RenamePsiElementProcessor() {
         val project = element.project
 
         // Convert to GlobalSearchScope if possible
-        val globalScope = when (searchScope) {
-            is GlobalSearchScope -> searchScope
-            else -> GlobalSearchScope.projectScope(project)
-        }
+        val globalScope =
+            when (searchScope) {
+                is GlobalSearchScope -> searchScope
+                else -> GlobalSearchScope.projectScope(project)
+            }
 
         // Search in all gbkt files
         val gbktFiles = FileTypeIndex.getFiles(GbktFileType, globalScope)
 
         for (virtualFile in gbktFiles) {
-            val psiFile = PsiManager.getInstance(project).findFile(virtualFile) as? KtFile
-                ?: continue
+            val psiFile =
+                PsiManager.getInstance(project).findFile(virtualFile) as? KtFile ?: continue
 
             // Find all references to this element
             val fileReferences = findReferencesInFile(psiFile, elementName, element)
@@ -92,7 +95,7 @@ class GbktRenamePsiElementProcessor : RenamePsiElementProcessor() {
     private fun findReferencesInFile(
         file: KtFile,
         name: String,
-        originalElement: PsiElement
+        originalElement: PsiElement,
     ): List<PsiReference> {
         val references = mutableListOf<PsiReference>()
         val analysis = GbktDslVisitor.analyze(file)
@@ -124,7 +127,7 @@ class GbktRenamePsiElementProcessor : RenamePsiElementProcessor() {
     override fun prepareRenaming(
         element: PsiElement,
         newName: String,
-        allRenames: MutableMap<PsiElement, String>
+        allRenames: MutableMap<PsiElement, String>,
     ) {
         super.prepareRenaming(element, newName, allRenames)
 
@@ -137,13 +140,15 @@ class GbktRenamePsiElementProcessor : RenamePsiElementProcessor() {
         val gbktFiles = FileTypeIndex.getFiles(GbktFileType, scope)
 
         for (virtualFile in gbktFiles) {
-            val psiFile = PsiManager.getInstance(project).findFile(virtualFile) as? KtFile
-                ?: continue
+            val psiFile =
+                PsiManager.getInstance(project).findFile(virtualFile) as? KtFile ?: continue
 
             val analysis = GbktDslVisitor.analyze(psiFile)
 
             for (reference in analysis.references) {
-                if (reference.name == elementName && !isPartOfProperty(reference.element, element)) {
+                if (
+                    reference.name == elementName && !isPartOfProperty(reference.element, element)
+                ) {
                     // Use the name identifier element, not the whole reference expression.
                     // This ensures the rename processor correctly identifies what to rename.
                     val nameElement = reference.element.getReferencedNameElement()
@@ -155,26 +160,27 @@ class GbktRenamePsiElementProcessor : RenamePsiElementProcessor() {
 
     companion object {
         /** DSL functions that define named elements. */
-        private val DSL_DEFINITION_FUNCTIONS = setOf(
-            "entity",
-            "scene",
-            "dialog",
-            "camera",
-            "u8Var",
-            "u16Var",
-            "i8Var",
-            "i16Var",
-            "u8Array",
-            "u16Array",
-            "flags",
-            "character",
-            "monster",
-            "ability",
-            "item",
-            "floor",
-            "battle",
-            "inventory",
-            "statusEffect",
-        )
+        private val DSL_DEFINITION_FUNCTIONS =
+            setOf(
+                "entity",
+                "scene",
+                "dialog",
+                "camera",
+                "u8Var",
+                "u16Var",
+                "i8Var",
+                "i16Var",
+                "u8Array",
+                "u16Array",
+                "flags",
+                "character",
+                "monster",
+                "ability",
+                "item",
+                "floor",
+                "battle",
+                "inventory",
+                "statusEffect",
+            )
     }
 }

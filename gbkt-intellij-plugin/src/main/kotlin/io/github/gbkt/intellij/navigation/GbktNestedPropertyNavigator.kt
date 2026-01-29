@@ -63,8 +63,7 @@ object GbktNestedPropertyNavigator {
 
         // Find the root definition across all project files
         val project = file.project
-        val rootDefinition = findRootDefinitionInProject(rootName, project)
-            ?: return emptyList()
+        val rootDefinition = findRootDefinitionInProject(rootName, project) ?: return emptyList()
 
         // If only one element in chain, return the root
         if (chain.size == 1) {
@@ -85,14 +84,13 @@ object GbktNestedPropertyNavigator {
         return results
     }
 
-    /**
-     * Searches all `.gbkt.kts` files in the project for a definition with the given name.
-     */
+    /** Searches all `.gbkt.kts` files in the project for a definition with the given name. */
     private fun findRootDefinitionInProject(
         name: String,
         project: Project,
     ): GbktDslVisitor.DslDefinition? {
-        val gbktFiles = FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project)).toList()
+        val gbktFiles =
+            FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project)).toList()
         val psiManager = PsiManager.getInstance(project)
 
         for (virtualFile in gbktFiles) {
@@ -107,10 +105,7 @@ object GbktNestedPropertyNavigator {
         return null
     }
 
-    /**
-     * Extracts the property chain as a list of names.
-     * "hero.stats.hp" → ["hero", "stats", "hp"]
-     */
+    /** Extracts the property chain as a list of names. "hero.stats.hp" → ["hero", "stats", "hp"] */
     private fun extractPropertyChain(dotExpression: KtDotQualifiedExpression): List<String> =
         buildList {
             fun traverse(expr: org.jetbrains.kotlin.psi.KtExpression) {
@@ -133,37 +128,87 @@ object GbktNestedPropertyNavigator {
             traverse(dotExpression)
         }
 
-    /**
-     * Finds the root definition (entity, character, scene, etc.).
-     */
+    /** Finds the root definition (entity, character, scene, etc.). */
     private fun findRootDefinition(
         name: String,
         analysis: GbktDslVisitor,
     ): GbktDslVisitor.DslDefinition? {
         // Check entities first (most common)
-        analysis.entities.find { it.name == name }?.let { return it }
+        analysis.entities
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
 
         // Check scenes
-        analysis.scenes.find { it.name == name }?.let { return it }
+        analysis.scenes
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
 
         // Check dialogs
-        analysis.dialogs.find { it.name == name }?.let { return it }
+        analysis.dialogs
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
 
         // Check cameras
-        analysis.cameras.find { it.name == name }?.let { return it }
+        analysis.cameras
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
 
         // Check variables
-        analysis.variables.find { it.name == name }?.let { return it }
+        analysis.variables
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
 
         // Check RPG definitions
-        analysis.characters.find { it.name == name }?.let { return it }
-        analysis.monsters.find { it.name == name }?.let { return it }
-        analysis.abilities.find { it.name == name }?.let { return it }
-        analysis.items.find { it.name == name }?.let { return it }
-        analysis.floors.find { it.name == name }?.let { return it }
-        analysis.battles.find { it.name == name }?.let { return it }
-        analysis.inventories.find { it.name == name }?.let { return it }
-        analysis.statusEffects.find { it.name == name }?.let { return it }
+        analysis.characters
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
+        analysis.monsters
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
+        analysis.abilities
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
+        analysis.items
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
+        analysis.floors
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
+        analysis.battles
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
+        analysis.inventories
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
+        analysis.statusEffects
+            .find { it.name == name }
+            ?.let {
+                return it
+            }
 
         return null
     }
@@ -171,23 +216,22 @@ object GbktNestedPropertyNavigator {
     /**
      * Finds a nested block within a definition by traversing the lambda body.
      *
-     * For example, given an entity definition and ["combat", "maxHp"], this finds
-     * the combat { } block inside the entity.
+     * For example, given an entity definition and ["combat", "maxHp"], this finds the combat { }
+     * block inside the entity.
      */
-    private fun findNestedBlock(
-        callExpression: KtCallExpression,
-        path: List<String>,
-    ): PsiElement? {
+    private fun findNestedBlock(callExpression: KtCallExpression, path: List<String>): PsiElement? {
         if (path.isEmpty()) return callExpression
 
         val targetName = path.first()
 
         // Find the lambda argument
-        val lambda = PsiTreeUtil.findChildOfType(callExpression, KtLambdaExpression::class.java)
-            ?: return null
+        val lambda =
+            PsiTreeUtil.findChildOfType(callExpression, KtLambdaExpression::class.java)
+                ?: return null
 
         // Search for a call expression with the target name
-        val nestedCalls = PsiTreeUtil.findChildrenOfType(lambda, KtCallExpression::class.java).toList()
+        val nestedCalls =
+            PsiTreeUtil.findChildrenOfType(lambda, KtCallExpression::class.java).toList()
 
         for (nestedCall in nestedCalls) {
             val calleeName = nestedCall.calleeExpression?.text
@@ -204,9 +248,7 @@ object GbktNestedPropertyNavigator {
         return null
     }
 
-    /**
-     * Gets the type of a DSL definition for better navigation context.
-     */
+    /** Gets the type of a DSL definition for better navigation context. */
     fun getDefinitionType(definition: GbktDslVisitor.DslDefinition): DefinitionType {
         return when (definition.type) {
             GbktDslVisitor.DslType.ENTITY -> DefinitionType.ENTITY
@@ -247,15 +289,17 @@ object GbktNestedPropertyNavigator {
     }
 
     /** Known nested block types and their properties. */
-    val NESTED_BLOCKS = mapOf(
-        "entity" to listOf("position", "velocity", "sprite", "hitbox", "combat", "states", "physics"),
-        "sprite" to listOf("size", "palette", "regions", "animations"),
-        "combat" to listOf("maxHp", "attackPower", "defense", "team", "invincibilityFrames"),
-        "states" to listOf("state"),
-        "state" to listOf("enter", "exit", "tick", "on"),
-        "character" to listOf("stats", "level", "onLevelUp"),
-        "monster" to listOf("baseStats", "ai", "drops"),
-        "ability" to listOf("cost", "targeting", "aspect", "execute"),
-        "item" to listOf("category", "slot", "stats", "onUse"),
-    )
+    val NESTED_BLOCKS =
+        mapOf(
+            "entity" to
+                listOf("position", "velocity", "sprite", "hitbox", "combat", "states", "physics"),
+            "sprite" to listOf("size", "palette", "regions", "animations"),
+            "combat" to listOf("maxHp", "attackPower", "defense", "team", "invincibilityFrames"),
+            "states" to listOf("state"),
+            "state" to listOf("enter", "exit", "tick", "on"),
+            "character" to listOf("stats", "level", "onLevelUp"),
+            "monster" to listOf("baseStats", "ai", "drops"),
+            "ability" to listOf("cost", "targeting", "aspect", "execute"),
+            "item" to listOf("category", "slot", "stats", "onUse"),
+        )
 }

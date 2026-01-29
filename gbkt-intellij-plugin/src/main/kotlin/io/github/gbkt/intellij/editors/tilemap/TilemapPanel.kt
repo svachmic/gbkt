@@ -233,7 +233,7 @@ class TilemapPanel : JPanel() {
                 Tool.ERASER -> {
                     placeTile(x, y, 0)
                 }
-                else -> Unit  // Other tools don't handle drag
+                else -> Unit // Other tools don't handle drag
             }
             lastDragX = x
             lastDragY = y

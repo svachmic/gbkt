@@ -303,10 +303,17 @@ class SimulationContext(val game: Game) {
             is IRPoolForEach -> executePoolForEach(stmt)
             is IRPoolDespawnWhere -> executePoolDespawnWhere(stmt)
 
-            // Camera
-            is IRCameraSetPosition -> {
-                cameraX = evaluateExpr(stmt.x)
-                cameraY = evaluateExpr(stmt.y)
+            // Camera - SetPosition and SnapTo have same effect in simulation
+            is IRCameraSetPosition,
+            is IRCameraSnapTo -> {
+                val (x, y) =
+                    when (stmt) {
+                        is IRCameraSetPosition -> stmt.x to stmt.y
+                        is IRCameraSnapTo -> stmt.x to stmt.y
+                        else -> error("Unreachable")
+                    }
+                cameraX = evaluateExpr(x)
+                cameraY = evaluateExpr(y)
             }
             is IRCameraUpdate -> {
                 /* Camera updates not simulated in detail */
@@ -316,10 +323,6 @@ class SimulationContext(val game: Game) {
             }
             is IRCameraStopFollow -> {
                 /* Not simulated */
-            }
-            is IRCameraSnapTo -> {
-                cameraX = evaluateExpr(stmt.x)
-                cameraY = evaluateExpr(stmt.y)
             }
             is IRCameraSetBounds -> {
                 /* Bounds not simulated */

@@ -549,23 +549,19 @@ class GBDKCodeGenerator(internal val game: Game) {
         return inlineFunctions
     }
 
+    /** C types used in variable and function declarations. */
+    private val cTypePattern =
+        """(?:U?(?:INT(?:8|16|32)|BYTE|WORD)|(?:u?int(?:8|16|32)|char)_t|fixed_t|char|void|InventorySlot|\w+_t)"""
+
     /** Pattern for matching variable declarations (supports 2D arrays and custom types). */
     private val varDeclPattern =
         Regex(
-            """^(static\s+)?(const\s+)?""" +
-                """(UINT8|UINT16|INT8|INT16|uint8_t|uint16_t|int8_t|int16_t|uint32_t|int32_t|""" +
-                """UBYTE|BYTE|UWORD|WORD|fixed_t|char|InventorySlot|\w+_t)""" +
-                """\s+(\*?\s*)(\w+)((?:\[[^\]]*\])+)?\s*[=;{]"""
+            """^(static\s+)?(const\s+)?($cTypePattern)\s+(\*?\s*)(\w+)((?:\[[^\]]*\])+)?\s*[=;{]"""
         )
 
     /** Pattern for matching function definitions (with optional BANKED keyword). */
     private val funcDefPattern =
-        Regex(
-            """^(static\s+)?""" +
-                """(void|UINT8|UINT16|INT8|INT16|uint8_t|uint16_t|int8_t|int16_t|""" +
-                """UBYTE|BYTE|UWORD|WORD|fixed_t|char\s*\*?)""" +
-                """\s+(\w+)\s*\(([^)]*)\)\s*(BANKED\s*)?\{"""
-        )
+        Regex("""^(static\s+)?($cTypePattern\s*\*?)\s+(\w+)\s*\(([^)]*)\)\s*(BANKED\s*)?\{""")
 
     /** Extract extern variable declarations from source code. */
     private fun extractExternDeclarations(lines: List<String>): List<String> {
@@ -850,7 +846,8 @@ class GBDKCodeGenerator(internal val game: Game) {
         val trimmed = line.trimStart()
 
         // Skip inline functions and defines (they're in header)
-        if (trimmed.startsWith(INLINE_PREFIX) || trimmed.startsWith(STATIC_INLINE_PREFIX)) return true
+        if (trimmed.startsWith(INLINE_PREFIX) || trimmed.startsWith(STATIC_INLINE_PREFIX))
+            return true
         if (trimmed.startsWith(DEFINE_DIRECTIVE)) return true
 
         // Handle bank pragma (updates state but returns true to skip appending)

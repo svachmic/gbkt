@@ -26,8 +26,8 @@ import org.jetbrains.kotlin.psi.KtPsiFactory
 /**
  * Quick fix that creates a new variable definition.
  *
- * When an undefined variable reference is detected, this quick fix offers to create
- * a new variable definition using u8Var, u16Var, etc.
+ * When an undefined variable reference is detected, this quick fix offers to create a new variable
+ * definition using u8Var, u16Var, etc.
  */
 class CreateVariableQuickFix(
     private val variableName: String,
@@ -60,7 +60,8 @@ class CreateVariableQuickFix(
         val psiFactory = KtPsiFactory(project)
 
         // Template for new variable
-        val template = "\nvar $variableName by ${variableType.dslFunction}(${variableType.defaultValue})\n"
+        val template =
+            "\nvar $variableName by ${variableType.dslFunction}(${variableType.defaultValue})\n"
 
         WriteCommandAction.runWriteCommandAction(project) {
             // Find a good insertion point - after other variable definitions or near top
@@ -90,8 +91,9 @@ class CreateVariableQuickFix(
         val declarations = file.declarations
 
         // Find the last variable definition to insert after it
-        val lastVariable = declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtProperty>()
-            .lastOrNull { property ->
+        val lastVariable =
+            declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtProperty>().lastOrNull {
+                property ->
                 val delegate = property.delegateExpression
                 delegate is org.jetbrains.kotlin.psi.KtCallExpression &&
                     delegate.calleeExpression?.text in VARIABLE_FUNCTIONS
@@ -113,9 +115,16 @@ class CreateVariableQuickFix(
     }
 
     companion object {
-        private val VARIABLE_FUNCTIONS = setOf(
-            "u8Var", "u16Var", "i8Var", "i16Var",
-            "u8Array", "u16Array", "i8Array", "i16Array",
-        )
+        private val VARIABLE_FUNCTIONS =
+            setOf(
+                "u8Var",
+                "u16Var",
+                "i8Var",
+                "i16Var",
+                "u8Array",
+                "u16Array",
+                "i8Array",
+                "i16Array",
+            )
     }
 }

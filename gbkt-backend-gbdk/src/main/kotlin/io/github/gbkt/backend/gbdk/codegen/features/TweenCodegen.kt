@@ -163,9 +163,12 @@ private fun computeEasingValue(easing: Easing, t: Double): Int {
 
                     // Oscillation period approximation (2 bounces)
                     val phase =
-                        if (t < 0.25) t * 8.0
-                        else if (t < 0.5) 2.0 - t * 4.0
-                        else if (t < 0.75) t * 4.0 - 2.0 else 4.0 - t * 4.0
+                        when {
+                            t < 0.25 -> t * 8.0
+                            t < 0.5 -> 2.0 - t * 4.0
+                            t < 0.75 -> t * 4.0 - 2.0
+                            else -> 4.0 - t * 4.0
+                        }
 
                     // Combine for elastic effect with overshoot
                     val overshoot = amplitude * phase * 0.3

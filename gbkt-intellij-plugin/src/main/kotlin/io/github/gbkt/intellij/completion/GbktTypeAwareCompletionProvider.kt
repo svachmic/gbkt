@@ -61,7 +61,8 @@ class GbktTypeAwareCompletionProvider : CompletionProvider<CompletionParameters>
         val position = parameters.position
 
         // Skip completion inside strings and comments for performance
-        if (PsiTreeUtil.getParentOfType(position, KtStringTemplateExpression::class.java) != null) return
+        if (PsiTreeUtil.getParentOfType(position, KtStringTemplateExpression::class.java) != null)
+            return
         if (PsiTreeUtil.getParentOfType(position, PsiComment::class.java) != null) return
 
         // Detect assignment or named argument context
@@ -76,27 +77,27 @@ class GbktTypeAwareCompletionProvider : CompletionProvider<CompletionParameters>
             val fqn = ENUM_FQN_MAPPINGS[enumType]
 
             for (value in values) {
-                val builder = LookupElementBuilder.create("$enumType.$value")
-                    .withIcon(AllIcons.Nodes.Enum)
-                    .withTypeText(enumType)
-                    .withPresentableText(value)
-                    .withTailText(" ($enumType)", true)
+                val builder =
+                    LookupElementBuilder.create("$enumType.$value")
+                        .withIcon(AllIcons.Nodes.Enum)
+                        .withTypeText(enumType)
+                        .withPresentableText(value)
+                        .withTailText(" ($enumType)", true)
 
                 // Add import handler if we have a known FQN
-                val element = if (fqn != null) {
-                    builder.withInsertHandler(EnumImportInsertHandler(fqn))
-                } else {
-                    builder
-                }
+                val element =
+                    if (fqn != null) {
+                        builder.withInsertHandler(EnumImportInsertHandler(fqn))
+                    } else {
+                        builder
+                    }
 
                 result.addElement(element)
             }
         }
     }
 
-    /**
-     * Insert handler that adds the import for enum types when selected.
-     */
+    /** Insert handler that adds the import for enum types when selected. */
     private class EnumImportInsertHandler(private val fqn: String) : InsertHandler<LookupElement> {
         override fun handleInsert(context: InsertionContext, item: LookupElement) {
             val file = context.file as? KtFile ?: return
@@ -104,19 +105,22 @@ class GbktTypeAwareCompletionProvider : CompletionProvider<CompletionParameters>
 
             // Check if import already exists
             val importDirectives = file.importDirectives
-            val alreadyImported = importDirectives.any { directive ->
-                val importPath = directive.importPath?.pathStr
-                importPath == fqn || importPath == "$fqn.*" ||
-                    importPath?.startsWith("${fqn.substringBeforeLast('.')}.*") == true
-            }
+            val alreadyImported =
+                importDirectives.any { directive ->
+                    val importPath = directive.importPath?.pathStr
+                    importPath == fqn ||
+                        importPath == "$fqn.*" ||
+                        importPath?.startsWith("${fqn.substringBeforeLast('.')}.*") == true
+                }
 
             if (!alreadyImported) {
                 // Add the import statement
                 val psiFactory = KtPsiFactory(project)
-                val importPath = org.jetbrains.kotlin.resolve.ImportPath(
-                    org.jetbrains.kotlin.name.FqName(fqn),
-                    false // isAllUnder
-                )
+                val importPath =
+                    org.jetbrains.kotlin.resolve.ImportPath(
+                        org.jetbrains.kotlin.name.FqName(fqn),
+                        false, // isAllUnder
+                    )
                 val importDirective = psiFactory.createImportDirective(importPath)
 
                 // Find the import list or create one
@@ -137,8 +141,8 @@ class GbktTypeAwareCompletionProvider : CompletionProvider<CompletionParameters>
     }
 
     /**
-     * Detects the parameter name context from assignment or function argument.
-     * Returns the parameter name (e.g., "slot", "category", "targeting").
+     * Detects the parameter name context from assignment or function argument. Returns the
+     * parameter name (e.g., "slot", "category", "targeting").
      */
     private fun detectParameterContext(position: PsiElement): String? {
         // Check for binary expression (assignment): slot = <cursor>
@@ -182,170 +186,170 @@ class GbktTypeAwareCompletionProvider : CompletionProvider<CompletionParameters>
 
     companion object {
         /** Maps enum type names to their fully qualified names in gbkt-core. */
-        private val ENUM_FQN_MAPPINGS = mapOf(
-            "EquipSlot" to "io.github.gbkt.core.rpg.EquipSlot",
-            "ItemCategory" to "io.github.gbkt.core.rpg.ItemCategory",
-            "TargetingMode" to "io.github.gbkt.core.rpg.TargetingMode",
-            "Aspect" to "io.github.gbkt.core.rpg.Aspect",
-            "MonsterTier" to "io.github.gbkt.core.rpg.MonsterTier",
-            "TurnOrderStrategy" to "io.github.gbkt.core.rpg.TurnOrderStrategy",
-            "StackMode" to "io.github.gbkt.core.rpg.StackMode",
-            "MovementStyle" to "io.github.gbkt.core.exploration.MovementStyle",
-            "Team" to "io.github.gbkt.core.combat.Team",
-            "BattleState" to "io.github.gbkt.core.rpg.BattleState",
-            "Easing" to "io.github.gbkt.core.graphics.Easing",
-        )
+        private val ENUM_FQN_MAPPINGS =
+            mapOf(
+                "EquipSlot" to "io.github.gbkt.core.rpg.EquipSlot",
+                "ItemCategory" to "io.github.gbkt.core.rpg.ItemCategory",
+                "TargetingMode" to "io.github.gbkt.core.rpg.TargetingMode",
+                "Aspect" to "io.github.gbkt.core.rpg.Aspect",
+                "MonsterTier" to "io.github.gbkt.core.rpg.MonsterTier",
+                "TurnOrderStrategy" to "io.github.gbkt.core.rpg.TurnOrderStrategy",
+                "StackMode" to "io.github.gbkt.core.rpg.StackMode",
+                "MovementStyle" to "io.github.gbkt.core.exploration.MovementStyle",
+                "Team" to "io.github.gbkt.core.combat.Team",
+                "BattleState" to "io.github.gbkt.core.rpg.BattleState",
+                "Easing" to "io.github.gbkt.core.graphics.Easing",
+            )
 
         /** Functions where the first argument is an enum type. */
-        private val FIRST_ARG_ENUM_FUNCTIONS = setOf(
-            "targeting",
-            "aspect",
-            "tier",
-            "turnOrder",
-            "stackMode",
-            "movementStyle",
-            "category",
-            "slot",
-        )
+        private val FIRST_ARG_ENUM_FUNCTIONS =
+            setOf(
+                "targeting",
+                "aspect",
+                "tier",
+                "turnOrder",
+                "stackMode",
+                "movementStyle",
+                "category",
+                "slot",
+            )
 
         /** Mapping from parameter names to their possible enum types and values. */
-        private val ENUM_MAPPINGS: Map<String, Map<String, List<String>>> = mapOf(
-            // Equipment slot
-            "slot" to mapOf(
-                "EquipSlot" to listOf(
-                    "WEAPON",
-                    "SHIELD",
-                    "HEAD",
-                    "BODY",
-                    "ACCESSORY",
-                    "ACCESSORY_1",
-                    "ACCESSORY_2",
-                )
-            ),
+        private val ENUM_MAPPINGS: Map<String, Map<String, List<String>>> =
+            mapOf(
+                // Equipment slot
+                "slot" to
+                    mapOf(
+                        "EquipSlot" to
+                            listOf(
+                                "WEAPON",
+                                "SHIELD",
+                                "HEAD",
+                                "BODY",
+                                "ACCESSORY",
+                                "ACCESSORY_1",
+                                "ACCESSORY_2",
+                            )
+                    ),
 
-            // Item category
-            "category" to mapOf(
-                "ItemCategory" to listOf(
-                    "CONSUMABLE",
-                    "WEAPON",
-                    "ARMOR",
-                    "ACCESSORY",
-                    "KEY_ITEM",
-                    "MATERIAL",
-                )
-            ),
+                // Item category
+                "category" to
+                    mapOf(
+                        "ItemCategory" to
+                            listOf(
+                                "CONSUMABLE",
+                                "WEAPON",
+                                "ARMOR",
+                                "ACCESSORY",
+                                "KEY_ITEM",
+                                "MATERIAL",
+                            )
+                    ),
 
-            // Ability targeting
-            "targeting" to mapOf(
-                "TargetingMode" to listOf(
-                    "SELF",
-                    "SINGLE_ALLY",
-                    "SINGLE_ENEMY",
-                    "ALL_ALLIES",
-                    "ALL_ENEMIES",
-                    "ALL",
-                    "RANDOM_ENEMY",
-                    "RANDOM_ALLY",
-                )
-            ),
+                // Ability targeting
+                "targeting" to
+                    mapOf(
+                        "TargetingMode" to
+                            listOf(
+                                "SELF",
+                                "SINGLE_ALLY",
+                                "SINGLE_ENEMY",
+                                "ALL_ALLIES",
+                                "ALL_ENEMIES",
+                                "ALL",
+                                "RANDOM_ENEMY",
+                                "RANDOM_ALLY",
+                            )
+                    ),
 
-            // Elemental aspect
-            "aspect" to mapOf(
-                "Aspect" to listOf(
-                    "FIRE",
-                    "ICE",
-                    "LIGHTNING",
-                    "EARTH",
-                    "WIND",
-                    "WATER",
-                    "LIGHT",
-                    "DARK",
-                    "PHYSICAL",
-                    "NONE",
-                )
-            ),
+                // Elemental aspect
+                "aspect" to
+                    mapOf(
+                        "Aspect" to
+                            listOf(
+                                "FIRE",
+                                "ICE",
+                                "LIGHTNING",
+                                "EARTH",
+                                "WIND",
+                                "WATER",
+                                "LIGHT",
+                                "DARK",
+                                "PHYSICAL",
+                                "NONE",
+                            )
+                    ),
 
-            // Monster tier
-            "tier" to mapOf(
-                "MonsterTier" to listOf(
-                    "COMMON",
-                    "UNCOMMON",
-                    "RARE",
-                    "ELITE",
-                    "BOSS",
-                    "LEGENDARY",
-                )
-            ),
+                // Monster tier
+                "tier" to
+                    mapOf(
+                        "MonsterTier" to
+                            listOf("COMMON", "UNCOMMON", "RARE", "ELITE", "BOSS", "LEGENDARY")
+                    ),
 
-            // Turn order strategy
-            "turnOrder" to mapOf(
-                "TurnOrderStrategy" to listOf(
-                    "SPEED_BASED",
-                    "ROUND_ROBIN",
-                    "PLAYER_FIRST",
-                    "ENEMY_FIRST",
-                    "RANDOM",
-                )
-            ),
+                // Turn order strategy
+                "turnOrder" to
+                    mapOf(
+                        "TurnOrderStrategy" to
+                            listOf(
+                                "SPEED_BASED",
+                                "ROUND_ROBIN",
+                                "PLAYER_FIRST",
+                                "ENEMY_FIRST",
+                                "RANDOM",
+                            )
+                    ),
 
-            // Status effect stacking
-            "stackMode" to mapOf(
-                "StackMode" to listOf(
-                    "REPLACE",
-                    "REFRESH_DURATION",
-                    "STACK_INTENSITY",
-                    "STACK_DURATION",
-                    "IGNORE",
-                )
-            ),
+                // Status effect stacking
+                "stackMode" to
+                    mapOf(
+                        "StackMode" to
+                            listOf(
+                                "REPLACE",
+                                "REFRESH_DURATION",
+                                "STACK_INTENSITY",
+                                "STACK_DURATION",
+                                "IGNORE",
+                            )
+                    ),
 
-            // Movement style for exploration
-            "movementStyle" to mapOf(
-                "MovementStyle" to listOf(
-                    "GRID",
-                    "SMOOTH",
-                    "FREE",
-                )
-            ),
+                // Movement style for exploration
+                "movementStyle" to mapOf("MovementStyle" to listOf("GRID", "SMOOTH", "FREE")),
 
-            // Combat team
-            "team" to mapOf(
-                "Team" to listOf(
-                    "PLAYER",
-                    "ENEMY",
-                    "NEUTRAL",
-                )
-            ),
+                // Combat team
+                "team" to mapOf("Team" to listOf("PLAYER", "ENEMY", "NEUTRAL")),
 
-            // Battle state
-            "onState" to mapOf(
-                "BattleState" to listOf(
-                    "INIT",
-                    "PLAYER_TURN",
-                    "ENEMY_TURN",
-                    "ACTION",
-                    "VICTORY",
-                    "DEFEAT",
-                    "FLEE",
-                )
-            ),
+                // Battle state
+                "onState" to
+                    mapOf(
+                        "BattleState" to
+                            listOf(
+                                "INIT",
+                                "PLAYER_TURN",
+                                "ENEMY_TURN",
+                                "ACTION",
+                                "VICTORY",
+                                "DEFEAT",
+                                "FLEE",
+                            )
+                    ),
 
-            // Easing functions
-            "easing" to mapOf(
-                "Easing" to listOf(
-                    "LINEAR",
-                    "EASE_IN",
-                    "EASE_OUT",
-                    "EASE_IN_OUT",
-                    "BOUNCE",
-                    "ELASTIC",
-                )
-            ),
+                // Easing functions
+                "easing" to
+                    mapOf(
+                        "Easing" to
+                            listOf(
+                                "LINEAR",
+                                "EASE_IN",
+                                "EASE_OUT",
+                                "EASE_IN_OUT",
+                                "BOUNCE",
+                                "ELASTIC",
+                            )
+                    ),
 
-            // Sprite size (special case - uses infix notation)
-            "size" to mapOf(
-                "" to listOf("8 x 8", "8 x 16", "16 x 8", "16 x 16")
-            ),
-        )
+                // Sprite size (special case - uses infix notation)
+                "size" to mapOf("" to listOf("8 x 8", "8 x 16", "16 x 8", "16 x 16")),
+            )
     }
 }

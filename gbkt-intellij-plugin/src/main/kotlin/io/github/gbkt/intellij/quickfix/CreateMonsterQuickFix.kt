@@ -28,8 +28,8 @@ import org.jetbrains.kotlin.psi.KtFile
 /**
  * Quick fix that creates a new monster definition.
  *
- * When an undefined monster reference is detected, this quick fix offers to create
- * a new monster definition at the appropriate location in the file.
+ * When an undefined monster reference is detected, this quick fix offers to create a new monster
+ * definition at the appropriate location in the file.
  */
 class CreateMonsterQuickFix(private val monsterName: String) : LocalQuickFix {
 
@@ -41,7 +41,8 @@ class CreateMonsterQuickFix(private val monsterName: String) : LocalQuickFix {
         val file = descriptor.psiElement.containingFile as? KtFile ?: return
 
         val defaults = ClampValueQuickFix.Companion.Defaults
-        val template = """
+        val template =
+            """
 
 val $monsterName by monster {
     name("${monsterName.replaceFirstChar { it.uppercase() }}")
@@ -66,7 +67,9 @@ val $monsterName by monster {
 
         WriteCommandAction.runWriteCommandAction(project) {
             val insertionPoint = findInsertionPoint(file)
-            val document = PsiDocumentManager.getInstance(project).getDocument(file) ?: return@runWriteCommandAction
+            val document =
+                PsiDocumentManager.getInstance(project).getDocument(file)
+                    ?: return@runWriteCommandAction
 
             val insertOffset: Int
             if (insertionPoint != null) {
@@ -99,8 +102,9 @@ val $monsterName by monster {
         val declarations = file.declarations
 
         // Find the last monster definition
-        val lastMonster = declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtProperty>()
-            .lastOrNull { property ->
+        val lastMonster =
+            declarations.filterIsInstance<org.jetbrains.kotlin.psi.KtProperty>().lastOrNull {
+                property ->
                 val delegate = property.delegateExpression
                 delegate is org.jetbrains.kotlin.psi.KtCallExpression &&
                     delegate.calleeExpression?.text == "monster"

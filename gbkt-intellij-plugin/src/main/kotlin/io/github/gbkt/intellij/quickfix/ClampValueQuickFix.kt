@@ -24,8 +24,8 @@ import org.jetbrains.kotlin.psi.KtPsiFactory
 /**
  * Quick fix that clamps an out-of-range value to valid bounds.
  *
- * When a Game Boy constraint violation is detected (e.g., coordinate > 255),
- * this quick fix offers to clamp the value to the valid range.
+ * When a Game Boy constraint violation is detected (e.g., coordinate > 255), this quick fix offers
+ * to clamp the value to the valid range.
  */
 class ClampValueQuickFix(
     private val currentValue: Int,
@@ -60,21 +60,15 @@ class ClampValueQuickFix(
             val PALETTE_INDEX = 0..7
             val SPRITE_SIZE = listOf(8, 16)
 
-            /**
-             * Screen-space X coordinate (visible area).
-             * Game Boy screen is 160 pixels wide.
-             */
+            /** Screen-space X coordinate (visible area). Game Boy screen is 160 pixels wide. */
             val SCREEN_X = 0..159
 
-            /**
-             * Screen-space Y coordinate (visible area).
-             * Game Boy screen is 144 pixels tall.
-             */
+            /** Screen-space Y coordinate (visible area). Game Boy screen is 144 pixels tall. */
             val SCREEN_Y = 0..143
 
             /**
-             * World-space coordinates (can extend beyond screen).
-             * Used for world position, scrolling backgrounds, etc.
+             * World-space coordinates (can extend beyond screen). Used for world position,
+             * scrolling backgrounds, etc.
              */
             val WORLD_X = 0..255
             val WORLD_Y = 0..255
