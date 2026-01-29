@@ -16,7 +16,6 @@ import io.github.gbkt.core.ir.Expr
 import io.github.gbkt.core.ir.ShakeDecay
 import io.github.gbkt.core.print
 import io.github.gbkt.core.rpg.BattleSystem
-import io.github.gbkt.core.rpg.CombatFormulas
 import io.github.gbkt.core.rpg.battleUpdate
 import io.github.gbkt.core.rpg.combatIsInState
 import io.github.gbkt.core.rpg.combatPartyCount
@@ -53,12 +52,23 @@ import io.github.gbkt.examples.labyrinth.StatusIcons
  * - 5 = Enemy turn (framework handles AI)
  * - 6 = Result display
  */
-@Suppress("LongMethod", "LongParameterList", "UnusedParameter")
+
+// Battle menu string constants
+private const val MSG_MONSTER_ATTACK = "MONSTER ATTACK!"
+private const val MENU_ATTACK_SELECTED = ">ATTACK"
+private const val MENU_ATTACK_UNSELECTED = " ATTACK"
+private const val MENU_ABILITY_SELECTED = ">ABILITY"
+private const val MENU_ABILITY_UNSELECTED = " ABILITY"
+private const val MENU_ITEM_SELECTED = ">ITEM"
+private const val MENU_ITEM_UNSELECTED = " ITEM"
+private const val MENU_FLEE_SELECTED = ">FLEE"
+private const val MENU_FLEE_UNSELECTED = " FLEE"
+
+@Suppress("LongMethod", "LongParameterList")
 fun GameBuilder.initBattleScene(
     state: GameState,
     battleState: BattleSceneState,
     combatSystem: BattleSystem,
-    combatFormulas: CombatFormulas,
     sounds: Sounds,
     gameplay: SceneRef,
     camera: Camera,
@@ -101,7 +111,7 @@ fun GameBuilder.initBattleScene(
             battleState.messageTimer set 0
 
             // Draw battle UI
-            print("MONSTER ATTACK!") at (2 to 1)
+            print(MSG_MONSTER_ATTACK) at (2 to 1)
             print("") at (0 to 4)
 
             // Initialize HP bars using tile-based StatusBar system
@@ -124,10 +134,10 @@ fun GameBuilder.initBattleScene(
             battleState.monster3StatusEffects set 0
 
             // Draw main menu
-            print(">ATTACK") at (1 to 13)
-            print(" ABILITY") at (1 to 14)
-            print(" ITEM") at (11 to 13)
-            print(" FLEE") at (11 to 14)
+            print(MENU_ATTACK_SELECTED) at (1 to 13)
+            print(MENU_ABILITY_UNSELECTED) at (1 to 14)
+            print(MENU_ITEM_UNSELECTED) at (11 to 13)
+            print(MENU_FLEE_UNSELECTED) at (11 to 14)
         }
 
         every.frame {
@@ -395,12 +405,12 @@ fun GameBuilder.initBattleScene(
                         sounds.menuMove.play()
                         // Redraw menu with updated cursor
                         whenever(battleState.menuCursor isEqualTo 0) {
-                            print(">ATTACK") at (1 to 13)
-                            print(" ABILITY") at (1 to 14)
+                            print(MENU_ATTACK_SELECTED) at (1 to 13)
+                            print(MENU_ABILITY_UNSELECTED) at (1 to 14)
                         }
                         whenever(battleState.menuCursor isEqualTo 2) {
-                            print(">ITEM") at (11 to 13)
-                            print(" FLEE") at (11 to 14)
+                            print(MENU_ITEM_SELECTED) at (11 to 13)
+                            print(MENU_FLEE_UNSELECTED) at (11 to 14)
                         }
                     }
                 }
@@ -410,12 +420,12 @@ fun GameBuilder.initBattleScene(
                         sounds.menuMove.play()
                         // Redraw menu with updated cursor
                         whenever(battleState.menuCursor isEqualTo 1) {
-                            print(" ATTACK") at (1 to 13)
-                            print(">ABILITY") at (1 to 14)
+                            print(MENU_ATTACK_UNSELECTED) at (1 to 13)
+                            print(MENU_ABILITY_SELECTED) at (1 to 14)
                         }
                         whenever(battleState.menuCursor isEqualTo 3) {
-                            print(" ITEM") at (11 to 13)
-                            print(">FLEE") at (11 to 14)
+                            print(MENU_ITEM_UNSELECTED) at (11 to 13)
+                            print(MENU_FLEE_SELECTED) at (11 to 14)
                         }
                     }
                 }
@@ -425,12 +435,12 @@ fun GameBuilder.initBattleScene(
                         sounds.menuMove.play()
                         // Moving from right column to left column
                         whenever(battleState.menuCursor isEqualTo 0) {
-                            print(">ATTACK") at (1 to 13)
-                            print(" ITEM") at (11 to 13)
+                            print(MENU_ATTACK_SELECTED) at (1 to 13)
+                            print(MENU_ITEM_UNSELECTED) at (11 to 13)
                         }
                         whenever(battleState.menuCursor isEqualTo 1) {
-                            print(">ABILITY") at (1 to 14)
-                            print(" FLEE") at (11 to 14)
+                            print(MENU_ABILITY_SELECTED) at (1 to 14)
+                            print(MENU_FLEE_UNSELECTED) at (11 to 14)
                         }
                     }
                 }
@@ -440,12 +450,12 @@ fun GameBuilder.initBattleScene(
                         sounds.menuMove.play()
                         // Moving from left column to right column
                         whenever(battleState.menuCursor isEqualTo 2) {
-                            print(" ATTACK") at (1 to 13)
-                            print(">ITEM") at (11 to 13)
+                            print(MENU_ATTACK_UNSELECTED) at (1 to 13)
+                            print(MENU_ITEM_SELECTED) at (11 to 13)
                         }
                         whenever(battleState.menuCursor isEqualTo 3) {
-                            print(" ABILITY") at (1 to 14)
-                            print(">FLEE") at (11 to 14)
+                            print(MENU_ABILITY_UNSELECTED) at (1 to 14)
+                            print(MENU_FLEE_SELECTED) at (11 to 14)
                         }
                     }
                 }
@@ -514,11 +524,11 @@ fun GameBuilder.initBattleScene(
                     sounds.menuCancel.play()
                     battleState.menuState set 0
                     // Redraw main menu with cursor on Attack
-                    print("MONSTER ATTACK!") at (2 to 1)
-                    print(">ATTACK") at (1 to 13)
-                    print(" ABILITY") at (1 to 14)
-                    print(" ITEM") at (11 to 13)
-                    print(" FLEE") at (11 to 14)
+                    print(MSG_MONSTER_ATTACK) at (2 to 1)
+                    print(MENU_ATTACK_SELECTED) at (1 to 13)
+                    print(MENU_ABILITY_UNSELECTED) at (1 to 14)
+                    print(MENU_ITEM_UNSELECTED) at (11 to 13)
+                    print(MENU_FLEE_UNSELECTED) at (11 to 14)
                     battleState.menuCursor set 0
                 }
             }
@@ -556,11 +566,11 @@ fun GameBuilder.initBattleScene(
                     battleState.menuState set 0
                     // Redraw main menu
                     screen.clear()
-                    print("MONSTER ATTACK!") at (2 to 1)
-                    print(">ATTACK") at (1 to 13)
-                    print(" ABILITY") at (1 to 14)
-                    print(" ITEM") at (11 to 13)
-                    print(" FLEE") at (11 to 14)
+                    print(MSG_MONSTER_ATTACK) at (2 to 1)
+                    print(MENU_ATTACK_SELECTED) at (1 to 13)
+                    print(MENU_ABILITY_UNSELECTED) at (1 to 14)
+                    print(MENU_ITEM_UNSELECTED) at (11 to 13)
+                    print(MENU_FLEE_UNSELECTED) at (11 to 14)
                     battleState.menuCursor set 0
                 }
             }
@@ -597,11 +607,11 @@ fun GameBuilder.initBattleScene(
                     battleState.menuState set 0
                     // Redraw main menu
                     screen.clear()
-                    print("MONSTER ATTACK!") at (2 to 1)
-                    print(">ATTACK") at (1 to 13)
-                    print(" ABILITY") at (1 to 14)
-                    print(" ITEM") at (11 to 13)
-                    print(" FLEE") at (11 to 14)
+                    print(MSG_MONSTER_ATTACK) at (2 to 1)
+                    print(MENU_ATTACK_SELECTED) at (1 to 13)
+                    print(MENU_ABILITY_UNSELECTED) at (1 to 14)
+                    print(MENU_ITEM_UNSELECTED) at (11 to 13)
+                    print(MENU_FLEE_UNSELECTED) at (11 to 14)
                     battleState.menuCursor set 0
                 }
             }

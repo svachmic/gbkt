@@ -26,6 +26,15 @@ import io.github.gbkt.examples.labyrinth.Sounds
  * - 1: Continue - Load a saved game (goes to hero select for now)
  * - 2: Options - Audio settings
  */
+
+// Title menu string constants
+private const val MENU_NEW_GAME_SELECTED = ">NEW GAME"
+private const val MENU_NEW_GAME_UNSELECTED = " NEW GAME"
+private const val MENU_CONTINUE_SELECTED = ">CONTINUE"
+private const val MENU_CONTINUE_UNSELECTED = " CONTINUE"
+private const val MENU_OPTIONS_SELECTED = ">OPTIONS"
+private const val MENU_OPTIONS_UNSELECTED = " OPTIONS"
+
 @Suppress("LongMethod")
 fun GameBuilder.initTitleScene(
     state: GameState,
@@ -45,9 +54,9 @@ fun GameBuilder.initTitleScene(
             print("") at (0 to 7)
 
             // Draw menu options with cursor on first option
-            print(">NEW GAME") at (5 to 9)
-            print(" CONTINUE") at (5 to 11)
-            print(" OPTIONS") at (5 to 13)
+            print(MENU_NEW_GAME_SELECTED) at (5 to 9)
+            print(MENU_CONTINUE_UNSELECTED) at (5 to 11)
+            print(MENU_OPTIONS_UNSELECTED) at (5 to 13)
 
             // Draw prompt
             print("") at (0 to 15)
@@ -66,14 +75,14 @@ fun GameBuilder.initTitleScene(
                     sounds.menuMove.play()
                     // Update cursor display
                     whenever(state.titleMenuCursor isEqualTo 0) {
-                        print(">NEW GAME") at (5 to 9)
-                        print(" CONTINUE") at (5 to 11)
-                        print(" OPTIONS") at (5 to 13)
+                        print(MENU_NEW_GAME_SELECTED) at (5 to 9)
+                        print(MENU_CONTINUE_UNSELECTED) at (5 to 11)
+                        print(MENU_OPTIONS_UNSELECTED) at (5 to 13)
                     }
                     whenever(state.titleMenuCursor isEqualTo 1) {
-                        print(" NEW GAME") at (5 to 9)
-                        print(">CONTINUE") at (5 to 11)
-                        print(" OPTIONS") at (5 to 13)
+                        print(MENU_NEW_GAME_UNSELECTED) at (5 to 9)
+                        print(MENU_CONTINUE_SELECTED) at (5 to 11)
+                        print(MENU_OPTIONS_UNSELECTED) at (5 to 13)
                     }
                 }
             }
@@ -85,14 +94,14 @@ fun GameBuilder.initTitleScene(
                     sounds.menuMove.play()
                     // Update cursor display
                     whenever(state.titleMenuCursor isEqualTo 1) {
-                        print(" NEW GAME") at (5 to 9)
-                        print(">CONTINUE") at (5 to 11)
-                        print(" OPTIONS") at (5 to 13)
+                        print(MENU_NEW_GAME_UNSELECTED) at (5 to 9)
+                        print(MENU_CONTINUE_SELECTED) at (5 to 11)
+                        print(MENU_OPTIONS_UNSELECTED) at (5 to 13)
                     }
                     whenever(state.titleMenuCursor isEqualTo 2) {
-                        print(" NEW GAME") at (5 to 9)
-                        print(" CONTINUE") at (5 to 11)
-                        print(">OPTIONS") at (5 to 13)
+                        print(MENU_NEW_GAME_UNSELECTED) at (5 to 9)
+                        print(MENU_CONTINUE_UNSELECTED) at (5 to 11)
+                        print(MENU_OPTIONS_SELECTED) at (5 to 13)
                     }
                 }
             }

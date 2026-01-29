@@ -464,7 +464,6 @@ private fun GameValidator.validateIRReferencesInStatements(
                     when (stmt) {
                         is IRWhile -> stmt.body
                         is IRFor -> stmt.body
-                        else -> return
                     }
                 validateIRReferencesInStatements(
                     body,
@@ -485,7 +484,6 @@ private fun GameValidator.validateIRReferencesInStatements(
                         is IRTransitionFadeIn -> stmt.onComplete
                         is IRTransitionWipe -> stmt.onComplete
                         is IRTransitionIris -> stmt.onComplete
-                        else -> return
                     }
                 validateIRReferencesInStatements(
                     onComplete,

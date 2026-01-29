@@ -195,8 +195,9 @@ class GbktDslVisitorTest {
     }
 
     @Test
-    fun `DslType enum has 7 values`() {
-        assertEquals(7, GbktDslVisitor.DslType.values().size)
+    fun `DslType enum has 15 values`() {
+        // 7 core types + 8 RPG types
+        assertEquals(15, GbktDslVisitor.DslType.values().size)
     }
 
     @Test

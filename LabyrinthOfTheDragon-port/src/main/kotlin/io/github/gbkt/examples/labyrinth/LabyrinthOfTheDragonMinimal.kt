@@ -17,6 +17,7 @@ import io.github.gbkt.core.screen
  * A stripped-down version to verify ROM building works. This has just the scene navigation without
  * RPG features.
  */
+private const val MSG_PRESS_START = "PRESS START"
 val labyrinthMinimal =
     gbGame("LabyrinthMin") {
 
@@ -27,7 +28,7 @@ val labyrinthMinimal =
                     screen.clear()
                     print("LABYRINTH OF") at (3 to 2)
                     print("THE DRAGON") at (4 to 4)
-                    print("PRESS START") at (4 to 10)
+                    print(MSG_PRESS_START) at (4 to 10)
                 }
                 every.frame { whenever(buttons.start.pressed) { scene("gameplay") } }
             }
@@ -65,7 +66,7 @@ val labyrinthMinimal =
             enter {
                 screen.clear()
                 print("GAME OVER") at (5 to 8)
-                print("PRESS START") at (4 to 12)
+                print(MSG_PRESS_START) at (4 to 12)
             }
             every.frame { whenever(buttons.start.pressed) { scene("title") } }
         }
@@ -76,7 +77,7 @@ val labyrinthMinimal =
                 screen.clear()
                 print("VICTORY!") at (6 to 4)
                 print("YOU WIN!") at (6 to 8)
-                print("PRESS START") at (4 to 12)
+                print(MSG_PRESS_START) at (4 to 12)
             }
             every.frame { whenever(buttons.start.pressed) { scene("title") } }
         }

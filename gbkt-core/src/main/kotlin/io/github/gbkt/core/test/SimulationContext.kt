@@ -310,7 +310,6 @@ class SimulationContext(val game: Game) {
                     when (stmt) {
                         is IRCameraSetPosition -> stmt.x to stmt.y
                         is IRCameraSnapTo -> stmt.x to stmt.y
-                        else -> error("Unreachable")
                     }
                 cameraX = evaluateExpr(x)
                 cameraY = evaluateExpr(y)

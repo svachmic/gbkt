@@ -102,7 +102,6 @@ class Scenes(
                 state,
                 battleState,
                 combatSystem,
-                combatFormulas,
                 sounds,
                 gameplay,
                 camera,

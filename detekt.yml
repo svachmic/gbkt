@@ -9,6 +9,12 @@ config:
   warningsAsErrors: false
   excludes: ''
 
+performance:
+  SpreadOperator:
+    active: true
+    excludes:
+      - '**/intellij/inspections/**'  # IntelliJ API requires vararg spread
+
 complexity:
   LongMethod:
     active: true
@@ -76,6 +82,7 @@ complexity:
       - '**/optimization/**'  # Optimization logic is complex
       - '**/validation/**'  # Validation has complex branching
       - '**/collision/**'  # Collision math is complex
+      - '**/intellij/completion/**'  # Completion type resolution checks many types
   NestedBlockDepth:
     active: true
     threshold: 5  # DSL builders can be nested
@@ -131,6 +138,11 @@ style:
     excludeLabeled: true
     excludeReturnFromLambda: true
     excludeGuardClauses: true
+    excludes:
+      - '**/intellij/completion/**'  # Completion providers need early returns for control flow
+      - '**/intellij/navigation/**'  # Navigation handlers need early returns
+      - '**/intellij/codegen/**'  # Codegen service has multiple return paths
+      - '**/intellij/inspections/**'  # Inspection checks need early returns
   LoopWithTooManyJumpStatements:
     active: true
     maxJumpCount: 1
@@ -185,6 +197,8 @@ exceptions:
       - 'RuntimeException'
       - 'Throwable'
     allowedExceptionNameRegex: '_|(ignore|expected).*'
+    excludes:
+      - '**/intellij/codegen/**'  # Codegen service catches exceptions at boundary
   TooGenericExceptionThrown:
     active: true
     exceptionNames:

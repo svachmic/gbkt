@@ -29,6 +29,8 @@ import io.github.gbkt.core.rpg.character
  * - Level 20: Fifth ability (~Floor 5)
  * - Level 25: Ultimate ability (~Floor 6)
  */
+private const val HERO_SPRITE_PATH = "sprites/hero.png"
+
 class Characters(builder: GameBuilder, private val abilities: Abilities) {
 
     /**
@@ -41,7 +43,7 @@ class Characters(builder: GameBuilder, private val abilities: Abilities) {
      */
     val druid: Character by
         builder.character {
-            sprite(SpriteAsset("sprites/hero.png"))
+            sprite(SpriteAsset(HERO_SPRITE_PATH))
             // Stat tiers: HP=B, SP=B, ATK=C, DEF=B, MATK=B, MDEF=A, AGL=B
             stats {
                 hp(20, max = 999) // B-tier at Lv5
@@ -76,7 +78,7 @@ class Characters(builder: GameBuilder, private val abilities: Abilities) {
      */
     val fighter: Character by
         builder.character {
-            sprite(SpriteAsset("sprites/hero.png"))
+            sprite(SpriteAsset(HERO_SPRITE_PATH))
             // Stat tiers: HP=A, SP=C, ATK=B, DEF=A, MATK=C, MDEF=B, AGL=B
             stats {
                 hp(23, max = 999) // A-tier at Lv5
@@ -111,7 +113,7 @@ class Characters(builder: GameBuilder, private val abilities: Abilities) {
      */
     val monk: Character by
         builder.character {
-            sprite(SpriteAsset("sprites/hero.png"))
+            sprite(SpriteAsset(HERO_SPRITE_PATH))
             // Stat tiers: HP=B, SP=B, ATK=B, DEF=B, MATK=C, MDEF=B, AGL=A
             stats {
                 hp(20, max = 999) // B-tier at Lv5
@@ -146,7 +148,7 @@ class Characters(builder: GameBuilder, private val abilities: Abilities) {
      */
     val sorcerer: Character by
         builder.character {
-            sprite(SpriteAsset("sprites/hero.png"))
+            sprite(SpriteAsset(HERO_SPRITE_PATH))
             // Stat tiers: HP=C, SP=A, ATK=C, DEF=C, MATK=A, MDEF=B, AGL=A
             stats {
                 hp(16, max = 999) // C-tier at Lv5

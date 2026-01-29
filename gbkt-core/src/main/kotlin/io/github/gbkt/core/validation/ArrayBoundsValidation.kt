@@ -159,7 +159,6 @@ private fun GameValidator.validateArrayBoundsInStatements(
                     when (stmt) {
                         is IRPoolSpawn -> stmt.initStatements
                         is IRPoolSpawnAt -> stmt.initStatements
-                        else -> return
                     }
                 validateArrayBoundsInStatements(initStatements, context, arrayBounds, knownBounds)
             }

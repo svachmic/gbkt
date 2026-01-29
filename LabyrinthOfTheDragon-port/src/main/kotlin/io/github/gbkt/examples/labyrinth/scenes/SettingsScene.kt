@@ -30,6 +30,15 @@ import io.github.gbkt.examples.labyrinth.Sounds
  * - A: Select (for Back option)
  * - B: Return to title
  */
+
+// Settings menu string constants
+private const val MENU_VOLUME_SELECTED = ">VOLUME:"
+private const val MENU_VOLUME_UNSELECTED = " VOLUME:"
+private const val MENU_SFX_SELECTED = ">SFX:"
+private const val MENU_SFX_UNSELECTED = " SFX:"
+private const val MENU_BACK_SELECTED = ">BACK"
+private const val MENU_BACK_UNSELECTED = " BACK"
+
 @Suppress("LongMethod", "MagicNumber")
 fun GameBuilder.initSettingsScene(
     settingsState: SettingsSceneState,
@@ -47,9 +56,9 @@ fun GameBuilder.initSettingsScene(
             print("") at (0 to 4)
 
             // Draw menu options with current values
-            print(">VOLUME:") at (2 to 7)
-            print(" SFX:") at (2 to 9)
-            print(" BACK") at (2 to 12)
+            print(MENU_VOLUME_SELECTED) at (2 to 7)
+            print(MENU_SFX_UNSELECTED) at (2 to 9)
+            print(MENU_BACK_UNSELECTED) at (2 to 12)
 
             // Draw volume bar (will be updated based on current value)
             print("[=======]") at (10 to 7)
@@ -69,14 +78,14 @@ fun GameBuilder.initSettingsScene(
                     sounds.menuMove.play()
                     // Update cursor display
                     whenever(settingsState.settingsCursor isEqualTo 0) {
-                        print(">VOLUME:") at (2 to 7)
-                        print(" SFX:") at (2 to 9)
-                        print(" BACK") at (2 to 12)
+                        print(MENU_VOLUME_SELECTED) at (2 to 7)
+                        print(MENU_SFX_UNSELECTED) at (2 to 9)
+                        print(MENU_BACK_UNSELECTED) at (2 to 12)
                     }
                     whenever(settingsState.settingsCursor isEqualTo 1) {
-                        print(" VOLUME:") at (2 to 7)
-                        print(">SFX:") at (2 to 9)
-                        print(" BACK") at (2 to 12)
+                        print(MENU_VOLUME_UNSELECTED) at (2 to 7)
+                        print(MENU_SFX_SELECTED) at (2 to 9)
+                        print(MENU_BACK_UNSELECTED) at (2 to 12)
                     }
                 }
             }
@@ -88,14 +97,14 @@ fun GameBuilder.initSettingsScene(
                     sounds.menuMove.play()
                     // Update cursor display
                     whenever(settingsState.settingsCursor isEqualTo 1) {
-                        print(" VOLUME:") at (2 to 7)
-                        print(">SFX:") at (2 to 9)
-                        print(" BACK") at (2 to 12)
+                        print(MENU_VOLUME_UNSELECTED) at (2 to 7)
+                        print(MENU_SFX_SELECTED) at (2 to 9)
+                        print(MENU_BACK_UNSELECTED) at (2 to 12)
                     }
                     whenever(settingsState.settingsCursor isEqualTo 2) {
-                        print(" VOLUME:") at (2 to 7)
-                        print(" SFX:") at (2 to 9)
-                        print(">BACK") at (2 to 12)
+                        print(MENU_VOLUME_UNSELECTED) at (2 to 7)
+                        print(MENU_SFX_UNSELECTED) at (2 to 9)
+                        print(MENU_BACK_SELECTED) at (2 to 12)
                     }
                 }
             }

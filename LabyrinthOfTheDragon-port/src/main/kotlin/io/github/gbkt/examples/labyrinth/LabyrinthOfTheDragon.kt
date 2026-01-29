@@ -39,6 +39,9 @@ import io.github.gbkt.examples.labyrinth.scenes.Scenes
 import io.github.gbkt.examples.labyrinth.scenes.SettingsSceneState
 import io.github.gbkt.examples.labyrinth.world.Floors
 
+// Asset path constants
+private const val STATUS_ICONS_SPRITE_PATH = "sprites/status_icons.png"
+
 /**
  * Labyrinth of the Dragon - gbkt Port
  *
@@ -223,73 +226,73 @@ val labyrinthOfTheDragon =
         // Player status icon sprites (4 slots at bottom of screen)
         val playerStatusIcon1 by entity {
             position(GameConfig.STATUS_ICON_PLAYER_X, GameConfig.STATUS_ICON_PLAYER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val playerStatusIcon2 by entity {
             position(GameConfig.STATUS_ICON_PLAYER_X + 8, GameConfig.STATUS_ICON_PLAYER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val playerStatusIcon3 by entity {
             position(GameConfig.STATUS_ICON_PLAYER_X + 16, GameConfig.STATUS_ICON_PLAYER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val playerStatusIcon4 by entity {
             position(GameConfig.STATUS_ICON_PLAYER_X + 24, GameConfig.STATUS_ICON_PLAYER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
 
         // Monster 1 status icon sprites (4 slots near monster 1 HP bar)
         val monster1StatusIcon1 by entity {
             position(GameConfig.STATUS_ICON_M1_X, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val monster1StatusIcon2 by entity {
             position(GameConfig.STATUS_ICON_M1_X + 8, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val monster1StatusIcon3 by entity {
             position(GameConfig.STATUS_ICON_M1_X + 16, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val monster1StatusIcon4 by entity {
             position(GameConfig.STATUS_ICON_M1_X + 24, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
 
         // Monster 2 status icon sprites (4 slots near monster 2 HP bar)
         val monster2StatusIcon1 by entity {
             position(GameConfig.STATUS_ICON_M2_X, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val monster2StatusIcon2 by entity {
             position(GameConfig.STATUS_ICON_M2_X + 8, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val monster2StatusIcon3 by entity {
             position(GameConfig.STATUS_ICON_M2_X + 16, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val monster2StatusIcon4 by entity {
             position(GameConfig.STATUS_ICON_M2_X + 24, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
 
         // Monster 3 status icon sprites (4 slots near monster 3 HP bar)
         val monster3StatusIcon1 by entity {
             position(GameConfig.STATUS_ICON_M3_X, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val monster3StatusIcon2 by entity {
             position(GameConfig.STATUS_ICON_M3_X + 8, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val monster3StatusIcon3 by entity {
             position(GameConfig.STATUS_ICON_M3_X + 16, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
         val monster3StatusIcon4 by entity {
             position(GameConfig.STATUS_ICON_M3_X + 24, GameConfig.STATUS_ICON_MONSTER_Y)
-            sprite(SpriteAsset("sprites/status_icons.png")) { size = 8 x 8 }
+            sprite(SpriteAsset(STATUS_ICONS_SPRITE_PATH)) { size = 8 x 8 }
         }
 
         // =========================================================================
