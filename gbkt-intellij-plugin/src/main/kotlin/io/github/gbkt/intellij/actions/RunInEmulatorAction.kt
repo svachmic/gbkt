@@ -125,13 +125,8 @@ class RunInEmulatorAction : AnAction() {
 
         logger.info("Launching ${sdkService.emulatorType} with ROM: $romPath")
 
-        val processBuilder =
-            when (sdkService.emulatorType) {
-                EmulatorType.BGB -> ProcessBuilder(emulatorPath.toString(), romPath)
-                EmulatorType.SAMEBOY -> ProcessBuilder(emulatorPath.toString(), romPath)
-                EmulatorType.MGBA -> ProcessBuilder(emulatorPath.toString(), romPath)
-                else -> ProcessBuilder(emulatorPath.toString(), romPath)
-            }
+        // All emulator types use the same command format: emulator path + ROM path
+        val processBuilder = ProcessBuilder(emulatorPath.toString(), romPath)
 
         try {
             processBuilder.start()

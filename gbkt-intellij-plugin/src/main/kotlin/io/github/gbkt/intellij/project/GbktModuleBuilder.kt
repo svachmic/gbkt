@@ -102,8 +102,7 @@ class GbktModuleBuilder : ModuleBuilder() {
     }
 
     /** Generate all project files from template. */
-    @Suppress("UnusedParameter")
-    private fun generateProjectFiles(projectDir: File, project: Project) {
+    private fun generateProjectFiles(projectDir: File, @Suppress("unused") project: Project) {
         val generator =
             ProjectFileGenerator(
                 projectDir = projectDir,

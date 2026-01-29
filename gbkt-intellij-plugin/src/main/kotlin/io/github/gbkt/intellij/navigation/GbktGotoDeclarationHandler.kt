@@ -112,7 +112,7 @@ class GbktGotoDeclarationHandler : GotoDeclarationHandler {
             com.intellij.psi.search.FileTypeIndex.getFiles(
                 io.github.gbkt.intellij.GbktFileType,
                 com.intellij.psi.search.GlobalSearchScope.projectScope(project),
-            )
+            ).toList()
 
         for (virtualFile in virtualFiles) {
             if (virtualFile == file.virtualFile) continue // Skip current file

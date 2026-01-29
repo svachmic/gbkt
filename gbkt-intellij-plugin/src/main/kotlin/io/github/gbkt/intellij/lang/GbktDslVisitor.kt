@@ -186,7 +186,7 @@ class GbktDslVisitor : PsiRecursiveElementVisitor() {
     }
 
     private fun getFirstStringArg(call: KtCallExpression): String? {
-        val args = call.valueArguments
+        val args = call.valueArguments.toList()
         if (args.isEmpty()) return null
 
         val firstArg = args[0].getArgumentExpression()

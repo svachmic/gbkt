@@ -232,7 +232,8 @@ class BalanceDataTableEditor : JPanel(BorderLayout()) {
     }
 
     /** Gets the current data model. */
-    fun getModel(): BalanceDataModel = model
+    val currentModel: BalanceDataModel
+        get() = model
 
     /** Table model that wraps BalanceDataModel. */
     private inner class BalanceTableModel : AbstractTableModel() {

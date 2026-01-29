@@ -148,7 +148,7 @@ class GbktDslInspection : LocalInspectionTool() {
         callee: String,
         holder: ProblemsHolder,
     ) {
-        val args = expression.valueArguments
+        val args = expression.valueArguments.toList()
         // Use centralized constraints from ClampValueQuickFix for consistency
         val constraints = ClampValueQuickFix.Companion.Constraints
 
@@ -188,26 +188,6 @@ class GbktDslInspection : LocalInspectionTool() {
                     checkIntArgRange(args[0], constraints.PALETTE_INDEX, "Palette index", holder)
                 }
             }
-        }
-    }
-
-    private fun checkIntArg(
-        arg: org.jetbrains.kotlin.psi.KtValueArgument,
-        min: Int,
-        max: Int,
-        name: String,
-        holder: ProblemsHolder,
-    ) {
-        val expr = arg.getArgumentExpression() ?: return
-        val value = expr.text.toIntOrNull() ?: return
-
-        if (value < min || value > max) {
-            holder.registerProblem(
-                expr,
-                "$name must be between $min and $max (got $value)",
-                ProblemHighlightType.GENERIC_ERROR,
-                ClampValueQuickFix(value, min, max, name),
-            )
         }
     }
 
