@@ -57,10 +57,8 @@ class BankAllocator(
             currentBank++
             currentBankUsage = 0
 
-            if (currentBank > maxBanks) {
-                throw IllegalStateException(
-                    "Exceeded maximum bank count ($maxBanks). " + "Total data is too large for ROM."
-                )
+            check(currentBank <= maxBanks) {
+                "Exceeded maximum bank count ($maxBanks). Total data is too large for ROM."
             }
         }
 
@@ -214,16 +212,14 @@ class BankAllocator(
                 }
             }
 
-            if (assignedBank == null) {
-                throw IllegalStateException(
-                    "Cannot allocate namespace '${namespace.name}' ($size bytes). " +
-                        "All string banks (${stringStartBank}-${stringEndBank - 1}) are full. " +
-                        "Total string data: ${stringTable.totalSizeBytes} bytes."
-                )
+            val bank = checkNotNull(assignedBank) {
+                "Cannot allocate namespace '${namespace.name}' ($size bytes). " +
+                    "All string banks (${stringStartBank}-${stringEndBank - 1}) are full. " +
+                    "Total string data: ${stringTable.totalSizeBytes} bytes."
             }
 
-            allocatedNamespaces.add(namespace.copy(bank = assignedBank))
-            stringBankUsage[assignedBank] = bankUsageLocal[assignedBank] ?: 0
+            allocatedNamespaces.add(namespace.copy(bank = bank))
+            stringBankUsage[bank] = bankUsageLocal[bank] ?: 0
         }
 
         // Restore original order

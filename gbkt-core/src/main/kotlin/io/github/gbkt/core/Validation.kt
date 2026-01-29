@@ -237,9 +237,9 @@ class GameValidator(internal val game: Game) {
 
         val worstCaseTotal = totalSprites + poolSprites + particleSprites
 
-        // Check for exact overflow
-        if (worstCaseTotal > MAX_OAM_SPRITES) {
-            errors.add(
+        // Check for overflow or near-overflow conditions
+        when {
+            worstCaseTotal > MAX_OAM_SPRITES -> errors.add(
                 ValidationError(
                     ValidationCategory.OAM_LIMIT,
                     "Game exceeds OAM limit: $worstCaseTotal sprites possible (max $MAX_OAM_SPRITES). " +
@@ -247,16 +247,14 @@ class GameValidator(internal val game: Game) {
                         "Pool slots: $poolSprites, Particle sprites: $particleSprites",
                 )
             )
-        } else if (worstCaseTotal == MAX_OAM_SPRITES) {
-            warnings.add(
+            worstCaseTotal == MAX_OAM_SPRITES -> warnings.add(
                 ValidationWarning(
                     ValidationCategory.OAM_LIMIT,
                     "Game is at OAM limit: $worstCaseTotal sprites (max $MAX_OAM_SPRITES). " +
                         "Any additional sprites will cause overflow.",
                 )
             )
-        } else if (worstCaseTotal > MAX_OAM_SPRITES - 5) {
-            warnings.add(
+            worstCaseTotal > MAX_OAM_SPRITES - 5 -> warnings.add(
                 ValidationWarning(
                     ValidationCategory.OAM_LIMIT,
                     "Game is close to OAM limit: $worstCaseTotal sprites possible (max $MAX_OAM_SPRITES)",
@@ -911,32 +909,28 @@ class GameValidator(internal val game: Game) {
                     GBVar.VarType.I16 -> -32768 to 32767
                 }
 
-            // Check 'from' value if it's a literal
+            // Check 'from' value if it's a literal and out of bounds
             val fromValue = extractLiteralValue(tween.from)
-            if (fromValue != null) {
-                if (fromValue < minValue || fromValue > maxValue) {
-                    errors.add(
-                        ValidationError(
-                            ValidationCategory.TWEEN,
-                            "Tween for '${tween.target}' in ${info.context} has 'from' value $fromValue " +
-                                "outside ${tween.targetType.name} bounds ($minValue to $maxValue).",
-                        )
+            if (fromValue != null && (fromValue < minValue || fromValue > maxValue)) {
+                errors.add(
+                    ValidationError(
+                        ValidationCategory.TWEEN,
+                        "Tween for '${tween.target}' in ${info.context} has 'from' value $fromValue " +
+                            "outside ${tween.targetType.name} bounds ($minValue to $maxValue).",
                     )
-                }
+                )
             }
 
-            // Check 'to' value if it's a literal
+            // Check 'to' value if it's a literal and out of bounds
             val toValue = extractLiteralValue(tween.to)
-            if (toValue != null) {
-                if (toValue < minValue || toValue > maxValue) {
-                    errors.add(
-                        ValidationError(
-                            ValidationCategory.TWEEN,
-                            "Tween for '${tween.target}' in ${info.context} has 'to' value $toValue " +
-                                "outside ${tween.targetType.name} bounds ($minValue to $maxValue).",
-                        )
+            if (toValue != null && (toValue < minValue || toValue > maxValue)) {
+                errors.add(
+                    ValidationError(
+                        ValidationCategory.TWEEN,
+                        "Tween for '${tween.target}' in ${info.context} has 'to' value $toValue " +
+                            "outside ${tween.targetType.name} bounds ($minValue to $maxValue).",
                     )
-                }
+                )
             }
 
             // Warn about potential overflow for U8 with large ranges

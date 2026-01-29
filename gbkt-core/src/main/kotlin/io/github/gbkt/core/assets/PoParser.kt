@@ -198,14 +198,16 @@ object PoParser {
                 // Empty line - finish current entry
                 trimmed.isEmpty() -> finishEntry()
 
-                // Translator comment (ignored)
-                trimmed.startsWith("# ") || trimmed == "#" -> {}
+                // Translator comment (ignored per PO spec - these are for human translators)
+                trimmed.startsWith("# ") || trimmed == "#" -> Unit
 
                 // Extracted comment (may contain @bank hint)
                 trimmed.startsWith("#.") -> {
                     val comment = trimmed.removePrefix("#.").trim()
                     // Check for @bank hint: "#. @bank 3"
                     val bankMatch = BANK_HINT_REGEX.find(comment)
+                    // Value is used by finishEntry() when called on empty line or EOF
+                    @Suppress("KotlinConstantConditions")
                     if (bankMatch != null) {
                         currentBank = bankMatch.groupValues[1].toIntOrNull()
                     }

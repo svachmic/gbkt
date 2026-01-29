@@ -358,8 +358,7 @@ class GbktDslInspection : LocalInspectionTool() {
         while (current != null) {
             if (current is KtFunctionLiteral) {
                 // Check if this lambda has a parameter with the given name
-                val parameters = current.valueParameters
-                if (parameters.any { it.name == name }) {
+                if (current.valueParameters.toList().any { it.name == name }) {
                     return true
                 }
             }

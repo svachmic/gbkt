@@ -127,7 +127,8 @@ object TablesParser {
         }
 
         // Create composites for base names that have all 4 suffixes
-        for ((baseName, cols) in columnsByBaseName) {
+        for ((baseName, colsList) in columnsByBaseName) {
+            val cols = colsList.toList()  // Immutable copy for processing
             if (cols.size == 4) {
                 // Sort by suffix order
                 val sorted =

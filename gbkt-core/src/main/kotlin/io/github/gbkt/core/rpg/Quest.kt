@@ -363,21 +363,26 @@ class QuestBuilder(private val questId: String) {
             while (iterator.hasNext()) {
                 val builder = iterator.next()
                 val dependsOn = builder.getSequenceAfter()
+                val resolvedOrder = dependsOn?.let { resolvedOrders[it] }
 
-                if (dependsOn == null) {
+                when {
                     // No dependency - use explicit order or 0
-                    resolvedOrders[builder.getId()] = builder.getExplicitSequenceOrder()
-                    iterator.remove()
-                } else if (resolvedOrders.containsKey(dependsOn)) {
+                    dependsOn == null -> {
+                        resolvedOrders[builder.getId()] = builder.getExplicitSequenceOrder()
+                        iterator.remove()
+                    }
                     // Dependency resolved - this comes after
-                    resolvedOrders[builder.getId()] = resolvedOrders[dependsOn]!! + 1
-                    iterator.remove()
-                } else if (!idToBuilder.containsKey(dependsOn)) {
+                    resolvedOrder != null -> {
+                        resolvedOrders[builder.getId()] = resolvedOrder + 1
+                        iterator.remove()
+                    }
                     // Invalid dependency - treat as no dependency
-                    resolvedOrders[builder.getId()] = builder.getExplicitSequenceOrder()
-                    iterator.remove()
+                    !idToBuilder.containsKey(dependsOn) -> {
+                        resolvedOrders[builder.getId()] = builder.getExplicitSequenceOrder()
+                        iterator.remove()
+                    }
+                    // Otherwise, dependency not yet resolved - try again next iteration
                 }
-                // Otherwise, dependency not yet resolved - try again next iteration
             }
         }
 

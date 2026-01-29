@@ -115,6 +115,13 @@ class GBDKCodeGenerator(internal val game: Game) {
         /** Section separator comment for generated C code. */
         const val SECTION_SEPARATOR =
             "// ============================================================================="
+
+        // Common C code keywords used in generation
+        internal const val DEFINE_DIRECTIVE = "#define"
+        internal const val TYPEDEF_STRUCT = "typedef struct"
+        internal const val INLINE_PREFIX = "inline "
+        internal const val STATIC_INLINE_PREFIX = "static inline "
+        internal const val PRAGMA_BANK = "#pragma bank"
     }
 
     // Validation error tracking - errors are collected during generation and reported at the end
@@ -135,7 +142,7 @@ class GBDKCodeGenerator(internal val game: Game) {
     internal fun setBank(bank: Int) {
         if (bank != currentBank && bank >= 0) {
             line()
-            line("#pragma bank $bank")
+            line("$PRAGMA_BANK $bank")
             currentBank = bank
         }
     }
@@ -480,7 +487,7 @@ class GBDKCodeGenerator(internal val game: Game) {
         for (line in headerLines) {
             when {
                 line.startsWith("#include") -> includes.add(line)
-                line.startsWith("#define") -> defines.add(line)
+                line.startsWith(DEFINE_DIRECTIVE) -> defines.add(line)
             }
         }
         return includes to defines
@@ -494,7 +501,7 @@ class GBDKCodeGenerator(internal val game: Game) {
         val defines = existingDefines.toMutableList()
         for (line in lines) {
             val trimmed = line.trimStart()
-            if (trimmed.startsWith("#define") && trimmed !in defines) {
+            if (trimmed.startsWith(DEFINE_DIRECTIVE) && trimmed !in defines) {
                 defines.add(trimmed)
             }
         }
@@ -508,7 +515,7 @@ class GBDKCodeGenerator(internal val game: Game) {
         val currentTypedef = StringBuilder()
 
         for (line in lines) {
-            if (line.trimStart().startsWith("typedef struct")) {
+            if (line.trimStart().startsWith(TYPEDEF_STRUCT)) {
                 inTypedef = true
                 currentTypedef.clear()
                 currentTypedef.appendLine(line)
@@ -529,10 +536,10 @@ class GBDKCodeGenerator(internal val game: Game) {
         val inlineFunctions = mutableListOf<String>()
         for (line in lines) {
             val trimmed = line.trimStart()
-            if (trimmed.startsWith("inline ") || trimmed.startsWith("static inline ")) {
+            if (trimmed.startsWith(INLINE_PREFIX) || trimmed.startsWith(STATIC_INLINE_PREFIX)) {
                 val headerLine =
-                    if (trimmed.startsWith("static inline ")) {
-                        line.replace("static inline ", "inline ")
+                    if (trimmed.startsWith(STATIC_INLINE_PREFIX)) {
+                        line.replace(STATIC_INLINE_PREFIX, INLINE_PREFIX)
                     } else {
                         line
                     }
@@ -708,7 +715,7 @@ class GBDKCodeGenerator(internal val game: Game) {
             appendLine()
             appendLine("#include \"game.h\"")
             appendLine()
-            appendLine("#pragma bank $bank")
+            appendLine("$PRAGMA_BANK $bank")
         }
 
     /**
@@ -722,7 +729,7 @@ class GBDKCodeGenerator(internal val game: Game) {
     private fun splitByBank(code: String): Map<String, String> {
         val lines = code.lines()
 
-        val firstBankIdx = lines.indexOfFirst { it.startsWith("#pragma bank") }
+        val firstBankIdx = lines.indexOfFirst { it.startsWith(PRAGMA_BANK) }
         if (firstBankIdx < 0) {
             return mapOf(MAIN_OUTPUT_FILE to code)
         }
@@ -843,12 +850,12 @@ class GBDKCodeGenerator(internal val game: Game) {
         val trimmed = line.trimStart()
 
         // Skip inline functions and defines (they're in header)
-        if (trimmed.startsWith("inline ") || trimmed.startsWith("static inline ")) return true
-        if (trimmed.startsWith("#define")) return true
+        if (trimmed.startsWith(INLINE_PREFIX) || trimmed.startsWith(STATIC_INLINE_PREFIX)) return true
+        if (trimmed.startsWith(DEFINE_DIRECTIVE)) return true
 
         // Handle bank pragma (updates state but returns true to skip appending)
-        if (line.startsWith("#pragma bank")) {
-            val newBank = line.substringAfter("#pragma bank").trim().toIntOrNull() ?: 0
+        if (line.startsWith(PRAGMA_BANK)) {
+            val newBank = line.substringAfter(PRAGMA_BANK).trim().toIntOrNull() ?: 0
             if (newBank != 0 && !state.bankContents.containsKey(newBank)) {
                 state.bankContents[newBank] = createBankHeader(newBank)
             }

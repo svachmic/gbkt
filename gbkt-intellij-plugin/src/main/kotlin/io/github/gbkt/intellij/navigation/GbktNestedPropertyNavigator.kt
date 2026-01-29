@@ -92,7 +92,7 @@ object GbktNestedPropertyNavigator {
         name: String,
         project: Project,
     ): GbktDslVisitor.DslDefinition? {
-        val gbktFiles = FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
+        val gbktFiles = FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project)).toList()
         val psiManager = PsiManager.getInstance(project)
 
         for (virtualFile in gbktFiles) {
@@ -187,7 +187,7 @@ object GbktNestedPropertyNavigator {
             ?: return null
 
         // Search for a call expression with the target name
-        val nestedCalls = PsiTreeUtil.findChildrenOfType(lambda, KtCallExpression::class.java)
+        val nestedCalls = PsiTreeUtil.findChildrenOfType(lambda, KtCallExpression::class.java).toList()
 
         for (nestedCall in nestedCalls) {
             val calleeName = nestedCall.calleeExpression?.text

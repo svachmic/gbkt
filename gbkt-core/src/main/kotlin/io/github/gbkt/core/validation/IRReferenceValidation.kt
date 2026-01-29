@@ -458,9 +458,14 @@ private fun GameValidator.validateIRReferencesInStatements(
                     )
                 }
             }
-            is IRWhile -> {
+            is IRWhile, is IRFor -> {
+                val body = when (stmt) {
+                    is IRWhile -> stmt.body
+                    is IRFor -> stmt.body
+                    else -> return
+                }
                 validateIRReferencesInStatements(
-                    stmt.body,
+                    body,
                     context,
                     knownSprites,
                     knownPools,
@@ -468,9 +473,16 @@ private fun GameValidator.validateIRReferencesInStatements(
                     knownDialogs,
                 )
             }
-            is IRFor -> {
+            is IRTransitionFadeOut, is IRTransitionFadeIn, is IRTransitionWipe, is IRTransitionIris -> {
+                val onComplete = when (stmt) {
+                    is IRTransitionFadeOut -> stmt.onComplete
+                    is IRTransitionFadeIn -> stmt.onComplete
+                    is IRTransitionWipe -> stmt.onComplete
+                    is IRTransitionIris -> stmt.onComplete
+                    else -> return
+                }
                 validateIRReferencesInStatements(
-                    stmt.body,
+                    onComplete,
                     context,
                     knownSprites,
                     knownPools,
@@ -478,49 +490,7 @@ private fun GameValidator.validateIRReferencesInStatements(
                     knownDialogs,
                 )
             }
-            is IRTransitionFadeOut -> {
-                validateIRReferencesInStatements(
-                    stmt.onComplete,
-                    context,
-                    knownSprites,
-                    knownPools,
-                    knownMenus,
-                    knownDialogs,
-                )
-            }
-            is IRTransitionFadeIn -> {
-                validateIRReferencesInStatements(
-                    stmt.onComplete,
-                    context,
-                    knownSprites,
-                    knownPools,
-                    knownMenus,
-                    knownDialogs,
-                )
-            }
-            is IRTransitionWipe -> {
-                validateIRReferencesInStatements(
-                    stmt.onComplete,
-                    context,
-                    knownSprites,
-                    knownPools,
-                    knownMenus,
-                    knownDialogs,
-                )
-            }
-            is IRTransitionIris -> {
-                validateIRReferencesInStatements(
-                    stmt.onComplete,
-                    context,
-                    knownSprites,
-                    knownPools,
-                    knownMenus,
-                    knownDialogs,
-                )
-            }
-            else -> {
-                // No nested statements or references to validate
-            }
+            else -> Unit  // No nested statements or references to validate
         }
     }
 }
