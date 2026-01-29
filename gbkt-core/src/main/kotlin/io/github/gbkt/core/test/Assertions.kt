@@ -94,19 +94,16 @@ class IntExpectation(private val actual: Int, private val name: String) {
 // =============================================================================
 
 /** Expectation builder for sprite state. */
-class SpriteExpectation(private val sprite: SimSprite?) {
-    private val name: String
-        get() = sprite?.name ?: "sprite"
-
-    init {
-        if (sprite == null) {
-            throw AssertionError("Expected sprite to exist, but it was null")
-        }
+class SpriteExpectation(nullableSprite: SimSprite?) {
+    private val sprite: SimSprite = requireNotNull(nullableSprite) {
+        "Expected sprite to exist, but it was null"
     }
+    private val name: String
+        get() = sprite.name
 
     /** Assert sprite is at exact position. */
     fun toBeAt(x: Int, y: Int) {
-        if (sprite!!.x != x || sprite.y != y) {
+        if (sprite.x != x || sprite.y != y) {
             throw AssertionError(
                 "Expected $name to be at ($x, $y), but was at (${sprite.x}, ${sprite.y})"
             )
@@ -115,35 +112,35 @@ class SpriteExpectation(private val sprite: SimSprite?) {
 
     /** Assert sprite X position. */
     fun toHaveX(x: Int) {
-        if (sprite!!.x != x) {
+        if (sprite.x != x) {
             throw AssertionError("Expected $name X to be $x, but was ${sprite.x}")
         }
     }
 
     /** Assert sprite Y position. */
     fun toHaveY(y: Int) {
-        if (sprite!!.y != y) {
+        if (sprite.y != y) {
             throw AssertionError("Expected $name Y to be $y, but was ${sprite.y}")
         }
     }
 
     /** Assert sprite is visible. */
     fun toBeVisible() {
-        if (!sprite!!.visible) {
+        if (!sprite.visible) {
             throw AssertionError("Expected $name to be visible, but it was hidden")
         }
     }
 
     /** Assert sprite is hidden. */
     fun toBeHidden() {
-        if (sprite!!.visible) {
+        if (sprite.visible) {
             throw AssertionError("Expected $name to be hidden, but it was visible")
         }
     }
 
     /** Assert sprite is playing a specific animation. */
     fun toBePlayingAnimation(animationName: String) {
-        if (sprite!!.currentAnimation != animationName) {
+        if (sprite.currentAnimation != animationName) {
             val current = sprite.currentAnimation ?: "none"
             throw AssertionError(
                 "Expected $name to be playing '$animationName', but was playing '$current'"
@@ -153,7 +150,7 @@ class SpriteExpectation(private val sprite: SimSprite?) {
 
     /** Assert sprite is not playing any animation. */
     fun toNotBeAnimating() {
-        if (sprite!!.currentAnimation != null) {
+        if (sprite.currentAnimation != null) {
             throw AssertionError(
                 "Expected $name to not be animating, but was playing '${sprite.currentAnimation}'"
             )
@@ -162,14 +159,14 @@ class SpriteExpectation(private val sprite: SimSprite?) {
 
     /** Assert sprite animation is paused. */
     fun toHaveAnimationPaused() {
-        if (!sprite!!.animationPaused) {
+        if (!sprite.animationPaused) {
             throw AssertionError("Expected $name animation to be paused, but it was playing")
         }
     }
 
     /** Assert sprite collides with another sprite. */
     fun toCollideWith(other: SimSprite, width: Int = 8, height: Int = 8) {
-        if (!sprite!!.collidesWith(other, width, height)) {
+        if (!sprite.collidesWith(other, width, height)) {
             throw AssertionError(
                 "Expected $name to collide with ${other.name}, but they don't overlap"
             )
@@ -178,7 +175,7 @@ class SpriteExpectation(private val sprite: SimSprite?) {
 
     /** Assert sprite does not collide with another sprite. */
     fun toNotCollideWith(other: SimSprite, width: Int = 8, height: Int = 8) {
-        if (sprite!!.collidesWith(other, width, height)) {
+        if (sprite.collidesWith(other, width, height)) {
             throw AssertionError(
                 "Expected $name to not collide with ${other.name}, but they overlap"
             )
@@ -191,19 +188,16 @@ class SpriteExpectation(private val sprite: SimSprite?) {
 // =============================================================================
 
 /** Expectation builder for pool state. */
-class PoolExpectation(private val pool: SimPool?) {
-    private val name: String
-        get() = pool?.name ?: "pool"
-
-    init {
-        if (pool == null) {
-            throw AssertionError("Expected pool to exist, but it was null")
-        }
+class PoolExpectation(nullablePool: SimPool?) {
+    private val pool: SimPool = requireNotNull(nullablePool) {
+        "Expected pool to exist, but it was null"
     }
+    private val name: String
+        get() = pool.name
 
     /** Assert pool has exact active count. */
     fun toHaveActiveCount(count: Int) {
-        if (pool!!.activeCount != count) {
+        if (pool.activeCount != count) {
             throw AssertionError(
                 "Expected $name to have $count active entities, but had ${pool.activeCount}"
             )
@@ -215,21 +209,21 @@ class PoolExpectation(private val pool: SimPool?) {
 
     /** Assert pool has at least one active entity. */
     fun toNotBeEmpty() {
-        if (pool!!.activeCount == 0) {
+        if (pool.activeCount == 0) {
             throw AssertionError("Expected $name to have active entities, but it was empty")
         }
     }
 
     /** Assert pool has space for spawning. */
     fun toHaveSpace() {
-        if (!pool!!.hasSpace) {
+        if (!pool.hasSpace) {
             throw AssertionError("Expected $name to have space, but it was full")
         }
     }
 
     /** Assert pool has space for at least N more entities. */
     fun toHaveSpaceFor(count: Int) {
-        val available = pool!!.size - pool.activeCount
+        val available = pool.size - pool.activeCount
         if (available < count) {
             throw AssertionError(
                 "Expected $name to have space for $count, but only has room for $available"
@@ -239,7 +233,7 @@ class PoolExpectation(private val pool: SimPool?) {
 
     /** Assert pool is full. */
     fun toBeFull() {
-        if (!pool!!.isFull) {
+        if (!pool.isFull) {
             throw AssertionError(
                 "Expected $name to be full, but has ${pool.size - pool.activeCount} slots available"
             )
@@ -248,7 +242,7 @@ class PoolExpectation(private val pool: SimPool?) {
 
     /** Assert all active entities satisfy a condition. */
     fun allMatch(description: String = "condition", predicate: (index: Int) -> Boolean) {
-        for (index in pool!!.activeIndices()) {
+        for (index in pool.activeIndices()) {
             if (!predicate(index)) {
                 throw AssertionError(
                     "Expected all entities in $name to match $description, but entity $index did not"
@@ -259,7 +253,7 @@ class PoolExpectation(private val pool: SimPool?) {
 
     /** Assert any active entity satisfies a condition. */
     fun anyMatch(description: String = "condition", predicate: (index: Int) -> Boolean) {
-        val match = pool!!.activeIndices().any { predicate(it) }
+        val match = pool.activeIndices().any { predicate(it) }
         if (!match) {
             throw AssertionError("Expected at least one entity in $name to match $description")
         }
