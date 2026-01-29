@@ -125,15 +125,12 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
      * Adds entity reference suggestions from all defined entities across the project. Searches all
      * .gbkt.kts files, not just the current file.
      */
-    @Suppress("kotlin:S6524") // Mutable set required for deduplication during iteration
     private fun addEntityReferenceSuggestions(
         file: com.intellij.psi.PsiFile,
         result: CompletionResultSet,
     ) {
         val project = file.project
         val addedNames = mutableSetOf<String>()
-
-        // Search all gbkt files in the project
         val gbktFiles =
             FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
 
@@ -141,50 +138,49 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
             val psiFile =
                 PsiManager.getInstance(project).findFile(virtualFile) as? KtFile ?: continue
             val analysis = GbktDslVisitor.analyze(psiFile)
+            val sourceFileSuffix =
+                if (virtualFile != file.virtualFile) " - ${virtualFile.name}" else ""
 
-            // Add entities
-            for (entity in analysis.entities) {
-                if (addedNames.add(entity.name)) {
-                    val sourceFile =
-                        if (virtualFile != file.virtualFile) {
-                            " - ${virtualFile.name}"
-                        } else {
-                            ""
-                        }
-                    result.addElement(
-                        LookupElementBuilder.create(entity.name)
-                            .withIcon(AllIcons.Nodes.Class)
-                            .withTypeText("Entity")
-                            .withTailText("$sourceFile", true)
-                    )
-                }
-            }
+            addDefinitionsToResult(
+                analysis.entities,
+                "Entity",
+                sourceFileSuffix,
+                addedNames,
+                result,
+            )
+            addDefinitionsToResult(
+                analysis.characters,
+                "Character",
+                sourceFileSuffix,
+                addedNames,
+                result,
+            )
+            addDefinitionsToResult(
+                analysis.monsters,
+                "Monster",
+                sourceFileSuffix,
+                addedNames,
+                result,
+            )
+        }
+    }
 
-            // Also add characters and monsters (common entity-like references)
-            for (character in analysis.characters) {
-                if (addedNames.add(character.name)) {
-                    val sourceFile =
-                        if (virtualFile != file.virtualFile) " - ${virtualFile.name}" else ""
-                    result.addElement(
-                        LookupElementBuilder.create(character.name)
-                            .withIcon(AllIcons.Nodes.Class)
-                            .withTypeText("Character")
-                            .withTailText("$sourceFile", true)
-                    )
-                }
-            }
-
-            for (monster in analysis.monsters) {
-                if (addedNames.add(monster.name)) {
-                    val sourceFile =
-                        if (virtualFile != file.virtualFile) " - ${virtualFile.name}" else ""
-                    result.addElement(
-                        LookupElementBuilder.create(monster.name)
-                            .withIcon(AllIcons.Nodes.Class)
-                            .withTypeText("Monster")
-                            .withTailText("$sourceFile", true)
-                    )
-                }
+    /** Helper to add named definitions to completion results with deduplication. */
+    private fun addDefinitionsToResult(
+        definitions: List<GbktDslVisitor.DslDefinition>,
+        typeName: String,
+        sourceFileSuffix: String,
+        addedNames: MutableSet<String>,
+        result: CompletionResultSet,
+    ) {
+        for (definition in definitions) {
+            if (addedNames.add(definition.name)) {
+                result.addElement(
+                    LookupElementBuilder.create(definition.name)
+                        .withIcon(AllIcons.Nodes.Class)
+                        .withTypeText(typeName)
+                        .withTailText(sourceFileSuffix, true)
+                )
             }
         }
     }
