@@ -68,15 +68,15 @@ class SimPool(
 
         // Reset state to defaults
         if (hasPosition) {
-            entityState["x"]!![index] = SimValue.ZERO
-            entityState["y"]!![index] = SimValue.ZERO
+            entityState.getValue("x")[index] = SimValue.ZERO
+            entityState.getValue("y")[index] = SimValue.ZERO
         }
         if (hasVelocity) {
-            entityState["vel_x"]!![index] = SimValue.ZERO
-            entityState["vel_y"]!![index] = SimValue.ZERO
+            entityState.getValue("vel_x")[index] = SimValue.ZERO
+            entityState.getValue("vel_y")[index] = SimValue.ZERO
         }
         for (field in stateFields) {
-            entityState[field.name]!![index] = SimValue.of(field.defaultValue)
+            entityState.getValue(field.name)[index] = SimValue.of(field.defaultValue)
         }
 
         // Set up index variable for init statements
@@ -94,8 +94,8 @@ class SimPool(
     fun spawnAt(sim: SimulationContext, x: Int, y: Int, initStatements: List<IRStatement>): Int {
         val index = spawn(sim, initStatements)
         if (index >= 0 && hasPosition) {
-            entityState["x"]!![index] = SimValue.of(x)
-            entityState["y"]!![index] = SimValue.of(y)
+            entityState.getValue("x")[index] = SimValue.of(x)
+            entityState.getValue("y")[index] = SimValue.of(y)
         }
         return index
     }
@@ -195,11 +195,11 @@ class SimPool(
         // Also set pool-prefixed x, y for current entity iteration
         // Use pool name prefix to avoid collision between multiple pools
         if (hasPosition) {
-            sim.setVariable("${name}_x", entityState["x"]!![index])
-            sim.setVariable("${name}_y", entityState["y"]!![index])
+            sim.setVariable("${name}_x", entityState.getValue("x")[index])
+            sim.setVariable("${name}_y", entityState.getValue("y")[index])
             // Also set simple x/y for backwards compatibility within single-pool usage
-            sim.setVariable("x", entityState["x"]!![index])
-            sim.setVariable("y", entityState["y"]!![index])
+            sim.setVariable("x", entityState.getValue("x")[index])
+            sim.setVariable("y", entityState.getValue("y")[index])
         }
     }
 
@@ -207,8 +207,8 @@ class SimPool(
     private fun syncContextToEntity(sim: SimulationContext, index: Int) {
         // Check for updates to pool-prefixed variables (preferred)
         if (hasPosition) {
-            entityState["x"]!![index] = sim.getVariable("${name}_x")
-            entityState["y"]!![index] = sim.getVariable("${name}_y")
+            entityState.getValue("x")[index] = sim.getVariable("${name}_x")
+            entityState.getValue("y")[index] = sim.getVariable("${name}_y")
         }
 
         // Also sync custom state fields back from context
@@ -227,7 +227,8 @@ class SimPool(
                 // Handle pool entity field assignments
                 val target = stmt.target
                 if (entityState.containsKey(target)) {
-                    val current = entityState[target]!![entityIndex]
+                    val stateArray = entityState.getValue(target)
+                    val current = stateArray[entityIndex]
                     val newValue = sim.evaluateExpr(stmt.value)
                     val result =
                         when (stmt.op) {
@@ -238,7 +239,7 @@ class SimPool(
                             AssignOp.AND -> current and newValue
                             AssignOp.OR -> current or newValue
                         }
-                    entityState[target]!![entityIndex] = result
+                    stateArray[entityIndex] = result
 
                     // Also update context for chained operations
                     sim.setVariable(target, result)

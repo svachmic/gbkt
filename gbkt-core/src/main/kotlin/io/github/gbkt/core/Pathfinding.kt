@@ -479,7 +479,7 @@ class NavGridFromTileMapBuilder(private val name: String, private val tileMap: T
 
                 // Apply tile weight if configured
                 if (isWalkable && tileIndex in tileWeights) {
-                    weightData[idx] = tileWeights[tileIndex]!!
+                    weightData[idx] = tileWeights.getValue(tileIndex)
                 } else if (!isWalkable) {
                     weightData[idx] = 0
                 }

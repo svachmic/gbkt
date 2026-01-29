@@ -155,7 +155,7 @@ class AudioMixer(val groups: Map<String, ChannelGroup>) {
      */
     fun setGroupVolume(groupName: String, volume: Int) {
         require(groupName in groups) { "Unknown group: $groupName" }
-        val group = groups[groupName]!!
+        val group = groups.getValue(groupName)
         RecordingContext.require()
             .emit(IRMixerSetVolume(group.id, IRLiteral(volume.coerceIn(0, 100))))
     }
@@ -168,7 +168,7 @@ class AudioMixer(val groups: Map<String, ChannelGroup>) {
      */
     fun setGroupVolume(groupName: String, volume: Expr) {
         require(groupName in groups) { "Unknown group: $groupName" }
-        val group = groups[groupName]!!
+        val group = groups.getValue(groupName)
         RecordingContext.require().emit(IRMixerSetVolume(group.id, volume.ir))
     }
 
@@ -181,7 +181,7 @@ class AudioMixer(val groups: Map<String, ChannelGroup>) {
      */
     fun fadeGroup(groupName: String, to: Int, over: FrameTiming) {
         require(groupName in groups) { "Unknown group: $groupName" }
-        val group = groups[groupName]!!
+        val group = groups.getValue(groupName)
         RecordingContext.require().emit(IRMixerFade(group.id, to.coerceIn(0, 100), over.count))
     }
 
@@ -194,7 +194,7 @@ class AudioMixer(val groups: Map<String, ChannelGroup>) {
      */
     fun fadeGroup(groupName: String, to: Int, over: Int) {
         require(groupName in groups) { "Unknown group: $groupName" }
-        val group = groups[groupName]!!
+        val group = groups.getValue(groupName)
         RecordingContext.require().emit(IRMixerFade(group.id, to.coerceIn(0, 100), over))
     }
 
@@ -205,7 +205,7 @@ class AudioMixer(val groups: Map<String, ChannelGroup>) {
      */
     fun muteGroup(groupName: String) {
         require(groupName in groups) { "Unknown group: $groupName" }
-        val group = groups[groupName]!!
+        val group = groups.getValue(groupName)
         RecordingContext.require().emit(IRMixerMute(group.id, true))
     }
 
@@ -216,7 +216,7 @@ class AudioMixer(val groups: Map<String, ChannelGroup>) {
      */
     fun unmuteGroup(groupName: String) {
         require(groupName in groups) { "Unknown group: $groupName" }
-        val group = groups[groupName]!!
+        val group = groups.getValue(groupName)
         RecordingContext.require().emit(IRMixerMute(group.id, false))
     }
 
@@ -227,7 +227,7 @@ class AudioMixer(val groups: Map<String, ChannelGroup>) {
      */
     fun toggleMuteGroup(groupName: String) {
         require(groupName in groups) { "Unknown group: $groupName" }
-        val group = groups[groupName]!!
+        val group = groups.getValue(groupName)
         RecordingContext.require().emit(IRMixerToggleMute(group.id))
     }
 
