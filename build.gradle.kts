@@ -1,5 +1,5 @@
 plugins {
-    kotlin("multiplatform") version "2.3.0" apply false
+    kotlin("multiplatform") version "2.3.10" apply false
     kotlin("jvm") version "2.3.0" apply false
     id("com.diffplug.spotless") version "8.1.0" apply false
     id("io.gitlab.arturbosch.detekt") version "1.23.8" apply false
