@@ -170,14 +170,14 @@ jobs:
           echo "ROM verification: PASSED"
 
       - name: Upload ROM artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: sample-game-rom
           path: sample-game/build/gbkt/generated/runner.gb
           retention-days: 7
 
       - name: Upload generated C code
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: generated-c-code
