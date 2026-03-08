@@ -1,7 +1,7 @@
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("com.diffplug.spotless") version "8.1.0"
+    id("com.diffplug.spotless") version "8.3.0"
 }
 
 val licenseHeader = """
