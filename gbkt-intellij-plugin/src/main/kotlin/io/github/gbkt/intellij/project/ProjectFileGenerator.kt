@@ -184,7 +184,11 @@ class ProjectFileGenerator(
         // gradlew script (Unix)
         val gradlew = File(projectDir, "gradlew")
         gradlew.writeText(GRADLEW_SCRIPT)
-        check(gradlew.setExecutable(true)) { "Failed to make gradlew executable" }
+        if (!gradlew.setExecutable(true)) {
+            System.err.println(
+                "Warning: Failed to make gradlew executable at ${gradlew.absolutePath}"
+            )
+        }
 
         // gradlew.bat script (Windows)
         File(projectDir, "gradlew.bat").writeText(GRADLEW_BAT_SCRIPT)

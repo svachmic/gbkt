@@ -31,23 +31,38 @@ repositories {
     mavenCentral()
 }
 
+val gbktVersion: String = findProperty("gbktVersion")?.toString() ?: "0.1.0"
+
+group = "io.github.gbkt"
+version = "$gbktVersion-SNAPSHOT"
+
 dependencies {
     // Use gbkt-core (published to mavenLocal)
-    implementation("io.github.gbkt:gbkt-core:0.1.0-SNAPSHOT")
+    implementation("io.github.gbkt:gbkt-core:$gbktVersion-SNAPSHOT")
+
+    // Embedded emulator for runEmulator and emulatorTest tasks
+    implementation("io.github.gbkt:gbkt-emulator:$gbktVersion-SNAPSHOT")
 
     // Backend API for type-safe access to backend interfaces
     // Note: compileOnly because the actual backend implementation comes from user's classpath
     // at runtime via classloader isolation. This provides IDE support and compile-time checks.
-    compileOnly("io.github.gbkt:gbkt-backend-api:0.1.0-SNAPSHOT")
+    compileOnly("io.github.gbkt:gbkt-backend-api:$gbktVersion-SNAPSHOT")
 
     // JSON parsing for source map loading
     implementation("org.json:json:20251224")
 
     // Test dependencies
+    // Note: gbkt-gradle-plugin uses JUnit 5 directly because GradleTestKit integration tests
+    // use JUnit 5 lifecycle annotations (@BeforeEach, @TempDir). kotlin("test") is added for
+    // consistency; the explicit junit-jupiter dep satisfies the JUnit 5 API import requirement.
     testImplementation(gradleTestKit())
-    testImplementation(platform("org.junit:junit-bom:6.0.1"))
+    testImplementation(kotlin("test"))
+    testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // Backend needed for integration tests (ServiceLoader discovery via withPluginClasspath)
+    testImplementation("io.github.gbkt:gbkt-backend-api:$gbktVersion-SNAPSHOT")
+    testImplementation("io.github.gbkt:gbkt-backend-gbdk:$gbktVersion-SNAPSHOT")
 }
 
 kotlin {
@@ -56,6 +71,12 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.jar {
+    manifest {
+        attributes("Implementation-Version" to project.version)
+    }
 }
 
 // ============================================================================

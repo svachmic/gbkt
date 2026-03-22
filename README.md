@@ -151,6 +151,26 @@ val myFirstGame = gbGame("HelloGB") {
 
 Place your `player.png` in `src/main/resources/assets/` (8x8 or 8x16 pixels, using 4 shades of gray).
 
+## Example Games
+
+The `gbkt-examples/` directory contains complete games demonstrating the framework:
+
+| Game | Complexity | Demonstrates |
+|------|-----------|-------------|
+| **Pong** | Beginner | Entities, input, collision, scenes |
+| **Breakout** | Intermediate | Sound effects, entity pools, status bars, 4 scenes |
+| **Explorer** | Advanced | Zones, camera follow, exploration system, save/load |
+
+```bash
+# Generate C and build any example
+./gradlew :gbkt-examples:pong:generateC
+./gradlew :gbkt-examples:pong:buildRom
+
+# Or try breakout / explorer
+./gradlew :gbkt-examples:breakout:buildRom
+./gradlew :gbkt-examples:explorer:buildRom
+```
+
 ## Why gbkt?
 
 | C (GBDK)                                       | gbkt                                    |
@@ -169,7 +189,6 @@ Place your `player.png` in `src/main/resources/assets/` (8x8 or 8x16 pixels, usi
 | Complete DSL reference | [context/DSL_REFERENCE.md](context/DSL_REFERENCE.md) |
 | Contributing guide | [context/DEVELOPER_EXPERIENCE.md](context/DEVELOPER_EXPERIENCE.md) |
 | Build tools & assets | [context/TOOLING.md](context/TOOLING.md) |
-| Project roadmap | [context/ROADMAP.md](context/ROADMAP.md) |
 
 ## License
 

@@ -147,7 +147,7 @@ class GbktDslInspection : LocalInspectionTool() {
         callee: String,
         holder: ProblemsHolder,
     ) {
-        val args = expression.valueArguments.toList()
+        val args = expression.valueArguments
         // Use centralized constraints from ClampValueQuickFix for consistency
         val constraints = ClampValueQuickFix.Companion.Constraints
 
@@ -256,28 +256,26 @@ class GbktDslInspection : LocalInspectionTool() {
         // Check if this looks like a reference to a DSL element
         // Only flag as error if it's used in a DSL context (e.g., passed to a DSL function)
         val parent = expression.parent
-        if (parent is KtCallExpression) {
-            val parentCallee = parent.calleeExpression?.text
-            if (parentCallee != null && name !in definedNames) {
-                // Determine appropriate quick fixes based on context
-                val quickFixes = getQuickFixesForContext(parentCallee, name)
+        val parentCallee = (parent as? KtCallExpression)?.calleeExpression?.text
+        if (parentCallee != null && name !in definedNames) {
+            // Determine appropriate quick fixes based on context
+            val quickFixes = getQuickFixesForContext(parentCallee, name)
 
-                if (quickFixes.isNotEmpty()) {
-                    holder.registerProblem(
-                        expression,
-                        "Possible undefined reference: '$name'. Make sure it's defined in this file or imported.",
-                        ProblemHighlightType.WEAK_WARNING,
-                        *quickFixes.toTypedArray(),
-                    )
-                } else if (parentCallee in ENTITY_CONSUMING_FUNCTIONS) {
-                    // Fallback for entity-consuming functions without specific quick fixes
-                    holder.registerProblem(
-                        expression,
-                        "Possible undefined reference: '$name'. Make sure it's defined in this file or imported.",
-                        ProblemHighlightType.WEAK_WARNING,
-                        CreateEntityQuickFix(name),
-                    )
-                }
+            if (quickFixes.isNotEmpty()) {
+                holder.registerProblem(
+                    expression,
+                    "Possible undefined reference: '$name'. Make sure it's defined in this file or imported.",
+                    ProblemHighlightType.WEAK_WARNING,
+                    *quickFixes.toTypedArray(),
+                )
+            } else if (parentCallee in ENTITY_CONSUMING_FUNCTIONS) {
+                // Fallback for entity-consuming functions without specific quick fixes
+                holder.registerProblem(
+                    expression,
+                    "Possible undefined reference: '$name'. Make sure it's defined in this file or imported.",
+                    ProblemHighlightType.WEAK_WARNING,
+                    CreateEntityQuickFix(name),
+                )
             }
         }
     }
@@ -347,10 +345,7 @@ class GbktDslInspection : LocalInspectionTool() {
         var current: com.intellij.psi.PsiElement? = expression.parent
         while (current != null) {
             // Check if this is a lambda with a parameter matching the given name
-            if (
-                current is KtFunctionLiteral &&
-                    current.valueParameters.toList().any { it.name == name }
-            ) {
+            if (current is KtFunctionLiteral && current.valueParameters.any { it.name == name }) {
                 return true
             }
             current = current.parent

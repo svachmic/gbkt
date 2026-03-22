@@ -26,6 +26,7 @@ complexity:
       - '**/validation/**'  # Validation functions check many cases
       - '**/collision/**'  # Collision math requires many steps
       - '**/CodeGenerator.kt'  # Main generator orchestrates many codegen calls
+      - '**/dsl/**'  # DSL GameBuilder.build() accumulates all IR fields per feature
   LongParameterList:
     active: true
     functionThreshold: 6
@@ -59,6 +60,7 @@ complexity:
       - '**/ir/**'  # IR wrapper classes have many operator overloads
       - '**/test/**'  # Test helper classes have many assertion methods
       - '**/builder/**'  # Builder classes have many configuration methods
+      - '**/dsl/**'  # DSL top-level builder (GameBuilder) accumulates one entry point per DSL feature
       - '**/scene/**'  # Scene transition scope has many transition types
       - '**/graphics/**'  # Camera has many methods for different operations
       - '**/world/**'  # Tile/zone builders have many configuration methods
@@ -79,6 +81,7 @@ complexity:
     excludes:
       - '**/codegen/**'  # Codegen has complex when expressions
       - '**/ir/**'  # IR substitution/deepCopy inherently complex
+      - '**/dsl/**'  # DSL stack-walking and recording context are inherently complex
       - '**/optimization/**'  # Optimization logic is complex
       - '**/validation/**'  # Validation has complex branching
       - '**/collision/**'  # Collision math is complex
@@ -125,16 +128,20 @@ style:
     excludes:
       - '**/test/**'  # Test files use wildcards for brevity
       - '**/commonTest/**'
+      - '**/codegen/**'  # Codegen AST uses wildcard imports for the C AST type aliases
     excludeImports:
       - 'java.util.*'
       - 'kotlinx.coroutines.*'
       - 'kotlin.test.*'  # Allowed in test files for brevity
+      - 'io.github.gbkt.core.dsl.*'  # Required for operator extension functions in game files
   ReturnCount:
     active: true
     max: 4
     excludedFunctions:
       - 'equals'
       - 'canAfford'  # Resource cost checking has multiple early returns
+      - 'findWhileLoop'  # Recursive tree traversal in PathfindingCodegenTest
+      - 'findRecursiveCall'  # Recursive tree traversal in PathfindingCodegenTest
     excludeLabeled: true
     excludeReturnFromLambda: true
     excludeGuardClauses: true
@@ -143,6 +150,7 @@ style:
       - '**/intellij/navigation/**'  # Navigation handlers need early returns
       - '**/intellij/codegen/**'  # Codegen service has multiple return paths
       - '**/intellij/inspections/**'  # Inspection checks need early returns
+      - '**/intellij/toolwindow/**'  # Tool window navigation handlers need early returns
   LoopWithTooManyJumpStatements:
     active: true
     maxJumpCount: 1

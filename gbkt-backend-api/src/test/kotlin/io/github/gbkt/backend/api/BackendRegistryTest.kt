@@ -6,12 +6,12 @@
  */
 package io.github.gbkt.backend.api
 
-import io.github.gbkt.core.Game
 import io.github.gbkt.core.constraints.AudioSpec
 import io.github.gbkt.core.constraints.MemorySpec
 import io.github.gbkt.core.constraints.ScreenSpec
 import io.github.gbkt.core.constraints.SpriteSpec
 import io.github.gbkt.core.constraints.TargetProfile
+import io.github.gbkt.core.ir.GameIR
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -134,9 +134,9 @@ class BackendRegistryTest {
             override val displayName = "Mock Backend: $id"
             override val romExtension = "rom"
 
-            override fun validate(game: Game) = ValidationResult.SUCCESS
+            override fun validate(game: GameIR) = ValidationResult.SUCCESS
 
-            override fun generate(game: Game, options: GenerationOptions) =
+            override fun generate(game: GameIR, options: GenerationOptions) =
                 GenerationResult.failed("Not implemented")
         }
     }

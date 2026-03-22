@@ -6,260 +6,311 @@
  */
 package io.github.gbkt.examples.labyrinth
 
-import io.github.gbkt.core.exploration.MovementStyle
-
 /**
- * Game configuration constants for Labyrinth of the Dragon.
+ * Gameplay constants ported from the original Labyrinth of the Dragon C implementation.
  *
- * Centralizes all gameplay constants for easy tuning and consistency across the codebase.
+ * Every constant here cross-references its origin in the original source. This serves as the
+ * definitive reference for all hard-coded values used throughout the gbkt V2 port.
+ *
+ * Original source files referenced:
+ * - `LabyrinthOfTheDragon/src/core.h` — display, VRAM, tile, and font constants
+ * - `LabyrinthOfTheDragon/src/player.h` — player and ability constants
+ * - `LabyrinthOfTheDragon/src/map.h` — map layout, object counts, and HUD constants
+ * - `LabyrinthOfTheDragon/src/monster.h` — monster tile dimensions
  */
 object GameConfig {
 
-    // =========================================================================
-    // EXPLORATION CONSTANTS
-    // =========================================================================
+    // -------------------------------------------------------------------------
+    // Tile and display constants
+    // @source core.h (implicit via GBDK), map.h
+    // -------------------------------------------------------------------------
 
-    /** Tile size in pixels (Game Boy standard 8x8) */
+    /**
+     * Width (and height) of a single tile in pixels.
+     *
+     * Game Boy tiles are always 8x8. This constant documents that assumption explicitly.
+     *
+     * @source Implicit in all GBDK tile addressing; confirmed by map movement logic in map.h.
+     */
     const val TILE_SIZE = 8
 
-    /** Movement style for dungeon exploration */
-    val MOVEMENT_STYLE = MovementStyle.GRID
-
-    /** Frames per tile movement (lower = faster) */
-    const val MOVEMENT_SPEED = 8
-
-    // =========================================================================
-    // TORCH / LIGHTING
-    // =========================================================================
-
-    /** Maximum torch fuel value */
-    const val TORCH_MAX = 255
-
-    /** Starting torch fuel */
-    const val TORCH_INITIAL = 100
-
-    /** Torch fuel consumed per step */
-    const val TORCH_DECREMENT = 1
-
-    /** Threshold for "torch getting dim" warning */
-    const val TORCH_LOW_THRESHOLD = 30
-
-    // =========================================================================
-    // KEYS
-    // =========================================================================
-
-    /** Maximum magic keys the player can hold */
-    const val KEYS_MAX = 99
-
-    /** Starting number of keys */
-    const val KEYS_INITIAL = 0
-
-    // =========================================================================
-    // PLAYER START POSITION
-    // =========================================================================
-
-    /** Player starting X position (tile coordinates) */
-    const val PLAYER_START_X = 5
-
-    /** Player starting Y position (tile coordinates) */
-    const val PLAYER_START_Y = 5
-
-    /** Starting floor index (0 = Floor 1) */
-    const val START_FLOOR = 0
-
-    // =========================================================================
-    // CHARACTER CLASSES
-    // =========================================================================
-
-    /** Druid class ID */
-    const val CLASS_DRUID = 0
-
-    /** Fighter class ID */
-    const val CLASS_FIGHTER = 1
-
-    /** Monk class ID */
-    const val CLASS_MONK = 2
-
-    /** Sorcerer class ID */
-    const val CLASS_SORCERER = 3
-
-    /** Total number of playable classes */
-    const val CLASS_COUNT = 4
-
-    // =========================================================================
-    // DUNGEON STRUCTURE
-    // =========================================================================
-
-    /** Total number of dungeon floors */
-    const val FLOOR_COUNT = 8
-
-    /** Maximum chests per floor */
-    const val CHESTS_PER_FLOOR = 8
-
-    // =========================================================================
-    // PAUSE MENU
-    // =========================================================================
-
-    /** Pause menu option: Resume game */
-    const val PAUSE_RESUME = 0
-
-    /** Pause menu option: Save game */
-    const val PAUSE_SAVE = 1
-
-    /** Pause menu option: Load game */
-    const val PAUSE_LOAD = 2
-
-    /** Pause menu option: Quit to title */
-    const val PAUSE_QUIT = 3
-
-    /** Pause menu total options */
-    const val PAUSE_OPTIONS = 4
-
-    // =========================================================================
-    // PAUSE MENU STATES
-    // =========================================================================
-
-    /** Pause sub-state: Main menu */
-    const val PAUSE_STATE_MAIN = 0
-
-    /** Pause sub-state: Save slot selection */
-    const val PAUSE_STATE_SAVE = 1
-
-    /** Pause sub-state: Load slot selection */
-    const val PAUSE_STATE_LOAD = 2
-
-    /** Pause sub-state: Confirmation dialog */
-    const val PAUSE_STATE_CONFIRM = 3
-
-    // =========================================================================
-    // SAVE SYSTEM
-    // =========================================================================
-
-    /** Number of save slots */
-    const val SAVE_SLOTS = 3
-
-    // =========================================================================
-    // BATTLE MENU
-    // =========================================================================
-
-    /** Battle menu state: Main action selection */
-    const val BATTLE_MENU_MAIN = 0
-
-    /** Battle menu state: Target selection */
-    const val BATTLE_MENU_TARGET = 1
-
-    /** Battle menu state: Ability selection */
-    const val BATTLE_MENU_ABILITY = 2
-
-    /** Battle menu state: Item selection */
-    const val BATTLE_MENU_ITEM = 3
-
-    /** Battle menu state: Execute action */
-    const val BATTLE_MENU_EXECUTE = 4
-
-    /** Battle menu state: Enemy turn */
-    const val BATTLE_MENU_ENEMY = 5
-
-    // =========================================================================
-    // MAP DIMENSIONS
-    // =========================================================================
-
-    /** Standard map width in tiles */
+    /**
+     * Width of a full dungeon map in tiles.
+     *
+     * Maps are 32x32 in the original. Used for boundary checks and scroll math.
+     *
+     * @source map.h — Map struct width/height fields and scroll system
+     */
     const val MAP_WIDTH = 32
 
-    /** Standard map height in tiles */
+    /**
+     * Height of a full dungeon map in tiles.
+     *
+     * @source map.h — Map struct width/height fields
+     */
     const val MAP_HEIGHT = 32
 
-    // =========================================================================
-    // HP BAR TILES (for tile-based rendering)
-    // =========================================================================
+    // -------------------------------------------------------------------------
+    // Floor and class counts
+    // @source player.h, floor*.c
+    // -------------------------------------------------------------------------
 
-    /** Empty HP bar tile (0x50 in original) */
-    const val TILE_HP_EMPTY = 0x50
+    /**
+     * Total number of dungeon floors (levels) in the game.
+     *
+     * Eight floors progress from the entrance to the dragon's lair.
+     *
+     * @source floor1.c through floor8.c — eight floor source files confirm the count
+     */
+    const val FLOOR_COUNT = 8
 
-    /** Full HP bar tile (0x58 in original) */
-    const val TILE_HP_FULL = 0x58
+    /**
+     * Number of playable character classes.
+     *
+     * Classes: Druid (0), Fighter (1), Monk (2), Sorcerer (3).
+     *
+     * @source player.h — `typedef enum PlayerClass { CLASS_DRUID=0, CLASS_FIGHTER=1, CLASS_MONK=2,
+     *   CLASS_SORCERER=3 }`
+     */
+    const val CLASS_COUNT = 4
 
-    /** First partial HP bar tile (0x51-0x57 for 7 intermediate states) */
-    const val TILE_HP_PARTIAL = 0x51
+    // -------------------------------------------------------------------------
+    // Font / VRAM tile offsets
+    // @source core.h
+    // -------------------------------------------------------------------------
 
-    // =========================================================================
-    // HP BAR POSITIONS (Battle UI)
-    // =========================================================================
+    /**
+     * Tile index offset where the font tileset begins in VRAM.
+     *
+     * The font occupies the shared BG/sprite tile range starting at 0x80. Used when drawing text to
+     * the window or background layer.
+     *
+     * @source core.h — `#define FONT_OFFSET 0x80`
+     */
+    const val FONT_OFFSET = 0x80
 
-    /** HP bar Y position (tile row) in battle UI */
-    const val HP_BAR_Y = 6
+    /**
+     * Tile id for the '0' character when the font tileset is loaded.
+     *
+     * Subsequent digits are consecutive: `FONT_DIGIT_OFFSET + digit` gives the tile id.
+     *
+     * @source core.h — `#define FONT_DIGIT_OFFSET 0xB0`
+     */
+    const val FONT_DIGIT_OFFSET = 0xB0
 
-    /** HP bar width in pixels (5 tiles × 8 pixels) */
-    const val HP_BAR_WIDTH = 40
+    /**
+     * Tile id for a space character when the font tileset is loaded.
+     *
+     * @source core.h — `#define FONT_SPACE 0xA0`
+     */
+    const val FONT_SPACE = 0xA0
 
-    /** HP bar height in pixels */
-    const val HP_BAR_HEIGHT = 8
+    /**
+     * Tile id for a '/' character when the font tileset is loaded.
+     *
+     * Used for HP/SP fraction displays (e.g. "25/50").
+     *
+     * @source core.h — `#define FONT_SLASH 0xAF`
+     */
+    const val FONT_SLASH = 0xAF
 
-    /** Number of pip segments in HP bar */
-    const val HP_BAR_PIPS = 5
+    /**
+     * Tile id for the horizontal menu border top row (flip-y gives the bottom row).
+     *
+     * @source core.h — `#define FONT_BORDER_TOP 0x91`
+     */
+    const val FONT_BORDER_TOP = 0x91
 
-    /** Monster 1 HP bar X position (tile column) */
-    const val HP_BAR_X1 = 1
+    // -------------------------------------------------------------------------
+    // Torch system
+    // @source player.h, map.h
+    // -------------------------------------------------------------------------
 
-    /** Monster 2 HP bar X position (tile column) */
-    const val HP_BAR_X2 = 7
+    /**
+     * Maximum value for the torch fuel gauge.
+     *
+     * Stored as a UINT8 (0–255). Starting value when a new torch is lit or when the player restores
+     * it from a sconce.
+     *
+     * @source player.h — `uint8_t torch_gauge` field in Player struct; map.h torch HUD logic
+     */
+    const val TORCH_MAX = 255
 
-    /** Monster 3 HP bar X position (tile column) */
-    const val HP_BAR_X3 = 13
+    /**
+     * Torch fuel level at which the "torch dimming" low-torch warning triggers.
+     *
+     * Below this threshold the player receives a visual/audio warning that the torch is running
+     * low.
+     *
+     * @source map.h — referenced by torch gauge display and warning trigger logic
+     */
+    const val TORCH_LOW_THRESHOLD = 50
 
-    // =========================================================================
-    // STATUS EFFECT ICONS
-    // =========================================================================
+    /**
+     * Number of frames between each torch gauge decrement by 1 unit.
+     *
+     * At 60 fps on GBC, this means the torch drains at approximately 6 units per second.
+     *
+     * @source map.h — `#define TORCH_GAUGE_SPEED 10`
+     */
+    const val TORCH_GAUGE_SPEED = 10
 
-    /** Number of status icon slots per combatant */
-    const val STATUS_ICON_SLOTS = 4
+    // -------------------------------------------------------------------------
+    // Ability system
+    // @source player.h
+    // -------------------------------------------------------------------------
 
-    /** Status icon tile base (0x60 in original) */
-    const val TILE_STATUS_BASE = 0x60
+    /**
+     * Maximum number of abilities a player can acquire over the course of the game.
+     *
+     * Each class has exactly 6 ability slots (0–5). Abilities are granted on level-up or via
+     * scripted events.
+     *
+     * @source player.h — `#define MAX_ABILITIES 6`; also `extern const Ability
+     *   *player_abilities[6]`
+     */
+    const val MAX_ABILITIES = 6
 
-    /** Status icon Y position for player (pixel) */
-    const val STATUS_ICON_PLAYER_Y = 128
+    /**
+     * Experience level at which new characters begin the game.
+     *
+     * New characters start at level 5 rather than level 1, giving them a small stat head-start.
+     *
+     * @source player.h — `#define NEW_CHARACTER_LEVEL 5`
+     */
+    const val NEW_CHARACTER_LEVEL = 5
 
-    /** Status icon Y position for monsters (pixel) */
-    const val STATUS_ICON_MONSTER_Y = 32
+    // -------------------------------------------------------------------------
+    // Save system
+    // @source SRAM layout / save.c
+    // -------------------------------------------------------------------------
 
-    /** Status icon X base for player */
-    const val STATUS_ICON_PLAYER_X = 8
+    /**
+     * Number of save slots available to the player.
+     *
+     * Three distinct SRAM save areas, each storing a full player state snapshot.
+     *
+     * @source SRAM layout in save.c and the title screen save-slot selection UI
+     */
+    const val SAVE_SLOTS = 3
 
-    /** Status icon X base for monster 1 */
-    const val STATUS_ICON_M1_X = 8
+    // -------------------------------------------------------------------------
+    // Monster tile dimensions
+    // @source monster.h
+    // -------------------------------------------------------------------------
 
-    /** Status icon X base for monster 2 */
-    const val STATUS_ICON_M2_X = 56
+    /**
+     * Width of a monster sprite sheet tile (in 8-pixel tiles).
+     *
+     * Each monster is represented as a 7×7 tile grid (56×56 pixels) in two-frame animation.
+     *
+     * @source monster.h — `#define MONSTER_TILES 7 * 7 * 2` implies 7-wide grid
+     */
+    const val MONSTER_TILES_W = 7
 
-    /** Status icon X base for monster 3 */
-    const val STATUS_ICON_M3_X = 104
+    /**
+     * Height of a monster sprite sheet tile (in 8-pixel tiles).
+     *
+     * @source monster.h — `#define MONSTER_TILES 7 * 7 * 2` implies 7-tall grid
+     */
+    const val MONSTER_TILES_H = 7
 
-    /** Debuff palette index (red/warning) */
-    const val PALETTE_DEBUFF = 7
+    // -------------------------------------------------------------------------
+    // Map object limits per floor
+    // @source map.h
+    // -------------------------------------------------------------------------
 
-    /** Buff palette index (blue/positive) */
-    const val PALETTE_BUFF = 6
+    /**
+     * Maximum number of maps (sub-areas) per dungeon floor, excluding sentinel.
+     *
+     * Each floor can contain up to 4 distinct map areas (MAP_A through MAP_D).
+     *
+     * @source map.h — `#define MAX_MAPS 4 + 1` (the +1 is the null-terminator sentinel)
+     */
+    const val MAX_MAPS_PER_FLOOR = 4
 
-    // Status effect icon indices (matching StatusEffects.kt)
-    const val STATUS_ICON_REGEN = 0
-    const val STATUS_ICON_POISON = 1
-    const val STATUS_ICON_BURN = 2
-    const val STATUS_ICON_ATK_UP = 3
-    const val STATUS_ICON_DEF_UP = 4
-    const val STATUS_ICON_HASTE = 5
-    const val STATUS_ICON_ATK_DOWN = 6
-    const val STATUS_ICON_DEF_DOWN = 7
-    const val STATUS_ICON_STUN = 8
-    const val STATUS_ICON_SLEEP = 9
-    const val STATUS_ICON_PARALYSIS = 10
-    const val STATUS_ICON_EVASION = 11
-    const val STATUS_ICON_BARKSKIN = 12
-    const val STATUS_ICON_DIAMOND = 13
-    const val STATUS_ICON_SLOW = 14
-    const val STATUS_ICON_BLIND = 15
-    const val STATUS_ICON_SCARED = 16
-    const val STATUS_ICON_CONFUSION = 17
-    const val STATUS_ICON_PRONE = 18
+    /**
+     * Maximum number of exit connections per floor, excluding sentinel.
+     *
+     * @source map.h — `#define MAX_EXITS 24 + 1`
+     */
+    const val MAX_EXITS_PER_FLOOR = 24
+
+    /**
+     * Maximum number of treasure chests per floor, excluding sentinel.
+     *
+     * @source map.h — `#define MAX_CHESTS 8 + 1`
+     */
+    const val MAX_CHESTS_PER_FLOOR = 8
+
+    /**
+     * Maximum number of signs per floor, excluding sentinel.
+     *
+     * @source map.h — `#define MAX_SIGNS 8 + 1`
+     */
+    const val MAX_SIGNS_PER_FLOOR = 8
+
+    /**
+     * Maximum number of levers per floor, excluding sentinel.
+     *
+     * @source map.h — `#define MAX_LEVERS 8 + 1`
+     */
+    const val MAX_LEVERS_PER_FLOOR = 8
+
+    /**
+     * Maximum number of sconces (wall torches) per floor, excluding sentinel.
+     *
+     * @source map.h — `#define MAX_SCONCES 32 + 1`
+     */
+    const val MAX_SCONCES_PER_FLOOR = 32
+
+    /**
+     * Maximum number of NPCs per floor, excluding sentinel.
+     *
+     * @source map.h — `#define MAX_NPCS 2 + 1`
+     */
+    const val MAX_NPCS_PER_FLOOR = 2
+
+    /**
+     * Maximum number of doors per floor, excluding sentinel.
+     *
+     * @source map.h — `#define MAX_DOORS 12 + 1`
+     */
+    const val MAX_DOORS_PER_FLOOR = 12
+
+    // -------------------------------------------------------------------------
+    // HUD / torch gauge sprite constants
+    // @source map.h
+    // -------------------------------------------------------------------------
+
+    /**
+     * X screen position (in pixels) for the torch gauge HUD sprites.
+     *
+     * @source map.h — `#define TORCH_GAUGE_X 16`
+     */
+    const val TORCH_GAUGE_X = 16
+
+    /**
+     * Y screen position (in pixels) for the torch gauge HUD sprites.
+     *
+     * @source map.h — `#define TORCH_GAUGE_Y 24`
+     */
+    const val TORCH_GAUGE_Y = 24
+
+    /**
+     * Number of monsters in the game (12 unique creature types).
+     *
+     * Kobold, Goblin, Zombie, Bugbear, Owlbear, Gelatinous Cube, Displacer Beast, Will-o'-Wisp,
+     * Death Knight, Mind Flayer, Beholder, Dragon.
+     *
+     * @source monster.h — `typedef enum MonsterType` has 12 non-sentinel entries
+     */
+    const val MONSTER_COUNT = 12
+
+    /**
+     * Number of available magic keys (max collectible quantity).
+     *
+     * @source map.h — map key system tracks per-floor key counters
+     */
+    const val MAGIC_KEY_MAX = 9
 }

@@ -6,69 +6,64 @@
  */
 package io.github.gbkt.examples.labyrinth.scenes
 
-import io.github.gbkt.core.SceneRef
-import io.github.gbkt.core.builder.GameBuilder
-import io.github.gbkt.core.input.buttons
-import io.github.gbkt.core.input.dpad
-import io.github.gbkt.core.print
-import io.github.gbkt.core.screen
-import io.github.gbkt.examples.labyrinth.GameConfig
-import io.github.gbkt.examples.labyrinth.GameState
+import io.github.gbkt.core.dsl.GameBuilder
+import io.github.gbkt.core.dsl.buttons
+import io.github.gbkt.core.ir.PositionDef
+import io.github.gbkt.examples.labyrinth.LabyrinthSounds
+import io.github.gbkt.examples.labyrinth.Palettes
 
 /**
- * Hero Selection Screen
+ * Hero class selection scene for Labyrinth of the Dragon.
  *
- * Allows the player to choose their character class: Druid, Fighter, Monk, or Sorcerer.
+ * Allows the player to choose one of four character classes before starting the game: Druid,
+ * Fighter, Monk, or Sorcerer.
+ *
+ * ## Original C Reference
+ * - `hero_select.c` — `init_hero_select()`, `update_hero_select()`
+ * - Class selection stored in `player.player_class` (CLASS_DRUID..CLASS_SORCERER)
+ *
+ * ## Input
+ * - D-pad up/down: browse classes (0=Druid, 1=Fighter, 2=Monk, 3=Sorcerer)
+ * - A or START: confirm selection, navigate to gameplay
+ *
+ * [PLACEHOLDER] Full implementation in Plan 11.
  */
-fun GameBuilder.initHeroSelectScene(
-    state: GameState,
-    title: SceneRef,
-    gameplay: SceneRef,
-): SceneRef =
-    scene("hero_select") {
-        enter {
-            screen.clear()
-            // Reset cursor to first option
-            state.heroSelectCursor set 0
+object HeroSelectScene {
 
-            // Draw header
-            print("SELECT CLASS") at (4 to 2)
-            print("") at (0 to 4)
+    /**
+     * Registers the hero select scene into the [GameBuilder].
+     *
+     * @param builder The active [GameBuilder].
+     * @param sounds Typed sound refs for SFX wiring.
+     */
+    fun register(builder: GameBuilder, sounds: LabyrinthSounds) {
+        builder.apply {
+            scene("hero_select") {
+                palette(Palettes.titleBg)
 
-            // Draw class options (cursor will be drawn in frame)
-            print(">DRUID") at (3 to 6)
-            print(" FIGHTER") at (3 to 8)
-            print(" MONK") at (3 to 10)
-            print(" SORCERER") at (3 to 12)
+                enter {
+                    hideSprites()
+                    clear()
+                    print("CHOOSE YOUR CLASS", position = PositionDef(1, 2))
+                    print("DRUID", position = PositionDef(2, 6))
+                    print("FIGHTER", position = PositionDef(2, 8))
+                    print("MONK", position = PositionDef(2, 10))
+                    print("SORCERER", position = PositionDef(2, 12))
+                    print("A: SELECT", position = PositionDef(5, 16))
+                }
 
-            // Draw class descriptions area
-            print("") at (0 to 14)
-            print("Nature magic") at (3 to 15)
-            print("& healing") at (3 to 16)
-        }
-
-        every.frame {
-            // D-pad up: move cursor up
-            whenever(dpad.up.pressed) {
-                whenever(state.heroSelectCursor isAbove 0) { state.heroSelectCursor -= 1 }
-            }
-
-            // D-pad down: move cursor down
-            whenever(dpad.down.pressed) {
-                whenever(state.heroSelectCursor isBelow GameConfig.CLASS_COUNT - 1) {
-                    state.heroSelectCursor += 1
+                frame {
+                    // [PLACEHOLDER] Full class navigation and stat preview in Plan 11.
+                    whenever(buttons.a.pressed) {
+                        playSound(sounds.heroSelected)
+                        navigate(Scenes.gameplayRef)
+                    }
+                    whenever(buttons.start.pressed) {
+                        playSound(sounds.heroSelected)
+                        navigate(Scenes.gameplayRef)
+                    }
                 }
             }
-
-            // A button: confirm selection and start game
-            whenever(buttons.a.pressed) {
-                // Store selected class
-                state.selectedClass set state.heroSelectCursor
-                // Transition to gameplay
-                scene(gameplay)
-            }
-
-            // B button: return to title
-            whenever(buttons.b.pressed) { scene(title) }
         }
     }
+}

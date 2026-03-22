@@ -70,7 +70,8 @@ private fun printHelp() {
 }
 
 private fun printVersion() {
-    println("gbkt version 0.1.0-SNAPSHOT")
+    val version = object {}.javaClass.getPackage()?.implementationVersion ?: "dev"
+    println("gbkt version $version")
     println("Game Boy Kotlin - DSL framework for Game Boy development")
 
     // Show available backends

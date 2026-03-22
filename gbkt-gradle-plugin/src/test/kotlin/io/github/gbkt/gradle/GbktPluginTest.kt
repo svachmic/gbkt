@@ -331,9 +331,9 @@ class GbktPluginTest {
                 game("com.example.Game::myGame")
 
                 emulator {
-                    path.set("/usr/local/bin/mgba")
-                    args.set(listOf("-s", "4"))
-                    liveReload.set(false)
+                    scale.set(4)
+                    headless.set(false)
+                    externalEmulator.set("/usr/local/bin/mgba")
                 }
             }
             """
@@ -355,7 +355,7 @@ class GbktPluginTest {
     }
 
     @Test
-    fun `emulator liveReload defaults to true`() {
+    fun `emulator extension defaults work without explicit configuration`() {
         buildFile.writeText(
             """
             plugins {
@@ -372,8 +372,8 @@ class GbktPluginTest {
                 game("com.example.Game::myGame")
 
                 emulator {
-                    // Not setting liveReload - should default to true
-                    args.set(listOf("-s", "2"))
+                    // Not setting scale or headless — should use defaults
+                    scale.set(2)
                 }
             }
             """
@@ -390,7 +390,7 @@ class GbktPluginTest {
         // Extension configuration should parse without errors
         assertTrue(
             result.output.isNotEmpty(),
-            "Build should complete successfully with default liveReload",
+            "Build should complete successfully with default emulator settings",
         )
     }
 }

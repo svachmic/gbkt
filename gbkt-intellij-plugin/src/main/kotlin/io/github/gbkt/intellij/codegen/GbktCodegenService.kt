@@ -49,12 +49,40 @@ class GbktCodegenService(private val project: Project) {
         val generationTimeMs: Long,
     )
 
-    /** Source map for mapping C lines to Kotlin sources. */
+    /** Source map for mapping C lines to Kotlin sources (single-file, keyed by cLine). */
     data class SourceMap(val mappings: Map<Int, SourceLocation>) {
-        data class SourceLocation(val file: String, val line: Int, val column: Int = 0)
+        data class SourceLocation(
+            val file: String,
+            val line: Int,
+            val column: Int = 0,
+            val irNodeType: String? = null,
+        )
+    }
+
+    /**
+     * Multi-file source map keyed by C file name (e.g., "main.c", "bank1.c"). Each value is a map
+     * from cLine to SourceLocation.
+     */
+    data class MultiFileSourceMap(
+        val filesMappings: Map<String, Map<Int, SourceMap.SourceLocation>>
+    ) {
+        /** Flat view merging all file mappings for backward-compatible single-file lookups. */
+        fun toSingleFileMap(): SourceMap {
+            val merged = mutableMapOf<Int, SourceMap.SourceLocation>()
+            for ((_, mappings) in filesMappings) {
+                merged.putAll(mappings)
+            }
+            return SourceMap(merged)
+        }
     }
 
     private var lastResult: CodegenResult? = null
+
+    /** Cached multi-file source maps, invalidated whenever readCachedSourceMap() is called. */
+    @Volatile private var lastMultiFileSourceMap: MultiFileSourceMap? = null
+
+    /** Generated C files keyed by filename, for combined view. */
+    @Volatile private var lastGeneratedFiles: Map<String, String>? = null
 
     /** Lock for thread-safe generation state management. */
     private val generationLock = ReentrantLock()
@@ -114,19 +142,83 @@ class GbktCodegenService(private val project: Project) {
         return future
     }
 
-    /** Gets the last generated C code, or null if not available. */
+    /** Gets the last generated C code (main.c only), or null if not available. */
     fun getLastCCode(): String? {
         return lastResult?.cCode ?: readCachedCCode()
     }
 
-    /** Gets the last source map, or null if not available. */
+    /** Gets all generated C files (main.c, bank1.c, etc.) keyed by filename. */
+    fun getGeneratedFiles(): Map<String, String>? {
+        return lastGeneratedFiles ?: readCachedGeneratedFiles()
+    }
+
+    /** Gets the last source map (single-file view), or null if not available. */
     fun getLastSourceMap(): SourceMap? {
-        return lastResult?.sourceMap ?: readCachedSourceMap()
+        return lastResult?.sourceMap ?: readCachedSourceMap()?.toSingleFileMap()
+    }
+
+    /** Gets the multi-file source map, or null if not available. */
+    fun getLastMultiFileSourceMap(): MultiFileSourceMap? {
+        return lastMultiFileSourceMap ?: readCachedSourceMap()
+    }
+
+    /**
+     * Forward lookup: given a C file and line number, returns the Kotlin source location that
+     * generated that C line.
+     *
+     * This enables C->DSL reverse mapping in the CCodePreviewPanel: when the user places their
+     * caret on a line in the generated C view, this method resolves the corresponding Kotlin file
+     * and line. If there is no exact match, the nearest preceding entry is returned as the best
+     * approximation.
+     *
+     * @param cFile C filename key (e.g., "main.c", "bank1.c")
+     * @param cLine 1-based line number within the C file
+     * @return The [SourceMap.SourceLocation] that maps to this C line, or null if not found
+     */
+    fun findKotlinLocationForCLine(cFile: String, cLine: Int): SourceMap.SourceLocation? {
+        val multiMap = lastMultiFileSourceMap ?: readCachedSourceMap() ?: return null
+        val fileMappings = multiMap.filesMappings[cFile] ?: return null
+
+        // Exact match first
+        fileMappings[cLine]?.let {
+            return it
+        }
+
+        // Fall back to nearest preceding entry
+        return fileMappings.entries
+            .filter { (line, _) -> line < cLine }
+            .maxByOrNull { (line, _) -> line }
+            ?.value
+    }
+
+    /**
+     * Reverse lookup: given a Kotlin source file and line, returns all matching (cFile, cLine)
+     * pairs across all loaded source maps.
+     *
+     * @param kotlinFile Absolute path to the Kotlin source file
+     * @param kotlinLine 1-based line number in the Kotlin source file
+     * @return List of (cFile, cLine) pairs ordered by cFile name for deterministic output
+     */
+    fun findCLinesForKotlinLocation(kotlinFile: String, kotlinLine: Int): List<Pair<String, Int>> {
+        val multiMap = lastMultiFileSourceMap ?: readCachedSourceMap() ?: return emptyList()
+        val results = mutableListOf<Pair<String, Int>>()
+
+        for ((cFile, mappings) in multiMap.filesMappings.entries.sortedBy { it.key }) {
+            for ((cLine, sourceLocation) in mappings) {
+                if (sourceLocation.file == kotlinFile && sourceLocation.line == kotlinLine) {
+                    results.add(cFile to cLine)
+                }
+            }
+        }
+
+        return results
     }
 
     /** Clears the cached generation result. */
     fun clearCache() {
         lastResult = null
+        lastMultiFileSourceMap = null
+        lastGeneratedFiles = null
     }
 
     private fun runGradleGenerate(): CodegenResult {
@@ -220,12 +312,14 @@ class GbktCodegenService(private val project: Project) {
 
             // Read generated files
             val cCode = readCachedCCode()
-            val sourceMap = readCachedSourceMap()
+            val multiMap = readCachedSourceMap()
+            lastMultiFileSourceMap = multiMap
+            lastGeneratedFiles = readCachedGeneratedFiles()
 
             CodegenResult(
                 success = true,
                 cCode = cCode,
-                sourceMap = sourceMap,
+                sourceMap = multiMap?.toSingleFileMap(),
                 errorMessage = null,
                 generationTimeMs = elapsedTime,
             )
@@ -247,113 +341,152 @@ class GbktCodegenService(private val project: Project) {
         return if (cFile.exists()) cFile.readText() else null
     }
 
-    private fun readCachedSourceMap(): SourceMap? {
+    /** Read all generated C files from the generated directory. */
+    private fun readCachedGeneratedFiles(): Map<String, String>? {
         val projectPath = project.basePath ?: return null
-        val mapFile = File(projectPath, "build/gbkt/generated/main.c.gbkt.map")
-        if (!mapFile.exists()) return null
+        val generatedDir = File(projectPath, "build/gbkt/generated")
+        if (!generatedDir.exists()) return null
 
-        return try {
-            parseSourceMap(mapFile.readText())
-        } catch (@Suppress("SwallowedException") e: Exception) {
-            null
-        }
+        val cFiles = generatedDir.listFiles { file -> file.extension == "c" } ?: return null
+        if (cFiles.isEmpty()) return null
+
+        // Sort with main.c first, then by bank number
+        val sorted =
+            cFiles.sortedWith(
+                compareBy { file ->
+                    when {
+                        file.name == "main.c" -> 0
+                        file.name.startsWith("bank") ->
+                            file.name.removePrefix("bank").removeSuffix(".c").toIntOrNull() ?: 999
+                        else -> 1000
+                    }
+                }
+            )
+
+        return sorted.associate { file -> file.name to file.readText() }
     }
 
     /**
-     * Parses a source map file in the gbkt format.
-     *
-     * Format: Each line is `cLine:sourceFile:sourceLine[:column]`
-     *
-     * Note: Windows paths contain colons (e.g., C:\path\file.kt), so we parse carefully by working
-     * from both ends of the line.
+     * Scan the generated directory for all *.gbkt.map files and parse them as v2 JSON format.
+     * Returns a MultiFileSourceMap with per-file mappings.
      */
-    private fun parseSourceMap(content: String): SourceMap {
+    private fun readCachedSourceMap(): MultiFileSourceMap? {
+        val projectPath = project.basePath ?: return null
+        val generatedDir = File(projectPath, "build/gbkt/generated")
+        if (!generatedDir.exists()) return null
+
+        val mapFiles = generatedDir.listFiles { file -> file.name.endsWith(".gbkt.map") }
+        if (mapFiles.isNullOrEmpty()) return null
+
+        val filesMappings = mutableMapOf<String, Map<Int, SourceMap.SourceLocation>>()
+
+        for (mapFile in mapFiles) {
+            try {
+                val parsed = parseSourceMap(mapFile.readText(), mapFile.name)
+                if (parsed != null) {
+                    filesMappings[parsed.first] = parsed.second
+                }
+            } catch (@Suppress("SwallowedException") e: Exception) {
+                // Skip malformed map files
+            }
+        }
+
+        if (filesMappings.isEmpty()) return null
+
+        val result = MultiFileSourceMap(filesMappings)
+        lastMultiFileSourceMap = result
+        return result
+    }
+
+    /**
+     * Parse a source map file in v2 JSON format using a simple regex-based approach.
+     *
+     * Format: {"version":"2.0","gameName":"...","cFile":"...","bankNumber":0,"mappings":[...]} Each
+     * mapping: {"cLine":N,"kotlinFile":"...","kotlinLine":N,"kotlinColumn":N,"irNodeType":"..."}
+     *
+     * Uses regex extraction instead of a JSON library to avoid dependency on org.json (Gradle-only)
+     * or Gson/Jackson (not guaranteed on IntelliJ plugin classpath).
+     *
+     * @param content The JSON content of the source map file
+     * @param fallbackFileName Filename used as cFile key if JSON doesn't contain it
+     * @return Pair of (cFileName, mappings) or null if parsing fails
+     */
+    private fun parseSourceMap(
+        content: String,
+        fallbackFileName: String,
+    ): Pair<String, Map<Int, SourceMap.SourceLocation>>? {
+        val cFile =
+            extractJsonString(content, "cFile") ?: fallbackFileName.removeSuffix(".gbkt.map")
+
+        // Extract the mappings array content between the outer [ and ]
+        val mappingsStart = content.indexOf("\"mappings\"")
+        if (mappingsStart < 0) return null
+        val arrayStart = content.indexOf('[', mappingsStart)
+        if (arrayStart < 0) return null
+
         val mappings = mutableMapOf<Int, SourceMap.SourceLocation>()
 
-        for (line in content.lines()) {
-            if (line.isBlank() || line.startsWith("#")) continue
+        // Split on object boundaries — find each {...} object in the array
+        var depth = 0
+        var objStart = -1
+        var i = arrayStart + 1
 
-            val parsed = parseSourceMapLine(line) ?: continue
-            mappings[parsed.cLine] =
-                SourceMap.SourceLocation(parsed.sourceFile, parsed.sourceLine, parsed.column)
-        }
-
-        return SourceMap(mappings)
-    }
-
-    /**
-     * Parses a single source map line, handling Windows paths correctly.
-     *
-     * Strategy: Parse from both ends to avoid issues with colons in Windows paths.
-     * - First colon separates cLine from the rest
-     * - Last colon(s) separate sourceLine and optional column
-     * - Everything in between is the file path
-     */
-    private fun parseSourceMapLine(line: String): ParsedMapping? {
-        // Find first colon to get cLine
-        val firstColonIdx = line.indexOf(':')
-        if (firstColonIdx == -1) return null
-
-        val cLine = line.substring(0, firstColonIdx).toIntOrNull() ?: return null
-        val remainder = line.substring(firstColonIdx + 1)
-
-        // Find last colon to get sourceLine (and maybe column)
-        val lastColonIdx = remainder.lastIndexOf(':')
-        if (lastColonIdx == -1) return null
-
-        // Check if there's a column (second-to-last colon)
-        val afterLastColon = remainder.substring(lastColonIdx + 1)
-        val beforeLastColon = remainder.substring(0, lastColonIdx)
-
-        // Try to parse what's after the last colon as a number
-        val lastNumber = afterLastColon.toIntOrNull()
-        if (lastNumber == null) {
-            // Last segment isn't a number - malformed line
-            return null
-        }
-
-        // Check if there's another colon for the column
-        val secondLastColonIdx = beforeLastColon.lastIndexOf(':')
-
-        return if (secondLastColonIdx != -1) {
-            // Might have column - check if the segment between colons is a number
-            val potentialSourceLine =
-                beforeLastColon.substring(secondLastColonIdx + 1).toIntOrNull()
-            if (potentialSourceLine != null) {
-                // Format: cLine:path:sourceLine:column
-                ParsedMapping(
-                    cLine = cLine,
-                    sourceFile = beforeLastColon.substring(0, secondLastColonIdx),
-                    sourceLine = potentialSourceLine,
-                    column = lastNumber,
-                )
-            } else {
-                // The segment between colons isn't a number, so no column
-                // Format: cLine:path:sourceLine (path might contain colons like C:\...)
-                ParsedMapping(
-                    cLine = cLine,
-                    sourceFile = beforeLastColon,
-                    sourceLine = lastNumber,
-                    column = 0,
-                )
+        while (i < content.length) {
+            val ch = content[i]
+            when (ch) {
+                '{' -> {
+                    if (depth == 0) objStart = i
+                    depth++
+                }
+                '}' -> {
+                    depth--
+                    if (depth == 0 && objStart >= 0) {
+                        val objStr = content.substring(objStart, i + 1)
+                        parseMappingObject(objStr)?.let { (cLine, loc) -> mappings[cLine] = loc }
+                        objStart = -1
+                    }
+                }
+                ']' -> if (depth == 0) break
             }
-        } else {
-            // Only one colon in remainder - format: cLine:path:sourceLine
-            ParsedMapping(
-                cLine = cLine,
-                sourceFile = beforeLastColon,
-                sourceLine = lastNumber,
-                column = 0,
-            )
+            i++
         }
+
+        return cFile to mappings
     }
 
-    private data class ParsedMapping(
-        val cLine: Int,
-        val sourceFile: String,
-        val sourceLine: Int,
-        val column: Int,
-    )
+    private fun parseMappingObject(obj: String): Pair<Int, SourceMap.SourceLocation>? {
+        val cLine = extractJsonInt(obj, "cLine") ?: return null
+        val kotlinFile = extractJsonString(obj, "kotlinFile") ?: return null
+        val kotlinLine = extractJsonInt(obj, "kotlinLine") ?: return null
+        val kotlinColumn = extractJsonInt(obj, "kotlinColumn") ?: 0
+        val irNodeType = extractJsonString(obj, "irNodeType")
+
+        return cLine to
+            SourceMap.SourceLocation(
+                file = kotlinFile,
+                line = kotlinLine,
+                column = kotlinColumn,
+                irNodeType = irNodeType,
+            )
+    }
+
+    /** Extract a string value from a simple JSON object string. */
+    private fun extractJsonString(json: String, key: String): String? {
+        val pattern = Regex(""""${Regex.escape(key)}"\s*:\s*"((?:[^"\\]|\\.)*)"""")
+        return pattern
+            .find(json)
+            ?.groupValues
+            ?.get(1)
+            ?.replace("\\\"", "\"")
+            ?.replace("\\\\", "\\")
+            ?.replace("\\/", "/")
+    }
+
+    /** Extract an integer value from a simple JSON object string. */
+    private fun extractJsonInt(json: String, key: String): Int? {
+        val pattern = Regex(""""${Regex.escape(key)}"\s*:\s*(-?\d+)""")
+        return pattern.find(json)?.groupValues?.get(1)?.toIntOrNull()
+    }
 
     /** Checks if C code generation is currently in progress. */
     fun isGenerating(): Boolean = isGeneratingFlag.get()

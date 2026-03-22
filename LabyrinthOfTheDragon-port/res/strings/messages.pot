@@ -891,7 +891,88 @@ msgid "strange_wind"
 msgstr ""
 
 #. @bank 2
-#. gain_ability namespace (0 strings)
+#. gain_ability namespace (20 strings)
+
+#. @bank 2
+msgctxt "gain_ability"
+msgid "druid1"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "druid2"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "druid3"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "druid4"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "druid5"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "fighter1"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "fighter2"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "fighter3"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "fighter4"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "fighter5"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "monk1"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "monk2"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "monk3"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "monk4"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "monk5"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "sorcerer1"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "sorcerer2"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "sorcerer3"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "sorcerer4"
+msgstr ""
+
+msgctxt "gain_ability"
+msgid "sorcerer5"
+msgstr ""
 
 #. @bank 2
 #. chest_item namespace (16 strings)

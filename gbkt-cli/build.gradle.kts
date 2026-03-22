@@ -42,6 +42,12 @@ tasks.test {
     useJUnitPlatform()
 }
 
+tasks.jar {
+    manifest {
+        attributes("Implementation-Version" to project.version)
+    }
+}
+
 // Create distribution with shell wrapper scripts
 tasks.named<CreateStartScripts>("startScripts") {
     applicationName = "gbkt"

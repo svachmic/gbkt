@@ -100,6 +100,81 @@ abstract class GbktExtension @Inject constructor(objects: ObjectFactory) {
     abstract val gbcMode: Property<String>
 
     /**
+     * Compile-time locale selection for building language-specific ROMs.
+     *
+     * When set, the build uses `res/strings/{locale}.po` as the localization source and appends
+     * `_{locale}` to the output ROM name (e.g., "labyrinth_en.gb", "labyrinth_cs.gb").
+     *
+     * Can be overridden on the command line via `-Pgbkt.locale=cs`.
+     *
+     * Default: "en"
+     *
+     * Usage:
+     * ```kotlin
+     * gbkt {
+     *     locale.set("en")  // build labyrinth_en.gb
+     * }
+     * ```
+     *
+     * Command-line override:
+     * ```
+     * ./gradlew buildRom -Pgbkt.locale=cs  # builds labyrinth_cs.gb
+     * ```
+     */
+    abstract val locale: Property<String>
+
+    /**
+     * Skip backend validation before code generation. Default: false.
+     *
+     * When true, validation errors are printed as warnings but don't block the build. Useful for
+     * games with known validation issues (e.g., OAM limits that are managed at runtime, missing
+     * placeholder assets) that still generate valid C code.
+     */
+    abstract val skipValidation: Property<Boolean>
+
+    /**
+     * Print the budget report during every `generateC` execution. Default: true.
+     *
+     * The budget report is produced by the ten-pass analysis pipeline and shows ROM bank usage,
+     * VRAM tile budget, OAM sprite count, and WRAM/HRAM consumption.
+     *
+     * Set to false to suppress the budget report output:
+     * ```kotlin
+     * gbkt {
+     *     budgetReport.set(false)
+     * }
+     * ```
+     *
+     * Note: The budget report is printed inline during `generateC` by `generateV2()`. The
+     * standalone `budgetReport` task remains independently callable regardless of this flag.
+     */
+    abstract val budgetReport: Property<Boolean>
+
+    /**
+     * Number of RAM banks for the cartridge.
+     *
+     * Maps to the GBDK linker flag `-Wl-ya<N>`. Common values:
+     * - 0 (default): No external RAM
+     * - 1: 8KB SRAM
+     * - 4: 32KB SRAM (used by MBC5+RAM+Battery)
+     *
+     * Only meaningful for cartridge types with RAM (MBC1+RAM, MBC5+RAM+BATTERY, etc.).
+     */
+    abstract val ramBanks: Property<Int>
+
+    /**
+     * Directory containing binary resource files (tilemaps, tilesets, etc.) that are referenced by
+     * generated C code via INCBIN directives.
+     *
+     * These files are copied alongside the generated C source before GBDK compilation. The
+     * directory structure is preserved (e.g., `res/tilemaps/floor1.tilemap` remains at that
+     * relative path).
+     *
+     * If not set, no resource files are copied.
+     */
+    abstract val resourceDirectory: DirectoryProperty
+
+    /**
      * Convenience method to set game definition.
      *
      * @param spec Format: "package.ClassName::propertyName"
@@ -148,8 +223,10 @@ abstract class GbktExtension @Inject constructor(objects: ObjectFactory) {
      * ```kotlin
      * gbkt {
      *     emulator {
-     *         path.set("/usr/local/bin/mgba")
-     *         args.set(listOf("-s", "4"))  // 4x window scale
+     *         scale.set(4)                // 4x window scale (default)
+     *         headless.set(false)         // show window (default)
+     *         // Optional: use external emulator instead of embedded Coffee-GB
+     *         externalEmulator.set("/usr/local/bin/mgba")
      *     }
      * }
      * ```
@@ -273,59 +350,53 @@ abstract class OptimizationExtension @Inject constructor() {
 /**
  * Emulator configuration for running built ROMs.
  *
- * Supports mGBA with cross-platform path detection and live reload.
+ * Uses the embedded Coffee-GB emulator by default. An external emulator can optionally be
+ * configured as a fallback for users who prefer mGBA or other standalone emulators.
  *
  * Usage:
  * ```kotlin
  * gbkt {
  *     emulator {
- *         path.set("/usr/local/bin/mgba")  // or auto-detect
- *         args.set(listOf("-s", "4"))       // optional: scale 4x
- *         liveReload.set(true)              // enable live reload (default)
+ *         scale.set(4)              // 4x window scale (640x576), default
+ *         headless.set(false)       // show window, default
+ *         maxFrames.set(600)        // for headless/test mode, default 600
+ *         // Optional: override with external emulator (e.g., mGBA)
+ *         externalEmulator.set("/usr/local/bin/mgba")
  *     }
  * }
  * ```
  */
 abstract class EmulatorExtension @Inject constructor() {
 
-    /**
-     * Path to the emulator executable. If not set, will auto-detect mGBA from common installation
-     * paths.
-     *
-     * Common paths checked:
-     * - macOS: /Applications/mGBA.app, /usr/local/bin/mgba, ~/Applications/mGBA.app
-     * - Linux: /usr/bin/mgba, /usr/local/bin/mgba, ~/.local/bin/mgba
-     * - Windows: C:\Program Files\mGBA\mGBA.exe, C:\Program Files (x86)\mGBA\mGBA.exe
-     */
-    abstract val path: Property<String>
+    /** Scale factor for the emulator display window. Default: 4 (640x576). */
+    abstract val scale: Property<Int>
+
+    /** Run in headless mode (no display window). Default: false. */
+    abstract val headless: Property<Boolean>
+
+    /** Maximum frames to run in test/headless mode. Default: 600 (10 seconds at 60fps). */
+    abstract val maxFrames: Property<Int>
 
     /**
-     * Additional command-line arguments to pass to the emulator.
+     * Optional path to an external emulator executable (e.g., mGBA).
      *
-     * Useful mGBA options:
-     * - "-s", "N" : Window scale factor (e.g., "-s", "4" for 4x size)
-     * - "-f" : Start in fullscreen
-     * - "-C" : Config option (e.g., "-C", "audio.volume=0.5")
-     */
-    abstract val args: ListProperty<String>
-
-    /**
-     * Enable live reload functionality. When enabled, the emulator will load a Lua script that
-     * monitors the ROM file for changes and automatically reloads when rebuilt.
+     * When set, [RunEmulatorTask] bypasses the embedded Coffee-GB emulator and launches the
+     * external emulator with the ROM path as argument. This is useful for users who prefer a
+     * different emulator for interactive play.
      *
-     * Requires mGBA with Lua scripting support. Default: true
-     */
-    abstract val liveReload: Property<Boolean>
-
-    /**
-     * Custom path to the live-reload Lua script. If not set, uses the bundled script at
-     * scripts/live-reload.lua.
+     * When unset (default), the embedded Coffee-GB emulator is used. No external emulator
+     * installation is required.
      *
-     * The script should use mGBA's Lua scripting API to:
-     * 1. Monitor the ROM file for modifications
-     * 2. Call emu:loadFile() when changes are detected
+     * Example:
+     * ```kotlin
+     * gbkt {
+     *     emulator {
+     *         externalEmulator.set("/Applications/mGBA.app/Contents/MacOS/mGBA")
+     *     }
+     * }
+     * ```
      */
-    abstract val liveReloadScript: Property<String>
+    abstract val externalEmulator: Property<String>
 }
 
 /**

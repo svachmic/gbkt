@@ -4,38 +4,86 @@ Complete reference for all gbkt DSL syntax and usage patterns.
 
 ## Variables and Assignments
 
+Variables are declared using property delegates and used directly as typed `AssignableVar` values.
+
 ```kotlin
-// Variable declaration
-var score by u8Var()
-var playerX by u16Var()
+// Variable declaration — name inferred from property name
+var score by u8Var(0)      // UINT8 (0-255), initial value 0
+var ballDx by i8Var(1)     // INT8 (-128..127), initial value 1
+var lives by u8Var(3)      // UINT8, initial value 3
+var distance by u16Var(0)  // UINT16 (0-65535)
 
-// Assignments with 'set' for literals
-playerX set 20
-playerY set 100
+// Direct set — use infix `set` operator
+score set 0           // score = 0
+ballDx set -1         // ballDx = -1
+lives set 3           // lives = 3
 
-// Compound assignments (new in v2.0!)
-playerY -= 2       // playerY = playerY - 2
-score += 10        // score = score + 10
-gameSpeed *= 2     // multiply
-damage /= 2        // divide
-frame %= 60        // modulo
+// Compound assignments (emit SET with ADD/SUB/MUL/DIV/MOD op)
+score += 10           // add
+lives -= 1            // subtract
+ballDy *= -1          // multiply (bounce direction)
+damage /= 2           // divide
+frame %= 60           // modulo
+
+// Increment / decrement
+score++               // score = score + 1
+--lives               // lives = lives - 1
+
+// Use in arithmetic expressions (returns Expr)
+val midX = (ball.x + paddle.x) / 2   // Expr arithmetic
+
+// DEPRECATED API (do not use in new game code):
+// assign("score", literal(0))  →  score set 0
+// varRef("score")              →  score (use directly)
+// literal(5)                   →  5 (raw Int auto-wrapped)
+```
+
+## Arrays
+
+Arrays are declared with `u8Array()` and accessed via bracket operators.
+
+```kotlin
+// Array declaration — name inferred from property name
+val bricks by u8Array(30)        // UINT8 array of 30 elements
+val tiles by u8Array(16, "tile") // explicit C name override
+
+// Bracket read — returns Expr for use in conditions and expressions
+val b = bricks[bidx]             // bidx is AssignableVar
+whenever(bricks[i] isEqualTo 1) { ... }
+
+// Bracket write — emits ArrayAssign op into active ScriptBuilder
+bricks[bidx] = 0                 // set to literal
+bricks[i] = score                // set to another AssignableVar
+
+// Compile-time size (not a C expression)
+val n = bricks.size              // Int, use in forOp bounds
+
+// DEPRECATED API (do not use in new game code):
+// arrayAssign("bricks", varRef("i"), literal(1))  →  bricks[i] = 1
+// arrayRef("bricks", varRef("i"))                 →  bricks[i]
 ```
 
 ## Readable Comparisons
 
+Comparison functions return `Expr` for use in `whenever()`, `ifOp()`, and `whileOp()` conditions.
+
 ```kotlin
-// Human-readable comparison aliases (new in v2.0!)
-whenever(isJumping isEqualTo 0) { /* ... */ }
-whenever(playerY isAbove groundY) { /* ... */ }
-whenever(health isBelow 10) { /* ... */ }
+// Infix comparison functions (all return Expr)
+whenever(score isEqualTo 0) { /* ... */ }
+whenever(player.y isAbove 16) { /* ... */ }
+whenever(ball.x isBelow 4) { /* ... */ }
 whenever(score isAtLeast 100) { /* ... */ }
 whenever(lives isAtMost 3) { /* ... */ }
-whenever(playerX isBetween 10..150) { /* ... */ }
+whenever(hp isNotEqualTo 0) { /* ... */ }
 
-// Also available: isNotEqualTo, isGreaterThan, isLessThan
-// Short forms: `is`, isNot
+// Cross-type comparisons (AssignableVar vs Int, Expr vs ActorPropertyRef, etc.)
+whenever(ball.y isAtLeast paddle.y) { ... }          // two ActorPropertyRefs
+whenever((paddle.y + 8) isAbove ball.y) { ... }      // Expr vs ActorPropertyRef
+whenever(score isAbove 0) { ... }                    // AssignableVar vs Int
 
-// Legacy operators still work: gt, lt, eq, neq, gte, lte
+// Logical operators (infix — && and || cannot be overloaded in Kotlin)
+whenever((hp isAbove 0) logicalAnd (torchLevel isAbove 0)) { ... }
+whenever((x isAbove 0) logicalOr (y isAbove 0)) { ... }
 ```
 
 ## Text Rendering DSL
@@ -57,6 +105,65 @@ printCentered("GAME OVER") at 6       // centered at row 6
 printCentered("PRESS START") at 10
 ```
 
+## Actors (v2 DSL)
+
+Actors are sprite entities with position, sprite asset, and hitbox. The `actor { }` delegate
+infers the actor name from the Kotlin property name (via `provideDelegate`). The result is an
+`ActorRef` with typed property accessors (`x`, `y`, `visible`).
+
+```kotlin
+// Actor declaration — name inferred from Kotlin property "ball", "player"
+val ball by actor {
+    position(80, 72)                     // initial screen position
+    sprite(asset("sprites/ball.png")) {
+        size(8, 8)                       // sprite dimensions
+        hitbox(0, 0, 8, 8)              // collision rectangle (required for collides())
+    }
+}
+
+val player by actor {
+    position(80, 72)
+    sprite(asset("sprites/player.png")) { size(8, 16); hitbox(0, 8, 8, 8) }
+}
+
+// Custom actor properties — registers prefixed global INT8/UINT8 variable
+val bullet by actor {
+    position(80, 72)
+    sprite(asset("sprites/bullet.png")) { size(4, 4); hitbox(0, 0, 4, 4) }
+    var speed by u8Prop(2)   // registers _bullet_speed UINT8 global
+    var active by u8Prop(0)  // registers _bullet_active UINT8 global
+}
+
+// Actor property access — returns ActorPropertyRef with full operator set
+ball.x += ballDx            // compound add (emits Assign with ADD op)
+ball.y -= 2                 // compound subtract
+ball.x set 80               // direct assignment
+ball.y set 72               // direct assignment
+ball.visible set false      // boolean set (false → 0)
+
+// Typed comparisons on actor properties
+whenever(ball.x isAbove 160) { ballDx set -1 }
+whenever(ball.y isBelow 16) { ballDy set 1 }
+whenever(ball.y isAtLeast paddle.y) { ... }      // ActorPropertyRef vs ActorPropertyRef
+
+// Teleport (emits SetPosition op)
+ball.moveTo(80, 72)
+
+// Collision detection — emits inline AABB overlap test in C
+// Requires both actors to have hitbox() defined in their sprite {} block
+whenever(ball.collides(paddle)) { ballDy set -1 }
+whenever(ball.collides(wall)) { ballDx set -1 }
+
+// Movement helpers
+moveBy(player, 2, 0)       // relative move using ActorRef
+moveBy(player, 0, -2)
+
+// Available actor properties: .x, .y, .visible
+// Property access outside script context returns ActorPropertyRef (not Expr)
+// — use .toExpr() to convert for use in print() vararg params:
+print("HP: %d", hp.toExpr())
+```
+
 ## Sprite Definition with Position
 
 ```kotlin
@@ -64,9 +171,13 @@ printCentered("PRESS START") at 10
 val player = sprite(SpriteAsset("player.png")) {
     size = 8 x 16
     position(80, 72)            // Sprite owns its position (x=80, y=72)
+    position(u16 = true)        // Use UINT16 positions (for worlds > 255px)
     palette = playerPalette     // GBC color palette
     hitbox(2, 2, 4, 12)         // x-offset, y-offset, width, height
 }
+
+// Note: position(u16=true) propagates UINT16 through sprite binding,
+// camera follow pointers, pool positions, and exploration pixel coords.
 
 // Access position directly on the sprite
 player.x += 2                   // Move right
@@ -156,51 +267,156 @@ gameplayScene = scene("gameplay") {
 ## Control Flow
 
 ```kotlin
-// Conditionals with whenever()
+// whenever() — conditional block, runs if condition is true each frame
 whenever(buttons.a.pressed) {
     playerVelY set 8
 }
 
-// D-pad also supports .held, .pressed, .released via DpadDirectionState:
-whenever(dpad.right.held) { player.x += 2 }
-whenever(dpad.up.pressed) { jump() }
-// buttons.dpad provides unified access to d-pad state
-
-// Nested conditions
+// Nested conditions — both must be true
 whenever(isJumping isEqualTo 1) {
     whenever(playerVelY isAbove 0) {
         playerY -= 2
     }
 }
 
-// Branch for multiple conditions
-branch {
-    buttons.a.pressed then { jump() }
-    buttons.b.pressed then { shoot() }
+// ifOp/elseOp — one-shot branch (use in enter/exit blocks, not frame)
+ifOp(hp isAbove 0) { hp -= damage }
+elseOp { navigate(gameoverScene) }
+
+// whileOp — loop (use in enter/exit only; frame is already called each tick)
+var i by u8Var(0)
+whileOp(i isBelow 30) {
+    bricks[i] = 1
+    i += 1
 }
 ```
 
-## Scenes and Timing
+## Input API
+
+The type-safe input API uses typed objects instead of magic strings.
 
 ```kotlin
-// Declare SceneRefs for type-safe transitions
-lateinit var gameplayScene: SceneRef
-lateinit var gameoverScene: SceneRef
+// D-pad — .held (continuous), .pressed (rising edge), .released (falling edge)
+whenever(dpad.up.held) { player.y -= 2 }
+whenever(dpad.down.held) { player.y += 2 }
+whenever(dpad.left.held) { player.x -= 2 }
+whenever(dpad.right.held) { player.x += 2 }
 
-// Scene definition (captures SceneRef)
-gameplayScene = scene("gameplay") {
-    enter { /* called once when entering */ }
-    exit { /* called once when leaving */ }
+// D-pad edge-triggered (rising edge, one frame only)
+whenever(dpad.up.pressed) { jump() }
+whenever(dpad.left.released) { stopSlide() }
 
-    every.frame { /* runs 60 fps */ }
-    every.second { /* once per second */ }
-    every(5).frames { /* every 5 frames */ }
+// D-pad special
+whenever(dpad.any) { stepCount += 1 }   // any direction held
+whenever(dpad.none) { idle() }          // no direction held
+
+// Buttons — .held, .pressed, .released
+whenever(buttons.a.pressed) { shoot() }
+whenever(buttons.b.pressed) { navigate("title") }
+whenever(buttons.start.pressed) { navigate(pauseScene) }
+whenever(buttons.select.held) { showMap() }
+
+// Axis helpers (returns Expr: -1, 0, or 1)
+player.x += dpad.x * 2                 // horizontal axis
+player.y += dpad.y * 2                 // vertical axis
+
+// Logical combinations
+whenever(dpad.up.held logicalAnd buttons.b.held) { fastMove() }
+
+// DEPRECATED (do not use in new game code):
+// dpadHeld("up")          →  dpad.up.held
+// buttonPressed("start")  →  buttons.start.pressed
+// dpadAny()               →  dpad.any
+```
+
+## Scenes and Navigation
+
+Scenes are defined with the `scene()` builder that returns a `SceneRef` — a type-safe handle for navigation.
+
+```kotlin
+// Define scenes — assign the returned SceneRef to a val
+// Scene ordering: define targets BEFORE the scene that navigates to them
+// (gameover before game, game before title) to avoid forward-reference strings.
+
+val gameoverScene = scene("gameover") {
+    enter {
+        hideSprites()
+        clear()
+        print("GAME OVER", position = PositionDef(6, 6))
+        print("PRESS START", position = PositionDef(5, 13))
+    }
+    frame {
+        // navigate("title") kept as string — circular: title→game→gameover→title
+        whenever(buttons.start.pressed) { navigate("title") }
+    }
 }
 
-// Scene transitions (type-safe)
-scene(gameplayScene)
-scene(gameoverScene)
+val gameScene = scene("game") {
+    enter { showSprites() }
+    frame {
+        // navigate via SceneRef — gameoverScene is defined above, no string needed
+        whenever(lives isEqualTo 0) { navigate(gameoverScene) }
+    }
+}
+
+val titleScene = scene("title") {
+    enter { print("PRESS START", position = PositionDef(5, 12)) }
+    frame { whenever(buttons.start.pressed) { navigate(gameScene) } }
+}
+
+// Set start scene using .id
+start = titleScene.id   // (or start = "title" — both work)
+
+// Navigate within scenes using SceneRef or String
+navigate(gameoverScene)  // preferred — type-safe, validated at compile time
+navigate("title")        // fallback for circular dependencies (document why)
 ```
+
+**Circular navigation:** When scenes form a cycle (title→game→gameover→title), at least one `navigate()` call must use a string. Break the cycle at the scene that is defined earliest, keeping string navigation with a comment explaining the circular dependency.
+
+**Timing in scenes:**
+
+```kotlin
+val gameScene = scene("game") {
+    enter { /* called once on scene entry */ }
+    exit { /* called once on scene exit */ }
+    frame {
+        /* runs every frame (60 fps) */
+        /* use this for game logic, input handling, rendering */
+    }
+}
+
+// Delay execution within enter/exit blocks
+delay(60)    // pause 60 frames (~1 second)
+delay(30)    // pause 30 frames (~0.5 second)
+```
+
+## DMG Color Constants
+
+For the original DMG Game Boy, the 4-shade grayscale palette is expressed as integer indices 0–3. Use the `DmgColor` constants for readability:
+
+```kotlin
+import io.github.gbkt.core.dsl.v2.DmgColor
+
+// Available constants (compile-time Int values)
+DmgColor.WHITE      // 0 — lightest shade
+DmgColor.LIGHT_GRAY // 1 — second lightest
+DmgColor.DARK_GRAY  // 2 — second darkest
+DmgColor.BLACK      // 3 — darkest shade
+
+// Usage example — sprite palette definition
+val player by actor {
+    position(80, 72)
+    sprite(asset("sprites/player.png")) {
+        size(8, 16)
+        hitbox(0, 8, 8, 8)
+        // palette index for each of the 4 shades
+        // (transparent, body, outline, shadow)
+    }
+}
+```
+
+**Note:** GBC (Game Boy Color) games use 15-bit RGB color defined via hardware palette registers. DMG constants apply only to DMG-mode games where the 4-shade index controls which hardware shade is displayed.
 
 ## Raw C Escape Hatch
 
@@ -1514,6 +1730,8 @@ val game = gbGame("MyGame") {
 ## Battle System
 
 Turn-based combat with 18 distinct battle states, multiple turn order strategies, and event callbacks.
+
+> **Note:** Use `battle()` for v1. The `battleEngine()` DSL is experimental and will be revised in a future release.
 
 ### Battle Definition
 

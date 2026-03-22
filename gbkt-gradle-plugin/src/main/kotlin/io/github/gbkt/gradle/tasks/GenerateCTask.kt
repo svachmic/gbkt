@@ -7,6 +7,7 @@
 package io.github.gbkt.gradle.tasks
 
 import io.github.gbkt.gradle.internal.BackendReflection
+import io.github.gbkt.gradle.internal.GenerationResultWrapper
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
@@ -80,6 +81,20 @@ abstract class GenerateCTask @Inject constructor(private val workerExecutor: Wor
     @get:Input @get:Optional abstract val useUnicode: Property<Boolean>
 
     /**
+     * Compile-time locale for PO file selection.
+     *
+     * When set, the framework selects `res/strings/{locale}.po` as the localization source. This
+     * makes locale an explicit build input so Gradle incremental builds work correctly — changing
+     * locale invalidates the generateC task output cache.
+     *
+     * Default: "en"
+     */
+    @get:Input @get:Optional abstract val locale: Property<String>
+
+    /** Skip validation errors (print as warnings instead of failing). */
+    @get:Input @get:Optional abstract val skipValidation: Property<Boolean>
+
+    /**
      * Directory containing pre-processed asset markers. If set, indicates which assets need
      * regeneration.
      */
@@ -121,6 +136,7 @@ abstract class GenerateCTask @Inject constructor(private val workerExecutor: Wor
             this.assetDir.set(assetDirectory.orNull?.asFile?.absolutePath)
             this.outputDir.set(this@GenerateCTask.outputDir.get().asFile)
             this.target.set(this@GenerateCTask.target.getOrElse("gbc"))
+            this.skipValidation.set(this@GenerateCTask.skipValidation.getOrElse(false))
 
             // Optimization settings
             this.optimizationEnabled.set(this@GenerateCTask.optimizationEnabled.getOrElse(true))
@@ -145,6 +161,7 @@ interface GenerateCParams : WorkParameters {
     val assetDir: Property<String>
     val outputDir: Property<File>
     val target: Property<String>
+    val skipValidation: Property<Boolean>
 
     // Optimization settings
     val optimizationEnabled: Property<Boolean>
@@ -198,9 +215,46 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
                 }
 
             // Invoke the getter to get the Game object
-            val game =
+            val rawGame =
                 getter.invoke(null)
                     ?: throw GradleException("Game property '$propertyName' returned null")
+
+            // Detect v2 GameBuilder and route to the v2 pipeline
+            val gameBuilderClass =
+                try {
+                    Class.forName("io.github.gbkt.core.dsl.GameBuilder")
+                } catch (_: ClassNotFoundException) {
+                    null
+                }
+
+            if (gameBuilderClass != null && gameBuilderClass.isInstance(rawGame)) {
+                // v2 path: call build() to get GameIR, then route to generateV2
+                executeV2Path(rawGame, outputDir, target)
+                return
+            }
+
+            // v1 path: Process assets (convert PNG sprites to tile data) before code generation
+            val game =
+                if (assetDir != null) {
+                    try {
+                        val pipelineClass = Class.forName("io.github.gbkt.core.AssetPipelineKt")
+                        val gameClass = rawGame::class.java
+                        val processMethod =
+                            pipelineClass.getMethod("processAssets", gameClass, String::class.java)
+                        val processed = processMethod.invoke(null, rawGame, assetDir)
+                        if (processed != null) {
+                            println("Asset processing complete")
+                            processed
+                        } else {
+                            rawGame
+                        }
+                    } catch (e: Exception) {
+                        println("WARNING: Asset processing skipped: ${e.message}")
+                        rawGame
+                    }
+                } else {
+                    rawGame
+                }
 
             // Get the Game class
             val gameClass = game::class.java
@@ -253,6 +307,9 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
                 )
             }
 
+            // Write build metadata for CompileRomTask
+            writeBuildMetadata(game, outputDir)
+
             println("Generated ${files.size} C files ($totalLines total lines)")
             println("Output directory: ${outputDir.absolutePath}")
 
@@ -278,6 +335,77 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
         } catch (e: Exception) {
             throw GradleException("Failed to generate C code: ${e.message}", e)
         }
+    }
+
+    /**
+     * Execute the v2 pipeline path for games defined with [io.github.gbkt.core.dsl.GameBuilder].
+     *
+     * Calls [GameBuilder.build] to produce a [GameIR], discovers the backend for the target, and
+     * invokes [GBDKBackend.generateV2] via reflection.
+     *
+     * Source map generation is skipped for v2 games. The v1 [GBDKCodeGenerator] is architecturally
+     * incompatible with [GameIR]; v2 source map support requires a new implementation in
+     * [GBDKPipelineV2] and is deferred to a gap-closure plan after Phase 5 core integration.
+     */
+    private fun executeV2Path(rawGame: Any, outputDir: File, target: String) {
+        // 1. Call build() to get GameIR
+        val gameIR =
+            rawGame.javaClass.getMethod("build").invoke(rawGame)
+                ?: throw GradleException("GameBuilder.build() returned null")
+
+        // 2. Find backend for target
+        val backend =
+            BackendReflection.findBackendForTarget(target)
+                ?: throw GradleException("No backend found for target '$target'")
+
+        println("Using backend: ${BackendReflection.getBackendDisplayName(backend)}")
+
+        // 3. Call generateV2(GameIR, AssetManifest?, File?) via reflection
+        val gameIrClass = Class.forName("io.github.gbkt.core.ir.GameIR")
+        val assetManifestClass = Class.forName("io.github.gbkt.core.AssetManifest")
+        val generateV2Method =
+            backend.javaClass.getMethod(
+                "generateV2",
+                gameIrClass,
+                assetManifestClass,
+                java.io.File::class.java,
+            )
+        val result =
+            generateV2Method.invoke(backend, gameIR, null, outputDir)
+                ?: throw GradleException("generateV2 returned null")
+
+        // 4. Extract files from GenerationResult via reflection
+        val generationResultWrapper = GenerationResultWrapper(result)
+        val files = generationResultWrapper.getFilesOrThrow()
+
+        // 5. Write each file to output directory, and write source map files where available
+        var totalLines = 0
+        files.forEach { (filename, content) ->
+            val outputFile = File(outputDir, filename)
+            outputFile.writeText(content)
+            totalLines += content.lines().size
+            println("Generated: $filename (${content.lines().size} lines)")
+
+            // Write v2 source map alongside the C file (if available for this file)
+            val sourceMapJson = generationResultWrapper.getSourceMapJsonForFile(filename)
+            if (sourceMapJson != null) {
+                val sourceMapFile = File(outputDir, "$filename.gbkt.map")
+                sourceMapFile.writeText(sourceMapJson)
+                println("Generated source map: $filename.gbkt.map")
+            }
+        }
+
+        // 7. Build metadata — may fail for GameIR (no getConfig() matching v1 Game.config);
+        //    wrap in try-catch and skip gracefully
+        try {
+            writeBuildMetadata(gameIR, outputDir)
+        } catch (_: Exception) {
+            // Not critical — skip silently for v2 games
+        }
+
+        println("Generated ${files.size} C files ($totalLines total lines)")
+        println("Output directory: ${outputDir.absolutePath}")
+        // Note: asset optimization skipped for v2 games (expects v1 Game object)
     }
 
     /**
@@ -312,7 +440,9 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
             // Validate the game before generation
             val validationResult = BackendReflection.validateGame(backend, game)
             validationResult.printDiagnostics()
-            validationResult.throwIfInvalid()
+            if (!parameters.skipValidation.getOrElse(false)) {
+                validationResult.throwIfInvalid()
+            }
 
             // Generate code
             val generationResult = BackendReflection.generateCode(backend, game)
@@ -329,6 +459,69 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
         }
     }
 
+    /**
+     * Extract cartridge type from game config via reflection and write build metadata.
+     *
+     * This writes a `gbkt-build.properties` file that CompileRomTask reads to determine the correct
+     * MBC type flag instead of hardcoding it.
+     */
+    private fun writeBuildMetadata(game: Any, outputDir: File) {
+        try {
+            val gameClass = game::class.java
+            val configMethod =
+                try {
+                    gameClass.getMethod("getConfig")
+                } catch (_: NoSuchMethodException) {
+                    return
+                }
+            val config = configMethod.invoke(game) ?: return
+
+            val cartridgeMethod =
+                try {
+                    config::class.java.getMethod("getCartridge")
+                } catch (_: NoSuchMethodException) {
+                    return
+                }
+            val cartridge = cartridgeMethod.invoke(config) ?: return
+            val cartridgeName = cartridge.toString()
+
+            val mbcType = CARTRIDGE_MBC_MAP[cartridgeName] ?: "0x00"
+
+            val props = java.util.Properties()
+            props.setProperty("cartridge", cartridgeName)
+            props.setProperty("mbcType", mbcType)
+
+            // Write GBC target mode for CompileRomTask (DSL config {
+            // target(GbcTarget.GBC_COMPATIBLE) })
+            val gbcTargetMethod =
+                try {
+                    config::class.java.getMethod("getGbcTarget")
+                } catch (_: NoSuchMethodException) {
+                    null
+                }
+            if (gbcTargetMethod != null) {
+                val gbcTargetValue = gbcTargetMethod.invoke(config)
+                if (gbcTargetValue != null) {
+                    val gbcTargetName = gbcTargetValue.toString()
+                    val gbcMode =
+                        when (gbcTargetName) {
+                            "GBC_COMPATIBLE" -> "COMPATIBLE"
+                            "GBC_ONLY" -> "ONLY"
+                            else -> "DISABLED"
+                        }
+                    props.setProperty("gbcMode", gbcMode)
+                    println("Build metadata: gbcTarget=$gbcTargetName, gbcMode=$gbcMode")
+                }
+            }
+
+            val propsFile = File(outputDir, "gbkt-build.properties")
+            propsFile.outputStream().use { props.store(it, "gbkt build metadata") }
+            println("Build metadata: cartridge=$cartridgeName, mbcType=$mbcType")
+        } catch (e: Exception) {
+            println("WARNING: Could not extract build metadata: ${e.message}")
+        }
+    }
+
     /** Run asset optimization analysis via reflection. */
     private fun runAssetOptimization(game: Any, assetDir: String?) {
         try {
@@ -341,19 +534,33 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
             val reporterClass = Class.forName("io.github.gbkt.core.optimization.ConsoleReporter")
             val gameClass = Class.forName("io.github.gbkt.core.Game")
 
-            // Create AnalyzerConfig
-            val analyzerConfigConstructor = analyzerConfigClass.constructors.first()
-            val analyzerConfig =
-                analyzerConfigConstructor.newInstance(
-                    parameters.lowEntropyThreshold.getOrElse(0.5f), // lowEntropyThreshold
-                    0.8f, // similarityThreshold
-                    256, // maxTilesForSimilarity
-                    parameters.detectDuplicates.getOrElse(true), // detectDuplicates
-                    parameters.detectEmpty.getOrElse(true), // detectEmpty
-                    parameters.detectLowEntropy.getOrElse(true), // detectLowEntropy
-                    true, // analyzePalette
-                    true, // analyzeCompression
-                )
+            // Create AnalyzerConfig via reflection
+            // Kotlin data classes with all-default params have synthetic constructors
+            val analyzerConfigConstructors = analyzerConfigClass.constructors
+            val analyzerConfig = run {
+                val args =
+                    arrayOf(
+                        parameters.lowEntropyThreshold.getOrElse(0.5f), // lowEntropyThreshold
+                        0.8f, // similarityThreshold
+                        256, // maxTilesForSimilarity
+                        parameters.detectDuplicates.getOrElse(true), // detectDuplicates
+                        parameters.detectEmpty.getOrElse(true), // detectEmpty
+                        parameters.detectLowEntropy.getOrElse(true), // detectLowEntropy
+                        true, // analyzePalette
+                        true, // analyzeCompression
+                    )
+                // Try exact 8-param constructor first
+                val exact = analyzerConfigConstructors.find { it.parameterCount == 8 }
+                if (exact != null) {
+                    exact.newInstance(*args)
+                } else {
+                    // Kotlin synthetic: 8 fields + defaults mask + DefaultConstructorMarker
+                    val synthetic =
+                        analyzerConfigConstructors.find { it.parameterCount == 10 }
+                            ?: analyzerConfigConstructors.first()
+                    synthetic.newInstance(*args, 0, null)
+                }
+            }
 
             // Create AssetAnalyzer
             val analyzerConstructor = analyzerClass.getConstructor(analyzerConfigClass)
@@ -367,41 +574,62 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
                 analyzerClass.getMethod("analyze", gameClass, java.io.File::class.java)
             val report = analyzeMethod.invoke(analyzer, game, assetDirFile)
 
-            // Create ReporterConfig
-            val reporterConfigConstructor = reporterConfigClass.constructors.first()
-
-            // Detect color/unicode support
-            val detectColorMethod =
-                reporterConfigClass
-                    .getDeclaredClasses()
-                    .find { it.simpleName == "Companion" }
-                    ?.getMethod("detectColorSupport")
-            val detectUnicodeMethod =
-                reporterConfigClass
-                    .getDeclaredClasses()
-                    .find { it.simpleName == "Companion" }
-                    ?.getMethod("detectUnicodeSupport")
-
+            // Detect color/unicode support via Companion instance methods
             val useColor =
-                parameters.useColor.orNull ?: (detectColorMethod?.invoke(null) as? Boolean ?: true)
+                parameters.useColor.orNull
+                    ?: try {
+                        val companionClass =
+                            reporterConfigClass.getDeclaredClasses().find {
+                                it.simpleName == "Companion"
+                            }
+                        val companionInstance = reporterConfigClass.getField("Companion").get(null)
+                        companionClass?.getMethod("detectColorSupport")?.invoke(companionInstance)
+                            as? Boolean ?: true
+                    } catch (_: Exception) {
+                        true
+                    }
             val useUnicode =
                 parameters.useUnicode.orNull
-                    ?: (detectUnicodeMethod?.invoke(null) as? Boolean ?: true)
+                    ?: try {
+                        val companionClass =
+                            reporterConfigClass.getDeclaredClasses().find {
+                                it.simpleName == "Companion"
+                            }
+                        val companionInstance = reporterConfigClass.getField("Companion").get(null)
+                        companionClass?.getMethod("detectUnicodeSupport")?.invoke(companionInstance)
+                            as? Boolean ?: true
+                    } catch (_: Exception) {
+                        true
+                    }
 
-            val reporterConfig =
-                reporterConfigConstructor.newInstance(
-                    useColor, // useColor
-                    useUnicode, // useUnicode
-                    parameters.optimizationVerbose.getOrElse(false), // showPerAsset
-                    true, // showSuggestions
-                    parameters.optimizationQuietWhenOptimal.getOrElse(true), // quietWhenOptimal
-                )
+            // Create ReporterConfig (5 fields, all with defaults → synthetic has 7 params)
+            val reporterConfigConstructors = reporterConfigClass.constructors
+            val reporterConfig = run {
+                val args =
+                    arrayOf(
+                        useColor, // useColor
+                        useUnicode, // useUnicode
+                        parameters.optimizationVerbose.getOrElse(false), // showPerAsset
+                        true, // showSuggestions
+                        parameters.optimizationQuietWhenOptimal.getOrElse(true), // quietWhenOptimal
+                    )
+                val exact = reporterConfigConstructors.find { it.parameterCount == 5 }
+                if (exact != null) {
+                    exact.newInstance(*args)
+                } else {
+                    val synthetic =
+                        reporterConfigConstructors.find { it.parameterCount == 7 }
+                            ?: reporterConfigConstructors.first()
+                    synthetic.newInstance(*args, 0, null)
+                }
+            }
 
             // Create reporter and generate report
             val reporterConstructor = reporterClass.getConstructor(reporterConfigClass)
             val reporter = reporterConstructor.newInstance(reporterConfig)
 
-            val reportMethod = reporterClass.getMethod("report", report::class.java)
+            val reportClass = Class.forName("io.github.gbkt.core.optimization.AssetReport")
+            val reportMethod = reporterClass.getMethod("report", reportClass)
             reportMethod.invoke(reporter, report)
         } catch (e: ClassNotFoundException) {
             // Optimization classes not available, skip silently
@@ -409,5 +637,19 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
             // Log warning but don't fail the build
             println("Warning: Asset optimization analysis failed: ${e.message}")
         }
+    }
+
+    companion object {
+        /** Maps Cartridge enum names to GBDK `-Wm-yt` hex codes. */
+        val CARTRIDGE_MBC_MAP =
+            mapOf(
+                "ROM_ONLY" to "0x00",
+                "MBC1" to "0x01",
+                "MBC1_RAM" to "0x02",
+                "MBC1_RAM_BATTERY" to "0x03",
+                "MBC3_TIMER_BATTERY" to "0x10",
+                "MBC5" to "0x19",
+                "MBC5_RAM_BATTERY" to "0x1B",
+            )
     }
 }

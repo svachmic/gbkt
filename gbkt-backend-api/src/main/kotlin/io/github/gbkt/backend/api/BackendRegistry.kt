@@ -15,10 +15,44 @@ import java.util.ServiceLoader
  * 1. Implement [CodegenBackend]
  * 2. Create `META-INF/services/io.github.gbkt.backend.api.CodegenBackend`
  * 3. Add the fully qualified class name of your implementation
+ *
+ * Thread safety: each thread gets its own isolated registry state via [ThreadLocal]. This prevents
+ * [clear] in one test from wiping backends registered by another test during parallel execution.
+ * ServiceLoader discovery results are cached globally and copied into each thread's local state.
  */
 object BackendRegistry {
-    private val backends: MutableMap<String, CodegenBackend> = mutableMapOf()
-    private var discovered = false
+
+    /** Globally discovered backends (populated once, never cleared). */
+    private val globalBackends: MutableMap<String, CodegenBackend> = mutableMapOf()
+    private var globalDiscovered = false
+    private val globalLock = Any()
+
+    /** Per-thread registry state, isolated for parallel test safety. */
+    private class RegistryState {
+        val backends: MutableMap<String, CodegenBackend> = mutableMapOf()
+        var initialized = false
+    }
+
+    private val threadState = ThreadLocal.withInitial { RegistryState() }
+
+    /** Ensure thread-local state is seeded from global discovery. */
+    private fun ensureInitialized(): RegistryState {
+        val state = threadState.get()
+        if (!state.initialized) {
+            synchronized(globalLock) {
+                if (!globalDiscovered) {
+                    val loader = ServiceLoader.load(CodegenBackend::class.java)
+                    for (backend in loader) {
+                        globalBackends[backend.id] = backend
+                    }
+                    globalDiscovered = true
+                }
+                state.backends.putAll(globalBackends)
+            }
+            state.initialized = true
+        }
+        return state
+    }
 
     /**
      * Discover all available backends using ServiceLoader.
@@ -27,16 +61,9 @@ object BackendRegistry {
      *
      * @return List of discovered backends
      */
-    @Synchronized
     fun discover(): List<CodegenBackend> {
-        if (!discovered) {
-            val loader = ServiceLoader.load(CodegenBackend::class.java)
-            for (backend in loader) {
-                register(backend)
-            }
-            discovered = true
-        }
-        return backends.values.toList()
+        val state = ensureInitialized()
+        return state.backends.values.toList()
     }
 
     /**
@@ -46,9 +73,9 @@ object BackendRegistry {
      *
      * @param backend The backend to register
      */
-    @Synchronized
     fun register(backend: CodegenBackend) {
-        backends[backend.id] = backend
+        val state = ensureInitialized()
+        state.backends[backend.id] = backend
     }
 
     /**
@@ -58,8 +85,8 @@ object BackendRegistry {
      * @return The backend, or null if not found
      */
     fun forId(id: String): CodegenBackend? {
-        discover() // Ensure discovery has run
-        return backends[id]
+        val state = ensureInitialized()
+        return state.backends[id]
     }
 
     /**
@@ -69,30 +96,30 @@ object BackendRegistry {
      * @return The backend supporting this target, or null if not found
      */
     fun forTarget(targetId: String): CodegenBackend? {
-        discover() // Ensure discovery has run
-        return backends.values.find { it.profile.id == targetId }
+        val state = ensureInitialized()
+        return state.backends.values.find { it.profile.id == targetId }
     }
 
     /** Get all registered backends. */
     fun all(): List<CodegenBackend> {
-        discover() // Ensure discovery has run
-        return backends.values.toList()
+        val state = ensureInitialized()
+        return state.backends.values.toList()
     }
 
     /** Get all supported target platform IDs. */
     fun supportedTargets(): List<String> {
-        discover()
-        return backends.values.map { it.profile.id }.distinct()
+        val state = ensureInitialized()
+        return state.backends.values.map { it.profile.id }.distinct()
     }
 
     /**
-     * Clear all registered backends.
+     * Clear all registered backends for the current thread.
      *
-     * Primarily for testing.
+     * Only affects the calling thread's registry state — safe for parallel test execution.
      */
-    @Synchronized
     fun clear() {
-        backends.clear()
-        discovered = false
+        val state = threadState.get()
+        state.backends.clear()
+        state.initialized = false
     }
 }

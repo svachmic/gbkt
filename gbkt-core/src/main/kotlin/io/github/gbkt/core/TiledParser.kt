@@ -42,6 +42,20 @@ object TiledParser {
         return parseJson(json, file.parentFile)
     }
 
+    /**
+     * Parse a Tiled JSON map directly from a JSON string.
+     *
+     * Intended for testing: allows inline JSON content without writing to disk.
+     *
+     * @param content JSON string with Tiled map data
+     * @param baseDir Optional base directory for resolving relative tileset paths
+     * @return Parsed TiledMap structure
+     */
+    fun parseContent(content: String, baseDir: File? = null): TiledMap {
+        val json = JSONObject(content)
+        return parseJson(json, baseDir)
+    }
+
     private fun parseJson(json: JSONObject, baseDir: File?): TiledMap {
         val width = json.getInt("width")
         val height = json.getInt("height")
@@ -76,8 +90,28 @@ object TiledParser {
                     height = layerJson.getInt("height"),
                     data = parseLayerData(layerJson.getJSONArray("data")),
                     visible = layerJson.optBoolean("visible", true),
+                    properties = parseLayerProperties(layerJson),
                 )
             }
+    }
+
+    private fun parseLayerProperties(layerJson: JSONObject): Map<String, Any> {
+        val propsArray = layerJson.optJSONArray("properties") ?: return emptyMap()
+        val properties = mutableMapOf<String, Any>()
+        for (i in 0 until propsArray.length()) {
+            val prop = propsArray.getJSONObject(i)
+            val name = prop.getString("name")
+            val type = prop.optString("type", "string")
+            val value: Any =
+                when (type) {
+                    "bool" -> prop.getBoolean("value")
+                    "int" -> prop.getInt("value")
+                    "float" -> prop.getDouble("value")
+                    else -> prop.getString("value")
+                }
+            properties[name] = value
+        }
+        return properties
     }
 
     private fun parseLayerData(dataJson: JSONArray): List<Int> {
@@ -198,7 +232,16 @@ data class TiledLayer(
     val height: Int, // Layer height in tiles
     val data: List<Int>, // Tile GIDs (Global IDs)
     val visible: Boolean,
+    /** Custom properties from the Tiled layer's properties array. */
+    val properties: Map<String, Any> = emptyMap(),
 ) {
+    /**
+     * Returns true if this layer is designated as a collision layer via the gbkt_collision=true
+     * custom property.
+     */
+    val isCollisionLayer: Boolean
+        get() = properties["gbkt_collision"] == true
+
     /** Get tile at position (x, y) */
     fun getTile(x: Int, y: Int): Int {
         require(x in 0 until width && y in 0 until height) {

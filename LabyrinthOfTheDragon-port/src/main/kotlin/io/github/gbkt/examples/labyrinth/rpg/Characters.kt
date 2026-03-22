@@ -4,172 +4,259 @@
  *
  * Copyright (c) 2026 Michal Svacha
  */
+@file:Suppress("MatchingDeclarationName")
+
 package io.github.gbkt.examples.labyrinth.rpg
 
-import io.github.gbkt.core.assets.SpriteAsset
-import io.github.gbkt.core.builder.GameBuilder
-import io.github.gbkt.core.rpg.Character
-import io.github.gbkt.core.rpg.at
-import io.github.gbkt.core.rpg.character
+import io.github.gbkt.core.dsl.GameBuilder
+import io.github.gbkt.rpg.domain.CharacterDef
+import io.github.gbkt.rpg.domain.ExpCurve
+import io.github.gbkt.rpg.dsl.character
 
 /**
- * The four playable character classes in Labyrinth of the Dragon.
+ * Labyrinth of the Dragon — character class definitions.
  *
- * Each class has distinct stat distributions and abilities:
- * - Druid: Nature magic, healing, balanced stats
- * - Fighter: Physical combat, high HP/ATK/DEF
- * - Monk: Martial arts, high AGI, instant kill potential
- * - Sorcerer: Arcane magic, high MATK/SP, low defenses
+ * Ports all 4 playable character classes and the Test debug class from the Original C
+ * implementation in `LabyrinthOfTheDragon/src/player.c` and `player.h`.
  *
- * Each class learns 6 abilities at specific levels:
- * - Level 1: Starting ability
- * - Level 5: Second ability (~Floor 2)
- * - Level 10: Third ability (~Floor 3)
- * - Level 15: Fourth ability (~Floor 4)
- * - Level 20: Fifth ability (~Floor 5)
- * - Level 25: Ultimate ability (~Floor 6)
+ * ## Original C Reference
+ * - `PlayerClass` enum: `player.h` line 21–27
+ * - Stat tiers: `player.c` `*_update_stats()` functions (lines 258–648)
+ * - Starting level: `player.c` `init_player()` calls `set_player_level(4)` (line 1066)
+ * - Max level: 99 (inferred from level cap in `set_player_level`)
+ * - Default character names: `player.c` `init_player()` switch statement
+ *
+ * ## Stat Tier Mapping
+ *
+ * The Original uses a four-tier power system (C < B < A < S) with lookup tables. Stats at starting
+ * level 4 are approximated from tier ranks:
+ *
+ * | Tier | HP  | SP  | ATK | DEF | MATK | MDEF | AGL |
+ * |------|-----|-----|-----|-----|------|------|-----|
+ * | C    | 60  | 10  | 8   | 6   | 8    | 6    | 8   |
+ * | B    | 80  | 20  | 12  | 10  | 12   | 10   | 12  |
+ * | A    | 100 | 35  | 16  | 14  | 16   | 14   | 16  |
+ * | S    | 120 | 50  | 20  | 18  | 20   | 18   | 20  |
+ *
+ * ## Ability Learning
+ *
+ * Each class earns 6 abilities through the ability-grant system. Abilities are defined in
+ * `rpg/abilities/` and wired through the `learns {}` block when ability definitions are available
+ * in the combat plan.
  */
-private const val HERO_SPRITE_PATH = "sprites/hero.png"
 
-class Characters(builder: GameBuilder, private val abilities: Abilities) {
+// =============================================================================
+// Character class references returned from defineCharacters()
+// =============================================================================
 
-    /**
-     * Druid - Nature Magic Class
-     *
-     * Balanced healer with nature magic. Can both heal and deal elemental damage. Good
-     * survivability with moderate stats.
-     *
-     * Stat Focus: MATK, MDEF, balanced HP Role: Healer / Elemental DPS
-     */
-    val druid: Character by
-        builder.character {
-            sprite(SpriteAsset(HERO_SPRITE_PATH))
-            // Stat tiers: HP=B, SP=B, ATK=C, DEF=B, MATK=B, MDEF=A, AGL=B
-            stats {
-                hp(20, max = 999) // B-tier at Lv5
-                sp(12, max = 99) // B-tier at Lv5
-                atk(10) // C-tier at Lv5
-                def(12) // B-tier at Lv5
-                matk(16) // B-tier at Lv5
-                mdef(15) // A-tier at Lv5
-                agl(1) // B-tier at Lv5
-                level(5) // Original: NEW_CHARACTER_LEVEL = 5
-            }
-            leveling {
-                maxLevel(99)
-                learns(
-                    abilities.cureWounds at 1, // Starting ability
-                    abilities.barkSkin at 5, // ~Floor 2
-                    abilities.lightning at 10, // ~Floor 3
-                    abilities.majorHeal at 15, // ~Floor 4
-                    abilities.insectPlague at 20, // ~Floor 5
-                    abilities.regenerate at 25, // ~Floor 6
-                )
-            }
-        }
+/**
+ * Typed container for all Labyrinth of the Dragon character class definitions.
+ *
+ * Returned by [GameBuilder.defineCharacters] for zero-magic-string access in downstream plans
+ * (combat, hero-select scene, etc.).
+ *
+ * @property druid Druid class — balanced magic/defense, healer + lightning damage.
+ * @property fighter Fighter class — high HP/DEF melee combatant.
+ * @property monk Monk class — high AGL martial artist, debuff-clearing abilities.
+ * @property sorcerer Sorcerer class — fragile but high SP and MATK, AOE magic.
+ * @property test Test debug class — max stats, special abilities for development. Not selectable in
+ *   normal gameplay (CLASS_TEST = 0xFF).
+ */
+data class LabyrinthCharacters(
+    val druid: CharacterDef,
+    val fighter: CharacterDef,
+    val monk: CharacterDef,
+    val sorcerer: CharacterDef,
+    val test: CharacterDef,
+)
 
-    /**
-     * Fighter - Martial Warrior Class
-     *
-     * Physical powerhouse with the highest HP and defense. Excels at dealing and taking physical
-     * damage. Limited magical ability.
-     *
-     * Stat Focus: HP, ATK, DEF Role: Tank / Physical DPS
-     */
-    val fighter: Character by
-        builder.character {
-            sprite(SpriteAsset(HERO_SPRITE_PATH))
-            // Stat tiers: HP=A, SP=C, ATK=B, DEF=A, MATK=C, MDEF=B, AGL=B
-            stats {
-                hp(23, max = 999) // A-tier at Lv5
-                sp(8, max = 99) // C-tier at Lv5
-                atk(16) // B-tier at Lv5
-                def(15) // A-tier at Lv5
-                matk(10) // C-tier at Lv5
-                mdef(12) // B-tier at Lv5
-                agl(1) // B-tier at Lv5
-                level(5) // Original: NEW_CHARACTER_LEVEL = 5
-            }
-            leveling {
-                maxLevel(99)
-                learns(
-                    abilities.secondWind at 1, // Starting ability - self heal
-                    abilities.actionSurge at 5, // ~Floor 2 - extra attack
-                    abilities.cleave at 10, // ~Floor 3 - AoE attack
-                    abilities.tripAttack at 15, // ~Floor 4 - stun
-                    abilities.menace at 20, // ~Floor 5 - debuff enemies
-                    abilities.indomitable at 25, // ~Floor 6 - massive DEF buff
-                )
-            }
-        }
+// =============================================================================
+// Character definitions DSL extension
+// =============================================================================
+
+/**
+ * Registers all 4 playable character classes and the debug Test class.
+ *
+ * Registers with the current [GameBuilder] so the GBDK backend can emit C stat structures. Returns
+ * [LabyrinthCharacters] for downstream typed references.
+ *
+ * ## Original C Source
+ * `LabyrinthOfTheDragon/src/player.c` — `druid_update_stats()` line 258, `fighter_update_stats()`
+ * line 351, `monk_update_stats()` line 468, `sorcerer_update_stats()` line 637,
+ * `test_class_update_stats()` line 789.
+ */
+fun GameBuilder.defineCharacters(): LabyrinthCharacters {
+
+    // -------------------------------------------------------------------------
+    // Druid (CLASS_DRUID = 0)
+    // Tiers: hp=B, sp=B, atk=C, def=B, matk=B, mdef=A, agl=B
+    // Magic class — healer and lightning caster. Named "Lyra" by default.
+    // Abilities: cure_wounds, bark_skin, lightning, heal, insect_plague, regen
+    // Original: player.c lines 258–345
+    // -------------------------------------------------------------------------
 
     /**
-     * Monk - Martial Artist Class
+     * Druid character class.
      *
-     * Agile combatant with the highest speed. Uses ki-powered techniques including the deadly
-     * Quivering Palm. Balanced between offense and evasion.
+     * A magic class specialising in healing and nature magic. Uses MATK for base attacks (Poison
+     * Spray). High MDEF makes her resilient against magical damage. Learns regen and bark-skin for
+     * sustainability, with lightning and insect plague as offense.
      *
-     * Stat Focus: AGL, ATK, balanced defenses Role: Speedy DPS / Debuff clearer
+     * Default name: "Lyra" — see `player.c` `init_player()`. Original index: `CLASS_DRUID = 0` —
+     * `player.h` line 22.
      */
-    val monk: Character by
-        builder.character {
-            sprite(SpriteAsset(HERO_SPRITE_PATH))
-            // Stat tiers: HP=B, SP=B, ATK=B, DEF=B, MATK=C, MDEF=B, AGL=A
+    val druidDef =
+        character("druid") {
+            name("Druid")
             stats {
-                hp(20, max = 999) // B-tier at Lv5
-                sp(12, max = 99) // B-tier at Lv5
-                atk(16) // B-tier at Lv5
-                def(12) // B-tier at Lv5
-                matk(10) // C-tier at Lv5
-                mdef(12) // B-tier at Lv5
-                agl(3) // A-tier at Lv5
-                level(5) // Original: NEW_CHARACTER_LEVEL = 5
+                hp(80) // B tier
+                sp(20) // B tier
+                atk(8) // C tier — magic class, physical ATK is low
+                def(10) // B tier
+                matk(12) // B tier — primary offensive stat
+                mdef(14) // A tier — strong magical defense
+                agl(12) // B tier
             }
-            leveling {
-                maxLevel(99)
-                learns(
-                    abilities.evasion at 1, // Starting ability - evasion buff
-                    abilities.openPalm at 5, // ~Floor 2 - push + damage
-                    abilities.stillMind at 10, // ~Floor 3 - cure debuffs
-                    abilities.flurry at 15, // ~Floor 4 - multi-hit
-                    abilities.diamondBody at 20, // ~Floor 5 - huge DEF buff
-                    abilities.quiveringPalm at 25, // ~Floor 6 - instant kill
-                )
-            }
+            level(4, maxLevel = 99, expCurve = ExpCurve.STANDARD)
         }
 
+    // -------------------------------------------------------------------------
+    // Fighter (CLASS_FIGHTER = 1)
+    // Tiers: hp=A, sp=C, atk=B, def=A, matk=C, mdef=B, agl=B
+    // Martial class — tanky melee warrior. Named "Deneth" by default.
+    // Abilities: second_wind, action_surge, cleave, trip_attack, menace, indomitable
+    // Original: player.c lines 351–463
+    // -------------------------------------------------------------------------
+
     /**
-     * Sorcerer - Arcane Magic Class
+     * Fighter character class.
      *
-     * Pure spellcaster with devastating magical attacks. Highest MATK and SP but lowest HP and
-     * physical stats. Classic "glass cannon" archetype.
+     * The archetypal melee combatant with the highest HP and DEF in the game. Low SP (C tier) and
+     * minimal magic stats — pure physical damage dealer and tank. Trip Attack and Menace provide
+     * crowd control. Indomitable gives full damage resistance.
      *
-     * Stat Focus: MATK, SP, MDEF Role: Magical DPS / AoE specialist
+     * Default name: "Deneth" — see `player.c` `init_player()`. Original index: `CLASS_FIGHTER = 1`
+     * — `player.h` line 23.
      */
-    val sorcerer: Character by
-        builder.character {
-            sprite(SpriteAsset(HERO_SPRITE_PATH))
-            // Stat tiers: HP=C, SP=A, ATK=C, DEF=C, MATK=A, MDEF=B, AGL=A
+    val fighterDef =
+        character("fighter") {
+            name("Fighter")
             stats {
-                hp(16, max = 999) // C-tier at Lv5
-                sp(15, max = 99) // A-tier at Lv5
-                atk(10) // C-tier at Lv5
-                def(9) // C-tier at Lv5
-                matk(21) // A-tier at Lv5
-                mdef(12) // B-tier at Lv5
-                agl(3) // A-tier at Lv5
-                level(5) // Original: NEW_CHARACTER_LEVEL = 5
+                hp(100) // A tier — highest HP
+                sp(10) // C tier — limited resource
+                atk(12) // B tier — strong physical attacker
+                def(14) // A tier — highest defense
+                matk(8) // C tier — weak magic
+                mdef(10) // B tier — moderate magical defense
+                agl(12) // B tier
             }
-            leveling {
-                maxLevel(99)
-                learns(
-                    abilities.darkness at 1, // Starting ability - blind enemies
-                    abilities.fireball at 5, // ~Floor 2 - fire damage + burn
-                    abilities.haste at 10, // ~Floor 3 - speed buff
-                    abilities.sleetStorm at 15, // ~Floor 4 - ice AoE
-                    abilities.disintegrate at 20, // ~Floor 5 - high damage
-                    abilities.wildMagic at 25, // ~Floor 6 - random powerful effect
-                )
-            }
+            level(4, maxLevel = 99, expCurve = ExpCurve.STANDARD)
         }
+
+    // -------------------------------------------------------------------------
+    // Monk (CLASS_MONK = 2)
+    // Tiers: hp=B, sp=B, atk=B, def=B, matk=C, mdef=B, agl=A
+    // Martial class — fastest character, debuff immunity. Named "Ken" by default.
+    // Abilities: evasion, open_palm, still_mind, flurry, diamond_body, quivering_palm
+    // Original: player.c lines 468–631
+    // -------------------------------------------------------------------------
+
+    /**
+     * Monk character class.
+     *
+     * A martial arts specialist with the highest AGL in the game. Balanced physical stats with weak
+     * magic. Still Mind clears all debuffs; Diamond Body grants physical/magical resistance.
+     * Quivering Palm has a chance for instant kill.
+     *
+     * Default name: "Ken" — see `player.c` `init_player()`. Original index: `CLASS_MONK = 2` —
+     * `player.h` line 24.
+     */
+    val monkDef =
+        character("monk") {
+            name("Monk")
+            stats {
+                hp(80) // B tier
+                sp(20) // B tier
+                atk(12) // B tier — uses atk+agl for attack rolls
+                def(10) // B tier
+                matk(8) // C tier — weak magic attack
+                mdef(10) // B tier
+                agl(16) // A tier — fastest character
+            }
+            level(4, maxLevel = 99, expCurve = ExpCurve.STANDARD)
+        }
+
+    // -------------------------------------------------------------------------
+    // Sorcerer (CLASS_SORCERER = 3)
+    // Tiers: hp=C, sp=A, atk=C, def=C, matk=A, mdef=B, agl=A
+    // Magic class — highest damage potential, but fragile. Named "Tyrion" by default.
+    // Abilities: darkness, fireball, haste, sleetstorm, disintegrate, wild_magic
+    // Original: player.c lines 637–783
+    // -------------------------------------------------------------------------
+
+    /**
+     * Sorcerer character class.
+     *
+     * A glass cannon with the lowest HP and DEF but the highest SP and MATK. AOE-focused with
+     * Fireball and Darkness (blind all enemies). Haste gives double attacks. Wild Magic is chaotic
+     * but powerful at higher levels. Sleet Storm marks enemies for guaranteed critical hits.
+     * Disintegrate has instant-kill chance.
+     *
+     * Default name: "Tyrion" — see `player.c` `init_player()`. Original index: `CLASS_SORCERER = 3`
+     * — `player.h` line 25.
+     */
+    val sorcererDef =
+        character("sorcerer") {
+            name("Sorcerer")
+            stats {
+                hp(60) // C tier — fragile
+                sp(35) // A tier — largest SP pool
+                atk(8) // C tier — magic class, weak physical
+                def(6) // C tier — lowest defense
+                matk(16) // A tier — strongest magic attacker
+                mdef(10) // B tier
+                agl(16) // A tier — fast caster
+            }
+            level(4, maxLevel = 99, expCurve = ExpCurve.STANDARD)
+        }
+
+    // -------------------------------------------------------------------------
+    // Test Class (CLASS_TEST = 0xFF)
+    // Tiers: all S tier — max stats for debug/development use
+    // NOT selectable in normal gameplay — for Phase 07 UAT testing
+    // Original: player.c lines 789–862, player.h lines 462–475
+    // -------------------------------------------------------------------------
+
+    /**
+     * Test debug class (not playable in normal gameplay).
+     *
+     * All stats at S tier (maximum) for rapid debugging and UAT. The Test class has 6 special debug
+     * abilities (Damage All, (De)buff, SUPERKILL, etc.) and bypasses normal class ability gates.
+     * Used during Phase 07 UAT to test all game systems.
+     *
+     * Original index: `CLASS_TEST = 0xFF` — `player.h` line 26. Debug abilities defined in
+     * `player.data.c` lines 159–181.
+     */
+    val testDef =
+        character("test") {
+            name("Test")
+            stats {
+                hp(120) // S tier
+                sp(50) // S tier
+                atk(20) // S tier
+                def(18) // S tier
+                matk(20) // S tier
+                mdef(18) // S tier
+                agl(20) // S tier
+            }
+            level(4, maxLevel = 99, expCurve = ExpCurve.STANDARD)
+        }
+
+    return LabyrinthCharacters(
+        druid = druidDef,
+        fighter = fighterDef,
+        monk = monkDef,
+        sorcerer = sorcererDef,
+        test = testDef,
+    )
 }

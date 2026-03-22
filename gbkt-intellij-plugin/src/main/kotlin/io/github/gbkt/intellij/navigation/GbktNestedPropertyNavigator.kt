@@ -70,18 +70,13 @@ object GbktNestedPropertyNavigator {
             return listOf(rootDefinition.element)
         }
 
-        // Navigate into the nested blocks
-        @Suppress("kotlin:S6524") // Mutable list required for building results
-        val results = mutableListOf<PsiElement>()
-        results.add(rootDefinition.element)
-
-        // Try to find nested blocks
+        // Navigate into the nested blocks - try to find nested blocks first
         val nestedTarget = findNestedBlock(rootDefinition.callExpression, chain.drop(1))
-        if (nestedTarget != null) {
-            results.add(0, nestedTarget) // Prefer the more specific match
+        return if (nestedTarget != null) {
+            listOf(nestedTarget, rootDefinition.element) // Prefer the more specific match
+        } else {
+            listOf(rootDefinition.element)
         }
-
-        return results
     }
 
     /** Searches all `.gbkt.kts` files in the project for a definition with the given name. */
@@ -230,8 +225,7 @@ object GbktNestedPropertyNavigator {
                 ?: return null
 
         // Search for a call expression with the target name
-        val nestedCalls =
-            PsiTreeUtil.findChildrenOfType(lambda, KtCallExpression::class.java).toList()
+        val nestedCalls = PsiTreeUtil.findChildrenOfType(lambda, KtCallExpression::class.java)
 
         for (nestedCall in nestedCalls) {
             val calleeName = nestedCall.calleeExpression?.text

@@ -180,22 +180,21 @@ class IntegrationTest {
     fun `asset pipeline handles missing asset directory gracefully`() {
         createGameWithSpritesFixture()
         createBasicBuildFile()
-        // Don't create the assets directory
+        // Don't create the assets directory — backend validation rejects missing sprites
 
         val result =
             GradleRunner.create()
                 .withProjectDir(testProjectDir)
                 .withArguments("generateC", "--stacktrace")
                 .withPluginClasspath()
-                .build()
+                .buildAndFail()
 
-        // Should succeed but warn about missing assets
-        assertEquals(TaskOutcome.SUCCESS, result.task(":generateC")?.outcome)
+        // Backend validates that referenced sprite files exist
         assertTrue(
-            result.output.contains("Warning") ||
+            result.output.contains("Asset file not found") ||
                 result.output.contains("not found") ||
-                result.output.contains("Asset"),
-            "Should warn about missing assets",
+                result.output.contains("ASSET_FILE"),
+            "Should report missing asset file: ${result.output}",
         )
     }
 
@@ -203,19 +202,21 @@ class IntegrationTest {
     fun `asset pipeline handles missing sprite file gracefully`() {
         createGameWithSpritesFixture()
         createBasicBuildFile()
-        // Create assets directory but no sprite file
+        // Create assets directory but no sprite file — backend validation rejects this
 
         val result =
             GradleRunner.create()
                 .withProjectDir(testProjectDir)
                 .withArguments("generateC", "--stacktrace")
                 .withPluginClasspath()
-                .build()
+                .buildAndFail()
 
-        assertEquals(TaskOutcome.SUCCESS, result.task(":generateC")?.outcome)
+        // Backend validates that referenced sprite files exist
         assertTrue(
-            result.output.contains("Warning") || result.output.contains("not found"),
-            "Should warn about missing sprite file",
+            result.output.contains("Asset file not found") ||
+                result.output.contains("not found") ||
+                result.output.contains("ASSET_FILE"),
+            "Should report missing sprite file: ${result.output}",
         )
     }
 
@@ -230,15 +231,14 @@ class IntegrationTest {
                 .withProjectDir(testProjectDir)
                 .withArguments("generateC", "--stacktrace")
                 .withPluginClasspath()
-                .build()
+                .buildAndFail()
 
-        // Should either fail or warn about invalid dimensions
-        // The exact behavior depends on validation settings
+        // Backend validates that sprite dimensions are multiples of 8
         assertTrue(
-            result.output.contains("dimension") ||
-                result.output.contains("multiple of 8") ||
-                result.task(":generateC")?.outcome == TaskOutcome.SUCCESS,
-            "Should handle invalid dimensions appropriately",
+            result.output.contains("multiple of 8") ||
+                result.output.contains("dimension") ||
+                result.output.contains("ASSET_FILE"),
+            "Should report invalid dimensions: ${result.output}",
         )
     }
 
@@ -552,6 +552,8 @@ class IntegrationTest {
 
             dependencies {
                 implementation("io.github.gbkt:gbkt-core:0.1.0-SNAPSHOT")
+                implementation("io.github.gbkt:gbkt-backend-api:0.1.0-SNAPSHOT")
+                runtimeOnly("io.github.gbkt:gbkt-backend-gbdk:0.1.0-SNAPSHOT")
             }
 
             kotlin {

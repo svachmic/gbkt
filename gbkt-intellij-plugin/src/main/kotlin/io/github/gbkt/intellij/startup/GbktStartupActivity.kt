@@ -87,46 +87,35 @@ class GbktStartupActivity : ProjectActivity {
         val basePath = project.basePath ?: return false
         val projectDir = java.io.File(basePath)
 
-        // Check for .gbkt.kts files
-        try {
-            if (projectDir.walkTopDown().any { it.name.endsWith(".gbkt.kts") }) {
-                return true
-            }
+        return hasGbktFiles(projectDir) ||
+            fileContainsGbktReference(java.io.File(projectDir, "build.gradle.kts")) ||
+            fileContainsGbktReference(java.io.File(projectDir, "settings.gradle.kts"))
+    }
+
+    /** Check if directory contains any .gbkt.kts files. */
+    private fun hasGbktFiles(projectDir: java.io.File): Boolean {
+        return try {
+            projectDir.walkTopDown().any { it.name.endsWith(".gbkt.kts") }
         } catch (e: SecurityException) {
             logger.warn("Security exception while scanning for .gbkt.kts files", e)
+            false
         }
+    }
 
-        // Check for gbkt in build.gradle.kts
-        val buildFile = java.io.File(projectDir, "build.gradle.kts")
-        if (buildFile.exists()) {
-            try {
-                val content = buildFile.readText()
-                if (content.contains("gbkt") || content.contains("io.github.gbkt")) {
-                    return true
-                }
-            } catch (e: java.io.IOException) {
-                logger.warn("Failed to read build.gradle.kts", e)
-            } catch (e: SecurityException) {
-                logger.warn("Security exception reading build.gradle.kts", e)
-            }
+    /** Check if a file exists and contains gbkt references. */
+    private fun fileContainsGbktReference(file: java.io.File): Boolean {
+        if (!file.exists()) return false
+
+        return try {
+            val content = file.readText()
+            content.contains("gbkt") || content.contains("io.github.gbkt")
+        } catch (e: java.io.IOException) {
+            logger.warn("Failed to read ${file.name}", e)
+            false
+        } catch (e: SecurityException) {
+            logger.warn("Security exception reading ${file.name}", e)
+            false
         }
-
-        // Check for settings.gradle.kts with gbkt modules
-        val settingsFile = java.io.File(projectDir, "settings.gradle.kts")
-        if (settingsFile.exists()) {
-            try {
-                val content = settingsFile.readText()
-                if (content.contains("gbkt")) {
-                    return true
-                }
-            } catch (e: java.io.IOException) {
-                logger.warn("Failed to read settings.gradle.kts", e)
-            } catch (e: SecurityException) {
-                logger.warn("Security exception reading settings.gradle.kts", e)
-            }
-        }
-
-        return false
     }
 
     private fun showSdkNotFoundNotification(project: Project) {

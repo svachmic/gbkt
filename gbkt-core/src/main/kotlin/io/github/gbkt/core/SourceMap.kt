@@ -79,6 +79,7 @@ fun captureSourceLocation(): SourceLocation? {
  * @property kotlinColumn The column number in the Kotlin file (1-based, optional)
  * @property symbol Optional symbol name (variable, function, etc.) associated with this line
  * @property snippet Optional source code snippet for context
+ * @property irNodeType Optional IR node type name for diagnostics (e.g. "Assign", "IfOp") — v2
  */
 data class SourceMapping(
     val cLine: Int,
@@ -87,6 +88,7 @@ data class SourceMapping(
     val kotlinColumn: Int = 0,
     val symbol: String? = null,
     val snippet: String? = null,
+    val irNodeType: String? = null,
 )
 
 /**
@@ -94,16 +96,18 @@ data class SourceMapping(
  *
  * This enables debugging by showing which Kotlin DSL line produced each line of generated C code.
  *
- * @property version Source map format version
+ * @property version Source map format version ("1.0" for v1, "2.0" for v2 pipeline maps)
  * @property gameName Name of the game being compiled
  * @property cFile Name of the generated C file
  * @property mappings List of line mappings
+ * @property bankNumber ROM bank number for the C file — v2 field, null for v1 maps
  */
 data class SourceMap(
     val version: String = "1.0",
     val gameName: String,
     val cFile: String,
     val mappings: List<SourceMapping>,
+    val bankNumber: Int? = null,
 ) {
     /** Serialize the source map to JSON format. */
     fun toJson(): String {
@@ -112,6 +116,9 @@ data class SourceMap(
         sb.appendLine("  \"version\": \"$version\",")
         sb.appendLine("  \"gameName\": \"${escapeJson(gameName)}\",")
         sb.appendLine("  \"cFile\": \"${escapeJson(cFile)}\",")
+        if (bankNumber != null) {
+            sb.appendLine("  \"bankNumber\": $bankNumber,")
+        }
         sb.appendLine("  \"mappings\": [")
 
         mappings.forEachIndexed { index, mapping ->
@@ -128,6 +135,9 @@ data class SourceMap(
             }
             if (mapping.snippet != null) {
                 sb.append(", \"snippet\": \"${escapeJson(mapping.snippet)}\"")
+            }
+            if (mapping.irNodeType != null) {
+                sb.append(", \"irNodeType\": \"${escapeJson(mapping.irNodeType)}\"")
             }
             sb.appendLine("}$comma")
         }
@@ -168,8 +178,18 @@ data class SourceMap(
  * builder.addMapping(10, sourceLocation, "playerX")
  * val sourceMap = builder.build()
  * ```
+ *
+ * @param gameName Name of the game for the generated source map.
+ * @param cFile Name of the generated C file.
+ * @param version Source map format version ("1.0" for v1, "2.0" for v2 pipeline maps).
+ * @param bankNumber Optional ROM bank number for v2 maps.
  */
-class SourceMapBuilder(private val gameName: String, private val cFile: String) {
+class SourceMapBuilder(
+    private val gameName: String,
+    private val cFile: String,
+    private val version: String = "1.0",
+    private val bankNumber: Int? = null,
+) {
     private val mappings = mutableListOf<SourceMapping>()
 
     /**
@@ -178,8 +198,14 @@ class SourceMapBuilder(private val gameName: String, private val cFile: String) 
      * @param cLine The line number in the generated C file (1-based)
      * @param location The Kotlin source location (null locations are ignored)
      * @param symbol Optional symbol name for this mapping
+     * @param irNodeType Optional IR node type name for diagnostics
      */
-    fun addMapping(cLine: Int, location: SourceLocation?, symbol: String? = null) {
+    fun addMapping(
+        cLine: Int,
+        location: SourceLocation?,
+        symbol: String? = null,
+        irNodeType: String? = null,
+    ) {
         if (location != null) {
             mappings.add(
                 SourceMapping(
@@ -189,6 +215,7 @@ class SourceMapBuilder(private val gameName: String, private val cFile: String) 
                     kotlinColumn = location.column,
                     symbol = symbol,
                     snippet = location.snippet,
+                    irNodeType = irNodeType,
                 )
             )
         }
@@ -212,5 +239,11 @@ class SourceMapBuilder(private val gameName: String, private val cFile: String) 
 
     /** Build the final SourceMap. */
     fun build(): SourceMap =
-        SourceMap(gameName = gameName, cFile = cFile, mappings = mappings.toList())
+        SourceMap(
+            version = version,
+            gameName = gameName,
+            cFile = cFile,
+            mappings = mappings.toList(),
+            bankNumber = bankNumber,
+        )
 }

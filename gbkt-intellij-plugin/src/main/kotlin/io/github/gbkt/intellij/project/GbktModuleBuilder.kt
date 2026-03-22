@@ -102,6 +102,7 @@ class GbktModuleBuilder : ModuleBuilder() {
     }
 
     /** Generate all project files from template. */
+    @Suppress("kotlin:S1172") // project reserved for future IDE integration
     private fun generateProjectFiles(projectDir: File, @Suppress("unused") project: Project) {
         val generator =
             ProjectFileGenerator(

@@ -23,7 +23,9 @@ plugins {
 }
 
 group = "io.github.gbkt"
-version = "0.1.0"
+version = findProperty("gbktVersion")?.toString() ?: "0.1.0"
+
+val intellijVersion = "2024.2"
 
 repositories {
     mavenCentral()
@@ -34,7 +36,7 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity("2024.2")
+        intellijIdeaCommunity(intellijVersion)
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.jetbrains.kotlin")
         pluginVerifier()

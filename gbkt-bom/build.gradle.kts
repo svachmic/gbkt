@@ -17,14 +17,47 @@ javaPlatform {
 
 dependencies {
     constraints {
-        // Core library - DSL, IR, all game constructs
+        // Foundation — pure IR types, zero external dependencies
+        api(project(":gbkt-ir"))
+
+        // DSL recording context — GameBuilder, ScriptBuilder, variable delegates
+        api(project(":gbkt-lang"))
+
+        // Engine constructs — scene lifecycle, actor management, input, graphics
+        api(project(":gbkt-engine"))
+
+        // World and exploration — floor, zone, encounter, dungeon crawling types
+        api(project(":gbkt-world"))
+
+        // Core library — DSL, IR, all game constructs (meta-module re-exporting all above)
         api(project(":gbkt-core"))
 
-        // Backend API - for custom backend implementations
+        // Backend API — for custom backend implementations
         api(project(":gbkt-backend-api"))
 
-        // GBDK Backend - Game Boy / Game Boy Color code generation
+        // GBDK Backend — Game Boy / Game Boy Color code generation
         api(project(":gbkt-backend-gbdk"))
+
+        // RPG genre package
+        api(project(":gbkt-genre-rpg"))
+
+        // Platformer genre package
+        api(project(":gbkt-genre-platformer"))
+
+        // Puzzle genre package (match-3, block-push)
+        api(project(":gbkt-genre-puzzle"))
+
+        // Sport and racing genre package
+        api(project(":gbkt-genre-sport"))
+
+        // Compiler analysis passes — resource allocation, VRAM/RAM budgets, semantic validation
+        api(project(":gbkt-analysis"))
+
+        // Embedded Game Boy emulator — Coffee-GB core with debug log capture and developer UI
+        api(project(":gbkt-emulator"))
+
+        // Convenience meta-module — single dependency for all published modules
+        api(project(":gbkt-all"))
     }
 }
 

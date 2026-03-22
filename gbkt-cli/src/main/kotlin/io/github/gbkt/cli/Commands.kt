@@ -116,7 +116,7 @@ fun handleBuild(args: List<String>) {
     }
 }
 
-@Suppress("UnusedParameter") // Reserved for future flags
+@Suppress("UnusedParameter", "kotlin:S1172") // Reserved for future flags
 fun handleRun(@Suppress("UNUSED_PARAMETER") args: List<String>) {
     println("Running emulator...")
 

@@ -16,7 +16,7 @@
 <idea-plugin>
     <id>io.github.gbkt.intellij</id>
     <name>gbkt - Game Boy Kotlin</name>
-    <vendor email="support@gbkt.io" url="https://github.com/ArcaneArts/gbkt">Michal Svacha</vendor>
+    <vendor email="support@gbkt.io" url="https://github.com/svachmic/gbkt">Michal Svacha</vendor>
 
     <description><![CDATA[
     <h1>gbkt - Game Boy Development Companion</h1>
@@ -191,6 +191,20 @@
             groupName="gbkt"
             enabledByDefault="true"
             level="ERROR"/>
+
+        <!-- Asset Reference Inspection (missing asset files) -->
+        <localInspection
+            language="Kotlin"
+            implementationClass="io.github.gbkt.intellij.inspections.GbktAssetRefInspection"
+            displayName="Missing asset reference"
+            groupName="gbkt"
+            enabledByDefault="true"
+            level="ERROR"/>
+
+        <!-- Budget gutter icons for scene/actor blocks -->
+        <codeInsight.lineMarkerProvider
+            implementationClass="io.github.gbkt.intellij.gutter.BudgetGutterIconProvider"
+            language="Kotlin"/>
 
         <!-- DSL Annotator for syntax highlighting -->
         <annotator

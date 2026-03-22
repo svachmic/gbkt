@@ -14,6 +14,13 @@ gbktPublishing {
 }
 
 dependencies {
+    // Re-export layered modules for backward compatibility.
+    // Consumers that depend on gbkt-core transitively see all v2 types.
+    api(project(":gbkt-ir"))
+    api(project(":gbkt-lang"))
+    api(project(":gbkt-engine"))
+    api(project(":gbkt-world"))
+
     // JSON parsing for Tiled map files
     implementation(libs.json)
 

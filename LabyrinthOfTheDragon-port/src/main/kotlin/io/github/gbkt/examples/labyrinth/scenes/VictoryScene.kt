@@ -6,29 +6,50 @@
  */
 package io.github.gbkt.examples.labyrinth.scenes
 
-import io.github.gbkt.core.SceneRef
-import io.github.gbkt.core.builder.GameBuilder
-import io.github.gbkt.core.input.buttons
-import io.github.gbkt.core.print
-import io.github.gbkt.core.screen
+import io.github.gbkt.core.dsl.GameBuilder
+import io.github.gbkt.core.dsl.buttons
+import io.github.gbkt.core.ir.PositionDef
+import io.github.gbkt.examples.labyrinth.LabyrinthSounds
 
 /**
- * Victory Scene
+ * Victory / credits scene for Labyrinth of the Dragon.
  *
- * Shown when the player defeats the Dragon. Congratulates the player and transitions to credits.
+ * Displayed after defeating the Dragon on floor 8. Shows a victory message and credits before
+ * returning to the title screen.
+ *
+ * ## Original C Reference
+ * - `credits.c` — `init_credits()`, `update_credits()`
+ * - Victory condition: Dragon defeated on floor 8 (floor8DragonDefeated flag set)
+ *
+ * [PLACEHOLDER] Full credits animation in Plan 11.
  */
-fun GameBuilder.initVictoryScene(credits: SceneRef): SceneRef =
-    scene("victory") {
-        enter {
-            screen.clear()
-            print("VICTORY!") at (6 to 4)
-            print("") at (0 to 6)
-            print("YOU HAVE SLAIN") at (3 to 8)
-            print("THE DRAGON!") at (4 to 10)
-            print("") at (0 to 12)
-            print("CONGRATULATIONS") at (2 to 14)
-            print("PRESS START") at (4 to 17)
-        }
+object VictoryScene {
 
-        every.frame { whenever(buttons.start.pressed) { scene(credits) } }
+    /**
+     * Registers the victory scene into the [GameBuilder].
+     *
+     * @param builder The active [GameBuilder].
+     * @param sounds Typed sound refs for SFX wiring.
+     */
+    fun register(builder: GameBuilder, sounds: LabyrinthSounds) {
+        builder.apply {
+            scene("victory") {
+                enter {
+                    hideSprites()
+                    clear()
+                    // @source credits.c — victory message
+                    print("YOU SLEW THE DRAGON!", position = PositionDef(0, 4))
+                    print("CONGRATULATIONS!", position = PositionDef(2, 6))
+                    print("PRESS START", position = PositionDef(5, 13))
+                    playSound(sounds.battleSuccess)
+                }
+
+                frame {
+                    // Return to title on START or A
+                    whenever(buttons.start.pressed) { navigate(Scenes.titleRef) }
+                    whenever(buttons.a.pressed) { navigate(Scenes.titleRef) }
+                }
+            }
+        }
     }
+}

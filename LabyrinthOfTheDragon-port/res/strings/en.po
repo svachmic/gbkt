@@ -61,15 +61,15 @@ msgstr "Remedy"
 
 msgctxt "misc"
 msgid "ether"
-msgstr "Ether "
+msgstr "Ether"
 
 msgctxt "misc"
 msgid "atk_up_potion"
-msgstr "ATK&  "
+msgstr "ATK&"
 
 msgctxt "misc"
 msgid "def_up_potion"
-msgstr "DEF&  "
+msgstr "DEF&"
 
 msgctxt "misc"
 msgid "elixir"
@@ -77,11 +77,11 @@ msgstr "Elixir"
 
 msgctxt "misc"
 msgid "regen_pot"
-msgstr "Regen "
+msgstr "Regen"
 
 msgctxt "misc"
 msgid "haste_pot"
-msgstr "Haste "
+msgstr "Haste"
 
 msgctxt "misc"
 msgid "dummy"
@@ -161,23 +161,23 @@ msgstr "But you evade!"
 #. @bank 0
 msgctxt "ability"
 msgid "druid_poison_spray"
-msgstr "Poison Spray "
+msgstr "Poison Spray"
 
 msgctxt "ability"
 msgid "druid_cure_wounds"
-msgstr "Cure Wounds  "
+msgstr "Cure Wounds"
 
 msgctxt "ability"
 msgid "druid_bark_skin"
-msgstr "Bark Skin    "
+msgstr "Bark Skin"
 
 msgctxt "ability"
 msgid "druid_lightning"
-msgstr "Lightning    "
+msgstr "Lightning"
 
 msgctxt "ability"
 msgid "druid_heal"
-msgstr "Heal         "
+msgstr "Heal"
 
 msgctxt "ability"
 msgid "druid_insect_plague"
@@ -185,63 +185,63 @@ msgstr "Insect Plague"
 
 msgctxt "ability"
 msgid "druid_regen"
-msgstr "Regenerate   "
+msgstr "Regenerate"
 
 msgctxt "ability"
 msgid "fighter_attack"
-msgstr "Melee Attack "
+msgstr "Melee Attack"
 
 msgctxt "ability"
 msgid "fighter_second_wind"
-msgstr "Second Wind  "
+msgstr "Second Wind"
 
 msgctxt "ability"
 msgid "fighter_action_surge"
-msgstr "Action Surge "
+msgstr "Action Surge"
 
 msgctxt "ability"
 msgid "fighter_cleave"
-msgstr "Cleave       "
+msgstr "Cleave"
 
 msgctxt "ability"
 msgid "fighter_trip_attack"
-msgstr "Trip Attack  "
+msgstr "Trip Attack"
 
 msgctxt "ability"
 msgid "fighter_menace"
-msgstr "Menace       "
+msgstr "Menace"
 
 msgctxt "ability"
 msgid "fighter_indomitable"
-msgstr "Indomitable  "
+msgstr "Indomitable"
 
 msgctxt "ability"
 msgid "monk_attack"
-msgstr "Unarmed Atk. "
+msgstr "Unarmed Atk."
 
 msgctxt "ability"
 msgid "monk_evasion"
-msgstr "Evasion      "
+msgstr "Evasion"
 
 msgctxt "ability"
 msgid "monk_open_palm"
-msgstr "Open Palm    "
+msgstr "Open Palm"
 
 msgctxt "ability"
 msgid "monk_still_mind"
-msgstr "Still Mind   "
+msgstr "Still Mind"
 
 msgctxt "ability"
 msgid "monk_flurry"
-msgstr "Flurry       "
+msgstr "Flurry"
 
 msgctxt "ability"
 msgid "monk_diamond_body"
-msgstr "Diamond Body "
+msgstr "Diamond Body"
 
 msgctxt "ability"
 msgid "monk_quivering_palm"
-msgstr "Quiver. Palm "
+msgstr "Quiver. Palm"
 
 msgctxt "ability"
 msgid "sorc_attack"
@@ -249,27 +249,27 @@ msgstr "Magic Missile"
 
 msgctxt "ability"
 msgid "sorc_darkness"
-msgstr "Darkness     "
+msgstr "Darkness"
 
 msgctxt "ability"
 msgid "sorc_fireball"
-msgstr "Fireball     "
+msgstr "Fireball"
 
 msgctxt "ability"
 msgid "sorc_haste"
-msgstr "Haste        "
+msgstr "Haste"
 
 msgctxt "ability"
 msgid "sorc_sleetstorm"
-msgstr "Sleetstorm   "
+msgstr "Sleetstorm"
 
 msgctxt "ability"
 msgid "sorc_disintegrate"
-msgstr "Disintegrate "
+msgstr "Disintegrate"
 
 msgctxt "ability"
 msgid "sorc_wild_magic"
-msgstr "Wild Magic   "
+msgstr "Wild Magic"
 
 #. @bank 3
 #. battle namespace (21 strings)
@@ -281,7 +281,7 @@ msgstr "%monster %c shivers in fear..."
 
 msgctxt "battle"
 msgid "monster_paralyzed"
-msgstr "%monster %c can"
+msgstr "%monster %c can't move!"
 
 msgctxt "battle"
 msgid "monster_poison_death"
@@ -373,7 +373,7 @@ msgstr "You deal %damage damage!"
 
 msgctxt "player"
 msgid "hit_immune"
-msgstr "They"
+msgstr "They're completely immune!"
 
 msgctxt "player"
 msgid "hit_resist"
@@ -409,7 +409,7 @@ msgstr "Poison gas erupts from your palm!"
 
 msgctxt "player"
 msgid "cure_wounds"
-msgstr "You"
+msgstr "You're enveloped in blue light..."
 
 msgctxt "player"
 msgid "bark_skin"
@@ -425,7 +425,7 @@ msgstr "Radiant green light descends..."
 
 msgctxt "player"
 msgid "heal_complete"
-msgstr "You"
+msgstr "You're fully healed!"
 
 msgctxt "player"
 msgid "insect_plague"
@@ -597,7 +597,7 @@ msgstr "The chest is empty!"
 
 msgctxt "maps"
 msgid "lever_stuck"
-msgstr "It"
+msgstr "It's stuck!"
 
 msgctxt "maps"
 msgid "lever_one_way"
@@ -685,7 +685,7 @@ msgstr "Monsters fear fire."
 
 msgctxt "floor1"
 msgid "sign_empty_chest"
-msgstr "It"
+msgstr "It's empty..."
 
 msgctxt "floor1"
 msgid "sign_tunnel_cave_in"
@@ -705,7 +705,7 @@ msgstr "A powerful foe once lived here."
 
 msgctxt "floor1"
 msgid "boss_defeated"
-msgstr "Yawp! You won"
+msgstr "Yawp! You won't beat my friends below!"
 
 #. @bank 2
 #. floor2 namespace (5 strings)
@@ -725,7 +725,7 @@ msgstr "Somewhere a door opens..."
 
 msgctxt "floor2"
 msgid "elite_msg"
-msgstr "An adventurer? Come, let"
+msgstr "An adventurer? Come, let's test your mettle!"
 
 msgctxt "floor2"
 msgid "boss_msg"
@@ -869,7 +869,7 @@ msgstr "There is no going back!"
 
 msgctxt "floor_common"
 msgid "steve_jobs"
-msgstr "It"
+msgstr "It's so sad that Steve Jobs Died of Ligma..."
 
 msgctxt "floor_common"
 msgid "tbd"
@@ -892,7 +892,88 @@ msgid "strange_wind"
 msgstr "You feel a strong breeze from the north."
 
 #. @bank 2
-#. gain_ability namespace (0 strings)
+#. gain_ability namespace (20 strings)
+
+#. @bank 2
+msgctxt "gain_ability"
+msgid "druid1"
+msgstr "You learn to cast Bark Skin!"
+
+msgctxt "gain_ability"
+msgid "druid2"
+msgstr "You learn to cast Lightning!"
+
+msgctxt "gain_ability"
+msgid "druid3"
+msgstr "You learn to cast Heal!"
+
+msgctxt "gain_ability"
+msgid "druid4"
+msgstr "You learn to cast Insect Plague!"
+
+msgctxt "gain_ability"
+msgid "druid5"
+msgstr "You learn to cast Regenerate!"
+
+msgctxt "gain_ability"
+msgid "fighter1"
+msgstr "You learn to use Action Surge!"
+
+msgctxt "gain_ability"
+msgid "fighter2"
+msgstr "You learn to use Cleave!"
+
+msgctxt "gain_ability"
+msgid "fighter3"
+msgstr "You learn to use Trip Attack!"
+
+msgctxt "gain_ability"
+msgid "fighter4"
+msgstr "You learn to use Menace!"
+
+msgctxt "gain_ability"
+msgid "fighter5"
+msgstr "You learn to use Indomitable!"
+
+msgctxt "gain_ability"
+msgid "monk1"
+msgstr "You learn to use Open Palm!"
+
+msgctxt "gain_ability"
+msgid "monk2"
+msgstr "You learn to use Still Mind!"
+
+msgctxt "gain_ability"
+msgid "monk3"
+msgstr "You learn to use Flurry!"
+
+msgctxt "gain_ability"
+msgid "monk4"
+msgstr "You learn to use Diamond Body!"
+
+msgctxt "gain_ability"
+msgid "monk5"
+msgstr "You learn to use Quivering Palm!"
+
+msgctxt "gain_ability"
+msgid "sorcerer1"
+msgstr "You learn to cast Fireball!"
+
+msgctxt "gain_ability"
+msgid "sorcerer2"
+msgstr "You learn to cast Haste!"
+
+msgctxt "gain_ability"
+msgid "sorcerer3"
+msgstr "You learn to cast Sleetstorm!"
+
+msgctxt "gain_ability"
+msgid "sorcerer4"
+msgstr "You learn to cast Disintegrate!"
+
+msgctxt "gain_ability"
+msgid "sorcerer5"
+msgstr "You learn to cast Wild Magic!"
 
 #. @bank 2
 #. chest_item namespace (16 strings)
@@ -1004,7 +1085,7 @@ msgstr "The world slows down!"
 
 msgctxt "items"
 msgid "use_failed"
-msgstr "The item didn"
+msgstr "The item didn't work!"
 
 #. @bank 6
 #. monster namespace (61 strings)
@@ -1044,7 +1125,7 @@ msgstr "You take %damage %aspect damage!"
 
 msgctxt "monster"
 msgid "hit_immune"
-msgstr "But you"
+msgstr "But you're completely immune!"
 
 msgctxt "monster"
 msgid "hit_resist"
@@ -1052,7 +1133,7 @@ msgstr "You resist, only %damage damage"
 
 msgctxt "monster"
 msgid "hit_vuln"
-msgstr "It"
+msgstr "It's SUPER BAD! %damage damage!"
 
 msgctxt "monster"
 msgid "hit_crit"
@@ -1072,7 +1153,7 @@ msgstr "Dummy %c stands still."
 
 msgctxt "monster"
 msgid "dummy_post_heal"
-msgstr ""
+msgstr "\"I will never die...\""
 
 msgctxt "monster"
 msgid "kobold_axe"
@@ -1116,7 +1197,7 @@ msgstr "Hrrnng... brains."
 
 msgctxt "monster"
 msgid "zombie_bite_miss"
-msgstr "Zombie %c"
+msgstr "Zombie %c's bite barely misses!"
 
 msgctxt "monster"
 msgid "zombie_bite_hit"
@@ -1128,7 +1209,7 @@ msgstr "Zombie %c swipes at you!"
 
 msgctxt "monster"
 msgid "bugbear_for_hruggek"
-msgstr "Bugbear %c screams "
+msgstr "Bugbear %c screams \"FOR HRUGGEK!\""
 
 msgctxt "monster"
 msgid "bugbear_for_hruggek_hit"

@@ -6,10 +6,11 @@ plugins {
 }
 
 val gbktVersion: String by project
+val isRelease = project.hasProperty("release")
 
 allprojects {
     group = "io.github.gbkt"
-    version = "$gbktVersion-SNAPSHOT"
+    version = if (isRelease) gbktVersion else "$gbktVersion-SNAPSHOT"
 
     repositories {
         mavenCentral()
@@ -31,7 +32,15 @@ tasks.register("checkVersionConsistency") {
     description = "Checks that all version references are consistent"
 
     doLast {
-        println("Version consistency check passed: $gbktVersion")
+        val rootVersion = project.property("gbktVersion") as String
+        val pluginPropsFile = file("gbkt-gradle-plugin/gradle.properties")
+        val pluginProps = java.util.Properties().apply { pluginPropsFile.inputStream().use { load(it) } }
+        val pluginVersion = pluginProps.getProperty("gbktVersion")
+            ?: error("gbkt-gradle-plugin/gradle.properties missing gbktVersion")
+        require(rootVersion == pluginVersion) {
+            "Version mismatch: root=$rootVersion, gbkt-gradle-plugin=$pluginVersion"
+        }
+        println("Version consistency check passed: $rootVersion")
     }
 }
 

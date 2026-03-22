@@ -1,0 +1,26 @@
+test_command: "./gradlew test"
+
+include:
+  - "gbkt-ir/src/"
+  - "gbkt-lang/src/"
+  - "gbkt-engine/src/"
+  - "gbkt-core/src/"
+  - "gbkt-backend-api/src/"
+  - "gbkt-analysis/src/"
+  - "gbkt-genre-rpg/src/"
+  - "gbkt-genre-platformer/src/"
+  - "gbkt-genre-puzzle/src/"
+  - "gbkt-genre-sport/src/"
+  - "gbkt-test/src/"
+
+exclude:
+  - "build/"
+  - ".gradle/"
+  - ".idea/"
+
+max_cycles: 5
+
+teams:
+  - red
+  - green
+  - refactor

@@ -10,6 +10,8 @@ on:
       - 'gbkt-backend-api/**'
       - 'gbkt-backend-gbdk/**'
       - 'gbkt-bom/**'
+      - 'gbkt-examples/**'
+      - 'gbkt-intellij-plugin/**'
       - 'buildSrc/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
@@ -25,6 +27,8 @@ on:
       - 'gbkt-backend-api/**'
       - 'gbkt-backend-gbdk/**'
       - 'gbkt-bom/**'
+      - 'gbkt-examples/**'
+      - 'gbkt-intellij-plugin/**'
       - 'buildSrc/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
@@ -56,10 +60,13 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
 
       - name: Build all modules
-        run: ./gradlew :gbkt-core:build :gbkt-cli:build :gbkt-backend-api:build :gbkt-backend-gbdk:build --no-daemon
+        run: ./gradlew :gbkt-core:build :gbkt-cli:build :gbkt-backend-api:build :gbkt-backend-gbdk:build :gbkt-intellij-plugin:build :gbkt-examples:pong:build :gbkt-examples:breakout:build :gbkt-examples:explorer:build --no-daemon
 
       - name: Run Tests
-        run: ./gradlew :gbkt-core:test :gbkt-backend-gbdk:test --no-daemon
+        run: ./gradlew :gbkt-core:test :gbkt-backend-api:test :gbkt-backend-gbdk:test :gbkt-gradle-plugin:test --no-daemon
+
+      - name: Verify Example C Generation
+        run: ./gradlew :gbkt-examples:pong:generateC :gbkt-examples:breakout:generateC :gbkt-examples:explorer:generateC --no-daemon
 
       - name: Upload Test Reports
         if: failure()
@@ -86,8 +93,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Check formatting
-        run: ./gradlew :gbkt-core:spotlessCheck :gbkt-cli:spotlessCheck --no-daemon
-        continue-on-error: true
+        run: ./gradlew spotlessCheck --no-daemon
 
   version-consistency:
     runs-on: ubuntu-latest

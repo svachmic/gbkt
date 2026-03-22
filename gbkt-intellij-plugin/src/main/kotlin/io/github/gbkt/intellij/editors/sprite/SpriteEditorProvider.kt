@@ -104,17 +104,25 @@ class SpriteFileEditor(private val file: VirtualFile) : UserDataHolderBase(), Fi
 
     override fun getName(): String = GbktBundle.message("editor.sprite.name")
 
-    override fun setState(state: FileEditorState) {}
+    override fun setState(state: FileEditorState) {
+        // No-op: sprite editor has no persistent state to restore
+    }
 
     override fun isModified(): Boolean = false
 
     override fun isValid(): Boolean = file.isValid
 
-    override fun addPropertyChangeListener(listener: PropertyChangeListener) {}
+    override fun addPropertyChangeListener(listener: PropertyChangeListener) {
+        // No-op: sprite editor does not fire property change events
+    }
 
-    override fun removePropertyChangeListener(listener: PropertyChangeListener) {}
+    override fun removePropertyChangeListener(listener: PropertyChangeListener) {
+        // No-op: sprite editor does not fire property change events
+    }
 
     override fun getFile(): VirtualFile = file
 
-    override fun dispose() {}
+    override fun dispose() {
+        // No-op: sprite editor has no resources requiring explicit cleanup
+    }
 }

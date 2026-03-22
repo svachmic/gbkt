@@ -6,12 +6,61 @@
  */
 package io.github.gbkt.backend.api
 
-// Re-export validation types from core for backward compatibility
-// This allows code using backend-api to access these types without importing from core
-typealias ValidationResult = io.github.gbkt.core.ValidationResult
+/**
+ * Result of game validation.
+ *
+ * Backends return this from their [CodegenBackend.validate] implementation to report any errors or
+ * warnings found during game validation.
+ */
+data class ValidationResult(
+    /** Whether the game is valid (no errors). */
+    val isValid: Boolean,
 
-typealias ValidationMessage = io.github.gbkt.core.ValidationMessage
+    /** Validation errors that prevent compilation. */
+    val errors: List<ValidationMessage> = emptyList(),
 
-typealias ValidationSeverity = io.github.gbkt.core.ValidationSeverity
+    /** Validation warnings (non-fatal issues). */
+    val warnings: List<ValidationMessage> = emptyList(),
+) {
+    companion object {
+        /** A successful validation result with no issues. */
+        val SUCCESS = ValidationResult(isValid = true)
 
-typealias ValidationException = io.github.gbkt.core.ValidationException
+        /** Create a failed result with a single error message. */
+        fun failed(message: String, category: String? = null) =
+            ValidationResult(
+                isValid = false,
+                errors = listOf(ValidationMessage(message, category, ValidationSeverity.ERROR)),
+            )
+    }
+}
+
+/** A single validation message (error or warning). */
+data class ValidationMessage(
+    /** Human-readable description of the issue. */
+    val message: String,
+
+    /** Optional category for grouping (e.g., "sprites", "memory", "assets"). */
+    val category: String? = null,
+
+    /** Severity of the message. */
+    val severity: ValidationSeverity = ValidationSeverity.ERROR,
+)
+
+/** Severity level for validation messages. */
+enum class ValidationSeverity {
+    /** Fatal error that prevents compilation. */
+    ERROR,
+
+    /** Non-fatal warning that should be addressed but doesn't prevent compilation. */
+    WARNING,
+
+    /** Informational message. */
+    INFO,
+}
+
+/** Exception thrown when validation fails and strict mode is enabled. */
+class ValidationException(
+    val result: ValidationResult,
+    message: String = "Game validation failed with ${result.errors.size} error(s)",
+) : Exception(message)

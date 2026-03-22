@@ -330,8 +330,8 @@ data class ReporterConfig(
         /** Detect if the terminal supports ANSI colors. */
         fun detectColorSupport(): Boolean {
             // Check common environment indicators
-            val term = System.getenv("TERM") ?: ""
-            val colorTerm = System.getenv("COLORTERM") ?: ""
+            val term = System.getenv("TERM").orEmpty()
+            val colorTerm = System.getenv("COLORTERM").orEmpty()
 
             return when {
                 // Explicitly disabled
@@ -350,8 +350,8 @@ data class ReporterConfig(
 
         /** Detect if the terminal supports Unicode. */
         fun detectUnicodeSupport(): Boolean {
-            val lang = System.getenv("LANG") ?: ""
-            val lcAll = System.getenv("LC_ALL") ?: ""
+            val lang = System.getenv("LANG").orEmpty()
+            val lcAll = System.getenv("LC_ALL").orEmpty()
 
             return when {
                 lang.contains("UTF-8", ignoreCase = true) -> true

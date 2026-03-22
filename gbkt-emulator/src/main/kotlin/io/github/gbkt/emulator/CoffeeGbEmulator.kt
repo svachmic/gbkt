@@ -1,0 +1,381 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Copyright (c) 2026 Michal Svacha
+ */
+package io.github.gbkt.emulator
+
+import eu.rekawek.coffeegb.core.Gameboy
+import eu.rekawek.coffeegb.core.GameboyType
+import eu.rekawek.coffeegb.core.debug.Console
+import eu.rekawek.coffeegb.core.events.EventBusImpl
+import eu.rekawek.coffeegb.core.gpu.Display
+import eu.rekawek.coffeegb.core.memory.cart.Rom
+import eu.rekawek.coffeegb.core.serial.SerialEndpoint
+import io.github.gbkt.emulator.debug.DebugLogEntry
+import io.github.gbkt.emulator.debug.DebugLogWriter
+import io.github.gbkt.emulator.debug.EmuPrintfInterceptor
+import io.github.gbkt.emulator.debug.SourceMapResolver
+import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
+
+/**
+ * Coffee-GB backed implementation of [GbEmulator].
+ *
+ * Wraps [eu.rekawek.coffeegb.core.Gameboy] with a custom tick loop — NOT `gameboy.run()` — so that
+ * downstream plans can intercept individual micro-ops via [onTick], step one frame at a time via
+ * [stepFrame], and control emulation speed via [setSpeed].
+ *
+ * Thread safety:
+ * - [running] uses [AtomicBoolean]; [paused] and [speedMultiplier] are `@Volatile`.
+ * - The frame buffer is guarded by [frameBufferLock] (double-buffer swap).
+ * - The debug log uses [ConcurrentLinkedDeque] for lock-free access with size bounds enforced on
+ *   write.
+ * - Tick operations in [emulatorLoop] and [stepFrame] are guarded by [tickLock] to prevent
+ *   concurrent access to the Gameboy instance.
+ *
+ * @param config Configuration including the ROM file and headless flag.
+ */
+class CoffeeGbEmulator(private val config: EmulatorConfig) : GbEmulator {
+
+    // ── Volatile state ────────────────────────────────────────────────────────
+
+    private val running = AtomicBoolean(false)
+    @Volatile private var paused = false
+    @Volatile private var speedMultiplier: Float = 1.0f
+    private var startTimeMs = 0L
+
+    // ── Coffee-GB internals ───────────────────────────────────────────────────
+
+    private var gameboy: Gameboy? = null
+    private var emulatorThread: Thread? = null
+
+    /** The EventBus shared with Coffee-GB. Exposed for InputHandler wiring. */
+    internal var eventBus: EventBusImpl? = null
+        private set
+
+    // ── Frame buffer (double-buffered) ────────────────────────────────────────
+
+    private val frameBufferLock = Any()
+    private val internalFrameBuffer = IntArray(Display.DISPLAY_WIDTH * Display.DISPLAY_HEIGHT)
+    private var publicFrameBuffer = IntArray(Display.DISPLAY_WIDTH * Display.DISPLAY_HEIGHT)
+
+    // ── Debug log ─────────────────────────────────────────────────────────────
+
+    private val debugLog = ConcurrentLinkedDeque<DebugLogEntry>()
+    private val debugLogSize = AtomicInteger(0)
+
+    // ── Source map resolver (C line → Kotlin DSL location) ───────────────────
+
+    private val sourceMapResolver =
+        SourceMapResolver(
+            sourceMapsDir = config.sourceMapsDir,
+            noiFile =
+                config.romFile.parentFile?.let { dir ->
+                    java.io.File(dir, config.romFile.nameWithoutExtension + ".noi")
+                },
+        )
+
+    // ── Log file writer ───────────────────────────────────────────────────────
+
+    private val logWriter = config.logFile?.let { DebugLogWriter(it) }
+
+    // ── EMU_printf interceptor (stored for resetDedup on frame boundaries) ───
+
+    private var interceptor: EmuPrintfInterceptor? = null
+
+    // ── Tick synchronization ──────────────────────────────────────────────────
+
+    private val tickLock = ReentrantLock()
+
+    // ── Callback hooks (wired by downstream plans) ────────────────────────────
+
+    /**
+     * Invoked after every micro-op tick on the emulator thread. Plan 03 (EmuPrintfInterceptor)
+     * wires this to check for the `ld d,d` trap. Must be fast — this fires ~4 million times per
+     * second at 1x speed.
+     */
+    @Volatile var onTick: (() -> Unit)? = null
+
+    /**
+     * Invoked with a copy of the frame buffer after each completed frame. Plan 09 (display) wires
+     * this to update the Swing panel.
+     */
+    @Volatile var onFrameReady: ((IntArray) -> Unit)? = null
+
+    /**
+     * Invoked when a new [DebugLogEntry] is added to the in-memory log. Plan 09 (log panel) wires
+     * this to append entries to the UI list.
+     */
+    @Volatile var onDebugEntry: ((DebugLogEntry) -> Unit)? = null
+
+    // ── GbEmulator interface ──────────────────────────────────────────────────
+
+    override val isHeadless: Boolean
+        get() = config.headless
+
+    override fun start() {
+        if (!running.compareAndSet(false, true)) return
+
+        var success = false
+        try {
+            val rom = Rom(config.romFile)
+            val gbConfig =
+                Gameboy.GameboyConfiguration(rom)
+                    .setGameboyType(if (config.gbcMode) GameboyType.CGB else GameboyType.DMG)
+                    .setBootstrapMode(Gameboy.BootstrapMode.SKIP)
+
+            val gb = gbConfig.build()
+
+            // Use a real EventBus to receive DmgFrameReadyEvent with pixel data.
+            // The Display fires this event after each completed frame with the raw
+            // pixel buffer that we convert to RGB for the display panel.
+            val eventBus = EventBusImpl()
+            this.eventBus = eventBus
+            eventBus.register(
+                { event ->
+                    event.toRgb(internalFrameBuffer, false)
+                    synchronized(frameBufferLock) {
+                        publicFrameBuffer = internalFrameBuffer.copyOf()
+                    }
+                },
+                Display.DmgFrameReadyEvent::class.java,
+            )
+
+            // Create the EMU_printf interceptor. Fires each time GBDK EMU_printf() is called
+            // in the ROM, routing the captured format string and PC address to addDebugEntry().
+            this.startTimeMs = System.currentTimeMillis()
+            val newInterceptor = EmuPrintfInterceptor { message, pc ->
+                val entry =
+                    DebugLogEntry(
+                        timestampMs = System.currentTimeMillis() - this.startTimeMs,
+                        level = LogLevel.GAME,
+                        message = message,
+                        pc = pc,
+                    )
+                addDebugEntry(entry)
+            }
+            interceptor = newInterceptor
+
+            // Register the tick listener that runs after each CPU micro-op.
+            // The interceptor checks for the EMU_printf trap signature and fires
+            // at most once per call site per frame (deduplicated by lastInterceptedPc).
+            gb.registerTickListener {
+                val cpu = gb.cpu
+                val addressSpace = gb.addressSpace
+                newInterceptor.check(cpu.registers, addressSpace)
+                onTick?.invoke()
+            }
+
+            gb.init(eventBus, SerialEndpoint.NULL_ENDPOINT, Console())
+
+            gameboy = gb
+
+            val thread = Thread(::emulatorLoop, "gbkt-emulator")
+            thread.isDaemon = true
+            thread.start()
+            emulatorThread = thread
+            success = true
+        } finally {
+            if (!success) {
+                running.set(false)
+                gameboy = null
+                interceptor = null
+                eventBus = null
+            }
+        }
+    }
+
+    override fun stop() {
+        running.set(false)
+        emulatorThread?.join(2_000L)
+        emulatorThread = null
+        try {
+            gameboy?.close()
+        } catch (_: Exception) {
+            // Best-effort close — suppress exceptions during shutdown
+        }
+        gameboy = null
+        interceptor = null
+        eventBus = null
+        onTick = null
+        onFrameReady = null
+        onDebugEntry = null
+        debugLogSize.set(0)
+        try {
+            logWriter?.close()
+        } catch (_: Exception) {
+            // Best-effort close — suppress exceptions during shutdown
+        }
+    }
+
+    override fun pause() {
+        paused = true
+    }
+
+    override fun resume() {
+        paused = false
+    }
+
+    override fun stepFrame() {
+        check(running.get()) { "stepFrame() requires the emulator to be running" }
+        check(paused) { "stepFrame() requires the emulator to be paused" }
+        val gb = checkNotNull(gameboy) { "Emulator not started" }
+        tickLock.withLock {
+            var frameDone: Boolean
+            do {
+                frameDone = gb.tick()
+                // onTick is already fired inside gb.tick() via the registered tick listener
+            } while (!frameDone)
+        }
+        interceptor?.resetDedup()
+        onFrameReady?.invoke(getFrameBuffer())
+    }
+
+    override fun setSpeed(multiplier: Float) {
+        require(multiplier > 0f) { "Speed multiplier must be positive, got $multiplier" }
+        speedMultiplier = multiplier
+    }
+
+    override fun getFrameBuffer(): IntArray {
+        return synchronized(frameBufferLock) { publicFrameBuffer.copyOf() }
+    }
+
+    override fun getMemory(): MemoryAccess {
+        val gb = checkNotNull(gameboy) { "Emulator not started" }
+        val addressSpace = gb.getAddressSpace()
+        return object : MemoryAccess {
+            override fun readByte(address: Int): Int {
+                check(running.get()) { "Emulator is not running" }
+                return addressSpace.getByte(address) and 0xFF
+            }
+
+            override fun writeByte(address: Int, value: Int) {
+                check(running.get()) { "Emulator is not running" }
+                addressSpace.setByte(address, value)
+            }
+        }
+    }
+
+    override fun getDebugLog(): List<DebugLogEntry> = debugLog.toList()
+
+    override fun isRunning(): Boolean = running.get()
+
+    override fun isPaused(): Boolean = paused
+
+    override fun getEventBus(): eu.rekawek.coffeegb.core.events.EventBus? = eventBus
+
+    // ── Internal helpers ──────────────────────────────────────────────────────
+
+    /**
+     * Adds a debug entry to the in-memory log (bounded by [EmulatorConfig.maxLogEntries]). Called
+     * by [EmuPrintfInterceptor] when it detects a `gbkt_log()` trap.
+     *
+     * Source map enrichment: if [DebugLogEntry.cLine] is set, resolves to Kotlin source location
+     * directly. If only [DebugLogEntry.pc] is available, attempts best-effort resolution via the
+     * source map resolver's nearest-line lookup.
+     *
+     * This method is module-internal — not exposed on the [GbEmulator] interface.
+     */
+    internal fun addDebugEntry(entry: DebugLogEntry) {
+        // Enrich the entry with Kotlin source location if available via source maps
+        val enrichedEntry =
+            if (entry.kotlinFile == null) {
+                val cLine = entry.cLine ?: sourceMapResolver.resolveByPc(entry.pc)
+                if (cLine != null) {
+                    val location = sourceMapResolver.resolve(cLine)
+                    if (location != null) {
+                        entry.copy(
+                            cLine = cLine,
+                            kotlinFile = location.file,
+                            kotlinLine = location.line,
+                            context = entry.context ?: location.context.ifEmpty { null },
+                        )
+                    } else {
+                        entry
+                    }
+                } else {
+                    entry
+                }
+            } else {
+                entry
+            }
+
+        debugLog.addLast(enrichedEntry)
+        debugLogSize.incrementAndGet()
+        // Evict oldest entries to enforce the bounded size
+        while (debugLogSize.get() > config.maxLogEntries) {
+            if (debugLog.pollFirst() != null) debugLogSize.decrementAndGet() else break
+        }
+        onDebugEntry?.invoke(enrichedEntry)
+        logWriter?.let { writer ->
+            try {
+                writer.write(enrichedEntry)
+            } catch (_: Exception) {
+                // Best-effort log write — ignore I/O errors
+            }
+        }
+    }
+
+    // ── Custom tick loop ──────────────────────────────────────────────────────
+
+    /**
+     * The emulator's main loop. Runs on the "gbkt-emulator" daemon thread.
+     *
+     * CRITICAL: Uses [Gameboy.tick] NOT [Gameboy.run]. This enables:
+     * 1. Per-tick interception via [onTick] (Plan 03 EMU_printf trap detection)
+     * 2. Speed control via [speedMultiplier] (adjusts frame sleep duration)
+     * 3. [stepFrame] support (tick until one frame completes, then stop)
+     */
+    private fun emulatorLoop() {
+        val gb = gameboy ?: return
+        // ~59.7275 FPS — one Game Boy frame every 16,742,706 nanoseconds
+        val targetFrameNanos = 16_742_706L
+        var lastFrameTime = System.nanoTime()
+
+        while (running.get()) {
+            try {
+                if (paused) {
+                    Thread.sleep(10L)
+                    lastFrameTime = System.nanoTime() // Reset timing on unpause
+                    continue
+                }
+
+                // Run one micro-op tick. onTick fires inside tick() via the registered listener.
+                val frameDone = tickLock.withLock { gb.tick() }
+
+                if (frameDone) {
+                    // Reset dedup so the same EMU_printf call site can fire again next frame
+                    interceptor?.resetDedup()
+
+                    // Frame buffer is populated by DmgFrameReadyEvent handler via EventBus.
+                    // Notify the display panel that a new frame is ready.
+                    onFrameReady?.invoke(getFrameBuffer())
+
+                    // Speed control: sleep to maintain target FPS adjusted by multiplier
+                    val now = System.nanoTime()
+                    val elapsed = now - lastFrameTime
+                    val targetNanos = (targetFrameNanos / speedMultiplier).toLong()
+                    val sleepNanos = targetNanos - elapsed
+                    if (sleepNanos > 500_000L) { // Only sleep if > 0.5ms to avoid wakeup jitter
+                        Thread.sleep(sleepNanos / 1_000_000L, (sleepNanos % 1_000_000L).toInt())
+                    }
+                    lastFrameTime = System.nanoTime()
+                }
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                addDebugEntry(
+                    DebugLogEntry(
+                        timestampMs = System.currentTimeMillis() - startTimeMs,
+                        level = LogLevel.ERROR,
+                        message = "Emulator tick crashed: ${e.message}",
+                    )
+                )
+                running.set(false)
+            }
+        }
+    }
+}

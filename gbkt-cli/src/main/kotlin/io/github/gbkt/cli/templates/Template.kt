@@ -24,12 +24,17 @@ interface Template {
     fun gameKt(projectName: String): String
 }
 
+/** Resolves the gbkt version from the jar manifest, falling back to "0.1.0-SNAPSHOT". */
+fun gbktVersion(): String =
+    object {}.javaClass.getPackage()?.implementationVersion ?: "0.1.0-SNAPSHOT"
+
 /** Common build.gradle.kts template used by all project types */
-fun commonBuildGradle(projectName: String): String =
-    """
+fun commonBuildGradle(projectName: String): String {
+    val version = gbktVersion()
+    return """
     |plugins {
     |    kotlin("jvm") version "2.3.0"
-    |    id("io.github.gbkt") version "0.1.0-SNAPSHOT"
+    |    id("io.github.gbkt") version "$version"
     |}
     |
     |group = "com.example"
@@ -41,21 +46,20 @@ fun commonBuildGradle(projectName: String): String =
     |}
     |
     |dependencies {
-    |    implementation("io.github.gbkt:gbkt-core-jvm:0.1.0-SNAPSHOT")
+    |    implementation("io.github.gbkt:gbkt-core:$version")
     |}
     |
     |gbkt {
-    |    // Game Boy ROM configuration
-    |    gameName = "$projectName"
+    |    game("GameKt::game")
+    |    assets("assets")
+    |    outputName.set("$projectName")
     |
     |    // Path to GBDK-2020 installation (set via environment variable or here)
-    |    // gbdkPath = "/opt/gbdk"
-    |
-    |    // Optional: specify emulator for 'runEmulator' task
-    |    // emulatorPath = "/usr/bin/mgba"
+    |    // gbdkHome.set("/opt/gbdk")
     |}
     """
         .trimMargin()
+}
 
 /** Common settings.gradle.kts template */
 fun commonSettingsGradle(projectName: String): String =

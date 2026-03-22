@@ -1,0 +1,152 @@
+# RPG Lite — English localization
+# Copyright (c) 2026 Michal Svacha
+# SPDX-License-Identifier: MPL-2.0
+#
+# GNU gettext PO format.
+# msgctxt = namespace (maps to ROM bank groups)
+# msgid   = string key (used in generated C as str_{ctx}_{id})
+# msgstr  = English translation
+#
+# Game Boy screen: 20 columns x 18 rows.
+# Strings must fit within 20 chars per line, 90 chars total for dialogs.
+# Pad fixed-width menu strings with trailing spaces for alignment.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# ---------------------------------------------------------------------------
+# UI strings — title screen, scene headers, and HUD labels
+# ---------------------------------------------------------------------------
+
+#. Title screen main heading (8 chars, col 6 for centering)
+msgctxt "ui"
+msgid "title_heading"
+msgstr "RPG LITE"
+
+#. Title screen subtitle (16 chars, col 2)
+msgctxt "ui"
+msgid "title_subtitle"
+msgstr "A MINI ADVENTURE"
+
+#. Title screen prompt (11 chars, col 5)
+msgctxt "ui"
+msgid "title_prompt"
+msgstr "PRESS START"
+
+#. Town scene heading (4 chars, col 8)
+msgctxt "ui"
+msgid "town_heading"
+msgstr "TOWN"
+
+#. Town enter dungeon hint (16 chars, col 2)
+msgctxt "ui"
+msgid "town_hint_dungeon"
+msgstr "A: ENTER DUNGEON"
+
+#. Town heal hint (16 chars, col 2)
+msgctxt "ui"
+msgid "town_hint_heal"
+msgstr "START: HEAL (5G)"
+
+#. Dungeon heading with level format (up to 13 chars)
+msgctxt "ui"
+msgid "dungeon_heading"
+msgstr "DUNGEON LV:%d"
+
+#. Game-over scene heading (9 chars, col 5)
+msgctxt "ui"
+msgid "gameover_heading"
+msgstr "GAME OVER"
+
+#. Game-over return prompt (11 chars, col 5)
+msgctxt "ui"
+msgid "gameover_prompt"
+msgstr "PRESS START"
+
+# ---------------------------------------------------------------------------
+# HUD strings — in-game status displays
+# ---------------------------------------------------------------------------
+
+#. HP and Gold status line format (fits 20 cols: "HP:30  GOLD:99")
+msgctxt "hud"
+msgid "hp_gold_status"
+msgstr "HP:%d  GOLD:%d"
+
+#. Game-over HP and Gold status line
+msgctxt "hud"
+msgid "gameover_stats"
+msgstr "HP: 0  GOLD: %d"
+
+# ---------------------------------------------------------------------------
+# Combat strings — battle scene messages
+# ---------------------------------------------------------------------------
+
+#. Victory message shown on battle win
+msgctxt "combat"
+msgid "victory"
+msgstr "VICTORY!"
+
+#. Defeat message shown on battle loss
+msgctxt "combat"
+msgid "defeat"
+msgstr "DEFEATED..."
+
+#. Encounter announcement for Slime
+msgctxt "combat"
+msgid "encounter_slime"
+msgstr "SLIME APPEARS!"
+
+#. Encounter announcement for Bat
+msgctxt "combat"
+msgid "encounter_bat"
+msgstr "BAT APPEARS!"
+
+#. Gold reward after battle
+msgctxt "combat"
+msgid "gold_reward"
+msgstr "+5 GOLD"
+
+# ---------------------------------------------------------------------------
+# Gameplay strings — dungeon exploration feedback
+# ---------------------------------------------------------------------------
+
+#. Shown when player heals in town
+msgctxt "gameplay"
+msgid "healed"
+msgstr "HP RESTORED"
+
+#. Shown when player cannot afford heal (not enough gold)
+msgctxt "gameplay"
+msgid "not_enough_gold"
+msgstr "NEED 5 GOLD"
+
+#. Shown when dungeon level increases (right edge reached)
+msgctxt "gameplay"
+msgid "deeper"
+msgstr "GOING DEEPER..."
+
+#. Return to town reminder shown in dungeon
+msgctxt "gameplay"
+msgid "town_hint"
+msgstr "START: RETURN"
+
+# ---------------------------------------------------------------------------
+# Character names (pad to 8 chars for combat menu alignment)
+# ---------------------------------------------------------------------------
+
+#. Hero character name
+msgctxt "character"
+msgid "hero"
+msgstr "Hero    "
+
+#. Slime monster name
+msgctxt "character"
+msgid "slime"
+msgstr "Slime   "
+
+#. Bat monster name
+msgctxt "character"
+msgid "bat"
+msgstr "Bat     "

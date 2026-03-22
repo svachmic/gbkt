@@ -6,11 +6,8 @@
  */
 package io.github.gbkt.backend.api
 
-import io.github.gbkt.core.Game
 import io.github.gbkt.core.constraints.TargetProfile
-
-// Re-export GameIR for backward compatibility - but backends should use Game directly
-typealias GameIR = io.github.gbkt.core.GameIR
+import io.github.gbkt.core.ir.GameIR
 
 /**
  * Backend interface for code generation.
@@ -47,19 +44,19 @@ interface CodegenBackend {
      * - Feature compatibility
      * - Asset formats
      *
-     * @param game The game to validate
+     * @param game The game IR to validate
      * @return Validation result with any errors or warnings
      */
-    fun validate(game: Game): ValidationResult
+    fun validate(game: GameIR): ValidationResult
 
     /**
      * Generate source code for the target platform.
      *
-     * @param game The validated game
+     * @param game The validated game IR
      * @param options Code generation options
      * @return Generation result with generated files
      */
-    fun generate(game: Game, options: GenerationOptions = GenerationOptions()): GenerationResult
+    fun generate(game: GameIR, options: GenerationOptions = GenerationOptions()): GenerationResult
 }
 
 /** Output format for code generation. */

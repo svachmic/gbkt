@@ -6,40 +6,58 @@
  */
 package io.github.gbkt.gradle.tasks
 
+import io.github.gbkt.emulator.EmulatorConfig
+import io.github.gbkt.emulator.EmulatorSession
 import java.io.File
-import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
 
 /**
- * Task that launches mGBA with debugging scripts enabled.
+ * Task that launches the embedded Coffee-GB emulator with full debug tooling enabled.
  *
  * Features:
- * - Loads source map for Kotlin->C line mapping
- * - Enables mGBA's GDB server (port 2345)
- * - Loads debug overlay Lua script
+ * - Opens the main emulator window with game display and toolbar
+ * - Enables the LogCat window for real-time debug log viewing
+ * - Enables the Memory Inspector window for live memory inspection
+ * - Writes a persistent debug log file alongside the ROM
+ * - Loads source maps for Kotlin DSL → C line number resolution
+ *
+ * Usage:
+ * ```
+ * ./gradlew debugEmulator
+ * ```
+ *
+ * After launch, tail the debug log for continuous output:
+ * ```
+ * tail -f build/gbkt/logs/debug.log
+ * ```
  */
-abstract class DebugEmulatorTask @Inject constructor() : DefaultTask() {
+abstract class DebugEmulatorTask : DefaultTask() {
 
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val romFile: RegularFileProperty
 
-    @get:InputFile
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val sourceMapFile: RegularFileProperty
-
-    @get:Input @get:Optional abstract val emulatorPath: Property<String>
-
     @get:Internal abstract val buildDirectory: DirectoryProperty
 
+    /** Run in headless mode (no display window). Default: false. */
+    @get:Input @get:Optional abstract val headless: Property<Boolean>
+
+    /** Display window scale factor. Default: 4 (640x576). */
+    @get:Input @get:Optional abstract val scale: Property<Int>
+
     init {
-        description = "Run ROM in mGBA with debugging enabled"
+        description = "Run ROM in the embedded emulator with full debug tooling"
         group = "gbkt"
     }
 
@@ -47,215 +65,29 @@ abstract class DebugEmulatorTask @Inject constructor() : DefaultTask() {
     fun run() {
         val rom = romFile.get().asFile
         if (!rom.exists()) {
-            throw GradleException("ROM not found: ${rom.absolutePath}")
+            throw GradleException("ROM not found: ${rom.absolutePath}. Run buildRom first.")
         }
 
-        val emulator = findEmulator()
-        val debugScript = generateDebugScript(rom)
+        val buildDir = buildDirectory.get().asFile
+        val logsDir = File(buildDir, "gbkt/logs")
+        logsDir.mkdirs()
 
-        logger.lifecycle("Launching mGBA in debug mode")
-        logger.lifecycle("ROM: ${rom.name}")
-        logger.lifecycle("Debug script: ${debugScript.name}")
-
-        // Build command with debug flags
-        val command = mutableListOf<String>()
-        command.add(emulator.absolutePath)
-        command.add("-g") // Enable GDB server
-        command.add("-l")
-        command.add(debugScript.absolutePath)
-        command.add(rom.absolutePath)
-
-        logger.lifecycle("GDB server will be available on port 2345")
-
-        val processBuilder = ProcessBuilder(command)
-        processBuilder.inheritIO()
-        processBuilder.start()
-
-        logger.lifecycle("mGBA debug session started")
-    }
-
-    private fun findEmulator(): File {
-        // Check user-provided path first
-        if (emulatorPath.isPresent) {
-            val path = File(emulatorPath.get())
-            if (path.exists() && path.canExecute()) return path
-        }
-
-        // Auto-detect mGBA on various platforms
-        val candidates =
-            listOf(
-                // macOS
-                "/Applications/mGBA.app/Contents/MacOS/mGBA",
-                "/opt/homebrew/bin/mgba",
-                "/usr/local/bin/mgba",
-                // Linux
-                "/usr/bin/mgba-qt",
-                "/usr/bin/mgba",
-                "/usr/local/bin/mgba-qt",
-                "/usr/local/bin/mgba",
-                // Flatpak
-                "/var/lib/flatpak/exports/bin/io.mgba.mGBA",
+        val config =
+            EmulatorConfig(
+                romFile = rom,
+                headless = headless.getOrElse(false),
+                scale = scale.getOrElse(4),
+                sourceMapsDir = File(buildDir, "gbkt/generated"),
+                logFile = File(logsDir, "debug.log"),
             )
 
-        for (path in candidates) {
-            val file = File(path)
-            if (file.exists() && file.canExecute()) {
-                logger.info("Found mGBA at: $path")
-                return file
-            }
-        }
+        logger.lifecycle("Launching debug emulator: ${rom.name}")
+        logger.lifecycle("Debug log: ${config.logFile?.absolutePath}")
 
-        // Try to find in PATH
-        val pathEnv = System.getenv("PATH") ?: ""
-        for (dir in pathEnv.split(File.pathSeparator)) {
-            for (name in listOf("mgba", "mgba-qt", "mGBA")) {
-                val file = File(dir, name)
-                if (file.exists() && file.canExecute()) {
-                    logger.info("Found mGBA in PATH: ${file.absolutePath}")
-                    return file
-                }
-            }
-        }
+        val session = EmulatorSession(config)
+        session.launch() // Non-blocking — Swing window keeps JVM alive
 
-        throw GradleException(
-            """
-            mGBA not found. Please either:
-            1. Install mGBA from https://mgba.io/
-            2. Set the emulator path in your build.gradle.kts:
-               gbkt {
-                   emulator {
-                       path.set("/path/to/mgba")
-                   }
-               }
-            """
-                .trimIndent()
-        )
-    }
-
-    private fun generateDebugScript(rom: File): File {
-        val scriptsDir = buildDirectory.get().dir("gbkt/scripts").asFile
-        scriptsDir.mkdirs()
-
-        val scriptFile = File(scriptsDir, "debug-wrapper.lua")
-        val sourceMapPath = sourceMapFile.orNull?.asFile?.absolutePath?.replace("\\", "/") ?: ""
-        val romPath = rom.absolutePath.replace("\\", "/")
-
-        val script =
-            """
-            |-- gbkt Debug Script for mGBA
-            |-- Auto-generated by DebugEmulatorTask
-            |
-            |GBKT_ROM_PATH = "$romPath"
-            |GBKT_SOURCE_MAP = "$sourceMapPath"
-            |
-            |-- Debug state
-            |local show_overlay = true
-            |local source_mappings = {}
-            |local breakpoints = {}
-            |
-            |-- Load source map if available
-            |local function load_source_map()
-            |    if GBKT_SOURCE_MAP == "" then
-            |        console:log("No source map available")
-            |        return false
-            |    end
-            |
-            |    local f = io.open(GBKT_SOURCE_MAP, "r")
-            |    if not f then
-            |        console:error("Cannot open source map: " .. GBKT_SOURCE_MAP)
-            |        return false
-            |    end
-            |
-            |    local content = f:read("*a")
-            |    f:close()
-            |
-            |    -- Basic JSON parsing for source mappings
-            |    local count = 0
-            |    for cLine, kotlinFile, kotlinLine in content:gmatch(
-            |        '"cLine"%s*:%s*(%d+).-"kotlinFile"%s*:%s*"([^"]+)".-"kotlinLine"%s*:%s*(%d+)'
-            |    ) do
-            |        source_mappings[tonumber(cLine)] = {
-            |            file = kotlinFile,
-            |            line = tonumber(kotlinLine)
-            |        }
-            |        count = count + 1
-            |    end
-            |
-            |    console:log("Loaded " .. count .. " source mappings from " .. GBKT_SOURCE_MAP)
-            |    return true
-            |end
-            |
-            |-- Set a breakpoint at a Kotlin source location
-            |local function set_kotlin_breakpoint(file, line)
-            |    for cLine, mapping in pairs(source_mappings) do
-            |        if mapping.file:find(file) and mapping.line == line then
-            |            table.insert(breakpoints, {
-            |                kotlin_file = file,
-            |                kotlin_line = line,
-            |                c_line = cLine
-            |            })
-            |            console:log("Breakpoint set: " .. file .. ":" .. line .. " (C line " .. cLine .. ")")
-            |            return true
-            |        end
-            |    end
-            |    console:error("No mapping found for " .. file .. ":" .. line)
-            |    return false
-            |end
-            |
-            |-- List all breakpoints
-            |local function list_breakpoints()
-            |    if #breakpoints == 0 then
-            |        console:log("No breakpoints set")
-            |        return
-            |    end
-            |    console:log("Breakpoints:")
-            |    for i, bp in ipairs(breakpoints) do
-            |        console:log("  " .. i .. ": " .. bp.kotlin_file .. ":" .. bp.kotlin_line)
-            |    end
-            |end
-            |
-            |-- Frame callback for debug overlay
-            |callbacks:add("frame", function()
-            |    if show_overlay then
-            |        -- Debug overlay could display:
-            |        -- - Current frame count
-            |        -- - Active breakpoints
-            |        -- - Memory watch values
-            |        -- For now, just a simple presence indicator
-            |    end
-            |end)
-            |
-            |-- Key callback for toggling overlay
-            |callbacks:add("keysRead", function()
-            |    local keys = emu:getKeys()
-            |    -- Toggle overlay with SELECT+START (0x0C)
-            |    if bit32.band(keys, 0x0C) == 0x0C then
-            |        show_overlay = not show_overlay
-            |        console:log("Debug overlay: " .. (show_overlay and "ON" or "OFF"))
-            |    end
-            |end)
-            |
-            |-- Initialize
-            |console:log("========================================")
-            |console:log("gbkt Debug Mode Active")
-            |console:log("========================================")
-            |console:log("ROM: " .. GBKT_ROM_PATH)
-            |console:log("GDB server available on port 2345")
-            |console:log("Press SELECT+START to toggle debug overlay")
-            |console:log("")
-            |
-            |load_source_map()
-            |
-            |console:log("")
-            |console:log("Commands available in Lua console:")
-            |console:log("  set_kotlin_breakpoint('File.kt', 42)")
-            |console:log("  list_breakpoints()")
-            |console:log("========================================")
-        """
-                .trimMargin()
-
-        scriptFile.writeText(script)
-        logger.info("Generated debug script: ${scriptFile.absolutePath}")
-        return scriptFile
+        logger.lifecycle("Debug emulator started. Close window to exit.")
+        logger.lifecycle("Tail the debug log: tail -f ${config.logFile?.absolutePath}")
     }
 }

@@ -57,31 +57,49 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
         if (!file.name.endsWith(".gbkt.kts")) return
 
         val position = parameters.position
+        if (isInsideStringOrComment(position)) return
 
-        // Skip completion inside strings and comments for performance
-        if (PsiTreeUtil.getParentOfType(position, KtStringTemplateExpression::class.java) != null)
-            return
-        if (PsiTreeUtil.getParentOfType(position, PsiComment::class.java) != null) return
-
-        // Check if we're in an entity-consuming context (collidesWith, follow, etc.)
         val callContext = findCallContext(position)
-        if (callContext != null && callContext in ENTITY_REFERENCE_FUNCTIONS) {
-            addEntityReferenceSuggestions(file, result)
-            return
-        }
+        if (handleReferenceCompletion(callContext, file, result)) return
 
-        // Check if we're in a scene-consuming context
-        if (callContext != null && callContext in SCENE_REFERENCE_FUNCTIONS) {
-            addSceneReferenceSuggestions(file, result)
-            return
-        }
-
-        // Find the context using PSI traversal (preferred) or fallback to text-based
         val builderContext =
             findBuilderContextPsi(position) ?: findBuilderContextText(file.text, parameters.offset)
 
-        // Add suggestions based on context with higher priority for context-specific items
+        addBuilderSuggestions(builderContext, result)
+    }
+
+    /** Check if position is inside a string template or comment. */
+    private fun isInsideStringOrComment(position: PsiElement): Boolean {
+        return PsiTreeUtil.getParentOfType(position, KtStringTemplateExpression::class.java) !=
+            null || PsiTreeUtil.getParentOfType(position, PsiComment::class.java) != null
+    }
+
+    /** Handle entity/scene reference completion. Returns true if handled. */
+    private fun handleReferenceCompletion(
+        callContext: String?,
+        file: com.intellij.psi.PsiFile,
+        result: CompletionResultSet,
+    ): Boolean {
+        if (callContext == null) return false
+
+        return when (callContext) {
+            in ENTITY_REFERENCE_FUNCTIONS -> {
+                addEntityReferenceSuggestions(file, result)
+                true
+            }
+            in SCENE_REFERENCE_FUNCTIONS -> {
+                addSceneReferenceSuggestions(file, result)
+                true
+            }
+            else -> false
+        }
+    }
+
+    /** Add builder-context-specific suggestions to the result set. */
+    private fun addBuilderSuggestions(builderContext: String, result: CompletionResultSet) {
         val suggestions = getContextSuggestions(builderContext)
+        val hasContext = builderContext.isNotEmpty()
+
         for ((keyword, description) in suggestions) {
             val element =
                 LookupElementBuilder.create(keyword)
@@ -89,13 +107,8 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
                     .withTypeText(description)
                     .withTailText(getTailText(keyword), true)
 
-            // Context-specific suggestions get higher priority
             val prioritized =
-                if (builderContext.isNotEmpty()) {
-                    PrioritizedLookupElement.withPriority(element, 100.0)
-                } else {
-                    element
-                }
+                if (hasContext) PrioritizedLookupElement.withPriority(element, 100.0) else element
             result.addElement(prioritized)
         }
     }
@@ -107,14 +120,13 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
         var current: PsiElement? = position.parent
 
         while (current != null) {
-            if (current is KtCallExpression) {
-                val calleeName = current.calleeExpression?.text
-                if (calleeName != null) {
-                    return calleeName
+            when (current) {
+                is KtCallExpression -> {
+                    val calleeName = current.calleeExpression?.text
+                    if (calleeName != null) return calleeName
                 }
+                is KtLambdaExpression -> return null // Stop at lambda boundaries
             }
-            // Don't traverse too far up - stop at lambda boundaries
-            if (current is KtLambdaExpression) break
             current = current.parent
         }
 
@@ -130,9 +142,9 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
         result: CompletionResultSet,
     ) {
         val project = file.project
-        val addedNames = mutableSetOf<String>()
+        val addedNames = hashSetOf<String>()
         val gbktFiles =
-            FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project)).toList()
+            FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
 
         for (virtualFile in gbktFiles) {
             val psiFile =
@@ -189,17 +201,16 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
      * Adds scene reference suggestions from all defined scenes across the project. Searches all
      * .gbkt.kts files, not just the current file.
      */
-    @Suppress("kotlin:S6524") // Mutable set required for deduplication during iteration
     private fun addSceneReferenceSuggestions(
         file: com.intellij.psi.PsiFile,
         result: CompletionResultSet,
     ) {
         val project = file.project
-        val addedNames = mutableSetOf<String>()
+        val addedNames = hashSetOf<String>()
 
         // Search all gbkt files in the project
         val gbktFiles =
-            FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project)).toList()
+            FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
 
         for (virtualFile in gbktFiles) {
             val psiFile =
@@ -233,29 +244,26 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
         var current: PsiElement? = position
 
         while (current != null) {
-            // Look for lambda expressions that are arguments to call expressions
-            if (current is KtLambdaExpression) {
-                val callExpr = PsiTreeUtil.getParentOfType(current, KtCallExpression::class.java)
-                if (callExpr != null) {
-                    val calleeName = callExpr.calleeExpression?.text
-                    if (calleeName != null && calleeName in BUILDER_NAMES) {
-                        return calleeName
-                    }
-                }
-            }
-
-            // Also check direct call expressions
-            if (current is KtCallExpression) {
-                val calleeName = current.calleeExpression?.text
-                if (calleeName != null && calleeName in BUILDER_NAMES) {
-                    return calleeName
-                }
-            }
-
+            val builderName = extractBuilderName(current)
+            if (builderName != null) return builderName
             current = current.parent
         }
 
         return null
+    }
+
+    /** Extract a builder name from a PSI element if it's a relevant call expression. */
+    private fun extractBuilderName(element: PsiElement): String? {
+        return when (element) {
+            is KtLambdaExpression -> {
+                val callExpr = PsiTreeUtil.getParentOfType(element, KtCallExpression::class.java)
+                callExpr?.calleeExpression?.text?.takeIf { it in BUILDER_NAMES }
+            }
+            is KtCallExpression -> {
+                element.calleeExpression?.text?.takeIf { it in BUILDER_NAMES }
+            }
+            else -> null
+        }
     }
 
     /**
@@ -265,26 +273,20 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
     private fun findBuilderContextText(text: String, offset: Int): String {
         val textBefore = text.substring(0, minOf(offset, text.length))
 
-        var lastBuilder = ""
-        var lastIndex = -1
-
-        for ((builder, pattern) in BUILDER_PATTERNS) {
-            val matches = pattern.findAll(textBefore)
-            for (match in matches) {
-                if (match.range.first > lastIndex) {
-                    // Check if this block is still open (count braces)
-                    val afterMatch = textBefore.substring(match.range.last)
-                    val openBraces = afterMatch.count { it == '{' }
-                    val closeBraces = afterMatch.count { it == '}' }
-                    if (openBraces > closeBraces) {
-                        lastBuilder = builder
-                        lastIndex = match.range.first
-                    }
-                }
+        return BUILDER_PATTERNS.flatMap { (builder, pattern) ->
+                pattern.findAll(textBefore).map { match -> builder to match }
             }
-        }
+            .filter { (_, match) -> isBlockStillOpen(textBefore, match.range.last) }
+            .maxByOrNull { (_, match) -> match.range.first }
+            ?.first ?: ""
+    }
 
-        return lastBuilder
+    /** Check if a block starting at afterIndex is still open (more '{' than '}'). */
+    private fun isBlockStillOpen(text: String, afterIndex: Int): Boolean {
+        val afterMatch = text.substring(afterIndex)
+        val openBraces = afterMatch.count { it == '{' }
+        val closeBraces = afterMatch.count { it == '}' }
+        return openBraces > closeBraces
     }
 
     /** Returns suggestions based on the current builder context. */

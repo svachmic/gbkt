@@ -143,40 +143,44 @@ class GbktPropertyChainCompletionProvider : CompletionProvider<CompletionParamet
     }
 
     private fun determineBaseType(name: String, analysis: GbktDslVisitor): BaseType {
-        // Check entities
-        if (analysis.entities.any { it.name == name }) return BaseType.ENTITY
+        return findTypeFromAnalysis(name, analysis) ?: inferTypeFromName(name)
+    }
 
-        // Check scenes
-        if (analysis.scenes.any { it.name == name }) return BaseType.SCENE
+    /** Find base type by checking analysis definition lists. */
+    private fun findTypeFromAnalysis(name: String, analysis: GbktDslVisitor): BaseType? {
+        val typeChecks =
+            listOf(
+                analysis.entities to BaseType.ENTITY,
+                analysis.scenes to BaseType.SCENE,
+                analysis.cameras to BaseType.CAMERA,
+                analysis.dialogs to BaseType.DIALOG,
+                analysis.characters to BaseType.CHARACTER,
+                analysis.monsters to BaseType.MONSTER,
+                analysis.abilities to BaseType.ABILITY,
+                analysis.items to BaseType.ITEM,
+                analysis.floors to BaseType.FLOOR,
+                analysis.battles to BaseType.BATTLE,
+                analysis.inventories to BaseType.INVENTORY,
+                analysis.statusEffects to BaseType.STATUS_EFFECT,
+                analysis.variables to BaseType.VARIABLE,
+            )
 
-        // Check cameras
-        if (analysis.cameras.any { it.name == name }) return BaseType.CAMERA
+        for ((definitions, type) in typeChecks) {
+            if (definitions.any { it.name == name }) return type
+        }
+        return null
+    }
 
-        // Check dialogs
-        if (analysis.dialogs.any { it.name == name }) return BaseType.DIALOG
-
-        // Check RPG definitions
-        if (analysis.characters.any { it.name == name }) return BaseType.CHARACTER
-        if (analysis.monsters.any { it.name == name }) return BaseType.MONSTER
-        if (analysis.abilities.any { it.name == name }) return BaseType.ABILITY
-        if (analysis.items.any { it.name == name }) return BaseType.ITEM
-        if (analysis.floors.any { it.name == name }) return BaseType.FLOOR
-        if (analysis.battles.any { it.name == name }) return BaseType.BATTLE
-        if (analysis.inventories.any { it.name == name }) return BaseType.INVENTORY
-        if (analysis.statusEffects.any { it.name == name }) return BaseType.STATUS_EFFECT
-
-        // Check variables
-        if (analysis.variables.any { it.name == name }) return BaseType.VARIABLE
-
-        // Check common patterns (fallback heuristics)
+    /** Infer base type from naming conventions (fallback heuristics). */
+    private fun inferTypeFromName(name: String): BaseType {
+        val lowerName = name.lowercase()
         return when {
-            name.contains("player", ignoreCase = true) -> BaseType.ENTITY
-            name.contains("enemy", ignoreCase = true) -> BaseType.ENTITY
-            name.contains("hero", ignoreCase = true) -> BaseType.CHARACTER
-            name.contains("camera", ignoreCase = true) -> BaseType.CAMERA
-            name.contains("dpad", ignoreCase = true) -> BaseType.DPAD
-            name.contains("buttons", ignoreCase = true) -> BaseType.BUTTONS
-            name.contains("screen", ignoreCase = true) -> BaseType.SCREEN
+            "player" in lowerName || "enemy" in lowerName -> BaseType.ENTITY
+            "hero" in lowerName -> BaseType.CHARACTER
+            "camera" in lowerName -> BaseType.CAMERA
+            "dpad" in lowerName -> BaseType.DPAD
+            "buttons" in lowerName -> BaseType.BUTTONS
+            "screen" in lowerName -> BaseType.SCREEN
             else -> BaseType.UNKNOWN
         }
     }

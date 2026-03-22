@@ -100,68 +100,63 @@ class GbktGotoDeclarationHandler : GotoDeclarationHandler {
         }
     }
 
-    private fun findDefinitionsInProject(file: PsiFile, name: String): List<PsiElement> {
-        val results = mutableListOf<PsiElement>()
+    private fun findDefinitionsInProject(file: PsiFile, name: String): List<PsiElement> =
+        buildList {
+            // First, search in the current file
+            addAll(findDefinitionsInFile(file, name))
 
-        // First, search in the current file
-        results.addAll(findDefinitionsInFile(file, name))
-
-        // Then search in all gbkt files in the project
-        val project = file.project
-        val virtualFiles =
-            com.intellij.psi.search.FileTypeIndex.getFiles(
+            // Then search in all gbkt files in the project
+            val project = file.project
+            val virtualFiles =
+                com.intellij.psi.search.FileTypeIndex.getFiles(
                     io.github.gbkt.intellij.GbktFileType,
                     com.intellij.psi.search.GlobalSearchScope.projectScope(project),
                 )
-                .toList()
 
-        for (virtualFile in virtualFiles) {
-            if (virtualFile == file.virtualFile) continue // Skip current file
+            for (virtualFile in virtualFiles) {
+                if (virtualFile == file.virtualFile) continue // Skip current file
 
-            val psiFile = com.intellij.psi.PsiManager.getInstance(project).findFile(virtualFile)
-            if (psiFile != null) {
-                results.addAll(findDefinitionsInFile(psiFile, name))
+                val psiFile = com.intellij.psi.PsiManager.getInstance(project).findFile(virtualFile)
+                if (psiFile != null) {
+                    addAll(findDefinitionsInFile(psiFile, name))
+                }
             }
         }
-
-        return results
-    }
 
     private fun findDefinitionsInFile(file: PsiFile, name: String): List<PsiElement> {
         if (file !is KtFile) return emptyList()
 
         val visitor = GbktDslVisitor.analyze(file)
-        val results = mutableListOf<PsiElement>()
 
-        // Check entities
-        visitor.entities.filter { it.name == name }.forEach { results.add(it.element) }
+        return buildList {
+            // Check entities
+            visitor.entities.filter { it.name == name }.forEach { add(it.element) }
 
-        // Check scenes
-        visitor.scenes.filter { it.name == name }.forEach { results.add(it.element) }
+            // Check scenes
+            visitor.scenes.filter { it.name == name }.forEach { add(it.element) }
 
-        // Check dialogs
-        visitor.dialogs.filter { it.name == name }.forEach { results.add(it.element) }
+            // Check dialogs
+            visitor.dialogs.filter { it.name == name }.forEach { add(it.element) }
 
-        // Check cameras
-        visitor.cameras.filter { it.name == name }.forEach { results.add(it.element) }
+            // Check cameras
+            visitor.cameras.filter { it.name == name }.forEach { add(it.element) }
 
-        // Check variables
-        visitor.variables.filter { it.name == name }.forEach { results.add(it.element) }
+            // Check variables
+            visitor.variables.filter { it.name == name }.forEach { add(it.element) }
 
-        // Check flags
-        visitor.flags.filter { it.name == name }.forEach { results.add(it.element) }
+            // Check flags
+            visitor.flags.filter { it.name == name }.forEach { add(it.element) }
 
-        // Check RPG definitions
-        visitor.characters.filter { it.name == name }.forEach { results.add(it.element) }
-        visitor.monsters.filter { it.name == name }.forEach { results.add(it.element) }
-        visitor.abilities.filter { it.name == name }.forEach { results.add(it.element) }
-        visitor.items.filter { it.name == name }.forEach { results.add(it.element) }
-        visitor.floors.filter { it.name == name }.forEach { results.add(it.element) }
-        visitor.battles.filter { it.name == name }.forEach { results.add(it.element) }
-        visitor.inventories.filter { it.name == name }.forEach { results.add(it.element) }
-        visitor.statusEffects.filter { it.name == name }.forEach { results.add(it.element) }
-
-        return results
+            // Check RPG definitions
+            visitor.characters.filter { it.name == name }.forEach { add(it.element) }
+            visitor.monsters.filter { it.name == name }.forEach { add(it.element) }
+            visitor.abilities.filter { it.name == name }.forEach { add(it.element) }
+            visitor.items.filter { it.name == name }.forEach { add(it.element) }
+            visitor.floors.filter { it.name == name }.forEach { add(it.element) }
+            visitor.battles.filter { it.name == name }.forEach { add(it.element) }
+            visitor.inventories.filter { it.name == name }.forEach { add(it.element) }
+            visitor.statusEffects.filter { it.name == name }.forEach { add(it.element) }
+        }
     }
 
     override fun getActionText(context: com.intellij.openapi.actionSystem.DataContext): String? {

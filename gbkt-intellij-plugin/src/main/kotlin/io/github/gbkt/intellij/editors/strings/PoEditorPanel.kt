@@ -189,7 +189,9 @@ class PoEditorPanel(private val project: Project, private val file: VirtualFile)
 
             when {
                 trimmed.isEmpty() -> finishEntry()
-                trimmed.startsWith("#") -> Unit // Comments (ignored in editor)
+                trimmed.startsWith("#") -> {
+                    // Comments are ignored in the editor table view
+                }
                 trimmed.startsWith("msgctxt ") -> {
                     inMsgctxt = true
                     inMsgid = false

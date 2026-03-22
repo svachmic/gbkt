@@ -1,11 +1,14 @@
 /**
- * Labyrinth of the Dragon - gbkt Port
+ * Labyrinth of the Dragon - gbkt V2 Port
  *
  * Build configuration for the reference RPG implementation.
+ * Uses the io.github.gbkt Gradle plugin for code generation and ROM compilation.
+ *
+ * V2 port: object-based entry point, canonical asset layout, GBC-only mode.
  */
 plugins {
     kotlin("jvm") version "2.3.0"
-    application
+    id("io.github.gbkt")
 }
 
 group = "io.github.gbkt.examples"
@@ -24,6 +27,9 @@ dependencies {
     // This enables ServiceLoader-based backend discovery
     implementation(project(":gbkt-backend-gbdk"))
 
+    // RPG genre plugin — characters, monsters, abilities, battle system
+    implementation(project(":gbkt-genre-rpg"))
+
     testImplementation(kotlin("test"))
 }
 
@@ -35,133 +41,27 @@ tasks.test {
     useJUnitPlatform()
 }
 
-application {
-    mainClass.set("io.github.gbkt.examples.labyrinth.GenerateCKt")
+// =============================================================================
+// GBKT PLUGIN CONFIGURATION
+// =============================================================================
+
+gbkt {
+    game("io.github.gbkt.examples.labyrinth.LabyrinthOfTheDragonKt::labyrinthOfTheDragon")
+    assets("res")
+    outputName.set("labyrinth")
+
+    // GBC-only mode (required for color palettes)
+    gbcMode.set("ONLY")
+
+    // 4 RAM banks (32KB SRAM) - matches original game
+    ramBanks.set(4)
+
+    // Binary resources for INCBIN (tilemaps, tileset data)
+    resourceDirectory.set(file("res"))
 }
 
 // =============================================================================
-// GBKT BUILD CONFIGURATION
-// =============================================================================
-
-val outputDir = layout.buildDirectory.dir("generated/gbdk")
-val romOutputFile = outputDir.map { it.file("labyrinth.gbc") }
-
-// Detect GBDK location - check environment variable or common paths
-val gbdkHome: String? = System.getenv("GBDK_HOME")
-    ?: listOf(
-        "/opt/gbdk",
-        "/usr/local/gbdk",
-        "${System.getProperty("user.home")}/gbdk",
-        "${System.getProperty("user.home")}/opt/gbdk",
-        "${System.getProperty("user.home")}/Library/gbdk",  // macOS
-        "C:/gbdk",  // Windows
-    ).firstOrNull { file(it).exists() }
-
-// =============================================================================
-// CODE GENERATION TASK
-// =============================================================================
-
-tasks.register<JavaExec>("generateC") {
-    group = "gbkt"
-    description = "Generate C code from Kotlin DSL"
-    dependsOn("classes")
-
-    mainClass.set("io.github.gbkt.examples.labyrinth.GenerateCKt")
-    classpath = sourceSets["main"].runtimeClasspath
-
-    // Pass output directory path as argument
-    args = listOf(outputDir.get().asFile.absolutePath)
-
-    doFirst {
-        outputDir.get().asFile.mkdirs()
-    }
-
-    outputs.dir(outputDir)
-}
-
-// =============================================================================
-// ROM BUILD TASK (requires GBDK)
-// =============================================================================
-
-tasks.register("buildRom") {
-    group = "gbkt"
-    description = "Build the GBC ROM file using GBDK"
-    dependsOn("generateC")
-
-    inputs.dir(outputDir)
-    outputs.file(romOutputFile)
-
-    doLast {
-        val srcDir = outputDir.get().asFile
-        val lcc = if (gbdkHome != null) {
-            file("$gbdkHome/bin/lcc").absolutePath
-        } else {
-            "lcc" // Assume it's in PATH
-        }
-
-        if (gbdkHome == null) {
-            logger.warn("GBDK_HOME not set. Assuming 'lcc' is in PATH.")
-            logger.warn("Set GBDK_HOME environment variable for reliable builds.")
-        } else {
-            logger.lifecycle("Using GBDK from: $gbdkHome")
-        }
-
-        // Find all .c files and sort them (main.c first, then bank files)
-        val cFiles = srcDir.listFiles { f -> f.extension == "c" }
-            ?.sortedBy { f ->
-                when {
-                    f.name == "main.c" -> 0
-                    f.name.startsWith("bank") -> {
-                        f.name.removePrefix("bank").removeSuffix(".c").toIntOrNull() ?: 999
-                    }
-                    else -> 1000
-                }
-            }
-            ?: emptyList()
-
-        if (cFiles.isEmpty()) {
-            throw GradleException("No C source files found in ${srcDir.absolutePath}")
-        }
-
-        logger.lifecycle("Compiling ${cFiles.size} source files...")
-        cFiles.forEach { f -> logger.lifecycle("  - ${f.name}") }
-
-        val args = mutableListOf(
-            lcc,
-            "-Wa-l",           // Generate listing
-            "-Wl-m",           // Generate map file
-            "-Wl-j",           // Generate symbol file
-            "-DUSE_SFR_FOR_REG",
-            "-msm83:gb",       // Target Game Boy
-            "-Wl-yt0x1B",      // MBC5 with RAM and battery
-            "-Wl-yo32",        // 32 ROM banks (512KB) - matches original
-            "-Wl-ya4",         // 4 RAM banks (32KB SRAM) - matches original
-            "-o", romOutputFile.get().asFile.name,
-        )
-        args.addAll(cFiles.map { it.name })
-
-        val process = ProcessBuilder(args)
-            .directory(srcDir)
-            .redirectErrorStream(true)
-            .start()
-
-        val output = process.inputStream.bufferedReader().readText()
-        val exitCode = process.waitFor()
-
-        if (output.isNotBlank()) {
-            println(output)
-        }
-
-        if (exitCode != 0) {
-            throw GradleException("GBDK compilation failed with exit code $exitCode")
-        }
-
-        logger.lifecycle("ROM built: ${romOutputFile.get().asFile.absolutePath}")
-    }
-}
-
-// =============================================================================
-// ASSET MIGRATION TASK
+// ASSET MIGRATION TASK (port-specific utility)
 // =============================================================================
 
 tasks.register("migrateAssets") {
@@ -305,23 +205,43 @@ $tileData
 }
 
 // =============================================================================
-// EMULATOR TASK
+// DEBUG TASK (port-specific utility)
 // =============================================================================
 
-tasks.register("runEmulator") {
+tasks.register("debugRom") {
     group = "gbkt"
-    description = "Run the ROM in an emulator"
+    description = "Build and run ROM in mGBA with serial logging"
     dependsOn("buildRom")
 
     doLast {
-        val romFile = romOutputFile.get().asFile
-        logger.lifecycle("ROM built: ${romFile.absolutePath}")
-        // macOS: open with default app
-        val os = System.getProperty("os.name").lowercase()
-        if (os.contains("mac")) {
-            ProcessBuilder("open", romFile.absolutePath).start()
+        val romFile = layout.buildDirectory.file("gbkt/output/labyrinth.gb").get().asFile
+        val logFile = layout.buildDirectory.file("debug_serial.log").get().asFile
+
+        val mgba = listOf(
+            "/Applications/mGBA.app/Contents/MacOS/mGBA",
+            "/usr/local/bin/mgba",
+            "${System.getProperty("user.home")}/Applications/mGBA.app/Contents/MacOS/mGBA",
+        ).firstOrNull { file(it).exists() } ?: "mgba"
+
+        logger.lifecycle("ROM: ${romFile.absolutePath}")
+        logger.lifecycle("Log: ${logFile.absolutePath}")
+        logger.lifecycle("Close mGBA to capture serial output.")
+
+        val process = ProcessBuilder(mgba, "-l", "2048", romFile.absolutePath)
+            .redirectErrorStream(true)
+            .start()
+
+        val output = process.inputStream.bufferedReader().readText()
+        process.waitFor()
+
+        logFile.writeText(output)
+
+        if (output.isNotBlank()) {
+            logger.lifecycle("\n=== SERIAL OUTPUT ===")
+            logger.lifecycle(output)
+            logger.lifecycle("=== END ===")
         } else {
-            logger.lifecycle("Run with your preferred emulator (e.g., mgba, bgb)")
+            logger.lifecycle("No serial output captured.")
         }
     }
 }

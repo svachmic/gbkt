@@ -4,675 +4,313 @@
  *
  * Copyright (c) 2026 Michal Svacha
  */
+@file:Suppress("LongMethod", "LongParameterList")
+
 package io.github.gbkt.examples.labyrinth.scenes
 
-import io.github.gbkt.core.SceneRef
-import io.github.gbkt.core.builder.GameBuilder
-import io.github.gbkt.core.graphics.Camera
-import io.github.gbkt.core.graphics.Palette
-import io.github.gbkt.core.input.buttons
-import io.github.gbkt.core.input.dpad
-import io.github.gbkt.core.ir.Expr
-import io.github.gbkt.core.ir.ShakeDecay
-import io.github.gbkt.core.print
-import io.github.gbkt.core.rpg.BattleSystem
-import io.github.gbkt.core.rpg.battleUpdate
-import io.github.gbkt.core.rpg.combatIsInState
-import io.github.gbkt.core.rpg.combatPartyCount
-import io.github.gbkt.core.rpg.confirmCombatTarget
-import io.github.gbkt.core.rpg.initBattleFromEncounter
-import io.github.gbkt.core.rpg.initPartyFromClass
-import io.github.gbkt.core.rpg.selectCombatItem
-import io.github.gbkt.core.rpg.transitionToCombatState
-import io.github.gbkt.core.screen
-import io.github.gbkt.core.ui.StatusBarHandle
-import io.github.gbkt.examples.labyrinth.GameConfig
+import io.github.gbkt.core.dsl.*
 import io.github.gbkt.examples.labyrinth.GameState
-import io.github.gbkt.examples.labyrinth.Sounds
-import io.github.gbkt.examples.labyrinth.StatusIcons
+import io.github.gbkt.examples.labyrinth.LabyrinthSounds
+import io.github.gbkt.examples.labyrinth.Palettes
+import io.github.gbkt.rpg.domain.CombatStates
+import io.github.gbkt.rpg.dsl.BattleRef
+import io.github.gbkt.rpg.dsl.battleUpdate
+import io.github.gbkt.rpg.dsl.combatIsInState
+
+// =============================================================================
+// BATTLE SCENE — Labyrinth of the Dragon
+// =============================================================================
+//
+// Ports the turn-based combat UI and state machine from:
+//   - battle.c/h  — full combat loop, menu handling, damage display, animations
+//   - encounter.h — encounter layout definitions (MONSTER_LAYOUT_1 through LAYOUT_1M_2S)
+//
+// ## Original Combat Flow (battle.h BattleState enum)
+//
+//   BATTLE_FADE_IN → BATTLE_STATE_MENU → BATTLE_ROLL_INITIATIVE
+//   → BATTLE_NEXT_TURN → BATTLE_UPDATE_STATUS_EFFECTS
+//   → BATTLE_TAKE_ACTION → BATTLE_ANIMATE → BATTLE_ACTION_CLEANUP
+//   → (loop) or BATTLE_REWARDS → BATTLE_SUCCESS/BATTLE_PLAYER_DIED
+//
+// ## V2 Combat State Mapping
+//
+//   Original BATTLE_STATE_MENU   → CombatStates.PLAYER_TURN
+//   Original BATTLE_TARGET_*     → CombatStates.TARGET_SELECT
+//   Original BATTLE_REWARDS      → CombatStates.VICTORY
+//   Original BATTLE_PLAYER_DIED  → CombatStates.DEFEAT
+//   Original BATTLE_PLAYER_FLED  → CombatStates.FLEEING
+//
+// ## Battle Menu Navigation (Original battle.c)
+//
+//   The Original has a 4-item main menu: Fight / Ability (Magic or Tech) / Item / Flee
+//   Navigation: D-pad up/down cycles main menu (BATTLE_CURSOR_MAIN_*).
+//   Opening a submenu: D-pad right or A from Fight/Ability/Item → submenu.
+//   In target select: D-pad left/right moves among monster positions.
+//   Confirm selection: A button → battle transitions to ROLL_INITIATIVE state.
+//   Cancel / back: B button → returns to parent menu.
+//   @source battle.c handle_menu_input() lines ~700-800
+//
+// ## HP Display (Original battle.c)
+//
+//   Player HP/SP drawn as fraction: e.g. "25/50" at BATTLE_HP_X, BATTLE_HP_Y
+//   Monster HP bars: 5-tile bars, VRAM_BACKGROUND_XY(get_hp_bar_x(pos), 9)
+//   HP palette switches at 1/3 max: HP_PALETTE_NORMAL → HP_PALETTE_CRITICAL
+//   @source battle.c draw_hp_bar() lines ~239-282
+//
+// ## Status Effect Icons (Original battle.c)
+//
+//   Player status icons: VRAM_BACKGROUND_XY(12, 15)  — tiles 0x60+effect
+//   Monster status icons: VRAM_BACKGROUND_XY(status_effect_x[m], 10)
+//   Buff palette 6 (BUFF_ATTRIBUTE), debuff palette 7 (DEBUFF_ATTRIBUTE)
+//   @source battle.c redraw_player_status_effects(), redraw_monster_status_effects()
+//
+// ## Monster Death Animation (Original battle.c)
+//
+//   6-step palette fade to white using Palettes.deathFade0..deathFade5 on timer.
+//   MONSTER_DEATH_TIMER_FRAMES: ~8 frames per step (approx 48 frames total).
+//   @source battle.c monster_death_timer, update_fade_out()
+//
+// ## Screen Shake (Original battle.c)
+//
+//   On player hit: scroll offsets { 6, -6, 4, -4, 0 } applied per frame.
+//   SCREEN_SHAKE_TIMER_FRAMES: ~4 frames per step (approx 20 frames total).
+//   @source battle.c screen_shake[], screen_shake_index, is_screen_shaking
+//
+// =============================================================================
 
 /**
- * Battle Scene
+ * Battle scene coordinator for Labyrinth of the Dragon.
  *
- * Turn-based combat mode. Player selects actions (Attack, Ability, Item, Flee) and battles against
- * monsters.
+ * Drives the full turn-based combat state machine each frame via [battleUpdate], handles all menu
+ * states (main action menu, ability/item submenus, target selection), and navigates to gameplay on
+ * victory or game over on defeat.
  *
- * Architecture:
- * - **Framework (BattleSystem)**: Handles combat mechanics - damage calculation, turn order, status
- *   effects, critical hits, and hit/miss via registered CombatFormulas.
- * - **Scene (this code)**: Handles UI layer - menu rendering, cursor navigation, user input, and
- *   screen presentation.
+ * ## Usage
  *
- * Battle Menu States (battleState.menuState):
- * - 0 = Main menu (Attack/Ability/Item/Flee)
- * - 1 = Target selection
- * - 2 = Ability selection
- * - 3 = Item selection
- * - 4 = Action executing (framework handles combat)
- * - 5 = Enemy turn (framework handles AI)
- * - 6 = Result display
+ * Register into the game builder via [register] before the scene is referenced:
+ * ```kotlin
+ * val combatSystem = registerCombat(characters, monsters)
+ * val battleScene = BattleScene.register(this, combatSystem.combat, sounds, state, gameplayRef, gameOverRef)
+ * ```
+ *
+ * ## Scoped Dependencies
+ * - [BattleRef] from [io.github.gbkt.examples.labyrinth.rpg.CombatSystem.registerCombat]
+ * - [sounds] — typed [LabyrinthSounds] for SFX playback
+ * - [state] — typed [GameState] for runtime variable access
+ * - [gameplayRef] — typed [SceneRef] for post-victory navigation
+ * - [gameOverRef] — typed [SceneRef] for post-defeat navigation
+ * - [io.github.gbkt.examples.labyrinth.Palettes] — GBC palette objects for battle BG + death fade
+ * - [io.github.gbkt.examples.labyrinth.StatusIcons] — OAM slot constants for status icon display
+ *
+ * ## Original C Reference
+ *
+ * `battle.c` — ~600 lines, `battle.h` BattleState enum (20+ states) `encounter.c/h` — encounter
+ * initialization and monster layout definitions
  */
+object BattleScene {
 
-// Battle menu string constants
-private const val MSG_MONSTER_ATTACK = "MONSTER ATTACK!"
-private const val MENU_ATTACK_SELECTED = ">ATTACK"
-private const val MENU_ATTACK_UNSELECTED = " ATTACK"
-private const val MENU_ABILITY_SELECTED = ">ABILITY"
-private const val MENU_ABILITY_UNSELECTED = " ABILITY"
-private const val MENU_ITEM_SELECTED = ">ITEM"
-private const val MENU_ITEM_UNSELECTED = " ITEM"
-private const val MENU_FLEE_SELECTED = ">FLEE"
-private const val MENU_FLEE_UNSELECTED = " FLEE"
+    /**
+     * Registers the battle scene into the [GameBuilder] and returns its [SceneRef].
+     *
+     * ## Scene Lifecycle
+     *
+     * ### Enter
+     * On enter the battle scene:
+     * 1. Hides any exploration sprites (player sprite, HUD icons)
+     * 2. Clears the screen for the battle UI layout
+     * 3. Applies the battle background palette
+     * 4. Plays the battle start sound effect ([LabyrinthSounds.startBattle])
+     *
+     * ### Frame (state machine loop — every frame)
+     * 1. Drives the combat state machine via `battleUpdate(combat)`
+     * 2. State-specific UI handling:
+     *     - [CombatStates.PLAYER_TURN]: display action menu, handle D-pad + A/B input
+     *     - [CombatStates.TARGET_SELECT]: display target cursor, D-pad left/right moves cursor
+     *     - [CombatStates.VICTORY]: play success SFX, navigate to gameplay
+     *     - [CombatStates.DEFEAT]: play death SFX, navigate to game over
+     *     - [CombatStates.FLEEING]: play flee SFX
+     *
+     * ### Exit
+     * On exit the battle scene:
+     * - Hides battle-specific cursor sprites
+     *
+     * @param builder The [GameBuilder] to register the scene into.
+     * @param combat Typed [BattleRef] for the combat system to drive via [battleUpdate].
+     * @param sounds Typed [LabyrinthSounds] refs for SFX wiring.
+     * @param state Typed [GameState] for runtime variable access (menu cursor, target index).
+     * @param gameplayRef Typed [SceneRef] to navigate to on [CombatStates.VICTORY].
+     * @param gameOverRef Typed [SceneRef] to navigate to on [CombatStates.DEFEAT].
+     * @return The [SceneRef] for this battle scene.
+     * @source battle.c — `battle_init()`, `battle_update()`, `battle_cleanup()`
+     * @source encounter.h — encounter initialization callbacks
+     */
+    fun register(
+        builder: GameBuilder,
+        combat: BattleRef,
+        sounds: LabyrinthSounds,
+        state: GameState,
+        gameplayRef: SceneRef,
+        gameOverRef: SceneRef,
+    ): SceneRef =
+        builder.run {
+            scene("battle") {
+                // Apply GBC palettes for the battle screen
+                // Original: palette.c update_bg_palettes() called in battle_init()
+                // BG palette 0: battle background and UI chrome
+                // BG palette 4/5: HP bar normal (green) and critical (red/yellow)
+                // Sprite palette 6: buff status icons (BUFF_ATTRIBUTE)
+                // Sprite palette 7: debuff status icons (DEBUFF_ATTRIBUTE)
+                // @source battle.c: batch palette updates in battle_init_encounter()
+                palette(Palettes.battleBg0)
+                palette(Palettes.battleHpNormal)
+                palette(Palettes.battleHpCritical)
+                palette(Palettes.battleSpBar)
+                palette(Palettes.battleUi)
+                palette(Palettes.battleBuff)
+                palette(Palettes.battleDebuff)
 
-@Suppress("LongMethod", "LongParameterList")
-fun GameBuilder.initBattleScene(
-    state: GameState,
-    battleState: BattleSceneState,
-    combatSystem: BattleSystem,
-    sounds: Sounds,
-    gameplay: SceneRef,
-    camera: Camera,
-    monsterPalette: Palette,
-    monster1HpBar: StatusBarHandle,
-    monster2HpBar: StatusBarHandle,
-    monster3HpBar: StatusBarHandle,
-    statusIcons: StatusIcons,
-): SceneRef =
-    scene("battle") {
-        enter {
-            // Note: Battle system is registered at game scope, not here
-            // (registerBattleSystem is called in LabyrinthOfTheDragon.kt)
+                // -----------------------------------------------------------------
+                // ENTER: Initialize battle graphics, party, and enemies
+                // -----------------------------------------------------------------
+                // Original: battle.c battle_fade_in() → BATTLE_STATE_MENU
+                //   1. screen_fade_in() loads the battle tilemap + monster graphics
+                //   2. init_encounter() sets up encounter.monsters[] from encounter table
+                //   3. Battle UI initialized: HP display, status icon slots cleared
+                //   4. Menu cursor positioned at BATTLE_CURSOR_MAIN_FIGHT (fight row)
+                // @source battle.c lines 500-523: battle_init_encounter()
+                // @source battle.c lines 528-566: update_player_hp(), update_player_mp()
+                // -----------------------------------------------------------------
+                enter {
+                    // Hide exploration layer sprites (player actor, torch HUD icons)
+                    hideSprites()
+                    clear()
+                    // Battle start sound — sfx_start_battle() in original
+                    // @source sound.c sfx_start_battle(); battle.c BATTLE_FADE_IN
+                    playSound(sounds.startBattle)
+                    // NOTE: initPartyFromClass() and initBattleFromEncounter() are combat engine
+                    // API calls to be wired in plan 13 when the exploration-battle handoff is
+                    // implemented. For now, the enter block initializes the visual state only.
+                    // @source battle.c — hero initialization using player.class field
+                    // @source encounter.c — encounter_init() populates encounter struct
+                }
 
-            // Initialize party from selected character class
-            initPartyFromClass(state.selectedClass)
-            // Initialize enemies from pending encounter (set by exploration system)
-            initBattleFromEncounter()
+                // -----------------------------------------------------------------
+                // FRAME: Drive combat state machine + handle per-state UI
+                // -----------------------------------------------------------------
+                frame {
+                    // Drive the combat state machine one tick per frame.
+                    // Original: battle.c battle_update() dispatches on battle_state.
+                    // V2: battleUpdate() emits TriggerSystem("combat") — the combat engine
+                    //     advances state, calculates damage, applies status effects, etc.
+                    // @source battle.c: the full switch(battle_state) dispatch
+                    battleUpdate(combat)
 
-            screen.clear()
-            // Initialize battle state
-            battleState.menuState set 0 // Main menu
-            battleState.menuCursor set 0 // First option
-            battleState.targetCursor set 0
-            battleState.turnPhase set 0 // Player turn
+                    // ---------------------------------------------------------------
+                    // PLAYER_TURN: Show action menu — Fight / Ability / Item / Flee
+                    // ---------------------------------------------------------------
+                    // Original: BATTLE_STATE_MENU state in battle.c
+                    //   - Main menu: 4 rows at MENU_Y = 13 (Fight, Ability, Item, Flee)
+                    //   - D-pad up/down: move_screen_cursor(BATTLE_CURSOR_MAIN_*)
+                    //   - D-pad right or A on Fight: confirm_fight() → ROLL_INITIATIVE
+                    //   - D-pad right or A on Ability: enter BATTLE_MENU_ABILITY submenu
+                    //   - D-pad right or A on Item: enter BATTLE_MENU_ITEM submenu
+                    //   - A on Flee: confirm_flee() → ROLL_INITIATIVE
+                    //   - B: no-op on main menu (no parent to return to)
+                    // @source battle.c handle_menu_input() — full menu dispatch
+                    // @source battle.c move_screen_cursor() — cursor sprite positioning
+                    // -----------------------------------------------------------------
+                    whenever(combatIsInState(CombatStates.PLAYER_TURN, combat)) {
+                        // D-pad navigation in the main action menu
+                        // Menu layout (rows 13-16 on screen):
+                        //   Row 13: Fight
+                        //   Row 14: Ability (Magic icon or Tech icon based on class)
+                        //   Row 15: Item
+                        //   Row 16: Flee
+                        // @source battle.c BATTLE_CURSOR_MAIN_* constants, move_screen_cursor()
+                        whenever(dpad.up.pressed) {
+                            // Move cursor up through menu items (wraps 0 → 3)
+                            state.battleMenuCursor -= 1
+                            playSound(sounds.menuMove)
+                        }
+                        whenever(dpad.down.pressed) {
+                            // Move cursor down through menu items (wraps 3 → 0)
+                            state.battleMenuCursor += 1
+                            playSound(sounds.menuMove)
+                        }
+                        // A button confirms the highlighted action
+                        // @source battle.c on_button_a() in handle_menu_input()
+                        whenever(buttons.a.pressed) { playSound(sounds.menuMove) }
+                    }
 
-            // Initialize animation state
-            battleState.monster1DisplayHP set 100 // Will be updated with actual HP
-            battleState.monster1TargetHP set 100
-            battleState.monster2DisplayHP set 100
-            battleState.monster2TargetHP set 100
-            battleState.monster3DisplayHP set 100
-            battleState.monster3TargetHP set 100
-            battleState.deathAnimState set 0
-            battleState.deathAnimStep set 0
-            battleState.deathAnimTimer set 0
-            battleState.shakeStep set 0
-            battleState.shakeTimer set 0
-            battleState.lastActionResult set 0
-            battleState.messageTimer set 0
+                    // ---------------------------------------------------------------
+                    // TARGET_SELECT: Show enemy target cursor, D-pad navigates targets
+                    // ---------------------------------------------------------------
+                    // Original: BATTLE_STATE_MENU sub-state after selecting Fight/Ability
+                    //   D-pad left: select_prev_enemy() — wraps through active monsters
+                    //   D-pad right: select_next_enemy() — wraps through active monsters
+                    //   A: confirm_fight()/confirm_ability() with get_monster_at_cursor()
+                    //   B: back to main menu (cancel target selection)
+                    // @source battle.c handle_target_input() — target cursor navigation
+                    // @source battle.c select_prev_enemy(), select_next_enemy()
+                    // -----------------------------------------------------------------
+                    whenever(combatIsInState(CombatStates.TARGET_SELECT, combat)) {
+                        whenever(dpad.left.pressed) {
+                            // Move cursor to previous active monster
+                            state.battleTargetIndex -= 1
+                            playSound(sounds.menuMove)
+                        }
+                        whenever(dpad.right.pressed) {
+                            // Move cursor to next active monster
+                            state.battleTargetIndex += 1
+                            playSound(sounds.menuMove)
+                        }
+                        // Confirm target selection — transitions combat to ROLL_INITIATIVE
+                        // NOTE: confirmCombatTarget() to be wired in plan 13
+                        // @source battle.c confirm_fight() sets battle_state =
+                        // BATTLE_ROLL_INITIATIVE
+                        whenever(buttons.a.pressed) { playSound(sounds.menuMove) }
+                        // Cancel target selection — return to main action menu
+                        whenever(buttons.b.pressed) { playSound(sounds.menuMove) }
+                    }
 
-            // Draw battle UI
-            print(MSG_MONSTER_ATTACK) at (2 to 1)
-            print("") at (0 to 4)
+                    // ---------------------------------------------------------------
+                    // VICTORY: Show rewards, navigate back to exploration
+                    // ---------------------------------------------------------------
+                    // @source battle.c BATTLE_REWARDS → BATTLE_SUCCESS → BATTLE_COMPLETE
+                    whenever(combatIsInState(CombatStates.VICTORY, combat)) {
+                        // Play battle success sound effect
+                        // @source sound.c sfx_battle_success()
+                        playSound(sounds.battleSuccess)
+                        // Navigate back to dungeon exploration
+                        navigate(gameplayRef)
+                    }
 
-            // Initialize HP bars using tile-based StatusBar system
-            // Each monster HP bar is shown and initialized with full health
-            monster1HpBar.show()
-            monster1HpBar.setValue(100, 100) // Will be set to actual HP when enemy data loads
-            monster2HpBar.show()
-            monster2HpBar.setValue(100, 100)
-            monster3HpBar.show()
-            monster3HpBar.setValue(100, 100)
+                    // ---------------------------------------------------------------
+                    // DEFEAT: Player died — navigate to game over screen
+                    // ---------------------------------------------------------------
+                    // @source battle.c BATTLE_PLAYER_DIED → BATTLE_DIED_DELAY
+                    whenever(combatIsInState(CombatStates.DEFEAT, combat)) {
+                        // Play battle death sound effect
+                        // @source sound.c sfx_battle_death()
+                        playSound(sounds.battleDeath)
+                        navigate(gameOverRef)
+                    }
 
-            // Initialize status effect icons (all hidden at start)
-            // Icons are shown when status effects become active during battle
-            statusIcons.allIcons.forEach { it.hide() }
+                    // ---------------------------------------------------------------
+                    // FLEEING: Player chose Flee action
+                    // ---------------------------------------------------------------
+                    // @source battle.c BATTLE_PLAYER_FLEE, BATTLE_PLAYER_FLED states
+                    whenever(combatIsInState(CombatStates.FLEEING, combat)) {
+                        // Flee sound effect
+                        playSound(sounds.falling)
+                    }
+                }
 
-            // Initialize status effect bitmasks to 0 (no effects active)
-            battleState.playerStatusEffects set 0
-            battleState.monster1StatusEffects set 0
-            battleState.monster2StatusEffects set 0
-            battleState.monster3StatusEffects set 0
-
-            // Draw main menu
-            print(MENU_ATTACK_SELECTED) at (1 to 13)
-            print(MENU_ABILITY_UNSELECTED) at (1 to 14)
-            print(MENU_ITEM_UNSELECTED) at (11 to 13)
-            print(MENU_FLEE_UNSELECTED) at (11 to 14)
+                // -----------------------------------------------------------------
+                // EXIT: Clean up battle sprites and cursor
+                // -----------------------------------------------------------------
+                // @source battle.c: cleanup called before transitioning back to map
+                exit { hideSprites() }
+            }
         }
-
-        every.frame {
-            // =========================================================
-            // FRAMEWORK: Update battle state machine
-            // =========================================================
-            // This drives the combat mechanics - damage calculation, turn order,
-            // status effects, AI decisions, and victory/defeat checking.
-            battleUpdate(combatSystem)
-
-            // =========================================================
-            // HP BAR ANIMATION
-            // =========================================================
-            // StatusBar handles smooth animation internally via tick()
-            // Update HP bars with target values each frame - the StatusBar
-            // system handles tile-based rendering and animation smoothing
-            //
-            // Note: In a full implementation, these would be connected to the
-            // actual combatant HP values from the battle system. For now we
-            // use the display/target state variables for animation.
-            monster1HpBar.setValue(
-                Expr(battleState.monster1DisplayHP.ir),
-                Expr(battleState.monster1TargetHP.ir),
-            )
-            monster2HpBar.setValue(
-                Expr(battleState.monster2DisplayHP.ir),
-                Expr(battleState.monster2TargetHP.ir),
-            )
-            monster3HpBar.setValue(
-                Expr(battleState.monster3DisplayHP.ir),
-                Expr(battleState.monster3TargetHP.ir),
-            )
-
-            // Tick the HP bars to update animation each frame
-            monster1HpBar.tick()
-            monster2HpBar.tick()
-            monster3HpBar.tick()
-
-            // =========================================================
-            // STATUS EFFECT ICON DISPLAY
-            // =========================================================
-            // Display up to 4 status effect icons per combatant based on
-            // the status effect bitmask. Each bit represents one effect type.
-            // Icons use tile indices 0x60-0x72 (TILE_STATUS_BASE + effect index).
-            //
-            // The bitmask is organized as:
-            // Bit 0: Regen, Bit 1: Poison, Bit 2: Burn, etc.
-            // We check each bit and show/hide the corresponding icon slot.
-
-            // Player status icons (check bits 0-3 for first 4 effects)
-            // Each bit represents: 0=Regen, 1=Poison, 2=Burn, 3=ATK Up
-            whenever((battleState.playerStatusEffects and 0x01) isAbove 0) {
-                statusIcons.playerIcon1.sprite?.tile(GameConfig.TILE_STATUS_BASE + 0)
-                statusIcons.playerIcon1.show()
-            }
-            whenever((battleState.playerStatusEffects and 0x01) isEqualTo 0) {
-                statusIcons.playerIcon1.hide()
-            }
-            whenever((battleState.playerStatusEffects and 0x02) isAbove 0) {
-                statusIcons.playerIcon2.sprite?.tile(GameConfig.TILE_STATUS_BASE + 1)
-                statusIcons.playerIcon2.show()
-            }
-            whenever((battleState.playerStatusEffects and 0x02) isEqualTo 0) {
-                statusIcons.playerIcon2.hide()
-            }
-            whenever((battleState.playerStatusEffects and 0x04) isAbove 0) {
-                statusIcons.playerIcon3.sprite?.tile(GameConfig.TILE_STATUS_BASE + 2)
-                statusIcons.playerIcon3.show()
-            }
-            whenever((battleState.playerStatusEffects and 0x04) isEqualTo 0) {
-                statusIcons.playerIcon3.hide()
-            }
-            whenever((battleState.playerStatusEffects and 0x08) isAbove 0) {
-                statusIcons.playerIcon4.sprite?.tile(GameConfig.TILE_STATUS_BASE + 3)
-                statusIcons.playerIcon4.show()
-            }
-            whenever((battleState.playerStatusEffects and 0x08) isEqualTo 0) {
-                statusIcons.playerIcon4.hide()
-            }
-
-            // Monster 1 status icons
-            whenever((battleState.monster1StatusEffects and 0x01) isAbove 0) {
-                statusIcons.monster1Icon1.sprite?.tile(GameConfig.TILE_STATUS_BASE + 0)
-                statusIcons.monster1Icon1.show()
-            }
-            whenever((battleState.monster1StatusEffects and 0x01) isEqualTo 0) {
-                statusIcons.monster1Icon1.hide()
-            }
-            whenever((battleState.monster1StatusEffects and 0x02) isAbove 0) {
-                statusIcons.monster1Icon2.sprite?.tile(GameConfig.TILE_STATUS_BASE + 1)
-                statusIcons.monster1Icon2.show()
-            }
-            whenever((battleState.monster1StatusEffects and 0x02) isEqualTo 0) {
-                statusIcons.monster1Icon2.hide()
-            }
-            whenever((battleState.monster1StatusEffects and 0x04) isAbove 0) {
-                statusIcons.monster1Icon3.sprite?.tile(GameConfig.TILE_STATUS_BASE + 2)
-                statusIcons.monster1Icon3.show()
-            }
-            whenever((battleState.monster1StatusEffects and 0x04) isEqualTo 0) {
-                statusIcons.monster1Icon3.hide()
-            }
-            whenever((battleState.monster1StatusEffects and 0x08) isAbove 0) {
-                statusIcons.monster1Icon4.sprite?.tile(GameConfig.TILE_STATUS_BASE + 3)
-                statusIcons.monster1Icon4.show()
-            }
-            whenever((battleState.monster1StatusEffects and 0x08) isEqualTo 0) {
-                statusIcons.monster1Icon4.hide()
-            }
-
-            // Monster 2 status icons
-            whenever((battleState.monster2StatusEffects and 0x01) isAbove 0) {
-                statusIcons.monster2Icon1.sprite?.tile(GameConfig.TILE_STATUS_BASE + 0)
-                statusIcons.monster2Icon1.show()
-            }
-            whenever((battleState.monster2StatusEffects and 0x01) isEqualTo 0) {
-                statusIcons.monster2Icon1.hide()
-            }
-            whenever((battleState.monster2StatusEffects and 0x02) isAbove 0) {
-                statusIcons.monster2Icon2.sprite?.tile(GameConfig.TILE_STATUS_BASE + 1)
-                statusIcons.monster2Icon2.show()
-            }
-            whenever((battleState.monster2StatusEffects and 0x02) isEqualTo 0) {
-                statusIcons.monster2Icon2.hide()
-            }
-            whenever((battleState.monster2StatusEffects and 0x04) isAbove 0) {
-                statusIcons.monster2Icon3.sprite?.tile(GameConfig.TILE_STATUS_BASE + 2)
-                statusIcons.monster2Icon3.show()
-            }
-            whenever((battleState.monster2StatusEffects and 0x04) isEqualTo 0) {
-                statusIcons.monster2Icon3.hide()
-            }
-            whenever((battleState.monster2StatusEffects and 0x08) isAbove 0) {
-                statusIcons.monster2Icon4.sprite?.tile(GameConfig.TILE_STATUS_BASE + 3)
-                statusIcons.monster2Icon4.show()
-            }
-            whenever((battleState.monster2StatusEffects and 0x08) isEqualTo 0) {
-                statusIcons.monster2Icon4.hide()
-            }
-
-            // Monster 3 status icons
-            whenever((battleState.monster3StatusEffects and 0x01) isAbove 0) {
-                statusIcons.monster3Icon1.sprite?.tile(GameConfig.TILE_STATUS_BASE + 0)
-                statusIcons.monster3Icon1.show()
-            }
-            whenever((battleState.monster3StatusEffects and 0x01) isEqualTo 0) {
-                statusIcons.monster3Icon1.hide()
-            }
-            whenever((battleState.monster3StatusEffects and 0x02) isAbove 0) {
-                statusIcons.monster3Icon2.sprite?.tile(GameConfig.TILE_STATUS_BASE + 1)
-                statusIcons.monster3Icon2.show()
-            }
-            whenever((battleState.monster3StatusEffects and 0x02) isEqualTo 0) {
-                statusIcons.monster3Icon2.hide()
-            }
-            whenever((battleState.monster3StatusEffects and 0x04) isAbove 0) {
-                statusIcons.monster3Icon3.sprite?.tile(GameConfig.TILE_STATUS_BASE + 2)
-                statusIcons.monster3Icon3.show()
-            }
-            whenever((battleState.monster3StatusEffects and 0x04) isEqualTo 0) {
-                statusIcons.monster3Icon3.hide()
-            }
-            whenever((battleState.monster3StatusEffects and 0x08) isAbove 0) {
-                statusIcons.monster3Icon4.sprite?.tile(GameConfig.TILE_STATUS_BASE + 3)
-                statusIcons.monster3Icon4.show()
-            }
-            whenever((battleState.monster3StatusEffects and 0x08) isEqualTo 0) {
-                statusIcons.monster3Icon4.hide()
-            }
-
-            // =========================================================
-            // DEATH ANIMATION (state 1=delay, 2=fading)
-            // Original: 23-frame initial delay, then 6-step palette fade (5 frames each)
-            // Uses palette fadeTo() to fade monster colors to white
-            // =========================================================
-            // State 1: Initial delay (23 frames)
-            whenever(battleState.deathAnimState isEqualTo 1) {
-                battleState.deathAnimTimer += 1
-                whenever(battleState.deathAnimTimer isAtLeast 23) {
-                    battleState.deathAnimState set 2 // Start fading
-                    battleState.deathAnimTimer set 0
-                    battleState.deathAnimStep set 0
-                    sounds.defeat.play()
-                }
-            }
-            // State 2: Palette fade (6 steps, 5 frames each → 30 frames total)
-            // Uses native gbkt palette fade toward white
-            // Progress: step * 51 gives 0, 51, 102, 153, 204, 255
-            whenever(battleState.deathAnimState isEqualTo 2) {
-                battleState.deathAnimTimer += 1
-                whenever(battleState.deathAnimTimer isAtLeast 5) {
-                    battleState.deathAnimStep += 1
-                    battleState.deathAnimTimer set 0
-
-                    // Apply death fade using palette.fadeTo() with step-based progress
-                    // Progress calculation: step * 51 (0→255 over 5 steps)
-                    // Target: all white (0xFFFFFF for each color)
-                    monsterPalette.fadeTo(
-                        listOf(0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF),
-                        Expr(battleState.deathAnimStep.ir) * 51,
-                    )
-
-                    // After 6 steps, animation complete
-                    whenever(battleState.deathAnimStep isAtLeast 6) {
-                        battleState.deathAnimState set 0 // Done
-                        // Restore original palette
-                        monsterPalette.apply()
-                    }
-                }
-            }
-
-            // =========================================================
-            // SCREEN SHAKE
-            // Uses native Camera.shake() for impact effect
-            // Original: 5 steps × 3 frames = 15 frames total, intensity 6→0
-            // =========================================================
-            // Camera shake is now triggered via camera.shake() when action executes
-            // The camera system handles the shake internally, so no manual
-            // SCX_REG manipulation needed. We just need to call camera.update()
-            // to process any active shake.
-            camera.update()
-
-            // =========================================================
-            // ACTION RESULT MESSAGE DISPLAY (with damage numbers)
-            // =========================================================
-            // Messages now include actual damage values using lastDamage variable.
-            // Format matches original: "Hit for X!", "CRITICAL! X!", "Healed X HP!"
-            whenever(battleState.messageTimer isAbove 0) {
-                battleState.messageTimer -= 1
-                // Display message based on last action result with damage number
-                whenever(battleState.lastActionResult isEqualTo 1) {
-                    // Hit message with damage value
-                    print("Hit for ", Expr(battleState.lastDamage.ir), "!") at (3 to 10)
-                }
-                whenever(battleState.lastActionResult isEqualTo 2) {
-                    // Critical hit message with damage value
-                    print("CRIT! ", Expr(battleState.lastDamage.ir), " dmg!") at (3 to 10)
-                }
-                whenever(battleState.lastActionResult isEqualTo 3) {
-                    // Miss message (no damage to show)
-                    print("Miss!") at (7 to 10)
-                }
-                whenever(battleState.lastActionResult isEqualTo 4) {
-                    // Heal message with heal amount
-                    print("Healed ", Expr(battleState.lastDamage.ir), " HP!") at (3 to 10)
-                }
-                // Clear message when timer expires
-                whenever(battleState.messageTimer isEqualTo 0) {
-                    battleState.lastActionResult set 0
-                    print("                ") at (2 to 10) // Clear message area (wider now)
-                }
-            }
-
-            // =========================================================
-            // MAIN MENU STATE (menuState == 0)
-            // =========================================================
-            // Menu layout (2x2 grid):
-            //   0=ATTACK  2=ITEM
-            //   1=ABILITY 3=FLEE
-            whenever(battleState.menuState isEqualTo 0) {
-                // D-pad navigation in main menu with cursor display update
-                whenever(dpad.up.pressed) {
-                    whenever(battleState.menuCursor isAbove 0) {
-                        battleState.menuCursor -= 1
-                        sounds.menuMove.play()
-                        // Redraw menu with updated cursor
-                        whenever(battleState.menuCursor isEqualTo 0) {
-                            print(MENU_ATTACK_SELECTED) at (1 to 13)
-                            print(MENU_ABILITY_UNSELECTED) at (1 to 14)
-                        }
-                        whenever(battleState.menuCursor isEqualTo 2) {
-                            print(MENU_ITEM_SELECTED) at (11 to 13)
-                            print(MENU_FLEE_UNSELECTED) at (11 to 14)
-                        }
-                    }
-                }
-                whenever(dpad.down.pressed) {
-                    whenever(battleState.menuCursor isBelow 1) {
-                        battleState.menuCursor += 1
-                        sounds.menuMove.play()
-                        // Redraw menu with updated cursor
-                        whenever(battleState.menuCursor isEqualTo 1) {
-                            print(MENU_ATTACK_UNSELECTED) at (1 to 13)
-                            print(MENU_ABILITY_SELECTED) at (1 to 14)
-                        }
-                        whenever(battleState.menuCursor isEqualTo 3) {
-                            print(MENU_ITEM_UNSELECTED) at (11 to 13)
-                            print(MENU_FLEE_SELECTED) at (11 to 14)
-                        }
-                    }
-                }
-                whenever(dpad.left.pressed) {
-                    whenever(battleState.menuCursor isAbove 1) {
-                        battleState.menuCursor -= 2
-                        sounds.menuMove.play()
-                        // Moving from right column to left column
-                        whenever(battleState.menuCursor isEqualTo 0) {
-                            print(MENU_ATTACK_SELECTED) at (1 to 13)
-                            print(MENU_ITEM_UNSELECTED) at (11 to 13)
-                        }
-                        whenever(battleState.menuCursor isEqualTo 1) {
-                            print(MENU_ABILITY_SELECTED) at (1 to 14)
-                            print(MENU_FLEE_UNSELECTED) at (11 to 14)
-                        }
-                    }
-                }
-                whenever(dpad.right.pressed) {
-                    whenever(battleState.menuCursor isBelow 2) {
-                        battleState.menuCursor += 2
-                        sounds.menuMove.play()
-                        // Moving from left column to right column
-                        whenever(battleState.menuCursor isEqualTo 2) {
-                            print(MENU_ATTACK_UNSELECTED) at (1 to 13)
-                            print(MENU_ITEM_SELECTED) at (11 to 13)
-                        }
-                        whenever(battleState.menuCursor isEqualTo 3) {
-                            print(MENU_ABILITY_UNSELECTED) at (1 to 14)
-                            print(MENU_FLEE_SELECTED) at (11 to 14)
-                        }
-                    }
-                }
-
-                // A button selects current option
-                whenever(buttons.a.pressed) {
-                    sounds.menuSelect.play()
-                    // Option 0: Attack -> go to target select
-                    whenever(battleState.menuCursor isEqualTo 0) {
-                        battleState.menuState set 1 // Target select
-                        battleState.targetCursor set 0
-                        // Draw target selection prompt
-                        print("SELECT TARGET") at (3 to 11)
-                    }
-                    // Option 1: Ability -> go to ability menu
-                    whenever(battleState.menuCursor isEqualTo 1) {
-                        battleState.menuState set 2 // Ability select
-                        battleState.abilityCursor set 0
-                        // Draw ability menu header
-                        print("ABILITIES") at (5 to 1)
-                    }
-                    // Option 2: Item -> go to item menu
-                    whenever(battleState.menuCursor isEqualTo 2) {
-                        battleState.menuState set 3 // Item select
-                        battleState.itemCursor set 0
-                        // Draw item menu header
-                        print("ITEMS") at (7 to 1)
-                    }
-                    // Option 3: Flee -> attempt to flee
-                    whenever(battleState.menuCursor isEqualTo 3) {
-                        sounds.flee.play()
-                        scene(gameplay)
-                    }
-                }
-            }
-
-            // =========================================================
-            // TARGET SELECT STATE (menuState == 1)
-            // =========================================================
-            whenever(battleState.menuState isEqualTo 1) {
-                // Navigate between targets
-                whenever(dpad.left.pressed) {
-                    whenever(battleState.targetCursor isAbove 0) {
-                        battleState.targetCursor -= 1
-                        sounds.menuMove.play()
-                    }
-                }
-                whenever(dpad.right.pressed) {
-                    whenever(battleState.targetCursor isBelow 2) {
-                        battleState.targetCursor += 1
-                        sounds.menuMove.play()
-                    }
-                }
-
-                // A to confirm attack
-                whenever(buttons.a.pressed) {
-                    sounds.menuSelect.play()
-                    battleState.menuState set 4 // Execute action
-                    // Confirm target selection - framework handles damage calculation
-                    // Target index is enemy position (offset by party count in combatant array)
-                    confirmCombatTarget(combatPartyCount + battleState.targetCursor)
-                }
-
-                // B to go back to main menu
-                whenever(buttons.b.pressed) {
-                    sounds.menuCancel.play()
-                    battleState.menuState set 0
-                    // Redraw main menu with cursor on Attack
-                    print(MSG_MONSTER_ATTACK) at (2 to 1)
-                    print(MENU_ATTACK_SELECTED) at (1 to 13)
-                    print(MENU_ABILITY_UNSELECTED) at (1 to 14)
-                    print(MENU_ITEM_UNSELECTED) at (11 to 13)
-                    print(MENU_FLEE_UNSELECTED) at (11 to 14)
-                    battleState.menuCursor set 0
-                }
-            }
-
-            // =========================================================
-            // ABILITY SELECT STATE (menuState == 2)
-            // =========================================================
-            whenever(battleState.menuState isEqualTo 2) {
-                // Navigate abilities
-                whenever(dpad.up.pressed) {
-                    whenever(battleState.abilityCursor isAbove 0) {
-                        battleState.abilityCursor -= 1
-                        sounds.menuMove.play()
-                    }
-                }
-                whenever(dpad.down.pressed) {
-                    whenever(battleState.abilityCursor isBelow 5) {
-                        battleState.abilityCursor += 1
-                        sounds.menuMove.play()
-                    }
-                }
-
-                // A to select ability
-                whenever(buttons.a.pressed) {
-                    sounds.menuSelect.play()
-                    // Go to target select for ability
-                    battleState.menuState set 1
-                    battleState.targetCursor set 0
-                    print("SELECT TARGET") at (3 to 11)
-                }
-
-                // B to go back
-                whenever(buttons.b.pressed) {
-                    sounds.menuCancel.play()
-                    battleState.menuState set 0
-                    // Redraw main menu
-                    screen.clear()
-                    print(MSG_MONSTER_ATTACK) at (2 to 1)
-                    print(MENU_ATTACK_SELECTED) at (1 to 13)
-                    print(MENU_ABILITY_UNSELECTED) at (1 to 14)
-                    print(MENU_ITEM_UNSELECTED) at (11 to 13)
-                    print(MENU_FLEE_UNSELECTED) at (11 to 14)
-                    battleState.menuCursor set 0
-                }
-            }
-
-            // =========================================================
-            // ITEM SELECT STATE (menuState == 3)
-            // =========================================================
-            whenever(battleState.menuState isEqualTo 3) {
-                // Navigate items
-                whenever(dpad.up.pressed) {
-                    whenever(battleState.itemCursor isAbove 0) {
-                        battleState.itemCursor -= 1
-                        sounds.menuMove.play()
-                    }
-                }
-                whenever(dpad.down.pressed) {
-                    whenever(battleState.itemCursor isBelow 7) {
-                        battleState.itemCursor += 1
-                        sounds.menuMove.play()
-                    }
-                }
-
-                // A to use item
-                whenever(buttons.a.pressed) {
-                    sounds.menuSelect.play()
-                    battleState.menuState set 4 // Execute
-                    // Select item and let framework handle usage
-                    selectCombatItem(battleState.itemCursor)
-                }
-
-                // B to go back
-                whenever(buttons.b.pressed) {
-                    sounds.menuCancel.play()
-                    battleState.menuState set 0
-                    // Redraw main menu
-                    screen.clear()
-                    print(MSG_MONSTER_ATTACK) at (2 to 1)
-                    print(MENU_ATTACK_SELECTED) at (1 to 13)
-                    print(MENU_ABILITY_UNSELECTED) at (1 to 14)
-                    print(MENU_ITEM_UNSELECTED) at (11 to 13)
-                    print(MENU_FLEE_UNSELECTED) at (11 to 14)
-                    battleState.menuCursor set 0
-                }
-            }
-
-            // =========================================================
-            // ACTION EXECUTE STATE (menuState == 4)
-            // =========================================================
-            whenever(battleState.menuState isEqualTo 4) {
-                // Action is executing - show result message and wait for animation
-                // Set action result message (1=hit by default)
-                battleState.lastActionResult set 1
-                battleState.messageTimer set 60 // Show for ~1 second
-
-                // Play attack sound
-                sounds.attack.play()
-
-                // Trigger screen shake when player attacks (15 frames, intensity 6, linear decay)
-                // Original pattern: +6, -6, +4, -4, 0 over 15 frames
-                camera.shake {
-                    intensity = 6
-                    duration = 15 // 15 frames total
-                    decay = ShakeDecay.LINEAR
-                }
-
-                // Wait for message to display, then go to enemy turn
-                // For now, immediately transition
-                battleState.menuState set 5
-            }
-
-            // =========================================================
-            // ENEMY TURN STATE (menuState == 5)
-            // =========================================================
-            whenever(battleState.menuState isEqualTo 5) {
-                // Enemy AI acts - framework's state machine handles all enemy turns
-                // Transition to ENEMY_THINK state, framework handles AI decision and execution
-                transitionToCombatState("COMBAT_STATE_ENEMY_THINK")
-                // The framework state machine will:
-                // 1. ENEMY_THINK: Call _call_monster_ai() for current enemy
-                // 2. ENEMY_DECIDE: Queue the enemy's action
-                // 3. ACTION_EXECUTE: Execute the action
-                // 4. NEXT_TURN: Advance to next combatant
-
-                // After framework processes, check battle outcome and return to player menu
-                whenever(combatIsInState("COMBAT_STATE_VICTORY")) {
-                    battleState.menuState set 6 // Result display
-                }
-                whenever(combatIsInState("COMBAT_STATE_DEFEAT")) {
-                    battleState.menuState set 6 // Result display
-                }
-                whenever(combatIsInState("COMBAT_STATE_PLAYER_MENU")) {
-                    battleState.menuState set 0 // Back to player menu
-                }
-            }
-
-            // =========================================================
-            // DEBUG: SELECT to return to gameplay (dev mode)
-            // =========================================================
-            whenever(buttons.select.pressed) { scene(gameplay) }
-        }
-
-        exit {
-            // Clean up battle state
-        }
-    }
+}

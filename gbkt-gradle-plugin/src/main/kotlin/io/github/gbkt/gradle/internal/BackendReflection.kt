@@ -109,31 +109,36 @@ object BackendReflection {
         sourceMap: Boolean,
         optimizationLevel: Int,
     ): Any {
-        // Try to find the constructor with default parameters
-        // Kotlin data classes have complex constructor signatures due to defaults
+        val outputFormatClass = Class.forName("io.github.gbkt.backend.api.OutputFormat")
+        val multiFile = outputFormatClass.enumConstants.find { it.toString() == "MULTI_FILE" }
         val constructors = optionsClass.constructors
-        val primaryConstructor =
-            constructors.find { it.parameterCount >= 3 } ?: constructors.first()
 
-        return when (primaryConstructor.parameterCount) {
-            // Full constructor with all parameters including defaults marker
-            in 5..10 -> {
-                // Kotlin data class with defaults: (debug, sourceMap, optLevel, outputFormat,
-                // customOptions, ...)
-                val outputFormatClass = Class.forName("io.github.gbkt.backend.api.OutputFormat")
-                val multiFile =
-                    outputFormatClass.enumConstants.find { it.toString() == "MULTI_FILE" }
-                primaryConstructor.newInstance(
-                    debug,
-                    sourceMap,
-                    optimizationLevel,
-                    multiFile,
-                    emptyMap<String, Any>(),
-                )
-            }
-            3 -> primaryConstructor.newInstance(debug, sourceMap, optimizationLevel)
-            else -> primaryConstructor.newInstance(debug, sourceMap, optimizationLevel)
+        // Prefer the 5-param primary constructor (all explicit fields)
+        val exactConstructor = constructors.find { it.parameterCount == 5 }
+        if (exactConstructor != null) {
+            return exactConstructor.newInstance(
+                debug,
+                sourceMap,
+                optimizationLevel,
+                multiFile,
+                emptyMap<String, Any>(),
+            )
         }
+
+        // Kotlin data classes with all-default params generate a synthetic constructor:
+        // (field1, field2, ..., fieldN, Int defaultsMask, DefaultConstructorMarker)
+        // Pass 0 for mask (= all values explicit) and null for marker
+        val syntheticConstructor =
+            constructors.find { it.parameterCount == 7 } ?: constructors.first()
+        return syntheticConstructor.newInstance(
+            debug,
+            sourceMap,
+            optimizationLevel,
+            multiFile,
+            emptyMap<String, Any>(),
+            0, // defaults bitmask: all values provided explicitly
+            null, // DefaultConstructorMarker
+        )
     }
 
     private fun getObjectInstance(clazz: Class<*>): Any {
@@ -214,6 +219,28 @@ class GenerationResultWrapper(private val result: Any) {
                 generatedFile.javaClass.getMethod("getContent").invoke(generatedFile) as String
             }
         }
+
+    /**
+     * Get the v2 source map JSON for a specific file, if available.
+     *
+     * Uses reflection to access [GeneratedFile.sourceMapJson] introduced in Plan 02. Returns null
+     * for v1 games (where the field does not exist) and for header files (game.h) which have no
+     * DSL-originated statements.
+     *
+     * @param filename The C filename to look up (e.g. "main.c", "bank1.c")
+     * @return Source map JSON string, or null if not available
+     */
+    fun getSourceMapJsonForFile(filename: String): String? {
+        @Suppress("UNCHECKED_CAST")
+        val filesMap = result.javaClass.getMethod("getFiles").invoke(result) as Map<String, Any>
+        val generatedFile = filesMap[filename] ?: return null
+        return try {
+            generatedFile.javaClass.getMethod("getSourceMapJson").invoke(generatedFile) as String?
+        } catch (e: NoSuchMethodException) {
+            // Backward compat: old GeneratedFile without sourceMapJson (v1 games)
+            null
+        }
+    }
 
     /** Get files or throw if generation failed. */
     fun getFilesOrThrow(): Map<String, String> {

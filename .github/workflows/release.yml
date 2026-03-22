@@ -38,14 +38,14 @@ jobs:
           echo "IS_SNAPSHOT=false" >> $GITHUB_OUTPUT
 
       - name: Build all modules
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
 
       - name: Run all tests
         run: |
-          ./gradlew :gbkt-core:test --no-daemon
-          ./gradlew :gbkt-backend-api:test --no-daemon
-          ./gradlew :gbkt-backend-gbdk:test --no-daemon
-          ./gradlew :gbkt-gradle-plugin:test --no-daemon
+          ./gradlew :gbkt-core:test -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
+          ./gradlew :gbkt-backend-api:test -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
+          ./gradlew :gbkt-backend-gbdk:test -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
+          ./gradlew :gbkt-gradle-plugin:test -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -100,6 +100,7 @@ jobs:
                     :gbkt-backend-gbdk:publishAllPublicationsToOSSRHRepository \
                     :gbkt-bom:publishAllPublicationsToOSSRHRepository \
                     :gbkt-cli:publishAllPublicationsToOSSRHRepository \
+                    -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease \
                     --no-daemon
 
   # ============================================================================
@@ -124,12 +125,19 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
       # First publish gbkt-core and gbkt-backend-api to mavenLocal
       # because gradle-plugin depends on them
       - name: Publish dependencies to mavenLocal
         run: |
           ./gradlew :gbkt-core:publishToMavenLocal \
                     :gbkt-backend-api:publishToMavenLocal \
+                    -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease \
                     --no-daemon
 
       - name: Publish Gradle Plugin to Portal
@@ -138,7 +146,7 @@ jobs:
           GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
         run: |
           cd gbkt-gradle-plugin
-          ../gradlew publishPlugins --no-daemon
+          ../gradlew publishPlugins -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
         # Note: Requires manual approval on first submission
 
   # ============================================================================
@@ -170,11 +178,11 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build release artifacts
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
 
       - name: Generate SBOM
         run: |
-          ./gradlew :gbkt-core:cyclonedxBom || echo "SBOM generation skipped (plugin not configured)"
+          ./gradlew :gbkt-core:cyclonedxBom -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease || echo "SBOM generation skipped (plugin not configured)"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -235,6 +243,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Publish to GitHub Packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -244,4 +258,5 @@ jobs:
                     :gbkt-backend-gbdk:publishAllPublicationsToGitHubPackagesRepository \
                     :gbkt-bom:publishAllPublicationsToGitHubPackagesRepository \
                     :gbkt-cli:publishAllPublicationsToGitHubPackagesRepository \
+                    -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease \
                     --no-daemon
