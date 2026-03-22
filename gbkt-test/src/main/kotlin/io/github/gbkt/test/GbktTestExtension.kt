@@ -47,12 +47,12 @@ import org.junit.jupiter.api.extension.TestExecutionExceptionHandler
  *
  * @param gameName Game name matching the ROM file base name (e.g., `"pong"`).
  * @param customRomFile Optional explicit ROM file path. Overrides convention-based discovery.
- * @param bootScript Optional lambda to run after [agent] starts, useful for skipping to a
- *   specific scene (e.g., pressing START to skip the title screen).
+ * @param bootScript Optional lambda to run after [agent] starts, useful for skipping to a specific
+ *   scene (e.g., pressing START to skip the title screen).
  * @param gbcMode When true, configures the emulator for Game Boy Color mode. Use for ROMs compiled
  *   with GBC_COMPATIBLE or GBC_ONLY target. Defaults to false.
- * @param stubEmulatorFactory Optional factory for injecting a stub [GbEmulator] in unit tests.
- *   When non-null, the [StepAgent] uses this factory instead of creating a real emulator.
+ * @param stubEmulatorFactory Optional factory for injecting a stub [GbEmulator] in unit tests. When
+ *   non-null, the [StepAgent] uses this factory instead of creating a real emulator.
  */
 class GbktTestExtension(
     val gameName: String,
@@ -83,23 +83,22 @@ class GbktTestExtension(
     override fun beforeEach(context: ExtensionContext) {
         val config = resolveConfig()
         if (config == null) {
-            Assumptions.assumeTrue(
-                false,
-                "ROM not found for game '$gameName' — run buildRom first",
-            )
+            Assumptions.assumeTrue(false, "ROM not found for game '$gameName' — run buildRom first")
             return
         }
 
         // Load metadata if available
         metadata =
-            config.metadataFile?.takeIf { it.exists() }?.let { file ->
-                try {
-                    GameMetadata.fromJsonFile(file)
-                } catch (e: MetadataParseException) {
-                    logger.warning("Failed to parse metadata: ${e.message}")
-                    null
+            config.metadataFile
+                ?.takeIf { it.exists() }
+                ?.let { file ->
+                    try {
+                        GameMetadata.fromJsonFile(file)
+                    } catch (e: MetadataParseException) {
+                        logger.warning("Failed to parse metadata: ${e.message}")
+                        null
+                    }
                 }
-            }
 
         agent = StepAgent(config, metadata, stubEmulatorFactory = stubEmulatorFactory)
         agentInitialized = true
@@ -114,14 +113,10 @@ class GbktTestExtension(
         }
     }
 
-    override fun handleTestExecutionException(
-        context: ExtensionContext,
-        throwable: Throwable,
-    ) {
+    override fun handleTestExecutionException(context: ExtensionContext, throwable: Throwable) {
         if (agentInitialized) {
             val testClass = context.testClass.map { it.simpleName }.orElse("Unknown")
-            val testName =
-                context.displayName.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(50)
+            val testName = context.displayName.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(50)
             val frame = agent.frameCount
             val label = "failure_${testClass}_${testName}_frame${frame}"
 
@@ -150,15 +145,13 @@ class GbktTestExtension(
     fun step(buttons: Set<Button> = emptySet()): Observation = agent.step(buttons)
 
     /** @see StepAgent.stepN */
-    fun stepN(n: Int, buttons: Set<Button> = emptySet()): Observation =
-        agent.stepN(n, buttons)
+    fun stepN(n: Int, buttons: Set<Button> = emptySet()): Observation = agent.stepN(n, buttons)
 
     /** @see StepAgent.readVariable */
     fun readVariable(name: String): Int? = agent.readVariable(name)
 
     /** @see StepAgent.writeVariable */
-    fun writeVariable(name: String, value: Int): Boolean =
-        agent.writeVariable(name, value)
+    fun writeVariable(name: String, value: Int): Boolean = agent.writeVariable(name, value)
 
     /** @see StepAgent.waitForScene */
     fun waitForScene(name: String, maxFrames: Int = 600): Observation =

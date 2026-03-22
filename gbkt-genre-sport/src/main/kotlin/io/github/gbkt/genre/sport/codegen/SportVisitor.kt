@@ -42,7 +42,6 @@ import io.github.gbkt.core.ir.GenericSystem
 import io.github.gbkt.core.pickup.PickupDef
 import io.github.gbkt.core.pickup.PickupSystemConfig
 import io.github.gbkt.genre.sport.domain.BallSportConfig
-import io.github.gbkt.genre.sport.domain.BracketType
 import io.github.gbkt.genre.sport.domain.RacingConfig
 import io.github.gbkt.genre.sport.domain.RacingMode
 import io.github.gbkt.genre.sport.domain.SportPickupDef
@@ -188,7 +187,8 @@ class SportVisitor : GenreSystemVisitor {
                                 ),
                         )
                     )
-                    // Proximity check: abs(player_x - wp_x) < threshold && abs(player_y - wp_y) < threshold
+                    // Proximity check: abs(player_x - wp_x) < threshold && abs(player_y - wp_y) <
+                    // threshold
                     // For unsigned subtraction, use (a > b ? a - b : b - a) pattern via ternary
                     add(
                         CVarDecl(
@@ -856,7 +856,8 @@ class SportVisitor : GenreSystemVisitor {
                                                                     CVar("tmp"),
                                                                 )
                                                             ),
-                                                            // Swap losses[j] with losses[j+1] in lockstep
+                                                            // Swap losses[j] with losses[j+1] in
+                                                            // lockstep
                                                             CExprStatement(
                                                                 CBinaryExpr(
                                                                     CVar("tmp"),

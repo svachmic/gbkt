@@ -12,7 +12,6 @@ import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassOptimizationSummary
 import io.github.gbkt.analysis.PassResult
 import io.github.gbkt.analysis.Severity
-import io.github.gbkt.core.ir.NavigateTo
 
 /**
  * Analysis pass that detects unreachable scenes via BFS from [GameIR.startScene].
@@ -91,5 +90,4 @@ class DeadCodeEliminationPass : AnalysisPass {
 
         return PassResult.Success(updatedContext)
     }
-
 }

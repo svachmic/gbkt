@@ -40,8 +40,8 @@ object GameDiscovery {
      * @param gameName The game name (must match the ROM file base name, e.g., "pong").
      * @param screenshotDir Override the screenshot output directory. Defaults to
      *   build/gbkt/test-failures under [projectRoot].
-     * @param projectRoot Root directory to resolve paths from. Defaults to File("."), which is
-     *   the working directory at test runtime (the subproject root when run by Gradle).
+     * @param projectRoot Root directory to resolve paths from. Defaults to File("."), which is the
+     *   working directory at test runtime (the subproject root when run by Gradle).
      * @return [AgentSessionConfig] if the ROM exists, or null if not found.
      */
     fun configForGame(
@@ -59,8 +59,8 @@ object GameDiscovery {
      * Scans for all built game ROMs under [projectRoot], checking both standalone and multi-game
      * (gbkt-examples) layouts.
      *
-     * Standalone layout: build/gbkt/output/NAME.gb under [projectRoot]
-     * Multi-game layout: gbkt-examples/NAME/build/gbkt/output/NAME.gb under [projectRoot]
+     * Standalone layout: build/gbkt/output/NAME.gb under [projectRoot] Multi-game layout:
+     * gbkt-examples/NAME/build/gbkt/output/NAME.gb under [projectRoot]
      *
      * @param projectRoot Root directory to scan. Defaults to File(".").
      * @return Sorted list of [GameInfo] entries for all found ROMs.
@@ -71,22 +71,31 @@ object GameDiscovery {
         // Standalone: build/gbkt/output/
         val standaloneDir = File(projectRoot, "build/gbkt/output")
         if (standaloneDir.isDirectory) {
-            standaloneDir.listFiles { f -> f.extension == "gb" }?.forEach { rom ->
-                val metadataFile = File(projectRoot, "build/gbkt/generated/game_metadata.json")
-                results.add(GameInfo(rom.nameWithoutExtension, rom, metadataFile.exists()))
-            }
+            standaloneDir
+                .listFiles { f -> f.extension == "gb" }
+                ?.forEach { rom ->
+                    val metadataFile = File(projectRoot, "build/gbkt/generated/game_metadata.json")
+                    results.add(GameInfo(rom.nameWithoutExtension, rom, metadataFile.exists()))
+                }
         }
 
         // Multi-game: gbkt-examples/NAME/build/gbkt/output/
         val examplesDir = File(projectRoot, "gbkt-examples")
         if (examplesDir.isDirectory) {
-            examplesDir.listFiles { f -> f.isDirectory }?.forEach { gameDir ->
-                val outputDir = File(gameDir, "build/gbkt/output")
-                outputDir.listFiles { f -> f.extension == "gb" }?.forEach { rom ->
-                    val metadataFile = File(gameDir, "build/gbkt/generated/game_metadata.json")
-                    results.add(GameInfo(rom.nameWithoutExtension, rom, metadataFile.exists()))
+            examplesDir
+                .listFiles { f -> f.isDirectory }
+                ?.forEach { gameDir ->
+                    val outputDir = File(gameDir, "build/gbkt/output")
+                    outputDir
+                        .listFiles { f -> f.extension == "gb" }
+                        ?.forEach { rom ->
+                            val metadataFile =
+                                File(gameDir, "build/gbkt/generated/game_metadata.json")
+                            results.add(
+                                GameInfo(rom.nameWithoutExtension, rom, metadataFile.exists())
+                            )
+                        }
                 }
-            }
         }
 
         return results.sortedBy { it.name }

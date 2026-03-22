@@ -6,8 +6,8 @@
  */
 package io.github.gbkt.emulator.agent
 
-import org.json.JSONObject
 import java.io.File
+import org.json.JSONObject
 
 /**
  * Tile decoder configuration for a single tilemap layer.
@@ -15,18 +15,10 @@ import java.io.File
  * @param type Decoder type: "gbdk_offset", "direct_ascii", or "custom".
  * @param mapping Tile index to character mapping. Only used when type is "custom".
  */
-data class TileDecoderConfig(
-    val type: String,
-    val mapping: Map<Int, Char> = emptyMap(),
-)
+data class TileDecoderConfig(val type: String, val mapping: Map<Int, Char> = emptyMap())
 
-/**
- * Per-layer tile decoder configuration for BG and WIN tilemap layers.
- */
-data class TileDecoders(
-    val bg: TileDecoderConfig? = null,
-    val win: TileDecoderConfig? = null,
-)
+/** Per-layer tile decoder configuration for BG and WIN tilemap layers. */
+data class TileDecoders(val bg: TileDecoderConfig? = null, val win: TileDecoderConfig? = null)
 
 /**
  * A DSL-declared variable parsed from the codegen-emitted `game_metadata.json`.
@@ -68,8 +60,8 @@ data class ActorMetadata(
  * Parsed game metadata providing actor-to-OAM-slot mapping and scene information.
  *
  * The codegen pipeline emits `game_metadata.json` alongside `game.h` and `main.c`. This class
- * parses that JSON and provides lookup methods for resolving OAM sprite slots to named actors
- * and accessing scene information.
+ * parses that JSON and provides lookup methods for resolving OAM sprite slots to named actors and
+ * accessing scene information.
  *
  * Usage:
  * ```kotlin
@@ -153,7 +145,9 @@ class GameMetadata(
                 // Parse scenes — must be a JSON object
                 val scenesObj = root.opt("scenes")
                 if (scenesObj !is org.json.JSONObject) {
-                    throw MetadataParseException("'scenes' must be a JSON object, got ${scenesObj?.javaClass?.simpleName}")
+                    throw MetadataParseException(
+                        "'scenes' must be a JSON object, got ${scenesObj?.javaClass?.simpleName}"
+                    )
                 }
                 val sceneEntries = mutableMapOf<String, Int>()
                 for (key in scenesObj.keys()) {
@@ -164,98 +158,118 @@ class GameMetadata(
                 // Parse actors — must be a JSON array
                 val actorsObj = root.opt("actors")
                 if (actorsObj !is org.json.JSONArray) {
-                    throw MetadataParseException("'actors' must be a JSON array, got ${actorsObj?.javaClass?.simpleName}")
-                }
-                val actors = (0 until actorsObj.length()).map { i ->
-                    val actorJson = actorsObj.getJSONObject(i)
-                    val vars = actorJson.getJSONObject("vars")
-                    ActorMetadata(
-                        name = actorJson.getString("name"),
-                        oamStart = actorJson.getInt("oamStart"),
-                        oamCount = actorJson.getInt("oamCount"),
-                        spriteWidth = actorJson.getInt("spriteWidth"),
-                        spriteHeight = actorJson.getInt("spriteHeight"),
-                        xVar = vars.getString("x"),
-                        yVar = vars.getString("y"),
+                    throw MetadataParseException(
+                        "'actors' must be a JSON array, got ${actorsObj?.javaClass?.simpleName}"
                     )
                 }
+                val actors =
+                    (0 until actorsObj.length()).map { i ->
+                        val actorJson = actorsObj.getJSONObject(i)
+                        val vars = actorJson.getJSONObject("vars")
+                        ActorMetadata(
+                            name = actorJson.getString("name"),
+                            oamStart = actorJson.getInt("oamStart"),
+                            oamCount = actorJson.getInt("oamCount"),
+                            spriteWidth = actorJson.getInt("spriteWidth"),
+                            spriteHeight = actorJson.getInt("spriteHeight"),
+                            xVar = vars.getString("x"),
+                            yVar = vars.getString("y"),
+                        )
+                    }
 
                 // Parse variables (optional)
                 val variablesJson = root.optJSONArray("variables")
-                val variables = if (variablesJson != null) {
-                    (0 until variablesJson.length()).map { i ->
-                        val v = variablesJson.getJSONObject(i)
-                        VariableDef(
-                            name = v.getString("name"),
-                            type = v.getString("type"),
-                            semantic = v.optString("semantic", "unknown"),
-                        )
+                val variables =
+                    if (variablesJson != null) {
+                        (0 until variablesJson.length()).map { i ->
+                            val v = variablesJson.getJSONObject(i)
+                            VariableDef(
+                                name = v.getString("name"),
+                                type = v.getString("type"),
+                                semantic = v.optString("semantic", "unknown"),
+                            )
+                        }
+                    } else {
+                        emptyList()
                     }
-                } else {
-                    emptyList()
-                }
 
                 // Parse texts (optional)
                 val textsJson = root.optJSONArray("texts")
-                val texts = if (textsJson != null) {
-                    (0 until textsJson.length()).map { i -> textsJson.getString(i) }
-                } else {
-                    emptyList()
-                }
+                val texts =
+                    if (textsJson != null) {
+                        (0 until textsJson.length()).map { i -> textsJson.getString(i) }
+                    } else {
+                        emptyList()
+                    }
 
                 // Parse terminal scenes (optional)
                 val terminalJson = root.optJSONArray("terminalScenes")
-                val terminalScenes = if (terminalJson != null) {
-                    (0 until terminalJson.length()).map { i -> terminalJson.getString(i) }.toSet()
-                } else {
-                    emptySet()
-                }
+                val terminalScenes =
+                    if (terminalJson != null) {
+                        (0 until terminalJson.length())
+                            .map { i -> terminalJson.getString(i) }
+                            .toSet()
+                    } else {
+                        emptySet()
+                    }
 
                 // Parse controls (optional) — per-scene input mappings
                 val controlsJson = root.optJSONObject("controls")
-                val controls: Map<String, List<ControlMapping>> = if (controlsJson != null) {
-                    buildMap {
-                        for (sceneId in controlsJson.keys()) {
-                            val arr = controlsJson.getJSONArray(sceneId)
-                            put(sceneId, (0 until arr.length()).map { i ->
-                                val m = arr.getJSONObject(i)
-                                ControlMapping(button = m.getString("button"), type = m.getString("type"))
-                            })
+                val controls: Map<String, List<ControlMapping>> =
+                    if (controlsJson != null) {
+                        buildMap {
+                            for (sceneId in controlsJson.keys()) {
+                                val arr = controlsJson.getJSONArray(sceneId)
+                                put(
+                                    sceneId,
+                                    (0 until arr.length()).map { i ->
+                                        val m = arr.getJSONObject(i)
+                                        ControlMapping(
+                                            button = m.getString("button"),
+                                            type = m.getString("type"),
+                                        )
+                                    },
+                                )
+                            }
                         }
+                    } else {
+                        emptyMap()
                     }
-                } else {
-                    emptyMap()
-                }
 
                 // Parse transitions (optional) — scene navigation graph
                 val transitionsJson = root.optJSONArray("transitions")
-                val transitions: List<TransitionEdgeMeta> = if (transitionsJson != null) {
-                    (0 until transitionsJson.length()).map { i ->
-                        val t = transitionsJson.getJSONObject(i)
-                        TransitionEdgeMeta(from = t.getString("from"), to = t.getString("to"))
+                val transitions: List<TransitionEdgeMeta> =
+                    if (transitionsJson != null) {
+                        (0 until transitionsJson.length()).map { i ->
+                            val t = transitionsJson.getJSONObject(i)
+                            TransitionEdgeMeta(from = t.getString("from"), to = t.getString("to"))
+                        }
+                    } else {
+                        emptyList()
                     }
-                } else {
-                    emptyList()
-                }
 
                 // Parse tileDecoders (optional) — tile decoder config for BG and WIN layers
                 val tileDecodersJson = root.optJSONObject("tileDecoders")
-                val tileDecoders = if (tileDecodersJson != null) {
-                    fun parseTdc(key: String): TileDecoderConfig? {
-                        val obj = tileDecodersJson.optJSONObject(key) ?: return null
-                        val tdcType = obj.getString("type")
-                        val mapping = if (tdcType == "custom" && obj.has("mapping")) {
-                            val m = obj.getJSONObject("mapping")
-                            buildMap { for (k in m.keys()) put(k.toInt(), m.getString(k).first()) }
-                        } else {
-                            emptyMap()
+                val tileDecoders =
+                    if (tileDecodersJson != null) {
+                        fun parseTdc(key: String): TileDecoderConfig? {
+                            val obj = tileDecodersJson.optJSONObject(key) ?: return null
+                            val tdcType = obj.getString("type")
+                            val mapping =
+                                if (tdcType == "custom" && obj.has("mapping")) {
+                                    val m = obj.getJSONObject("mapping")
+                                    buildMap {
+                                        for (k in m.keys()) put(k.toInt(), m.getString(k).first())
+                                    }
+                                } else {
+                                    emptyMap()
+                                }
+                            return TileDecoderConfig(type = tdcType, mapping = mapping)
                         }
-                        return TileDecoderConfig(type = tdcType, mapping = mapping)
+                        TileDecoders(bg = parseTdc("bg"), win = parseTdc("win"))
+                    } else {
+                        null
                     }
-                    TileDecoders(bg = parseTdc("bg"), win = parseTdc("win"))
-                } else {
-                    null
-                }
 
                 return GameMetadata(
                     scenes = scenes,
@@ -305,22 +319,21 @@ class GameMetadata(
 // ── Extension functions for tile decoder resolution ────────────────────────────
 
 /**
- * Returns the [VramTextVerifier.TileDecoder] for the BG tilemap layer, or null if no
- * tile decoder config is present.
+ * Returns the [VramTextVerifier.TileDecoder] for the BG tilemap layer, or null if no tile decoder
+ * config is present.
  */
-fun GameMetadata.bgDecoder(): VramTextVerifier.TileDecoder? =
-    tileDecoders?.bg?.toDecoder()
+fun GameMetadata.bgDecoder(): VramTextVerifier.TileDecoder? = tileDecoders?.bg?.toDecoder()
 
 /**
- * Returns the [VramTextVerifier.TileDecoder] for the WIN tilemap layer, or null if no
- * tile decoder config is present.
+ * Returns the [VramTextVerifier.TileDecoder] for the WIN tilemap layer, or null if no tile decoder
+ * config is present.
  */
-fun GameMetadata.winDecoder(): VramTextVerifier.TileDecoder? =
-    tileDecoders?.win?.toDecoder()
+fun GameMetadata.winDecoder(): VramTextVerifier.TileDecoder? = tileDecoders?.win?.toDecoder()
 
-private fun TileDecoderConfig.toDecoder(): VramTextVerifier.TileDecoder? = when (type) {
-    "gbdk_offset" -> VramTextVerifier.GBDK_BG_DECODER
-    "direct_ascii" -> VramTextVerifier.DIRECT_ASCII_DECODER
-    "custom" -> VramTextVerifier.TileDecoder { tile -> mapping[tile] ?: '.' }
-    else -> null
-}
+private fun TileDecoderConfig.toDecoder(): VramTextVerifier.TileDecoder? =
+    when (type) {
+        "gbdk_offset" -> VramTextVerifier.GBDK_BG_DECODER
+        "direct_ascii" -> VramTextVerifier.DIRECT_ASCII_DECODER
+        "custom" -> VramTextVerifier.TileDecoder { tile -> mapping[tile] ?: '.' }
+        else -> null
+    }

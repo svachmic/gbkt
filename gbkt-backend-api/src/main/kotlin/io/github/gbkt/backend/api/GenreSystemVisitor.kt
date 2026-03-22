@@ -15,9 +15,9 @@ interface CodegenFragment
 /**
  * Sanitizes an identifier string for use as a C identifier.
  *
- * Replaces hyphens and spaces with underscores, producing a valid C identifier fragment.
- * This is the canonical implementation — all codegen code should call this instead of
- * inline `.replace('-', '_').replace(' ', '_')` chains.
+ * Replaces hyphens and spaces with underscores, producing a valid C identifier fragment. This is
+ * the canonical implementation — all codegen code should call this instead of inline `.replace('-',
+ * '_').replace(' ', '_')` chains.
  */
 fun sanitizeCId(id: String): String = id.replace('-', '_').replace(' ', '_')
 

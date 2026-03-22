@@ -28,8 +28,8 @@ import java.io.File
  *   addition to the in-memory buffer.
  * @param watchVariables List of DSL variable names to include in screenshot JSON sidecars. When
  *   empty, all variables from the sym file are included in each sidecar snapshot.
- * @param gbcMode When true, the emulator is configured for GBC (Game Boy Color) mode. Use for
- *   ROMs compiled with `-Wm-yc` or `-Wm-yC` flags.
+ * @param gbcMode When true, the emulator is configured for GBC (Game Boy Color) mode. Use for ROMs
+ *   compiled with `-Wm-yc` or `-Wm-yC` flags.
  */
 data class AgentSessionConfig(
     val romFile: File,
@@ -42,8 +42,8 @@ data class AgentSessionConfig(
     val gbcMode: Boolean = false,
     /**
      * When `true` (default), the emulator runs without a display window — suitable for CI and
-     * automated tests. When `false`, a Swing window opens showing the Game Boy LCD so the
-     * developer can watch the agent play in real time (Netflix "smart monkey" style).
+     * automated tests. When `false`, a Swing window opens showing the Game Boy LCD so the developer
+     * can watch the agent play in real time (Netflix "smart monkey" style).
      */
     val headless: Boolean = true,
 ) {
@@ -53,13 +53,12 @@ data class AgentSessionConfig(
 
     companion object {
         /**
-         * Discovers companion files (sym, metadata, source maps) based on
-         * the standard Gradle plugin output layout.
+         * Discovers companion files (sym, metadata, source maps) based on the standard Gradle
+         * plugin output layout.
          *
-         * Convention: ROM at `build/gbkt/output/game.gb` ->
-         *   sym at `build/gbkt/output/game.noi`,
-         *   metadata at `build/gbkt/generated/game_metadata.json`,
-         *   source maps at `build/gbkt/generated/`.
+         * Convention: ROM at `build/gbkt/output/game.gb` -> sym at `build/gbkt/output/game.noi`,
+         * metadata at `build/gbkt/generated/game_metadata.json`, source maps at
+         * `build/gbkt/generated/`.
          */
         fun discoverFiles(romFile: File, screenshotDir: File? = null): AgentSessionConfig {
             val outputDir = romFile.parentFile
@@ -67,9 +66,11 @@ data class AgentSessionConfig(
             val generatedDir = gbktDir?.let { File(it, "generated") }
             val baseName = romFile.nameWithoutExtension
 
-            val symFile = outputDir?.let { File(it, "$baseName.noi") }?.takeIf { it.exists() }
-                ?: outputDir?.let { File(it, "$baseName.sym") }?.takeIf { it.exists() }
-            val metadataFile = generatedDir?.let { File(it, "game_metadata.json") }?.takeIf { it.exists() }
+            val symFile =
+                outputDir?.let { File(it, "$baseName.noi") }?.takeIf { it.exists() }
+                    ?: outputDir?.let { File(it, "$baseName.sym") }?.takeIf { it.exists() }
+            val metadataFile =
+                generatedDir?.let { File(it, "game_metadata.json") }?.takeIf { it.exists() }
             val sourceMapsDir = generatedDir?.takeIf { it.exists() }
 
             return AgentSessionConfig(

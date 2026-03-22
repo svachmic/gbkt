@@ -23,23 +23,20 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/**
- * StepAgent integration tests for Dungeon — proves the AI-testable workflow.
- */
+/** StepAgent integration tests for Dungeon — proves the AI-testable workflow. */
 class DungeonStepAgentTest {
 
-    @JvmField
-    @RegisterExtension
-    val game = GbktTestExtension("dungeon")
+    @JvmField @RegisterExtension val game = GbktTestExtension("dungeon")
 
     @Test
     fun `metadata and symbol table agree on variable names`() {
         game.verifyMetadataSymbolAgreement(
             MetadataExpectation(
                 expectedSceneCount = 4,
-                expectedScenes = setOf(Scenes.TITLE, Scenes.GAMEPLAY, Scenes.BATTLE, Scenes.GAMEOVER),
+                expectedScenes =
+                    setOf(Scenes.TITLE, Scenes.GAMEPLAY, Scenes.BATTLE, Scenes.GAMEOVER),
                 expectedActors = setOf(Actors.PLAYER),
-            ),
+            )
         )
     }
 
@@ -79,7 +76,10 @@ class DungeonStepAgentTest {
         val beforeX = game.readVariable(Variables.PLAYER_X)!!
         game.stepN(30, setOf(Button.RIGHT))
         val afterRightX = game.readVariable(Variables.PLAYER_X)!!
-        assertTrue(afterRightX > beforeX, "Player should move right: before=$beforeX, after=$afterRightX")
+        assertTrue(
+            afterRightX > beforeX,
+            "Player should move right: before=$beforeX, after=$afterRightX",
+        )
 
         // Phase 6: Screenshot Capture
         val file = game.captureScreenshot("dungeon_integration")
@@ -96,6 +96,10 @@ class DungeonStepAgentTest {
 
         val wrote = game.writeVariable(Variables.TORCH_LEVEL, 42)
         assertTrue(wrote, "writeVariable should succeed for torchLevel")
-        assertEquals(42, game.readVariable(Variables.TORCH_LEVEL), "torchLevel should read back 42 after write")
+        assertEquals(
+            42,
+            game.readVariable(Variables.TORCH_LEVEL),
+            "torchLevel should read back 42 after write",
+        )
     }
 }

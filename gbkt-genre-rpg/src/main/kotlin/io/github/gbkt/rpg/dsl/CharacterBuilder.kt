@@ -41,22 +41,34 @@ class CombatStatsBuilder {
     }
 
     /** Sets the attack power value. Must be non-negative. */
-    fun atk(value: Int) { atk = requireNonNeg("ATK", value) }
+    fun atk(value: Int) {
+        atk = requireNonNeg("ATK", value)
+    }
 
     /** Sets the defense rating value. Must be non-negative. */
-    fun def(value: Int) { def = requireNonNeg("DEF", value) }
+    fun def(value: Int) {
+        def = requireNonNeg("DEF", value)
+    }
 
     /** Sets the skill/magic point value. Must be non-negative. */
-    fun sp(value: Int) { sp = requireNonNeg("SP", value) }
+    fun sp(value: Int) {
+        sp = requireNonNeg("SP", value)
+    }
 
     /** Sets the magic attack power value. Must be non-negative. */
-    fun matk(value: Int) { matk = requireNonNeg("MATK", value) }
+    fun matk(value: Int) {
+        matk = requireNonNeg("MATK", value)
+    }
 
     /** Sets the magic defense rating value. Must be non-negative. */
-    fun mdef(value: Int) { mdef = requireNonNeg("MDEF", value) }
+    fun mdef(value: Int) {
+        mdef = requireNonNeg("MDEF", value)
+    }
 
     /** Sets the agility value (determines turn order). Must be non-negative. */
-    fun agl(value: Int) { agl = requireNonNeg("AGL", value) }
+    fun agl(value: Int) {
+        agl = requireNonNeg("AGL", value)
+    }
 
     /** Builds and validates the [CombatStats] instance. */
     fun build(): CombatStats =

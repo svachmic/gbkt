@@ -23,14 +23,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/**
- * StepAgent integration tests for Racer — proves the AI-testable workflow.
- */
+/** StepAgent integration tests for Racer — proves the AI-testable workflow. */
 class RacerStepAgentTest {
 
-    @JvmField
-    @RegisterExtension
-    val game = GbktTestExtension("racer")
+    @JvmField @RegisterExtension val game = GbktTestExtension("racer")
 
     @Test
     fun `metadata and symbol table agree on variable names`() {
@@ -39,7 +35,7 @@ class RacerStepAgentTest {
                 expectedSceneCount = 3,
                 expectedScenes = setOf(Scenes.TITLE, Scenes.RACE, Scenes.RESULTS),
                 expectedActors = setOf(Actors.CAR),
-            ),
+            )
         )
     }
 
@@ -78,15 +74,26 @@ class RacerStepAgentTest {
             val varObs = game.step()
             for (actor in varObs.actors) {
                 val meta = metadata.actor(actor.name)!!
-                assertEquals(game.readVariable(meta.xVar), actor.x, "Actor '${actor.name}' x mismatch")
-                assertEquals(game.readVariable(meta.yVar), actor.y, "Actor '${actor.name}' y mismatch")
+                assertEquals(
+                    game.readVariable(meta.xVar),
+                    actor.x,
+                    "Actor '${actor.name}' x mismatch",
+                )
+                assertEquals(
+                    game.readVariable(meta.yVar),
+                    actor.y,
+                    "Actor '${actor.name}' y mismatch",
+                )
             }
 
             // Phase 5: Input Affects State (LEFT/RIGHT → car_x)
             val beforeX = game.readVariable(Variables.CAR_X)!!
             game.stepN(5, setOf(Button.RIGHT))
             val afterRightX = game.readVariable(Variables.CAR_X)!!
-            assertTrue(afterRightX > beforeX, "Car should move right: before=$beforeX, after=$afterRightX")
+            assertTrue(
+                afterRightX > beforeX,
+                "Car should move right: before=$beforeX, after=$afterRightX",
+            )
         }
 
         // Phase 6: Screenshot Capture

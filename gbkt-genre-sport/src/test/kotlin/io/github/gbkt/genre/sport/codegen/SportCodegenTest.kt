@@ -388,8 +388,9 @@ class SportCodegenTest {
 
         val result = visitor.visit("sport_tournament", systemConfig, gameIR)
         val functions = result.functions as List<CFunction>
-        val standingsFunc = functions.firstOrNull { it.name == "tournament_standings_cup" }
-            ?: error("tournament_standings_cup not found")
+        val standingsFunc =
+            functions.firstOrNull { it.name == "tournament_standings_cup" }
+                ?: error("tournament_standings_cup not found")
 
         // The standings function body must contain _tournament_losses_ references
         // (rendered via the C AST printer which uses the function's body statements)
@@ -407,8 +408,9 @@ class SportCodegenTest {
 
         val result = visitor.visit("sport_tournament", systemConfig, gameIR)
         val functions = result.functions as List<CFunction>
-        val advanceFunc = functions.firstOrNull { it.name == "tournament_advance_cup2" }
-            ?: error("tournament_advance_cup2 not found")
+        val advanceFunc =
+            functions.firstOrNull { it.name == "tournament_advance_cup2" }
+                ?: error("tournament_advance_cup2 not found")
 
         // The advance function must have loser_idx as a parameter
         val paramNames = advanceFunc.params.map { it.name }

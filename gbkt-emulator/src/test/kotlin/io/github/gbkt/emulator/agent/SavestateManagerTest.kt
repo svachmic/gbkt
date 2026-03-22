@@ -9,17 +9,16 @@ package io.github.gbkt.emulator.agent
 import io.github.gbkt.emulator.GbEmulator
 import io.github.gbkt.emulator.MemoryAccess
 import io.github.gbkt.emulator.debug.DebugLogEntry
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 class SavestateManagerTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     /**
      * Creates a mock GbEmulator backed by a flat byte array.
@@ -35,26 +34,39 @@ class SavestateManagerTest {
         for ((addr, value) in initMemory) {
             mem[addr] = value
         }
-        val emulator = object : GbEmulator {
-            override fun start() = Unit
-            override fun stop() = Unit
-            override fun pause() = Unit
-            override fun resume() = Unit
-            override fun stepFrame() = Unit
-            override fun setSpeed(multiplier: Float) = Unit
-            override fun getFrameBuffer(): IntArray = IntArray(160 * 144)
-            override fun getMemory(): MemoryAccess =
-                object : MemoryAccess {
-                    override fun readByte(address: Int): Int = mem[address]
-                    override fun writeByte(address: Int, value: Int) {
-                        mem[address] = value
+        val emulator =
+            object : GbEmulator {
+                override fun start() = Unit
+
+                override fun stop() = Unit
+
+                override fun pause() = Unit
+
+                override fun resume() = Unit
+
+                override fun stepFrame() = Unit
+
+                override fun setSpeed(multiplier: Float) = Unit
+
+                override fun getFrameBuffer(): IntArray = IntArray(160 * 144)
+
+                override fun getMemory(): MemoryAccess =
+                    object : MemoryAccess {
+                        override fun readByte(address: Int): Int = mem[address]
+
+                        override fun writeByte(address: Int, value: Int) {
+                            mem[address] = value
+                        }
                     }
-                }
-            override fun getDebugLog(): List<DebugLogEntry> = emptyList()
-            override fun isRunning(): Boolean = !isPaused
-            override fun isPaused(): Boolean = isPaused
-            override val isHeadless: Boolean = true
-        }
+
+                override fun getDebugLog(): List<DebugLogEntry> = emptyList()
+
+                override fun isRunning(): Boolean = !isPaused
+
+                override fun isPaused(): Boolean = isPaused
+
+                override val isHeadless: Boolean = true
+            }
         return emulator to mem
     }
 
@@ -73,7 +85,10 @@ class SavestateManagerTest {
         val file = File(tempDir, "state.gbst")
         SavestateManager.save(emulator, file)
         val magic = file.readBytes().take(4).toByteArray()
-        assertArrayEquals(byteArrayOf('G'.code.toByte(), 'B'.code.toByte(), 'S'.code.toByte(), 'T'.code.toByte()), magic)
+        assertArrayEquals(
+            byteArrayOf('G'.code.toByte(), 'B'.code.toByte(), 'S'.code.toByte(), 'T'.code.toByte()),
+            magic,
+        )
     }
 
     @Test
@@ -125,9 +140,7 @@ class SavestateManagerTest {
     fun `save throws when emulator is not paused`() {
         val (emulator, _) = mockEmulator(isPaused = false)
         val file = File(tempDir, "state.gbst")
-        assertThrows(IllegalArgumentException::class.java) {
-            SavestateManager.save(emulator, file)
-        }
+        assertThrows(IllegalArgumentException::class.java) { SavestateManager.save(emulator, file) }
     }
 
     @Test
@@ -149,8 +162,6 @@ class SavestateManagerTest {
         val file = File(tempDir, "bad.gbst")
         file.writeBytes(ByteArray(8483) { 0 }) // all zeros, wrong magic
         val (emulator, _) = mockEmulator()
-        assertThrows(IllegalArgumentException::class.java) {
-            SavestateManager.load(emulator, file)
-        }
+        assertThrows(IllegalArgumentException::class.java) { SavestateManager.load(emulator, file) }
     }
 }

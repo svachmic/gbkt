@@ -74,8 +74,8 @@ interface GbEmulator {
     val isHeadless: Boolean
 
     /**
-     * Returns the EventBus for posting input events, or null if this emulator
-     * implementation does not support event-driven input.
+     * Returns the EventBus for posting input events, or null if this emulator implementation does
+     * not support event-driven input.
      */
     fun getEventBus(): eu.rekawek.coffeegb.core.events.EventBus? = null
 }

@@ -23,14 +23,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/**
- * StepAgent integration tests for RPG Lite — proves the AI-testable workflow.
- */
+/** StepAgent integration tests for RPG Lite — proves the AI-testable workflow. */
 class RpgLiteStepAgentTest {
 
-    @JvmField
-    @RegisterExtension
-    val game = GbktTestExtension("rpg-lite")
+    @JvmField @RegisterExtension val game = GbktTestExtension("rpg-lite")
 
     @Test
     fun `metadata and symbol table agree on variable names`() {
@@ -39,7 +35,7 @@ class RpgLiteStepAgentTest {
                 expectedSceneCount = 4,
                 expectedScenes = setOf(Scenes.TITLE, Scenes.TOWN, Scenes.DUNGEON, Scenes.GAMEOVER),
                 expectedActors = setOf(Actors.HERO_ACTOR),
-            ),
+            )
         )
     }
 

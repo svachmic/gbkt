@@ -11,10 +11,9 @@ import java.io.File
 /**
  * Bidirectional mapping between scene names and their numeric indices.
  *
- * Scene indices are defined in the generated `game.h` as `#define SCENE_XXXX N`.
- * This class parses those defines and provides lookup in both directions, enabling
- * [UatRunner.waitForScene] and [UatRunner.currentScene] to work with human-readable
- * scene names instead of raw numeric indices.
+ * Scene indices are defined in the generated `game.h` as `#define SCENE_XXXX N`. This class parses
+ * those defines and provides lookup in both directions, enabling [UatRunner.waitForScene] and
+ * [UatRunner.currentScene] to work with human-readable scene names instead of raw numeric indices.
  *
  * @param entries Map of lowercase scene name to numeric index.
  */
@@ -30,7 +29,8 @@ class SceneMap(entries: Map<String, Int>) {
     fun nameOf(sceneIndex: Int): String? = indexToName[sceneIndex]
 
     /** All known scene names. */
-    val sceneNames: Set<String> get() = nameToIndex.keys
+    val sceneNames: Set<String>
+        get() = nameToIndex.keys
 
     companion object {
         private val SCENE_DEFINE_PATTERN = Regex("""#define\s+SCENE_(\w+)\s+(\d+)""")

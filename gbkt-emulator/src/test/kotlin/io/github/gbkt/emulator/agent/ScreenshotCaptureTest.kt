@@ -6,6 +6,9 @@
  */
 package io.github.gbkt.emulator.agent
 
+import java.awt.image.BufferedImage
+import java.io.File
+import javax.imageio.ImageIO
 import org.json.JSONObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -13,9 +16,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
-import java.awt.image.BufferedImage
-import java.io.File
-import javax.imageio.ImageIO
 
 /**
  * Unit tests for [ScreenshotCapture].
@@ -24,20 +24,20 @@ import javax.imageio.ImageIO
  */
 class ScreenshotCaptureTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     // ── PNG file creation ──────────────────────────────────────────────────────
 
     @Test
     fun `capture creates PNG file at correct path`() {
         val frameBuffer = IntArray(160 * 144) { 0x00FF0000 } // All red
-        val pngFile = ScreenshotCapture.capture(
-            frameBuffer = frameBuffer,
-            label = "testScene",
-            frameNumber = 42,
-            outputDir = tempDir,
-        )
+        val pngFile =
+            ScreenshotCapture.capture(
+                frameBuffer = frameBuffer,
+                label = "testScene",
+                frameNumber = 42,
+                outputDir = tempDir,
+            )
         assertTrue(pngFile.exists(), "PNG file should exist at ${pngFile.absolutePath}")
         assertEquals("testScene_frame42.png", pngFile.name)
     }
@@ -45,12 +45,13 @@ class ScreenshotCaptureTest {
     @Test
     fun `captured PNG has correct 160x144 dimensions`() {
         val frameBuffer = IntArray(160 * 144) { 0x0000FF00 } // All green
-        val pngFile = ScreenshotCapture.capture(
-            frameBuffer = frameBuffer,
-            label = "dimensions",
-            frameNumber = 1,
-            outputDir = tempDir,
-        )
+        val pngFile =
+            ScreenshotCapture.capture(
+                frameBuffer = frameBuffer,
+                label = "dimensions",
+                frameNumber = 1,
+                outputDir = tempDir,
+            )
         val img: BufferedImage = ImageIO.read(pngFile)
         assertEquals(160, img.width, "PNG width should be 160")
         assertEquals(144, img.height, "PNG height should be 144")
@@ -148,12 +149,13 @@ class ScreenshotCaptureTest {
     fun `capture creates outputDir if it does not exist`() {
         val nestedDir = File(tempDir, "nested/output/dir")
         val frameBuffer = IntArray(160 * 144)
-        val pngFile = ScreenshotCapture.capture(
-            frameBuffer = frameBuffer,
-            label = "nested",
-            frameNumber = 1,
-            outputDir = nestedDir,
-        )
+        val pngFile =
+            ScreenshotCapture.capture(
+                frameBuffer = frameBuffer,
+                label = "nested",
+                frameNumber = 1,
+                outputDir = nestedDir,
+            )
         assertTrue(nestedDir.exists(), "outputDir should be created")
         assertTrue(pngFile.exists(), "PNG file should exist in created dir")
     }
@@ -163,12 +165,13 @@ class ScreenshotCaptureTest {
     @Test
     fun `capture returns the PNG file`() {
         val frameBuffer = IntArray(160 * 144)
-        val result = ScreenshotCapture.capture(
-            frameBuffer = frameBuffer,
-            label = "ret",
-            frameNumber = 7,
-            outputDir = tempDir,
-        )
+        val result =
+            ScreenshotCapture.capture(
+                frameBuffer = frameBuffer,
+                label = "ret",
+                frameNumber = 7,
+                outputDir = tempDir,
+            )
         assertEquals("ret_frame7.png", result.name)
         assertTrue(result.exists())
     }

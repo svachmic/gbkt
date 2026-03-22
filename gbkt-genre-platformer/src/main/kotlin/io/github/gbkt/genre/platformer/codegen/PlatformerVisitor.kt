@@ -490,15 +490,18 @@ class PlatformerVisitor : GenreSystemVisitor {
             thenBody =
                 listOf(
                     CIf(
-                        condition =
-                            CBinaryExpr(CVar("_cam_target_$axis"), ">", CVar("_cam_$axis")),
+                        condition = CBinaryExpr(CVar("_cam_target_$axis"), ">", CVar("_cam_$axis")),
                         thenBody =
                             listOf(
                                 CExprStatement(
                                     CBinaryExpr(
                                         CVar("_cam_$axis"),
                                         "=",
-                                        CBinaryExpr(CVar("_cam_target_$axis"), "-", CLiteral(deadZone)),
+                                        CBinaryExpr(
+                                            CVar("_cam_target_$axis"),
+                                            "-",
+                                            CLiteral(deadZone),
+                                        ),
                                     )
                                 )
                             ),
@@ -508,7 +511,11 @@ class PlatformerVisitor : GenreSystemVisitor {
                                     CBinaryExpr(
                                         CVar("_cam_$axis"),
                                         "=",
-                                        CBinaryExpr(CVar("_cam_target_$axis"), "+", CLiteral(deadZone)),
+                                        CBinaryExpr(
+                                            CVar("_cam_target_$axis"),
+                                            "+",
+                                            CLiteral(deadZone),
+                                        ),
                                     )
                                 )
                             ),
@@ -966,12 +973,20 @@ class PlatformerVisitor : GenreSystemVisitor {
                                 args =
                                     listOf(
                                         CBinaryExpr(
-                                            CBinaryExpr(CUnaryExpr("*", CVar("player_x")), "+", CLiteral(4)),
+                                            CBinaryExpr(
+                                                CUnaryExpr("*", CVar("player_x")),
+                                                "+",
+                                                CLiteral(4),
+                                            ),
                                             ">>",
                                             CLiteral(3),
                                         ),
                                         CBinaryExpr(
-                                            CBinaryExpr(CUnaryExpr("*", CVar("player_y")), "+", CLiteral(4)),
+                                            CBinaryExpr(
+                                                CUnaryExpr("*", CVar("player_y")),
+                                                "+",
+                                                CLiteral(4),
+                                            ),
                                             ">>",
                                             CLiteral(3),
                                         ),
@@ -1031,7 +1046,11 @@ class PlatformerVisitor : GenreSystemVisitor {
                     CFunction(
                         name = "platformer_ladder_update",
                         returnType = CVoid,
-                        params = listOf(CParam("player_x", CPointer(CU8)), CParam("player_y", CPointer(CU8))),
+                        params =
+                            listOf(
+                                CParam("player_x", CPointer(CU8)),
+                                CParam("player_y", CPointer(CU8)),
+                            ),
                         body = body,
                         sectionComment = "Platformer ladder climb update",
                     )

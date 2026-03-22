@@ -28,17 +28,18 @@ import org.junit.jupiter.api.extension.RegisterExtension
  * Integration tests that verify the StepAgent pipeline works end-to-end against the real Pong ROM.
  *
  * Three test groups:
- * 1. **Metadata ↔ Symbol Table** — no emulator, checks that codegen-emitted metadata and .noi agree.
- * 2. **Full Pipeline** — boots the emulator and verifies observations, actors, variables, and input.
- * 3. **writeVariable round trip** — writes a value, reads it back, confirms observation consistency.
+ * 1. **Metadata ↔ Symbol Table** — no emulator, checks that codegen-emitted metadata and .noi
+ *    agree.
+ * 2. **Full Pipeline** — boots the emulator and verifies observations, actors, variables, and
+ *    input.
+ * 3. **writeVariable round trip** — writes a value, reads it back, confirms observation
+ *    consistency.
  *
  * All tests are skipped gracefully if the ROM or metadata file is not found (run `buildRom` first).
  */
 class PongStepAgentTest {
 
-    @JvmField
-    @RegisterExtension
-    val game = GbktTestExtension("pong")
+    @JvmField @RegisterExtension val game = GbktTestExtension("pong")
 
     // ── Test 1: Metadata and symbol table agree on variable names (no emulator) ──
 
@@ -49,9 +50,10 @@ class PongStepAgentTest {
                 expectedSceneCount = 3,
                 expectedScenes = setOf(Scenes.TITLE, Scenes.GAME, Scenes.GAMEOVER),
                 expectedActors = setOf(Actors.PADDLE1, Actors.PADDLE2, Actors.BALL),
-                expectedOamCounts = mapOf(Actors.PADDLE1 to 2, Actors.PADDLE2 to 2, Actors.BALL to 1),
+                expectedOamCounts =
+                    mapOf(Actors.PADDLE1 to 2, Actors.PADDLE2 to 2, Actors.BALL to 1),
                 expectedTotalOam = 5,
-            ),
+            )
         )
     }
 
@@ -65,15 +67,19 @@ class PongStepAgentTest {
         val titleObs = game.stepN(120)
         assertEquals(120, titleObs.frame, "Frame counter should be 120 after boot")
         assertScene(titleObs, Scenes.TITLE, "Should be on title scene after boot")
-        assertEquals(2, titleObs.variables[Variables.CURRENT_SCENE], "Title scene index should be 2")
+        assertEquals(
+            2,
+            titleObs.variables[Variables.CURRENT_SCENE],
+            "Title scene index should be 2",
+        )
         assertTextOnScreen(titleObs, Texts.PONG, "Title screen should show PONG")
         assertTextOnScreen(titleObs, Texts.PRESS_START, "Title screen should show PRESS START")
         assertTextOnScreen(titleObs, Texts.FIRST_TO_5, "Title screen should show FIRST TO 5")
 
         // ── Phase 2: Scene Transition (START → gameplay) ──
         game.step(setOf(Button.START)) // press
-        game.step()                     // release
-        val gameObs = game.stepN(60)    // wait for transition
+        game.step() // release
+        val gameObs = game.stepN(60) // wait for transition
         assertScene(gameObs, Scenes.GAME, "Should transition to game scene after START")
         assertEquals(1, gameObs.variables[Variables.CURRENT_SCENE], "Game scene index should be 1")
 
@@ -96,11 +102,13 @@ class PongStepAgentTest {
             val inspectedX = game.readVariable(meta.xVar)
             val inspectedY = game.readVariable(meta.yVar)
             assertEquals(
-                inspectedX, actor.x,
+                inspectedX,
+                actor.x,
                 "Actor '${actor.name}' x: readVariable(${meta.xVar})=$inspectedX != obs.x=${actor.x}",
             )
             assertEquals(
-                inspectedY, actor.y,
+                inspectedY,
+                actor.y,
                 "Actor '${actor.name}' y: readVariable(${meta.yVar})=$inspectedY != obs.y=${actor.y}",
             )
         }
@@ -116,7 +124,8 @@ class PongStepAgentTest {
                 )
             }
             assertEquals(
-                meta.oamCount, actor.sprites.size,
+                meta.oamCount,
+                actor.sprites.size,
                 "Actor '${actor.name}' sprite count ${actor.sprites.size} != metadata oamCount ${meta.oamCount}",
             )
         }
@@ -129,7 +138,10 @@ class PongStepAgentTest {
 
         game.stepN(30, setOf(Button.DOWN))
         val afterDownY = game.readVariable(Variables.PADDLE1_Y)!!
-        assertTrue(afterDownY > afterUpY, "Paddle should move down: afterUp=$afterUpY, afterDown=$afterDownY")
+        assertTrue(
+            afterDownY > afterUpY,
+            "Paddle should move down: afterUp=$afterUpY, afterDown=$afterDownY",
+        )
 
         // ── Phase 7: Ball Movement ──
         val ballXBefore = game.readVariable(Variables.BALL_X)!!
@@ -174,7 +186,11 @@ class PongStepAgentTest {
         assertTrue(wrote, "writeVariable should succeed for ball_x")
 
         // Read back immediately (before frame advance)
-        assertEquals(42, game.readVariable(Variables.BALL_X), "ball_x should read back 42 after write")
+        assertEquals(
+            42,
+            game.readVariable(Variables.BALL_X),
+            "ball_x should read back 42 after write",
+        )
 
         // Step one frame — game logic applies ballDx, so value shifts slightly
         val obs = game.step()

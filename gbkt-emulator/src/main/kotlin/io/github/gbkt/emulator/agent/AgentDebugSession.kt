@@ -44,10 +44,10 @@ import javax.swing.SwingUtilities
  * All methods except [stop], [close], and [frameCount] throw [IllegalStateException] if called
  * before [start].
  *
- * @param config Configuration for the session (ROM, sym file, screenshot dir, watch variables,
- *   GBC mode).
- * @param stubEmulatorFactory Internal-use factory for injecting a stub emulator in tests. When
- *   null (the default), creates a [CoffeeGbEmulator] from [AgentSessionConfig.toEmulatorConfig].
+ * @param config Configuration for the session (ROM, sym file, screenshot dir, watch variables, GBC
+ *   mode).
+ * @param stubEmulatorFactory Internal-use factory for injecting a stub emulator in tests. When null
+ *   (the default), creates a [CoffeeGbEmulator] from [AgentSessionConfig.toEmulatorConfig].
  */
 class AgentDebugSession(
     private val config: AgentSessionConfig,
@@ -83,21 +83,23 @@ class AgentDebugSession(
         check(emulator == null) {
             "AgentDebugSession already started. Call stop() before starting again."
         }
-        val emu = try {
-            val e = if (stubEmulatorFactory != null) {
-                stubEmulatorFactory.invoke()
-            } else {
-                CoffeeGbEmulator(config.toEmulatorConfig())
+        val emu =
+            try {
+                val e =
+                    if (stubEmulatorFactory != null) {
+                        stubEmulatorFactory.invoke()
+                    } else {
+                        CoffeeGbEmulator(config.toEmulatorConfig())
+                    }
+                e.start()
+                e.pause()
+                e
+            } catch (e: Exception) {
+                throw EmulatorStartException(
+                    "Failed to start emulator for ROM '${config.romFile.name}': ${e.message}",
+                    e,
+                )
             }
-            e.start()
-            e.pause()
-            e
-        } catch (e: Exception) {
-            throw EmulatorStartException(
-                "Failed to start emulator for ROM '${config.romFile.name}': ${e.message}",
-                e,
-            )
-        }
 
         // Wire VariableInspector to emulator memory
         val memory = emu.getMemory()
@@ -130,9 +132,7 @@ class AgentDebugSession(
      * Safe to call even if [start] was never called. Also safe to call multiple times.
      */
     fun stop() {
-        viewerWindow?.let { win ->
-            SwingUtilities.invokeLater { win.dispose() }
-        }
+        viewerWindow?.let { win -> SwingUtilities.invokeLater { win.dispose() } }
         viewerWindow = null
         emulator?.stop()
         emulator = null
@@ -185,11 +185,12 @@ class AgentDebugSession(
         val insp = checkNotNull(inspector)
 
         val allVars = insp.readAll()
-        val variableSnapshot = if (config.watchVariables.isEmpty()) {
-            allVars
-        } else {
-            allVars.filterKeys { it in config.watchVariables }
-        }
+        val variableSnapshot =
+            if (config.watchVariables.isEmpty()) {
+                allVars
+            } else {
+                allVars.filterKeys { it in config.watchVariables }
+            }
 
         return ScreenshotCapture.capture(
             frameBuffer = emu.getFrameBuffer(),
@@ -209,7 +210,8 @@ class AgentDebugSession(
      * are tracked via [InputScript.totalFrames] to keep [frameCount] accurate.
      *
      * @param script The input sequence to execute.
-     * @throws IllegalStateException if [start] has not been called or if the emulator is not paused.
+     * @throws IllegalStateException if [start] has not been called or if the emulator is not
+     *   paused.
      */
     fun executeInputScript(script: InputScript) {
         requireStarted()
@@ -229,7 +231,8 @@ class AgentDebugSession(
     /**
      * Reads the current byte value for a named DSL variable.
      *
-     * @param name The DSL variable name (without the C underscore prefix, e.g. "score" not "_score").
+     * @param name The DSL variable name (without the C underscore prefix, e.g. "score" not
+     *   "_score").
      * @return The byte value at the symbol's address (0–255), or null if the symbol is not found.
      * @throws IllegalStateException if [start] has not been called.
      */
@@ -241,7 +244,8 @@ class AgentDebugSession(
     /**
      * Returns a snapshot of all loaded variables mapped to their current byte values.
      *
-     * @return Map from variable name to current byte value (0–255). Empty if no sym file was provided.
+     * @return Map from variable name to current byte value (0–255). Empty if no sym file was
+     *   provided.
      * @throws IllegalStateException if [start] has not been called.
      */
     fun readAllVariables(): Map<String, Int> {
@@ -254,7 +258,8 @@ class AgentDebugSession(
      *
      * Useful for test setup — e.g. forcing `p1Score` to 4 before testing win condition.
      *
-     * @param name The DSL variable name (without the C underscore prefix, e.g. "score" not "_score").
+     * @param name The DSL variable name (without the C underscore prefix, e.g. "score" not
+     *   "_score").
      * @param value The byte value to write (0–255).
      * @return `true` if the symbol was found and written, `false` if the symbol is not loaded.
      * @throws IllegalStateException if [start] has not been called.
@@ -326,11 +331,8 @@ class AgentDebugSession(
      * @param tolerance Fraction of pixels allowed to differ (0.0 = pixel-perfect, 0.05 = 5%).
      * @return [DiffResult] with match status, pixel counts, and optional diff image.
      */
-    fun diffScreenshots(
-        expected: File,
-        actual: File,
-        tolerance: Double = 0.0,
-    ): DiffResult = VisualDiff.compare(expected, actual, tolerance)
+    fun diffScreenshots(expected: File, actual: File, tolerance: Double = 0.0): DiffResult =
+        VisualDiff.compare(expected, actual, tolerance)
 
     // ── Debug log ─────────────────────────────────────────────────────────────
 

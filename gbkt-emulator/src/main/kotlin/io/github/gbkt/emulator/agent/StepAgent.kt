@@ -12,19 +12,15 @@ import java.io.File
 import java.util.logging.Logger
 
 /**
- * Per-actor state snapshot within an [Observation], combining metadata identity with runtime values.
+ * Per-actor state snapshot within an [Observation], combining metadata identity with runtime
+ * values.
  *
  * @param name Actor name from [GameMetadata] (e.g., `"ball"`, `"paddle1"`).
  * @param x X position variable value, or null if the symbol is not loaded.
  * @param y Y position variable value, or null if the symbol is not loaded.
  * @param sprites OAM [SpriteEntry] instances belonging to this actor (resolved via OAM slot range).
  */
-data class ActorState(
-    val name: String,
-    val x: Int?,
-    val y: Int?,
-    val sprites: List<SpriteEntry>,
-)
+data class ActorState(val name: String, val x: Int?, val y: Int?, val sprites: List<SpriteEntry>)
 
 /**
  * Full game state snapshot returned by [StepAgent.step] after advancing one frame.
@@ -88,22 +84,26 @@ class StepAgent(
 
     private val logger = Logger.getLogger(StepAgent::class.java.name)
 
-    private val resolvedMetadata: GameMetadata? = metadata
-        ?: config.metadataFile?.takeIf { it.exists() }?.let { file ->
-            try {
-                GameMetadata.fromJsonFile(file)
-            } catch (e: MetadataParseException) {
-                logger.warning("Failed to parse metadata: ${e.message}")
-                null
-            }
-        }
+    private val resolvedMetadata: GameMetadata? =
+        metadata
+            ?: config.metadataFile
+                ?.takeIf { it.exists() }
+                ?.let { file ->
+                    try {
+                        GameMetadata.fromJsonFile(file)
+                    } catch (e: MetadataParseException) {
+                        logger.warning("Failed to parse metadata: ${e.message}")
+                        null
+                    }
+                }
 
     private val session = AgentDebugSession(config, stubEmulatorFactory)
     private val heldButtons = mutableSetOf<Button>()
     private var lastLogIndex = 0
 
     /** Total number of emulator frames advanced via [step] or [stepN]. */
-    val frameCount: Int get() = session.frameCount
+    val frameCount: Int
+        get() = session.frameCount
 
     /**
      * Starts the emulator session. Must be called before [step].
@@ -209,8 +209,8 @@ class StepAgent(
     /**
      * Steps up to [maxFrames] frames, returning the first [Observation] where [predicate] is true.
      *
-     * Always advances at least one frame. If the predicate never matches, the final observation
-     * is returned — the caller can inspect it to detect timeout.
+     * Always advances at least one frame. If the predicate never matches, the final observation is
+     * returned — the caller can inspect it to detect timeout.
      *
      * @param maxFrames Maximum number of frames to advance. Must be positive.
      * @param buttons Set of buttons to hold during the wait.
@@ -249,7 +249,8 @@ class StepAgent(
         waitUntil(maxFrames) { it.variables[name] == expected }
 
     /**
-     * Waits until [text] appears on screen (either tilemap layer), or until [maxFrames] is exhausted.
+     * Waits until [text] appears on screen (either tilemap layer), or until [maxFrames] is
+     * exhausted.
      *
      * @return The [Observation] where the text was found, or the final observation on timeout.
      */
@@ -289,8 +290,8 @@ class StepAgent(
     /**
      * Re-reads tilemap text from VRAM with optional scroll-aware offsets.
      *
-     * Unlike the pre-decoded text in [Observation], this performs a fresh VRAM read
-     * that can apply SCX/SCY hardware register offsets when [scrollAware] is true.
+     * Unlike the pre-decoded text in [Observation], this performs a fresh VRAM read that can apply
+     * SCX/SCY hardware register offsets when [scrollAware] is true.
      *
      * @param layer Which tilemap layer to read.
      * @param scrollAware When true and layer is BACKGROUND, apply SCX/SCY offsets.
@@ -300,10 +301,11 @@ class StepAgent(
         layer: VramTextVerifier.TilemapLayer = VramTextVerifier.TilemapLayer.BACKGROUND,
         scrollAware: Boolean = false,
     ): List<String> {
-        val decoder = when (layer) {
-            VramTextVerifier.TilemapLayer.BACKGROUND -> resolvedMetadata?.bgDecoder()
-            VramTextVerifier.TilemapLayer.WINDOW -> resolvedMetadata?.winDecoder()
-        }
+        val decoder =
+            when (layer) {
+                VramTextVerifier.TilemapLayer.BACKGROUND -> resolvedMetadata?.bgDecoder()
+                VramTextVerifier.TilemapLayer.WINDOW -> resolvedMetadata?.winDecoder()
+            }
         return VramTextVerifier.readAllRows(session.getMemory(), layer, decoder, scrollAware)
     }
 
@@ -318,28 +320,30 @@ class StepAgent(
 
             val variables = session.readAllVariables()
             val sceneIndex = variables["current_scene"]
-            val scene = sceneIndex?.let {
-                resolvedMetadata?.scenes?.nameOf(it) ?: "scene_$it"
-            }
+            val scene = sceneIndex?.let { resolvedMetadata?.scenes?.nameOf(it) ?: "scene_$it" }
             val visibleSprites = OamSpriteReader.readVisible(memory)
 
-            val actors = if (resolvedMetadata != null) {
-                resolvedMetadata.actors.map { actorMeta ->
-                    ActorState(
-                        name = actorMeta.name,
-                        x = variables[actorMeta.xVar],
-                        y = variables[actorMeta.yVar],
-                        sprites = visibleSprites.filter {
-                            resolvedMetadata.actorForSlot(it.index) == actorMeta.name
-                        },
-                    )
+            val actors =
+                if (resolvedMetadata != null) {
+                    resolvedMetadata.actors.map { actorMeta ->
+                        ActorState(
+                            name = actorMeta.name,
+                            x = variables[actorMeta.xVar],
+                            y = variables[actorMeta.yVar],
+                            sprites =
+                                visibleSprites.filter {
+                                    resolvedMetadata.actorForSlot(it.index) == actorMeta.name
+                                },
+                        )
+                    }
+                } else {
+                    emptyList()
                 }
-            } else {
-                emptyList()
-            }
 
-            val isTerminal = scene != null && resolvedMetadata != null
-                && scene in resolvedMetadata.terminalScenes
+            val isTerminal =
+                scene != null &&
+                    resolvedMetadata != null &&
+                    scene in resolvedMetadata.terminalScenes
 
             val bgDec = resolvedMetadata?.bgDecoder()
             val winDec = resolvedMetadata?.winDecoder()
@@ -349,8 +353,18 @@ class StepAgent(
                 scene = scene,
                 sprites = visibleSprites,
                 actors = actors,
-                bgText = VramTextVerifier.readAllRows(memory, VramTextVerifier.TilemapLayer.BACKGROUND, bgDec),
-                winText = VramTextVerifier.readAllRows(memory, VramTextVerifier.TilemapLayer.WINDOW, winDec),
+                bgText =
+                    VramTextVerifier.readAllRows(
+                        memory,
+                        VramTextVerifier.TilemapLayer.BACKGROUND,
+                        bgDec,
+                    ),
+                winText =
+                    VramTextVerifier.readAllRows(
+                        memory,
+                        VramTextVerifier.TilemapLayer.WINDOW,
+                        winDec,
+                    ),
                 newLogEntries = newEntries,
                 isTerminal = isTerminal,
             )
@@ -385,8 +399,7 @@ fun Observation.hasText(text: String): Boolean =
     bgText.any { text in it } || winText.any { text in it }
 
 /** Returns true if an actor with [name] is present in this observation. */
-fun Observation.hasActor(name: String): Boolean =
-    actors.any { it.name == name }
+fun Observation.hasActor(name: String): Boolean = actors.any { it.name == name }
 
 fun Observation.toSummary(): String = buildString {
     append("Frame $frame")
@@ -394,28 +407,30 @@ fun Observation.toSummary(): String = buildString {
     appendLine()
     if (variables.isNotEmpty()) {
         append("Vars: ")
-        appendLine(variables.entries.sortedBy { it.key }.joinToString(" ") { "${it.key}=${it.value}" })
+        appendLine(
+            variables.entries.sortedBy { it.key }.joinToString(" ") { "${it.key}=${it.value}" }
+        )
     }
     if (actors.isNotEmpty()) {
         append("Actors: ")
-        appendLine(actors.joinToString(" ") { a ->
-            "${a.name}(${a.x ?: "?"},${a.y ?: "?"})"
-        })
+        appendLine(actors.joinToString(" ") { a -> "${a.name}(${a.x ?: "?"},${a.y ?: "?"})" })
     }
     appendLine("Sprites: ${sprites.size} visible")
     // BG text
-    val bgRows = bgText.mapIndexedNotNull { i, row ->
-        if (row.any { it != '.' && it != ' ' }) "[row $i] \"$row\"" else null
-    }
+    val bgRows =
+        bgText.mapIndexedNotNull { i, row ->
+            if (row.any { it != '.' && it != ' ' }) "[row $i] \"$row\"" else null
+        }
     if (bgRows.isEmpty()) {
         appendLine("BG: (empty)")
     } else {
         bgRows.forEach { appendLine("BG: $it") }
     }
     // WIN text
-    val winRows = winText.mapIndexedNotNull { i, row ->
-        if (row.any { it != '.' && it != ' ' }) "[row $i] \"$row\"" else null
-    }
+    val winRows =
+        winText.mapIndexedNotNull { i, row ->
+            if (row.any { it != '.' && it != ' ' }) "[row $i] \"$row\"" else null
+        }
     if (winRows.isEmpty()) {
         appendLine("WIN: (empty)")
     } else {
@@ -423,8 +438,6 @@ fun Observation.toSummary(): String = buildString {
     }
     // Log
     if (newLogEntries.isNotEmpty()) {
-        newLogEntries.forEach { entry ->
-            appendLine("Log: ${entry.formatted().trimEnd()}")
-        }
+        newLogEntries.forEach { entry -> appendLine("Log: ${entry.formatted().trimEnd()}") }
     }
 }

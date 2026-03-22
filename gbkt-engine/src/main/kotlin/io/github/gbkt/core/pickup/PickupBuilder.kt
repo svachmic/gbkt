@@ -147,7 +147,14 @@ class PickupZoneBuilder(val id: String, val pickupId: String) {
     fun build(): PickupZone {
         require(width > 0) { "PickupZone '$id' width must be positive, got $width" }
         require(height > 0) { "PickupZone '$id' height must be positive, got $height" }
-        return PickupZone(id = id, x = x, y = y, width = width, height = height, pickupId = pickupId)
+        return PickupZone(
+            id = id,
+            x = x,
+            y = y,
+            width = width,
+            height = height,
+            pickupId = pickupId,
+        )
     }
 }
 

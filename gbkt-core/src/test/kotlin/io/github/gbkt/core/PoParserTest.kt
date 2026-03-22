@@ -338,8 +338,16 @@ class PoParserTest {
         // cannot fit in any bank. Two namespaces, each with content > 10 bytes.
         val entries =
             listOf(
-                PoEntry("ns1", "key1", "12345678901"), // 11 chars + null = 12 bytes, exceeds 10-byte bank
-                PoEntry("ns2", "key2", "ABCDEFGHIJK"), // 11 chars + null = 12 bytes, exceeds 10-byte bank
+                PoEntry(
+                    "ns1",
+                    "key1",
+                    "12345678901",
+                ), // 11 chars + null = 12 bytes, exceeds 10-byte bank
+                PoEntry(
+                    "ns2",
+                    "key2",
+                    "ABCDEFGHIJK",
+                ), // 11 chars + null = 12 bytes, exceeds 10-byte bank
             )
 
         val allocator = BankAllocator(maxBanks = 1, bankSizeBytes = 10)

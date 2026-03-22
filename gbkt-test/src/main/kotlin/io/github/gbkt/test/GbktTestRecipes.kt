@@ -21,8 +21,8 @@ private val logger = Logger.getLogger("io.github.gbkt.test.GbktTestRecipes")
 /**
  * Pre-built composable test patterns for game-level integration tests.
  *
- * All recipes are extension functions on [GbktTestExtension] and use metadata-driven
- * logic where available. They work without metadata as best-effort heuristic checks.
+ * All recipes are extension functions on [GbktTestExtension] and use metadata-driven logic where
+ * available. They work without metadata as best-effort heuristic checks.
  *
  * Usage:
  * ```kotlin
@@ -44,9 +44,9 @@ private val TITLE_SCENE_PATTERNS = setOf("title", "main_menu", "menu", "start", 
 /**
  * Boots the game 120 frames and asserts the game is on the title/initial scene.
  *
- * If metadata is available, asserts the scene matches the first scene in the scene map.
- * Otherwise, accepts any scene name matching common title patterns (title, main_menu, etc.).
- * If [expectedTexts] is non-empty, each string must appear on screen.
+ * If metadata is available, asserts the scene matches the first scene in the scene map. Otherwise,
+ * accepts any scene name matching common title patterns (title, main_menu, etc.). If
+ * [expectedTexts] is non-empty, each string must appear on screen.
  *
  * @param expectedTexts Optional list of text strings that must appear on screen.
  * @return The [Observation] after booting 120 frames.
@@ -63,13 +63,15 @@ fun GbktTestExtension.verifyTitleScreen(expectedTexts: List<String> = emptyList(
             val sceneNames = metaScenes.sceneNames
             if (sceneNames.isNotEmpty()) {
                 // Accept: either matches a title-like pattern, or is the smallest-index scene
-                val lowestIndexScene = sceneNames.minByOrNull { metaScenes.indexOf(it) ?: Int.MAX_VALUE }
-                val isTitle = TITLE_SCENE_PATTERNS.any { it in scene.lowercase() }
-                    || scene == lowestIndexScene
+                val lowestIndexScene =
+                    sceneNames.minByOrNull { metaScenes.indexOf(it) ?: Int.MAX_VALUE }
+                val isTitle =
+                    TITLE_SCENE_PATTERNS.any { it in scene.lowercase() } ||
+                        scene == lowestIndexScene
                 if (!isTitle) {
                     throw AssertionError(
                         "verifyTitleScreen: expected title/initial scene after 120 frames, " +
-                            "but got '$scene'. Known scenes: $sceneNames",
+                            "but got '$scene'. Known scenes: $sceneNames"
                     )
                 }
             }
@@ -90,11 +92,11 @@ fun GbktTestExtension.verifyTitleScreen(expectedTexts: List<String> = emptyList(
 /**
  * Best-effort check that the game can reach the first non-title scene from the title screen.
  *
- * Presses START and waits up to 300 frames for the first non-title scene transition.
- * If no metadata is available, this is a no-op.
+ * Presses START and waits up to 300 frames for the first non-title scene transition. If no metadata
+ * is available, this is a no-op.
  *
- * Note: This is a shallow smoke test. Complex multi-step navigation paths (e.g., requiring
- * gameplay progression) will not be verified here — they require per-game test logic.
+ * Note: This is a shallow smoke test. Complex multi-step navigation paths (e.g., requiring gameplay
+ * progression) will not be verified here — they require per-game test logic.
  */
 fun GbktTestExtension.verifyFirstSceneTransition() {
     val meta = metadata ?: return
@@ -117,7 +119,7 @@ fun GbktTestExtension.verifyFirstSceneTransition() {
             // Scene not reached — this is a best-effort check, not hard fail
             logger.warning(
                 "verifyFirstSceneTransition: could not reach '$targetScene' within 300 frames " +
-                    "(complex navigation may require per-game test logic)",
+                    "(complex navigation may require per-game test logic)"
             )
         }
         break // Only verify the first non-title scene to keep this best-effort
@@ -127,8 +129,8 @@ fun GbktTestExtension.verifyFirstSceneTransition() {
 /**
  * Verifies that pressing [button] for 30 frames in [scene] causes [variableName] to change.
  *
- * Uses [bootToScene] to navigate to the target scene, reads the variable before and after
- * holding the button, then asserts the value changed in the expected direction.
+ * Uses [bootToScene] to navigate to the target scene, reads the variable before and after holding
+ * the button, then asserts the value changed in the expected direction.
  *
  * @param scene Scene to navigate to before testing input.
  * @param button Button to hold.
@@ -142,28 +144,30 @@ fun GbktTestExtension.verifyInputResponds(
     expectDecrease: Boolean = false,
 ) {
     bootToScene(scene)
-    val before = agent.readVariable(variableName)
-        ?: throw AssertionError(
-            "verifyInputResponds: variable '$variableName' not found before holding $button",
-        )
+    val before =
+        agent.readVariable(variableName)
+            ?: throw AssertionError(
+                "verifyInputResponds: variable '$variableName' not found before holding $button"
+            )
     agent.stepN(30, setOf(button))
     agent.step() // release
-    val after = agent.readVariable(variableName)
-        ?: throw AssertionError(
-            "verifyInputResponds: variable '$variableName' not found after holding $button",
-        )
+    val after =
+        agent.readVariable(variableName)
+            ?: throw AssertionError(
+                "verifyInputResponds: variable '$variableName' not found after holding $button"
+            )
     if (expectDecrease) {
         if (after >= before) {
             throw AssertionError(
                 "verifyInputResponds: expected '$variableName' to decrease after holding $button " +
-                    "for 30 frames, but before=$before, after=$after",
+                    "for 30 frames, but before=$before, after=$after"
             )
         }
     } else {
         if (after <= before) {
             throw AssertionError(
                 "verifyInputResponds: expected '$variableName' to increase after holding $button " +
-                    "for 30 frames, but before=$before, after=$after",
+                    "for 30 frames, but before=$before, after=$after"
             )
         }
     }
@@ -172,8 +176,8 @@ fun GbktTestExtension.verifyInputResponds(
 /**
  * Verifies that each actor in [expectedActors] is visible after navigating to [scene].
  *
- * Uses [bootToScene] to navigate to the scene, steps 10 frames, then checks each actor name
- * appears in the observation's actors list.
+ * Uses [bootToScene] to navigate to the scene, steps 10 frames, then checks each actor name appears
+ * in the observation's actors list.
  *
  * @param scene Scene to navigate to.
  * @param expectedActors List of DSL actor names expected to be visible.
@@ -219,7 +223,7 @@ fun GbktTestExtension.bootToScene(sceneName: String, maxFrames: Int = 600): Obse
     throw AssertionError(
         "bootToScene: could not reach scene '$sceneName' within ${maxFrames * 2 + 2} frames. " +
             "Current scene: '${afterStart.scene}'. " +
-            "Check your bootScript or game navigation logic.",
+            "Check your bootScript or game navigation logic."
     )
 }
 
@@ -241,8 +245,8 @@ data class MetadataExpectation(
 )
 
 /**
- * Verifies that `game_metadata.json`, the `.noi` symbol table, and `game.h` all agree
- * on variable names, scene definitions, actor layout, and OAM slot allocation.
+ * Verifies that `game_metadata.json`, the `.noi` symbol table, and `game.h` all agree on variable
+ * names, scene definitions, actor layout, and OAM slot allocation.
  *
  * This is a no-emulator recipe — it only reads build artifacts on disk.
  *
@@ -271,10 +275,12 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
         "metadata or .noi not found — run buildRom first",
     )
 
-    val zeroMemory = object : MemoryAccess {
-        override fun readByte(address: Int): Int = 0
-        override fun writeByte(address: Int, value: Int) {}
-    }
+    val zeroMemory =
+        object : MemoryAccess {
+            override fun readByte(address: Int): Int = 0
+
+            override fun writeByte(address: Int, value: Int) {}
+        }
 
     val metadata = GameMetadata.fromJsonFile(metadataFile)
     val inspector = VariableInspector(zeroMemory, symFile)
@@ -285,13 +291,13 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
         if (actor.xVar !in loadedVars) {
             throw AssertionError(
                 "verifyMetadataSymbolAgreement: Actor '${actor.name}' xVar '${actor.xVar}' " +
-                    "not found in .noi symbols. Available: $loadedVars",
+                    "not found in .noi symbols. Available: $loadedVars"
             )
         }
         if (actor.yVar !in loadedVars) {
             throw AssertionError(
                 "verifyMetadataSymbolAgreement: Actor '${actor.name}' yVar '${actor.yVar}' " +
-                    "not found in .noi symbols. Available: $loadedVars",
+                    "not found in .noi symbols. Available: $loadedVars"
             )
         }
     }
@@ -300,7 +306,7 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
     if (currentSceneVar !in loadedVars) {
         throw AssertionError(
             "verifyMetadataSymbolAgreement: '$currentSceneVar' not found in .noi symbols. " +
-                "Available: $loadedVars",
+                "Available: $loadedVars"
         )
     }
 
@@ -313,7 +319,7 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
         if (metadataSceneNames != headerSceneNames) {
             throw AssertionError(
                 "verifyMetadataSymbolAgreement: scene names mismatch — " +
-                    "metadata=$metadataSceneNames, game.h=$headerSceneNames",
+                    "metadata=$metadataSceneNames, game.h=$headerSceneNames"
             )
         }
 
@@ -323,7 +329,7 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
             if (metaIndex != headerIndex) {
                 throw AssertionError(
                     "verifyMetadataSymbolAgreement: scene '$name' index mismatch — " +
-                        "metadata=$metaIndex, game.h=$headerIndex",
+                        "metadata=$metaIndex, game.h=$headerIndex"
                 )
             }
         }
@@ -334,30 +340,31 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
     if (actualSceneCount != expectation.expectedSceneCount) {
         throw AssertionError(
             "verifyMetadataSymbolAgreement: expected ${expectation.expectedSceneCount} scenes, " +
-                "got $actualSceneCount. Scenes: ${metadata.scenes.sceneNames}",
+                "got $actualSceneCount. Scenes: ${metadata.scenes.sceneNames}"
         )
     }
     for (scene in expectation.expectedScenes) {
         if (scene !in metadata.scenes.sceneNames) {
             throw AssertionError(
                 "verifyMetadataSymbolAgreement: expected scene '$scene' not found in metadata. " +
-                    "Available: ${metadata.scenes.sceneNames}",
+                    "Available: ${metadata.scenes.sceneNames}"
             )
         }
     }
 
     // 5. Expected actors exist (with OAM counts if specified)
     for (actorName in expectation.expectedActors) {
-        val actor = metadata.actor(actorName)
-            ?: throw AssertionError(
-                "verifyMetadataSymbolAgreement: expected actor '$actorName' not found in metadata. " +
-                    "Available: ${metadata.actors.map { it.name }}",
-            )
+        val actor =
+            metadata.actor(actorName)
+                ?: throw AssertionError(
+                    "verifyMetadataSymbolAgreement: expected actor '$actorName' not found in metadata. " +
+                        "Available: ${metadata.actors.map { it.name }}"
+                )
         val expectedOam = expectation.expectedOamCounts[actorName]
         if (expectedOam != null && actor.oamCount != expectedOam) {
             throw AssertionError(
                 "verifyMetadataSymbolAgreement: actor '$actorName' OAM count mismatch — " +
-                    "expected=$expectedOam, actual=${actor.oamCount}",
+                    "expected=$expectedOam, actual=${actor.oamCount}"
             )
         }
     }
@@ -368,7 +375,7 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
         if (totalOam != expectation.expectedTotalOam) {
             throw AssertionError(
                 "verifyMetadataSymbolAgreement: total OAM count mismatch — " +
-                    "expected=${expectation.expectedTotalOam}, actual=$totalOam",
+                    "expected=${expectation.expectedTotalOam}, actual=$totalOam"
             )
         }
     }
@@ -384,7 +391,7 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
                 throw AssertionError(
                     "verifyMetadataSymbolAgreement: OAM overlap between '${a.name}' " +
                         "[${a.oamStart}..${a.oamStart + a.oamCount - 1}] and '${b.name}' " +
-                        "[${b.oamStart}..${b.oamStart + b.oamCount - 1}]",
+                        "[${b.oamStart}..${b.oamStart + b.oamCount - 1}]"
                 )
             }
         }

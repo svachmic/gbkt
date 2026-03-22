@@ -6,6 +6,10 @@
  */
 package io.github.gbkt.emulator.agent
 
+import java.awt.Color
+import java.awt.image.BufferedImage
+import java.io.File
+import javax.imageio.ImageIO
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -14,15 +18,10 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.awt.Color
-import java.awt.image.BufferedImage
-import java.io.File
-import javax.imageio.ImageIO
 
 class VisualDiffTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     private fun createPng(width: Int, height: Int, color: Int, name: String): File {
         val img = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
@@ -167,9 +166,7 @@ class VisualDiffTest {
         val expected = createPng(160, 144, 0xFFFFFF, "big")
         val actual = createPng(80, 72, 0xFFFFFF, "small")
 
-        assertThrows(IllegalArgumentException::class.java) {
-            VisualDiff.compare(expected, actual)
-        }
+        assertThrows(IllegalArgumentException::class.java) { VisualDiff.compare(expected, actual) }
     }
 
     @Test

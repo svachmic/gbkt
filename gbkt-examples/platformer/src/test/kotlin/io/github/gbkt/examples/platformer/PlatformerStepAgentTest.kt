@@ -23,14 +23,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/**
- * StepAgent integration tests for Platformer — proves the AI-testable workflow.
- */
+/** StepAgent integration tests for Platformer — proves the AI-testable workflow. */
 class PlatformerStepAgentTest {
 
-    @JvmField
-    @RegisterExtension
-    val game = GbktTestExtension("platformer")
+    @JvmField @RegisterExtension val game = GbktTestExtension("platformer")
 
     @Test
     fun `metadata and symbol table agree on variable names`() {
@@ -39,7 +35,7 @@ class PlatformerStepAgentTest {
                 expectedSceneCount = 3,
                 expectedScenes = setOf(Scenes.TITLE, Scenes.GAMEPLAY, Scenes.WIN),
                 expectedActors = setOf(Actors.PLAYER),
-            ),
+            )
         )
     }
 
@@ -79,7 +75,10 @@ class PlatformerStepAgentTest {
         val beforeX = game.readVariable(Variables.PLAYER_X)!!
         game.stepN(30, setOf(Button.RIGHT))
         val afterRightX = game.readVariable(Variables.PLAYER_X)!!
-        assertTrue(afterRightX > beforeX, "Player should move right: before=$beforeX, after=$afterRightX")
+        assertTrue(
+            afterRightX > beforeX,
+            "Player should move right: before=$beforeX, after=$afterRightX",
+        )
 
         // Phase 6: Screenshot Capture
         val file = game.captureScreenshot("platformer_integration")
@@ -96,6 +95,10 @@ class PlatformerStepAgentTest {
 
         val wrote = game.writeVariable(Variables.PLAYER_X, 42)
         assertTrue(wrote, "writeVariable should succeed for player_x")
-        assertEquals(42, game.readVariable(Variables.PLAYER_X), "player_x should read back 42 after write")
+        assertEquals(
+            42,
+            game.readVariable(Variables.PLAYER_X),
+            "player_x should read back 42 after write",
+        )
     }
 }

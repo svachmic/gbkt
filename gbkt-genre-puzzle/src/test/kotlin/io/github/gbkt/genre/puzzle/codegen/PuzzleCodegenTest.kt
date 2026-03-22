@@ -270,7 +270,8 @@ class PuzzleCodegenTest {
                 mode = PuzzleMode.MATCH,
                 width = 6,
                 height = 6,
-                matchConfig = MatchConfig(minMatchLength = 3, gravityDirection = GravityDirection.DOWN),
+                matchConfig =
+                    MatchConfig(minMatchLength = 3, gravityDirection = GravityDirection.DOWN),
             )
         val gameIR = buildPuzzleGameIR(config, "clrmatch")
         val output = pipeline.generate(gameIR)
@@ -280,13 +281,18 @@ class PuzzleCodegenTest {
         assertTrue(
             mainC.contains("run_start"),
             "puzzle_check_match must declare 'run_start' variable for end-of-run detection. mainC snippet: " +
-                mainC.lines().filter { it.contains("puzzle_check_match") || it.contains("run_start") }.take(10),
+                mainC
+                    .lines()
+                    .filter { it.contains("puzzle_check_match") || it.contains("run_start") }
+                    .take(10),
         )
 
         // The check_match function must clear matched cells (assign 0 to grid cells)
         // We look for clearing-loop pattern with "= 0" inside puzzle_check_match_clrmatch
-        val checkMatchSection = mainC.substringAfter("puzzle_check_match_clrmatch")
-            .substringBefore("puzzle_apply_gravity_clrmatch")
+        val checkMatchSection =
+            mainC
+                .substringAfter("puzzle_check_match_clrmatch")
+                .substringBefore("puzzle_apply_gravity_clrmatch")
         assertTrue(
             checkMatchSection.contains("= 0"),
             "puzzle_check_match must clear matched cells (assign 0). Section: ${checkMatchSection.take(500)}",
@@ -305,15 +311,18 @@ class PuzzleCodegenTest {
                 mode = PuzzleMode.MATCH,
                 width = 6,
                 height = 6,
-                matchConfig = MatchConfig(minMatchLength = 3, gravityDirection = GravityDirection.DOWN),
+                matchConfig =
+                    MatchConfig(minMatchLength = 3, gravityDirection = GravityDirection.DOWN),
             )
         val gameIR = buildPuzzleGameIR(config, "grav_down")
         val output = pipeline.generate(gameIR)
         val mainC = output.files["main.c"] ?: error("main.c not generated")
 
         // The gravity function must contain a swapped variable for convergence
-        val gravitySection = mainC.substringAfter("puzzle_apply_gravity_grav_down")
-            .substringBefore("puzzle_update_chain_grav_down")
+        val gravitySection =
+            mainC
+                .substringAfter("puzzle_apply_gravity_grav_down")
+                .substringBefore("puzzle_update_chain_grav_down")
         assertTrue(
             gravitySection.contains("swapped"),
             "puzzle_apply_gravity DOWN must use 'swapped' convergence variable. Section: ${gravitySection.take(500)}",
@@ -332,15 +341,18 @@ class PuzzleCodegenTest {
                 mode = PuzzleMode.MATCH,
                 width = 6,
                 height = 6,
-                matchConfig = MatchConfig(minMatchLength = 3, gravityDirection = GravityDirection.UP),
+                matchConfig =
+                    MatchConfig(minMatchLength = 3, gravityDirection = GravityDirection.UP),
             )
         val gameIR = buildPuzzleGameIR(config, "grav_up")
         val output = pipeline.generate(gameIR)
         val mainC = output.files["main.c"] ?: error("main.c not generated")
 
         // The gravity function must contain a swapped variable for convergence
-        val gravitySection = mainC.substringAfter("puzzle_apply_gravity_grav_up")
-            .substringBefore("puzzle_update_chain_grav_up")
+        val gravitySection =
+            mainC
+                .substringAfter("puzzle_apply_gravity_grav_up")
+                .substringBefore("puzzle_update_chain_grav_up")
         assertTrue(
             gravitySection.contains("swapped"),
             "puzzle_apply_gravity UP must use 'swapped' convergence variable. Section: ${gravitySection.take(500)}",

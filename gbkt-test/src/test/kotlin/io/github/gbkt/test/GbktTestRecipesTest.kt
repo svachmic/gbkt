@@ -26,8 +26,8 @@ import org.junit.jupiter.api.io.TempDir
 /**
  * Unit tests for all 5 test recipes in [GbktTestRecipes].
  *
- * Uses stub emulator injection via [GbktTestExtension.stubEmulatorFactory] to drive recipes
- * without a real ROM or emulator. Follows the same mock patterns established in StepAgentTest.
+ * Uses stub emulator injection via [GbktTestExtension.stubEmulatorFactory] to drive recipes without
+ * a real ROM or emulator. Follows the same mock patterns established in StepAgentTest.
  */
 class GbktTestRecipesTest {
 
@@ -53,10 +53,10 @@ class GbktTestRecipesTest {
     }
 
     /**
-     * Creates a [MemoryAccess] together with an `onFrame` callback that mutates memory values
-     * after a specified number of `stepFrame()` calls. This decouples mutation timing from the
-     * number of `readByte()` calls inside `buildObservation()`, making tests resilient to
-     * observation-format changes.
+     * Creates a [MemoryAccess] together with an `onFrame` callback that mutates memory values after
+     * a specified number of `stepFrame()` calls. This decouples mutation timing from the number of
+     * `readByte()` calls inside `buildObservation()`, making tests resilient to observation-format
+     * changes.
      *
      * @return A pair of (memory, onFrame). Wire `onFrame` into [createExtension]'s `onStepFrame`.
      */
@@ -66,20 +66,28 @@ class GbktTestRecipesTest {
         mutations: Map<Int, Int>,
     ): Pair<MemoryAccess, () -> Unit> {
         val mem = IntArray(0x10000) { 0 }
-        for ((addr, value) in initialPatches) { mem[addr] = value }
+        for ((addr, value) in initialPatches) {
+            mem[addr] = value
+        }
         var frameCount = 0
         var mutated = false
         val onFrame: () -> Unit = {
             frameCount++
             if (!mutated && frameCount >= mutateAfterFrames) {
                 mutated = true
-                for ((addr, value) in mutations) { mem[addr] = value }
+                for ((addr, value) in mutations) {
+                    mem[addr] = value
+                }
             }
         }
-        val memory = object : MemoryAccess {
-            override fun readByte(address: Int): Int = mem[address]
-            override fun writeByte(address: Int, value: Int) { mem[address] = value }
-        }
+        val memory =
+            object : MemoryAccess {
+                override fun readByte(address: Int): Int = mem[address]
+
+                override fun writeByte(address: Int, value: Int) {
+                    mem[address] = value
+                }
+            }
         return memory to onFrame
     }
 
@@ -155,8 +163,7 @@ class GbktTestRecipesTest {
      */
     private fun createExtension(
         memory: MemoryAccess = mockMemory(),
-        symContent: String =
-            "DEF _score 00:C100\nDEF _lives 00:C101\nDEF _current_scene 00:C102\n",
+        symContent: String = "DEF _score 00:C100\nDEF _lives 00:C101\nDEF _current_scene 00:C102\n",
         metadata: GameMetadata? = null,
         onStepFrame: () -> Unit = {},
     ): GbktTestExtension {
@@ -184,9 +191,8 @@ class GbktTestRecipesTest {
     }
 
     /**
-     * Creates a minimal [ExtensionContext] proxy for calling [GbktTestExtension.beforeEach]
-     * outside of a real JUnit5 test run. Uses a JDK dynamic proxy to avoid implementing the full
-     * interface.
+     * Creates a minimal [ExtensionContext] proxy for calling [GbktTestExtension.beforeEach] outside
+     * of a real JUnit5 test run. Uses a JDK dynamic proxy to avoid implementing the full interface.
      */
     private fun stubExtensionContext(): ExtensionContext {
         return java.lang.reflect.Proxy.newProxyInstance(
@@ -326,7 +332,10 @@ class GbktTestRecipesTest {
             assertFailsWith<AssertionError> {
                 ext.verifyTitleScreen(expectedTexts = listOf("MISSING TEXT"))
             }
-        assertTrue(error.message!!.contains("MISSING TEXT"), "Error should mention the missing text")
+        assertTrue(
+            error.message!!.contains("MISSING TEXT"),
+            "Error should mention the missing text",
+        )
     }
 
     @Test
@@ -359,11 +368,7 @@ class GbktTestRecipesTest {
     @Test
     fun `verifyFirstSceneTransition is no-op with single scene in metadata`() {
         val memory = mockMemory(0xC102 to 0)
-        val metadata =
-            GameMetadata.of(
-                scenes = SceneMap(mapOf("title" to 0)),
-                actors = emptyList(),
-            )
+        val metadata = GameMetadata.of(scenes = SceneMap(mapOf("title" to 0)), actors = emptyList())
         val ext = createExtension(memory = memory, metadata = metadata)
         // Should complete without error -- returns early when < 2 scenes
         ext.verifyFirstSceneTransition()
@@ -405,11 +410,7 @@ class GbktTestRecipesTest {
                 actors = emptyList(),
             )
         val ext = createExtension(memory = memory, metadata = metadata, onStepFrame = onFrame)
-        ext.verifyInputResponds(
-            scene = "gameplay",
-            button = Button.RIGHT,
-            variableName = "score",
-        )
+        ext.verifyInputResponds(scene = "gameplay", button = Button.RIGHT, variableName = "score")
     }
 
     @Test
@@ -485,15 +486,10 @@ class GbktTestRecipesTest {
                             spriteHeight = 16,
                             xVar = "paddle_x",
                             yVar = "paddle_y",
-                        ),
+                        )
                     ),
             )
-        val ext =
-            createExtension(
-                memory = memory,
-                symContent = symContent,
-                metadata = metadata,
-            )
+        val ext = createExtension(memory = memory, symContent = symContent, metadata = metadata)
         ext.verifySpriteVisibility("gameplay", listOf("paddle"))
     }
 
@@ -535,7 +531,8 @@ class GbktTestRecipesTest {
     fun `bootToScene finds scene after waiting with mutating memory`() {
         // Start at title (scene 0). bootToScene flow:
         // step() = frame 1 → scene "title", not "gameplay".
-        // waitForScene("gameplay", 600): step() = frame 2 → mutation fires, scene becomes "gameplay".
+        // waitForScene("gameplay", 600): step() = frame 2 → mutation fires, scene becomes
+        // "gameplay".
         val (memory, onFrame) =
             mutatingMemoryByFrame(
                 initialPatches = mapOf(0xC102 to 0),
@@ -562,8 +559,7 @@ class GbktTestRecipesTest {
                 actors = emptyList(),
             )
         val ext = createExtension(memory = memory, metadata = metadata)
-        val error =
-            assertFailsWith<AssertionError> { ext.bootToScene("gameplay", maxFrames = 10) }
+        val error = assertFailsWith<AssertionError> { ext.bootToScene("gameplay", maxFrames = 10) }
         assertTrue(error.message!!.contains("gameplay"), "Error should mention the target scene")
         assertTrue(
             error.message!!.contains("could not reach"),

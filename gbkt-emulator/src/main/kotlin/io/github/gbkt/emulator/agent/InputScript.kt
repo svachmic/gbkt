@@ -24,7 +24,6 @@ enum class Button {
 
 /**
  * A single step in a scripted input sequence.
- *
  * - [Press] — press and release a button over the given number of frames
  * - [Hold] — press a button without releasing (until explicit [Release])
  * - [Release] — release a previously held button
@@ -57,14 +56,15 @@ class InputScript(val steps: List<InputStep>)
  * Only [InputStep.Press] and [InputStep.Wait] steps advance frames. [InputStep.Hold] and
  * [InputStep.Release] are instantaneous.
  */
-fun InputScript.totalFrames(): Int = steps.sumOf { step ->
-    when (step) {
-        is InputStep.Press -> step.frames
-        is InputStep.Wait -> step.frames
-        is InputStep.Hold -> 0
-        is InputStep.Release -> 0
+fun InputScript.totalFrames(): Int =
+    steps.sumOf { step ->
+        when (step) {
+            is InputStep.Press -> step.frames
+            is InputStep.Wait -> step.frames
+            is InputStep.Hold -> 0
+            is InputStep.Release -> 0
+        }
     }
-}
 
 /**
  * DSL builder for constructing [InputScript] instances.

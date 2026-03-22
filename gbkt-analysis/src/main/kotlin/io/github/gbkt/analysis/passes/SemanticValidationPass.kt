@@ -65,8 +65,8 @@ class SemanticValidationPass : AnalysisPass {
     }
 
     /**
-     * Generic duplicate detection: iterates [items], extracts a name via [nameOf], and emits
-     * an ANLZ-01 diagnostic for each duplicate. Returns the set of all unique names found.
+     * Generic duplicate detection: iterates [items], extracts a name via [nameOf], and emits an
+     * ANLZ-01 diagnostic for each duplicate. Returns the set of all unique names found.
      *
      * @param entityKind Human-readable entity label (e.g. "scene", "actor", "variable").
      * @param fieldKind Human-readable field label (e.g. "ID", "name").
@@ -184,8 +184,7 @@ class SemanticValidationPass : AnalysisPass {
     }
 
     /** Counts [RawOp] instances within a list of [ScriptOp]s (including nested ops). */
-    private fun countRawOps(ops: List<ScriptOp>): Int =
-        collectAllOps(ops).count { it is RawOp }
+    private fun countRawOps(ops: List<ScriptOp>): Int = collectAllOps(ops).count { it is RawOp }
 
     /**
      * Validates GBC hardware palette limits.
@@ -257,26 +256,53 @@ class SemanticValidationPass : AnalysisPass {
         if (hasAudioMixer) return
 
         val topLevelOps = buildList {
-            for (scene in game.scenes) { addAll(scene.enterOps); addAll(scene.frameOps); addAll(scene.exitOps) }
-            for (zone in game.zones) {
-                addAll(zone.onEnter); addAll(zone.onExit)
-                for (obj in zone.objects) { addAll(obj.onInteract) }
+            for (scene in game.scenes) {
+                addAll(scene.enterOps)
+                addAll(scene.frameOps)
+                addAll(scene.exitOps)
             }
-            for (rule in game.collisionRules) { addAll(rule.onCollide) }
-            for (pool in game.actorPools) { addAll(pool.deathCallback) }
-            for (menu in game.menus) { for (item in menu.items) { addAll(item.body) } }
-            for (puzzleObj in game.puzzleObjects) { for (h in puzzleObj.handlers) { addAll(h.actions) } }
+            for (zone in game.zones) {
+                addAll(zone.onEnter)
+                addAll(zone.onExit)
+                for (obj in zone.objects) {
+                    addAll(obj.onInteract)
+                }
+            }
+            for (rule in game.collisionRules) {
+                addAll(rule.onCollide)
+            }
+            for (pool in game.actorPools) {
+                addAll(pool.deathCallback)
+            }
+            for (menu in game.menus) {
+                for (item in menu.items) {
+                    addAll(item.body)
+                }
+            }
+            for (puzzleObj in game.puzzleObjects) {
+                for (h in puzzleObj.handlers) {
+                    addAll(h.actions)
+                }
+            }
             for (system in game.systems) {
                 when (system) {
                     is ExplorationSystem -> {
-                        addAll(system.stepStatements); addAll(system.blockedStatements)
+                        addAll(system.stepStatements)
+                        addAll(system.blockedStatements)
                         addAll(system.interactStatements)
-                        for (g in system.gauges) { addAll(g.onLowStatements); addAll(g.onDepletedStatements) }
+                        for (g in system.gauges) {
+                            addAll(g.onLowStatements)
+                            addAll(g.onDepletedStatements)
+                        }
                     }
                     is CombatEngineSystem -> {
-                        addAll(system.onVictoryCondition); addAll(system.onDefeatCondition)
-                        addAll(system.onVictoryOps); addAll(system.onDefeatOps)
-                        for ((_, ops) in system.combatHooks) { addAll(ops) }
+                        addAll(system.onVictoryCondition)
+                        addAll(system.onDefeatCondition)
+                        addAll(system.onVictoryOps)
+                        addAll(system.onDefeatOps)
+                        for ((_, ops) in system.combatHooks) {
+                            addAll(ops)
+                        }
                     }
                     else -> Unit
                 }
@@ -311,5 +337,4 @@ class SemanticValidationPass : AnalysisPass {
             }
         }
     }
-
 }

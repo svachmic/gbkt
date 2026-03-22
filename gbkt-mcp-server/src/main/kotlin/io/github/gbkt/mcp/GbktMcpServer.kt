@@ -21,9 +21,9 @@ import kotlinx.io.buffered
 /**
  * Entry point for the gbkt MCP server.
  *
- * Starts a stdio-based MCP server that exposes Game Boy emulator tools for AI agents.
- * The server manages a single [McpEmulatorSession] and registers 11 tools for
- * frame-by-frame game control, variable inspection, screenshot capture, and metadata query.
+ * Starts a stdio-based MCP server that exposes Game Boy emulator tools for AI agents. The server
+ * manages a single [McpEmulatorSession] and registers 11 tools for frame-by-frame game control,
+ * variable inspection, screenshot capture, and metadata query.
  *
  * Usage:
  * ```
@@ -42,31 +42,29 @@ import kotlinx.io.buffered
  * }
  * ```
  *
- * When `--headed` is passed, every `emulator_start` call opens a Swing window showing the
- * Game Boy LCD in real time. The agent still controls all input — the developer just watches.
+ * When `--headed` is passed, every `emulator_start` call opens a Swing window showing the Game Boy
+ * LCD in real time. The agent still controls all input — the developer just watches.
  */
 fun main(args: Array<String>) {
     val headed = "--headed" in args
     val session = McpEmulatorSession(headed = headed)
 
-    val server = Server(
-        Implementation(
-            name = "gbkt-emulator",
-            version = "1.0.0",
-        ),
-        ServerOptions(
-            capabilities = ServerCapabilities(
-                tools = ServerCapabilities.Tools(listChanged = false),
+    val server =
+        Server(
+            Implementation(name = "gbkt-emulator", version = "1.0.0"),
+            ServerOptions(
+                capabilities =
+                    ServerCapabilities(tools = ServerCapabilities.Tools(listChanged = false))
             ),
-        ),
-    )
+        )
 
     server.registerEmulatorTools(session)
 
-    val transport = StdioServerTransport(
-        inputStream = System.`in`.asSource().buffered(),
-        outputStream = System.out.asSink().buffered(),
-    )
+    val transport =
+        StdioServerTransport(
+            inputStream = System.`in`.asSource().buffered(),
+            outputStream = System.out.asSink().buffered(),
+        )
 
     runBlocking {
         val mcpSession = server.createSession(transport)

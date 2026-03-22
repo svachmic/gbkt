@@ -22,9 +22,9 @@ import kotlin.test.assertTrue
  * Two tiers:
  * 1. IR integrity tests — run on JVM via SimulationContextV2, no ROM required. Validate game
  *    structure and that all 4 scenes are reachable and exit cleanly.
- * 2. ROM smoke test (emulatorTest Gradle task) — headless Coffee-GB validation run via
- *    `./gradlew :gbkt-examples:rpg-lite:emulatorTest`. This test class validates the IR tier;
- *    the Gradle task validates the ROM tier.
+ * 2. ROM smoke test (emulatorTest Gradle task) — headless Coffee-GB validation run via `./gradlew
+ *    :gbkt-examples:rpg-lite:emulatorTest`. This test class validates the IR tier; the Gradle task
+ *    validates the ROM tier.
  *
  * Scenarios validated:
  * - All 4 scenes (title, town, dungeon, gameover) are enterable without crash
@@ -64,7 +64,8 @@ class RpgLiteEmulatorTest {
         val sim = SimulationContextV2(ir)
         sim.enterScene("title")
         assertEquals("title", sim.currentScene)
-        // Title enter ops: hideSprites, clear, print calls (RPG LITE, A MINI ADVENTURE, PRESS START)
+        // Title enter ops: hideSprites, clear, print calls (RPG LITE, A MINI ADVENTURE, PRESS
+        // START)
         assertTrue(ir.scenes.first { it.id == "title" }.enterOps.isNotEmpty())
     }
 
@@ -188,34 +189,48 @@ class RpgLiteEmulatorTest {
 
     @Test
     fun `combat CombatEngineSystem registered with id combat`() {
-        val combatSystem = ir.systems.filterIsInstance<CombatEngineSystem>().find { it.id == "combat" }
-        assertNotNull(combatSystem, "Expected CombatEngineSystem with id='combat' from simpleBattle builder")
+        val combatSystem =
+            ir.systems.filterIsInstance<CombatEngineSystem>().find { it.id == "combat" }
+        assertNotNull(
+            combatSystem,
+            "Expected CombatEngineSystem with id='combat' from simpleBattle builder",
+        )
         assertEquals(CombatType.TURN_BASED, combatSystem.combatType)
     }
 
     @Test
     fun `combat system contains party (hero) and encounter data`() {
-        val combatSystem = ir.systems.filterIsInstance<CombatEngineSystem>().find { it.id == "combat" }
+        val combatSystem =
+            ir.systems.filterIsInstance<CombatEngineSystem>().find { it.id == "combat" }
         assertNotNull(combatSystem, "Expected CombatEngineSystem with id='combat'")
         requireNotNull(combatSystem)
         val config = combatSystem.encounterConfig
-        assertNotNull(config, "CombatEngineSystem.encounterConfig must be set by simpleBattle builder")
+        assertNotNull(
+            config,
+            "CombatEngineSystem.encounterConfig must be set by simpleBattle builder",
+        )
         assertTrue(config.containsKey("partyIds"), "encounterConfig must have partyIds")
         assertTrue(config.containsKey("encounterData"), "encounterConfig must have encounterData")
 
-        @Suppress("UNCHECKED_CAST")
-        val partyIds = config["partyIds"] as? List<String>
+        @Suppress("UNCHECKED_CAST") val partyIds = config["partyIds"] as? List<String>
         assertNotNull(partyIds, "partyIds must be a List<String>")
         assertTrue(partyIds.contains("hero"), "partyIds must contain 'hero'")
     }
 
     @Test
     fun `combat system has onVictory and onDefeat ops`() {
-        val combatSystem = ir.systems.filterIsInstance<CombatEngineSystem>().find { it.id == "combat" }
+        val combatSystem =
+            ir.systems.filterIsInstance<CombatEngineSystem>().find { it.id == "combat" }
         assertNotNull(combatSystem, "Expected CombatEngineSystem")
         requireNotNull(combatSystem)
-        assertTrue(combatSystem.onVictoryOps.isNotEmpty(), "onVictoryOps must not be empty (gold+=5, navigate)")
-        assertTrue(combatSystem.onDefeatOps.isNotEmpty(), "onDefeatOps must not be empty (navigate gameover)")
+        assertTrue(
+            combatSystem.onVictoryOps.isNotEmpty(),
+            "onVictoryOps must not be empty (gold+=5, navigate)",
+        )
+        assertTrue(
+            combatSystem.onDefeatOps.isNotEmpty(),
+            "onDefeatOps must not be empty (navigate gameover)",
+        )
     }
 
     // =========================================================================

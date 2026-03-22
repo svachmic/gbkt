@@ -6,13 +6,12 @@
  */
 package io.github.gbkt.emulator.agent
 
-import eu.rekawek.coffeegb.core.events.EventBus
 import eu.rekawek.coffeegb.core.events.Event
+import eu.rekawek.coffeegb.core.events.EventBus
 import eu.rekawek.coffeegb.core.events.Subscriber
 import eu.rekawek.coffeegb.core.joypad.ButtonPressEvent
 import eu.rekawek.coffeegb.core.joypad.ButtonReleaseEvent
 import io.github.gbkt.emulator.GbEmulator
-import io.github.gbkt.emulator.LogLevel
 import io.github.gbkt.emulator.MemoryAccess
 import io.github.gbkt.emulator.debug.DebugLogEntry
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -23,8 +22,8 @@ import org.junit.jupiter.api.Test
 /**
  * Unit tests for [InputScriptPlayer].
  *
- * Uses a stub [GbEmulator] to count [stepFrame] calls and a recording [EventBus]
- * to verify the correct sequence of [ButtonPressEvent] / [ButtonReleaseEvent].
+ * Uses a stub [GbEmulator] to count [stepFrame] calls and a recording [EventBus] to verify the
+ * correct sequence of [ButtonPressEvent] / [ButtonReleaseEvent].
  */
 class InputScriptPlayerTest {
 
@@ -42,10 +41,8 @@ class InputScriptPlayerTest {
                 name: String,
             ) = Unit
 
-            override fun <E : Event> register(
-                subscriber: Subscriber<E>,
-                eventClass: Class<E>,
-            ) = Unit
+            override fun <E : Event> register(subscriber: Subscriber<E>, eventClass: Class<E>) =
+                Unit
 
             override fun <E : Event> post(event: E) {
                 postedEvents += event
@@ -62,16 +59,29 @@ class InputScriptPlayerTest {
     private val pausedEmulator =
         object : GbEmulator {
             override fun start() = Unit
+
             override fun stop() = Unit
+
             override fun pause() = Unit
+
             override fun resume() = Unit
-            override fun stepFrame() { stepFrameCount++ }
+
+            override fun stepFrame() {
+                stepFrameCount++
+            }
+
             override fun setSpeed(multiplier: Float) = Unit
+
             override fun getFrameBuffer(): IntArray = IntArray(160 * 144)
+
             override fun getMemory(): MemoryAccess = error("not used")
+
             override fun getDebugLog(): List<DebugLogEntry> = emptyList()
+
             override fun isRunning(): Boolean = true
+
             override fun isPaused(): Boolean = true
+
             override val isHeadless: Boolean = true
         }
 
@@ -176,8 +186,8 @@ class InputScriptPlayerTest {
         // release(RIGHT): 1 event, 0 frames
         assertEquals(31, stepFrameCount)
         assertEquals(4, postedEvents.size)
-        assert(postedEvents[0] is ButtonPressEvent)  // hold RIGHT
-        assert(postedEvents[1] is ButtonPressEvent)  // press A start
+        assert(postedEvents[0] is ButtonPressEvent) // hold RIGHT
+        assert(postedEvents[1] is ButtonPressEvent) // press A start
         assert(postedEvents[2] is ButtonReleaseEvent) // press A end
         assert(postedEvents[3] is ButtonReleaseEvent) // release RIGHT
     }
@@ -186,16 +196,17 @@ class InputScriptPlayerTest {
 
     @Test
     fun `all Button enum values map to Coffee-GB Button correctly`() {
-        val mappings = listOf(
-            Button.UP to eu.rekawek.coffeegb.core.joypad.Button.UP,
-            Button.DOWN to eu.rekawek.coffeegb.core.joypad.Button.DOWN,
-            Button.LEFT to eu.rekawek.coffeegb.core.joypad.Button.LEFT,
-            Button.RIGHT to eu.rekawek.coffeegb.core.joypad.Button.RIGHT,
-            Button.A to eu.rekawek.coffeegb.core.joypad.Button.A,
-            Button.B to eu.rekawek.coffeegb.core.joypad.Button.B,
-            Button.START to eu.rekawek.coffeegb.core.joypad.Button.START,
-            Button.SELECT to eu.rekawek.coffeegb.core.joypad.Button.SELECT,
-        )
+        val mappings =
+            listOf(
+                Button.UP to eu.rekawek.coffeegb.core.joypad.Button.UP,
+                Button.DOWN to eu.rekawek.coffeegb.core.joypad.Button.DOWN,
+                Button.LEFT to eu.rekawek.coffeegb.core.joypad.Button.LEFT,
+                Button.RIGHT to eu.rekawek.coffeegb.core.joypad.Button.RIGHT,
+                Button.A to eu.rekawek.coffeegb.core.joypad.Button.A,
+                Button.B to eu.rekawek.coffeegb.core.joypad.Button.B,
+                Button.START to eu.rekawek.coffeegb.core.joypad.Button.START,
+                Button.SELECT to eu.rekawek.coffeegb.core.joypad.Button.SELECT,
+            )
         for ((agentButton, coffeeButton) in mappings) {
             postedEvents.clear()
             player.play(inputScript { press(agentButton) })

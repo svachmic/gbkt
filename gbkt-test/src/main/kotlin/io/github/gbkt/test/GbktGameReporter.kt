@@ -75,7 +75,9 @@ class GbktGameReporter(private val gameName: String) {
      */
     fun printSummary() {
         println("=== $gameName Test Summary ===")
-        println("  Scenes verified: ${scenesVerified.sorted().joinToString(", ").ifEmpty { "none" }}")
+        println(
+            "  Scenes verified: ${scenesVerified.sorted().joinToString(", ").ifEmpty { "none" }}"
+        )
         println("  Assertions: $assertionsPassed passed, $assertionsFailed failed")
         println("  Screenshots: $screenshotsCaptured captured")
         println("==============================")

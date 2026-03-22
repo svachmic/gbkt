@@ -19,9 +19,9 @@ import kotlin.test.assertTrue
  * Two tiers:
  * 1. IR integrity tests — run on JVM via SimulationContextV2, no ROM required. Validate game
  *    structure and that all 5 scenes are reachable and exit cleanly.
- * 2. ROM smoke test (emulatorTest Gradle task) — headless Coffee-GB validation run via
- *    `./gradlew :gbkt-examples:explorer:emulatorTest`. This test class validates the IR tier;
- *    the Gradle task validates the ROM tier.
+ * 2. ROM smoke test (emulatorTest Gradle task) — headless Coffee-GB validation run via `./gradlew
+ *    :gbkt-examples:explorer:emulatorTest`. This test class validates the IR tier; the Gradle task
+ *    validates the ROM tier.
  *
  * Scenarios validated:
  * - All 5 scenes (title, gameplay, pause, combat_scene, gameover) are enterable without crash

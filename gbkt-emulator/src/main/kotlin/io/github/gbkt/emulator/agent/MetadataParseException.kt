@@ -11,4 +11,5 @@ package io.github.gbkt.emulator.agent
  *
  * Wraps the underlying JSON parse error or missing-field error with a descriptive message.
  */
-class MetadataParseException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+class MetadataParseException(message: String, cause: Throwable? = null) :
+    RuntimeException(message, cause)

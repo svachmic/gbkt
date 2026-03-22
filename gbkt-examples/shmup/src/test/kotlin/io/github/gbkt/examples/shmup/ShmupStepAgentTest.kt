@@ -23,14 +23,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/**
- * StepAgent integration tests for Shmup — proves the AI-testable workflow.
- */
+/** StepAgent integration tests for Shmup — proves the AI-testable workflow. */
 class ShmupStepAgentTest {
 
-    @JvmField
-    @RegisterExtension
-    val game = GbktTestExtension("shmup")
+    @JvmField @RegisterExtension val game = GbktTestExtension("shmup")
 
     @Test
     fun `metadata and symbol table agree on variable names`() {
@@ -39,7 +35,7 @@ class ShmupStepAgentTest {
                 expectedSceneCount = 3,
                 expectedScenes = setOf(Scenes.TITLE, Scenes.GAMEPLAY, Scenes.GAMEOVER),
                 expectedActors = setOf(Actors.PLAYER),
-            ),
+            )
         )
     }
 
@@ -96,6 +92,10 @@ class ShmupStepAgentTest {
 
         val wrote = game.writeVariable(Variables.SCORE, 42)
         assertTrue(wrote, "writeVariable should succeed for score")
-        assertEquals(42, game.readVariable(Variables.SCORE), "score should read back 42 after write")
+        assertEquals(
+            42,
+            game.readVariable(Variables.SCORE),
+            "score should read back 42 after write",
+        )
     }
 }

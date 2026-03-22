@@ -47,8 +47,7 @@ class ConstraintCheckPass : AnalysisPass {
         val totalOamEntries = inventory.spriteTileCounts.values.sum()
         val maxSprites = profile.sprites.maxSprites
         when {
-            totalOamEntries >= config.oamErrorThreshold ||
-                totalOamEntries > maxSprites -> {
+            totalOamEntries >= config.oamErrorThreshold || totalOamEntries > maxSprites -> {
                 diagnostics +=
                     Diagnostic(
                         id = "ANLZ-02",
@@ -82,7 +81,8 @@ class ConstraintCheckPass : AnalysisPass {
         // --- WRAM usage check ---
         val actorStateBytes = context.game.actors.size * RAMPlanningPass.ACTOR_STATE_BYTES
         val overheadBytes = RAMPlanningPass.ENGINE_OVERHEAD_BYTES
-        val totalRamBytes = inventory.variableBytes + inventory.collectionBytes + actorStateBytes + overheadBytes
+        val totalRamBytes =
+            inventory.variableBytes + inventory.collectionBytes + actorStateBytes + overheadBytes
         val workRam = profile.memory.workRam
         val wramWarningBytes = (workRam * config.wramWarningThreshold).toInt()
         when {

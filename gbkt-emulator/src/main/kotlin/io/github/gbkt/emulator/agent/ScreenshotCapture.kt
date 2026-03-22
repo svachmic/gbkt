@@ -7,17 +7,17 @@
 package io.github.gbkt.emulator.agent
 
 import io.github.gbkt.emulator.debug.DebugLogEntry
-import org.json.JSONObject
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
 import javax.imageio.ImageIO
+import org.json.JSONObject
 
 /**
  * Captures a Game Boy LCD frame as a 160x144 PNG file with a JSON metadata sidecar.
  *
- * PNG path:  `{outputDir}/{label}_frame{frameNumber}.png`
- * JSON path: `{outputDir}/{label}_frame{frameNumber}.json`
+ * PNG path: `{outputDir}/{label}_frame{frameNumber}.png` JSON path:
+ * `{outputDir}/{label}_frame{frameNumber}.json`
  *
  * JSON sidecar format:
  * ```json
@@ -49,11 +49,13 @@ object ScreenshotCapture {
     /**
      * Captures the given frame buffer as a 160x144 PNG and writes a JSON sidecar with metadata.
      *
-     * @param frameBuffer 23040-element RGB pixel array from [io.github.gbkt.emulator.GbEmulator.getFrameBuffer].
-     *   Each element is packed as 0x00RRGGBB. Must be exactly 160 * 144 = 23040 elements.
+     * @param frameBuffer 23040-element RGB pixel array from
+     *   [io.github.gbkt.emulator.GbEmulator.getFrameBuffer]. Each element is packed as 0x00RRGGBB.
+     *   Must be exactly 160 * 144 = 23040 elements.
      * @param label Human-readable label used as the file name prefix (e.g., "battle_start").
      * @param frameNumber The emulator frame number at capture time (used in file name and JSON).
-     * @param outputDir Directory to write the PNG and JSON files into. Created if it does not exist.
+     * @param outputDir Directory to write the PNG and JSON files into. Created if it does not
+     *   exist.
      * @param variableSnapshot Optional map of DSL variable names to their current values. Written
      *   into the `"variables"` field of the JSON sidecar.
      * @param debugLogEntries Optional list of debug log entries to include in the JSON sidecar.
@@ -110,7 +112,7 @@ object ScreenshotCapture {
                     JSONObject()
                         .put("timestampMs", entry.timestampMs)
                         .put("level", entry.level.name)
-                        .put("message", entry.message),
+                        .put("message", entry.message)
                 )
             }
             sidecar.put("debugLog", logArray)

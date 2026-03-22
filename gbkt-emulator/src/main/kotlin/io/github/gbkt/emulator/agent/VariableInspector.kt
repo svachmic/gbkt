@@ -13,8 +13,9 @@ import java.io.File
  * Reads named DSL variables from a running emulator by resolving symbol names to memory addresses
  * via an SDCC `.sym` file.
  *
- * Symbol names come from the lcc compiler output: each global DSL variable `score` becomes `__score`
- * in the GBDK `.noi` file. This class strips all leading underscores for the user-facing API.
+ * Symbol names come from the lcc compiler output: each global DSL variable `score` becomes
+ * `__score` in the GBDK `.noi` file. This class strips all leading underscores for the user-facing
+ * API.
  *
  * Supported symbol file formats:
  * ```
@@ -30,10 +31,7 @@ import java.io.File
  * @param memory The emulator memory interface to read variable values from.
  * @param symFile Optional `.sym` file to load symbols from immediately.
  */
-class VariableInspector(
-    private val memory: MemoryAccess,
-    symFile: File? = null,
-) {
+class VariableInspector(private val memory: MemoryAccess, symFile: File? = null) {
 
     companion object {
         /** Start of Game Boy WRAM (Work RAM) — 0xC000. */
@@ -76,7 +74,8 @@ class VariableInspector(
         symFile.readLines().forEach { line ->
             val parts = line.trim().split("\\s+".toRegex())
             if (parts.size >= 3 && parts[0] == "DEF" && parts[1].startsWith("_")) {
-                // Strip all leading underscores — SDCC uses one (_score), GBDK .noi uses two (__score)
+                // Strip all leading underscores — SDCC uses one (_score), GBDK .noi uses two
+                // (__score)
                 val name = parts[1].trimStart('_')
                 if (name.isEmpty()) return@forEach
                 val addrStr = parts[2]
@@ -94,7 +93,8 @@ class VariableInspector(
                     } catch (_: Exception) {
                         return@forEach
                     }
-                // Only load symbols in WRAM range — filters out ROM functions, I/O regs, linker metadata
+                // Only load symbols in WRAM range — filters out ROM functions, I/O regs, linker
+                // metadata
                 if (address !in WRAM_START..WRAM_END) return@forEach
                 symbols[name] = SymbolEntry(name, address, inferVariableType(name))
             }
@@ -164,8 +164,7 @@ class VariableInspector(
      *
      * @return Map from variable name to type-correct value.
      */
-    fun readAll(): Map<String, Int> =
-        symbols.mapValues { (_, entry) -> readTypedValue(entry) }
+    fun readAll(): Map<String, Int> = symbols.mapValues { (_, entry) -> readTypedValue(entry) }
 
     /**
      * Overrides the type for one or more symbols, replacing the heuristic-inferred type.
@@ -177,9 +176,7 @@ class VariableInspector(
      */
     fun overrideTypes(typeMap: Map<String, String>) {
         for ((name, type) in typeMap) {
-            symbols[name]?.let { existing ->
-                symbols[name] = existing.copy(type = type)
-            }
+            symbols[name]?.let { existing -> symbols[name] = existing.copy(type = type) }
         }
     }
 
@@ -191,21 +188,24 @@ class VariableInspector(
     private fun readTypedValue(entry: SymbolEntry): Int {
         val raw = memory.readByte(entry.address)
         return when (entry.type) {
-            "INT8", "I8" -> if (raw > 127) raw - 256 else raw
-            "UINT16", "U16" -> {
-                if (entry.address + 1 > WRAM_END) return raw  // boundary safety
+            "INT8",
+            "I8" -> if (raw > 127) raw - 256 else raw
+            "UINT16",
+            "U16" -> {
+                if (entry.address + 1 > WRAM_END) return raw // boundary safety
                 val lo = memory.readByte(entry.address)
                 val hi = memory.readByte(entry.address + 1)
                 (hi shl 8) or lo
             }
-            "INT16", "I16" -> {
-                if (entry.address + 1 > WRAM_END) return raw  // boundary safety
+            "INT16",
+            "I16" -> {
+                if (entry.address + 1 > WRAM_END) return raw // boundary safety
                 val lo = memory.readByte(entry.address)
                 val hi = memory.readByte(entry.address + 1)
                 val raw16 = (hi shl 8) or lo
                 if (raw16 > 32767) raw16 - 65536 else raw16
             }
-            else -> raw  // UINT8, U8 — existing unsigned byte behavior
+            else -> raw // UINT8, U8 — existing unsigned byte behavior
         }
     }
 

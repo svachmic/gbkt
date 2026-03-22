@@ -29,8 +29,8 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CU8
 import io.github.gbkt.backend.gbdk.codegen.ast.CUnaryExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CVar
 import io.github.gbkt.backend.gbdk.codegen.ast.CVarDecl
-import io.github.gbkt.backend.gbdk.codegen.ast.CWhile
 import io.github.gbkt.backend.gbdk.codegen.ast.CVoid
+import io.github.gbkt.backend.gbdk.codegen.ast.CWhile
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.genre.puzzle.domain.BlockPushConfig
 import io.github.gbkt.genre.puzzle.domain.CellBehavior
@@ -235,11 +235,7 @@ class PuzzleVisitor : GenreSystemVisitor {
             CFor(
                 init = CVarDecl(name = "k", type = CU8, initializer = CVar("run_start")),
                 condition =
-                    CBinaryExpr(
-                        CVar("k"),
-                        "<",
-                        CBinaryExpr(CVar("run_start"), "+", CVar("run")),
-                    ),
+                    CBinaryExpr(CVar("k"), "<", CBinaryExpr(CVar("run_start"), "+", CVar("run"))),
                 increment = CUnaryExpr("++", CVar("k")),
                 body =
                     listOf(
@@ -266,11 +262,7 @@ class PuzzleVisitor : GenreSystemVisitor {
             CFor(
                 init = CVarDecl(name = "k", type = CU8, initializer = CVar("run_start")),
                 condition =
-                    CBinaryExpr(
-                        CVar("k"),
-                        "<",
-                        CBinaryExpr(CVar("run_start"), "+", CVar("run")),
-                    ),
+                    CBinaryExpr(CVar("k"), "<", CBinaryExpr(CVar("run_start"), "+", CVar("run"))),
                 increment = CUnaryExpr("++", CVar("k")),
                 body =
                     listOf(
@@ -296,10 +288,7 @@ class PuzzleVisitor : GenreSystemVisitor {
             CIf(
                 condition = CBinaryExpr(CVar("run"), ">=", CLiteral(minMatch)),
                 thenBody =
-                    listOf(
-                        clearLoop,
-                        CExprStatement(CBinaryExpr(CVar("found"), "=", CLiteral(1))),
-                    ),
+                    listOf(clearLoop, CExprStatement(CBinaryExpr(CVar("found"), "=", CLiteral(1)))),
             )
 
         // Horizontal scan — end-of-run clearing
@@ -344,20 +333,29 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                 CArrayAccess(
                                                     CVar("_puzzle_grid_$id"),
                                                     CBinaryExpr(
-                                                        CBinaryExpr(CVar("r"), "*", CLiteral(width)),
+                                                        CBinaryExpr(
+                                                            CVar("r"),
+                                                            "*",
+                                                            CLiteral(width),
+                                                        ),
                                                         "+",
                                                         CBinaryExpr(CVar("c"), "-", CLiteral(1)),
                                                     ),
                                                 ),
                                             ),
-                                        thenBody = listOf(CExprStatement(CUnaryExpr("++", CVar("run")))),
+                                        thenBody =
+                                            listOf(CExprStatement(CUnaryExpr("++", CVar("run")))),
                                         // else: end-of-run detected
                                         elseBody =
                                             listOf(
                                                 buildEndOfRunCheck(buildHorizClearLoop("r")),
                                                 // reset run and run_start
-                                                CExprStatement(CBinaryExpr(CVar("run"), "=", CLiteral(1))),
-                                                CExprStatement(CBinaryExpr(CVar("run_start"), "=", CVar("c"))),
+                                                CExprStatement(
+                                                    CBinaryExpr(CVar("run"), "=", CLiteral(1))
+                                                ),
+                                                CExprStatement(
+                                                    CBinaryExpr(CVar("run_start"), "=", CVar("c"))
+                                                ),
                                             ),
                                     ),
                                 ),
@@ -409,7 +407,11 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                     CVar("_puzzle_grid_$id"),
                                                     CBinaryExpr(
                                                         CBinaryExpr(
-                                                            CBinaryExpr(CVar("r2"), "-", CLiteral(1)),
+                                                            CBinaryExpr(
+                                                                CVar("r2"),
+                                                                "-",
+                                                                CLiteral(1),
+                                                            ),
                                                             "*",
                                                             CLiteral(width),
                                                         ),
@@ -418,12 +420,17 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                     ),
                                                 ),
                                             ),
-                                        thenBody = listOf(CExprStatement(CUnaryExpr("++", CVar("run")))),
+                                        thenBody =
+                                            listOf(CExprStatement(CUnaryExpr("++", CVar("run")))),
                                         elseBody =
                                             listOf(
                                                 buildEndOfRunCheck(buildVertClearLoop("c2")),
-                                                CExprStatement(CBinaryExpr(CVar("run"), "=", CLiteral(1))),
-                                                CExprStatement(CBinaryExpr(CVar("run_start"), "=", CVar("r2"))),
+                                                CExprStatement(
+                                                    CBinaryExpr(CVar("run"), "=", CLiteral(1))
+                                                ),
+                                                CExprStatement(
+                                                    CBinaryExpr(CVar("run_start"), "=", CVar("r2"))
+                                                ),
                                             ),
                                     ),
                                 ),
@@ -464,7 +471,8 @@ class PuzzleVisitor : GenreSystemVisitor {
                                 CExprStatement(CBinaryExpr(CVar("swapped"), "=", CLiteral(0))),
                                 // For each column, bubble non-zero cells downward
                                 CFor(
-                                    init = CVarDecl(name = "c", type = CU8, initializer = CLiteral(0)),
+                                    init =
+                                        CVarDecl(name = "c", type = CU8, initializer = CLiteral(0)),
                                     condition = CBinaryExpr(CVar("c"), "<", CLiteral(width)),
                                     increment = CUnaryExpr("++", CVar("c")),
                                     body =
@@ -476,7 +484,8 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                         type = CU8,
                                                         initializer = CLiteral(height - 1),
                                                     ),
-                                                condition = CBinaryExpr(CVar("r"), ">", CLiteral(0)),
+                                                condition =
+                                                    CBinaryExpr(CVar("r"), ">", CLiteral(0)),
                                                 increment = CUnaryExpr("--", CVar("r")),
                                                 body =
                                                     listOf(
@@ -512,12 +521,18 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                                                         ),
                                                                                         CBinaryExpr(
                                                                                             CBinaryExpr(
-                                                                                                CVar("r"),
+                                                                                                CVar(
+                                                                                                    "r"
+                                                                                                ),
                                                                                                 "*",
-                                                                                                CLiteral(width),
+                                                                                                CLiteral(
+                                                                                                    width
+                                                                                                ),
                                                                                             ),
                                                                                             "+",
-                                                                                            CVar("c"),
+                                                                                            CVar(
+                                                                                                "c"
+                                                                                            ),
                                                                                         ),
                                                                                     ),
                                                                             ),
@@ -529,12 +544,18 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                                                         ),
                                                                                         CBinaryExpr(
                                                                                             CBinaryExpr(
-                                                                                                CVar("r"),
+                                                                                                CVar(
+                                                                                                    "r"
+                                                                                                ),
                                                                                                 "*",
-                                                                                                CLiteral(width),
+                                                                                                CLiteral(
+                                                                                                    width
+                                                                                                ),
                                                                                             ),
                                                                                             "+",
-                                                                                            CVar("c"),
+                                                                                            CVar(
+                                                                                                "c"
+                                                                                            ),
                                                                                         ),
                                                                                     ),
                                                                                     "=",
@@ -545,15 +566,23 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                                                         CBinaryExpr(
                                                                                             CBinaryExpr(
                                                                                                 CBinaryExpr(
-                                                                                                    CVar("r"),
+                                                                                                    CVar(
+                                                                                                        "r"
+                                                                                                    ),
                                                                                                     "-",
-                                                                                                    CLiteral(1),
+                                                                                                    CLiteral(
+                                                                                                        1
+                                                                                                    ),
                                                                                                 ),
                                                                                                 "*",
-                                                                                                CLiteral(width),
+                                                                                                CLiteral(
+                                                                                                    width
+                                                                                                ),
                                                                                             ),
                                                                                             "+",
-                                                                                            CVar("c"),
+                                                                                            CVar(
+                                                                                                "c"
+                                                                                            ),
                                                                                         ),
                                                                                     ),
                                                                                 )
@@ -567,22 +596,31 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                                                         CBinaryExpr(
                                                                                             CBinaryExpr(
                                                                                                 CBinaryExpr(
-                                                                                                    CVar("r"),
+                                                                                                    CVar(
+                                                                                                        "r"
+                                                                                                    ),
                                                                                                     "-",
-                                                                                                    CLiteral(1),
+                                                                                                    CLiteral(
+                                                                                                        1
+                                                                                                    ),
                                                                                                 ),
                                                                                                 "*",
-                                                                                                CLiteral(width),
+                                                                                                CLiteral(
+                                                                                                    width
+                                                                                                ),
                                                                                             ),
                                                                                             "+",
-                                                                                            CVar("c"),
+                                                                                            CVar(
+                                                                                                "c"
+                                                                                            ),
                                                                                         ),
                                                                                     ),
                                                                                     "=",
                                                                                     CVar("tmp"),
                                                                                 )
                                                                             ),
-                                                                            // Mark that a swap occurred
+                                                                            // Mark that a swap
+                                                                            // occurred
                                                                             CExprStatement(
                                                                                 CBinaryExpr(
                                                                                     CVar("swapped"),
@@ -619,7 +657,8 @@ class PuzzleVisitor : GenreSystemVisitor {
                                 CExprStatement(CBinaryExpr(CVar("swapped"), "=", CLiteral(0))),
                                 // For each column, bubble non-zero cells upward
                                 CFor(
-                                    init = CVarDecl(name = "c", type = CU8, initializer = CLiteral(0)),
+                                    init =
+                                        CVarDecl(name = "c", type = CU8, initializer = CLiteral(0)),
                                     condition = CBinaryExpr(CVar("c"), "<", CLiteral(width)),
                                     increment = CUnaryExpr("++", CVar("c")),
                                     body =
@@ -631,7 +670,12 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                         type = CU8,
                                                         initializer = CLiteral(0),
                                                     ),
-                                                condition = CBinaryExpr(CVar("r"), "<", CLiteral(height - 1)),
+                                                condition =
+                                                    CBinaryExpr(
+                                                        CVar("r"),
+                                                        "<",
+                                                        CLiteral(height - 1),
+                                                    ),
                                                 increment = CUnaryExpr("++", CVar("r")),
                                                 body =
                                                     listOf(
@@ -667,12 +711,18 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                                                         ),
                                                                                         CBinaryExpr(
                                                                                             CBinaryExpr(
-                                                                                                CVar("r"),
+                                                                                                CVar(
+                                                                                                    "r"
+                                                                                                ),
                                                                                                 "*",
-                                                                                                CLiteral(width),
+                                                                                                CLiteral(
+                                                                                                    width
+                                                                                                ),
                                                                                             ),
                                                                                             "+",
-                                                                                            CVar("c"),
+                                                                                            CVar(
+                                                                                                "c"
+                                                                                            ),
                                                                                         ),
                                                                                     ),
                                                                             ),
@@ -684,12 +734,18 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                                                         ),
                                                                                         CBinaryExpr(
                                                                                             CBinaryExpr(
-                                                                                                CVar("r"),
+                                                                                                CVar(
+                                                                                                    "r"
+                                                                                                ),
                                                                                                 "*",
-                                                                                                CLiteral(width),
+                                                                                                CLiteral(
+                                                                                                    width
+                                                                                                ),
                                                                                             ),
                                                                                             "+",
-                                                                                            CVar("c"),
+                                                                                            CVar(
+                                                                                                "c"
+                                                                                            ),
                                                                                         ),
                                                                                     ),
                                                                                     "=",
@@ -700,15 +756,23 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                                                         CBinaryExpr(
                                                                                             CBinaryExpr(
                                                                                                 CBinaryExpr(
-                                                                                                    CVar("r"),
+                                                                                                    CVar(
+                                                                                                        "r"
+                                                                                                    ),
                                                                                                     "+",
-                                                                                                    CLiteral(1),
+                                                                                                    CLiteral(
+                                                                                                        1
+                                                                                                    ),
                                                                                                 ),
                                                                                                 "*",
-                                                                                                CLiteral(width),
+                                                                                                CLiteral(
+                                                                                                    width
+                                                                                                ),
                                                                                             ),
                                                                                             "+",
-                                                                                            CVar("c"),
+                                                                                            CVar(
+                                                                                                "c"
+                                                                                            ),
                                                                                         ),
                                                                                     ),
                                                                                 )
@@ -722,22 +786,31 @@ class PuzzleVisitor : GenreSystemVisitor {
                                                                                         CBinaryExpr(
                                                                                             CBinaryExpr(
                                                                                                 CBinaryExpr(
-                                                                                                    CVar("r"),
+                                                                                                    CVar(
+                                                                                                        "r"
+                                                                                                    ),
                                                                                                     "+",
-                                                                                                    CLiteral(1),
+                                                                                                    CLiteral(
+                                                                                                        1
+                                                                                                    ),
                                                                                                 ),
                                                                                                 "*",
-                                                                                                CLiteral(width),
+                                                                                                CLiteral(
+                                                                                                    width
+                                                                                                ),
                                                                                             ),
                                                                                             "+",
-                                                                                            CVar("c"),
+                                                                                            CVar(
+                                                                                                "c"
+                                                                                            ),
                                                                                         ),
                                                                                     ),
                                                                                     "=",
                                                                                     CVar("tmp"),
                                                                                 )
                                                                             ),
-                                                                            // Mark that a swap occurred
+                                                                            // Mark that a swap
+                                                                            // occurred
                                                                             CExprStatement(
                                                                                 CBinaryExpr(
                                                                                     CVar("swapped"),
@@ -845,20 +918,12 @@ class PuzzleVisitor : GenreSystemVisitor {
                 CBinaryExpr(
                     CArrayAccess(
                         CVar("_puzzle_grid_$id"),
-                        CBinaryExpr(
-                            CBinaryExpr(CVar("ny"), "*", CLiteral(width)),
-                            "+",
-                            CVar("nx"),
-                        ),
+                        CBinaryExpr(CBinaryExpr(CVar("ny"), "*", CLiteral(width)), "+", CVar("nx")),
                     ),
                     "=",
                     CArrayAccess(
                         CVar("_puzzle_grid_$id"),
-                        CBinaryExpr(
-                            CBinaryExpr(CVar("py"), "*", CLiteral(width)),
-                            "+",
-                            CVar("px"),
-                        ),
+                        CBinaryExpr(CBinaryExpr(CVar("py"), "*", CLiteral(width)), "+", CVar("px")),
                     ),
                 )
             )
@@ -869,11 +934,7 @@ class PuzzleVisitor : GenreSystemVisitor {
                 CBinaryExpr(
                     CArrayAccess(
                         CVar("_puzzle_grid_$id"),
-                        CBinaryExpr(
-                            CBinaryExpr(CVar("py"), "*", CLiteral(width)),
-                            "+",
-                            CVar("px"),
-                        ),
+                        CBinaryExpr(CBinaryExpr(CVar("py"), "*", CLiteral(width)), "+", CVar("px")),
                     ),
                     "=",
                     CLiteral(0),
@@ -1036,7 +1097,11 @@ class PuzzleVisitor : GenreSystemVisitor {
     // puzzle_check_cell_type_<id>(x, y) — custom cell type dispatch
     // =========================================================================
 
-    private fun buildCheckCellType(id: String, width: Int, customCellTypes: List<CustomCellType>): CFunction {
+    private fun buildCheckCellType(
+        id: String,
+        width: Int,
+        customCellTypes: List<CustomCellType>,
+    ): CFunction {
         val body = mutableListOf<CStatement>()
         body.add(CComment("Return cell type code at (x, y) with custom type dispatch"))
         body.add(
@@ -1044,7 +1109,10 @@ class PuzzleVisitor : GenreSystemVisitor {
                 name = "cell",
                 type = CU8,
                 initializer =
-                    CArrayAccess(CVar("_puzzle_grid_$id"), CBinaryExpr(CBinaryExpr(CVar("y"), "*", CLiteral(width)), "+", CVar("x"))),
+                    CArrayAccess(
+                        CVar("_puzzle_grid_$id"),
+                        CBinaryExpr(CBinaryExpr(CVar("y"), "*", CLiteral(width)), "+", CVar("x")),
+                    ),
             )
         )
         // Build switch cases for custom cell types

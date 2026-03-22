@@ -9,6 +9,7 @@ package io.github.gbkt.mcp
 import io.github.gbkt.emulator.GbEmulator
 import io.github.gbkt.emulator.MemoryAccess
 import io.github.gbkt.emulator.debug.DebugLogEntry
+import java.io.File
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -17,20 +18,15 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
-/**
- * Real lifecycle tests for [McpEmulatorSession] using stub emulators.
- */
+/** Real lifecycle tests for [McpEmulatorSession] using stub emulators. */
 class SessionLifecycleTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private fun fakeRom(): File =
-        File(tempDir, "test.gb").also { it.writeBytes(ByteArray(64)) }
+    private fun fakeRom(): File = File(tempDir, "test.gb").also { it.writeBytes(ByteArray(64)) }
 
     private fun writeSymFile(): File =
         File(tempDir, "test.sym").also {
@@ -39,10 +35,15 @@ class SessionLifecycleTest {
 
     private fun mockMemory(vararg patches: Pair<Int, Int>): MemoryAccess {
         val mem = IntArray(0x10000) { 0 }
-        for ((addr, value) in patches) { mem[addr] = value }
+        for ((addr, value) in patches) {
+            mem[addr] = value
+        }
         return object : MemoryAccess {
             override fun readByte(address: Int): Int = mem[address]
-            override fun writeByte(address: Int, value: Int) { mem[address] = value }
+
+            override fun writeByte(address: Int, value: Int) {
+                mem[address] = value
+            }
         }
     }
 
@@ -50,17 +51,37 @@ class SessionLifecycleTest {
         object : GbEmulator {
             private var _paused = true
             private var _running = false
-            override fun start() { _running = true }
-            override fun stop() { _running = false }
-            override fun pause() { _paused = true }
-            override fun resume() { _paused = false }
+
+            override fun start() {
+                _running = true
+            }
+
+            override fun stop() {
+                _running = false
+            }
+
+            override fun pause() {
+                _paused = true
+            }
+
+            override fun resume() {
+                _paused = false
+            }
+
             override fun stepFrame() = Unit
+
             override fun setSpeed(multiplier: Float) = Unit
+
             override fun getFrameBuffer(): IntArray = IntArray(160 * 144) { 0x00FF00 }
+
             override fun getMemory(): MemoryAccess = memory
+
             override fun getDebugLog(): List<DebugLogEntry> = emptyList()
+
             override fun isRunning(): Boolean = _running
+
             override fun isPaused(): Boolean = _paused
+
             override val isHeadless: Boolean = true
         }
 
@@ -97,9 +118,7 @@ class SessionLifecycleTest {
         session.start(fakeRom(), writeSymFile())
 
         assertThrows<IllegalStateException> {
-            kotlinx.coroutines.runBlocking {
-                session.start(fakeRom(), writeSymFile())
-            }
+            kotlinx.coroutines.runBlocking { session.start(fakeRom(), writeSymFile()) }
         }
 
         session.stop()
@@ -152,17 +171,13 @@ class SessionLifecycleTest {
     @Test
     fun `step before start throws IllegalStateException`() = runTest {
         val session = makeSession()
-        assertThrows<IllegalStateException> {
-            kotlinx.coroutines.runBlocking { session.step() }
-        }
+        assertThrows<IllegalStateException> { kotlinx.coroutines.runBlocking { session.step() } }
     }
 
     @Test
     fun `observe before start throws IllegalStateException`() = runTest {
         val session = makeSession()
-        assertThrows<IllegalStateException> {
-            kotlinx.coroutines.runBlocking { session.observe() }
-        }
+        assertThrows<IllegalStateException> { kotlinx.coroutines.runBlocking { session.observe() } }
     }
 
     @Test

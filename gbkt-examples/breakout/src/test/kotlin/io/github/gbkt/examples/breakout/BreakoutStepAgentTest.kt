@@ -23,14 +23,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/**
- * StepAgent integration tests for Breakout — proves the AI-testable workflow.
- */
+/** StepAgent integration tests for Breakout — proves the AI-testable workflow. */
 class BreakoutStepAgentTest {
 
-    @JvmField
-    @RegisterExtension
-    val game = GbktTestExtension("breakout")
+    @JvmField @RegisterExtension val game = GbktTestExtension("breakout")
 
     @Test
     fun `metadata and symbol table agree on variable names`() {
@@ -39,7 +35,7 @@ class BreakoutStepAgentTest {
                 expectedSceneCount = 4,
                 expectedScenes = setOf(Scenes.TITLE, Scenes.GAME, Scenes.WIN, Scenes.GAMEOVER),
                 expectedActors = setOf(Actors.PADDLE, Actors.BALL),
-            ),
+            )
         )
     }
 
@@ -80,7 +76,10 @@ class BreakoutStepAgentTest {
         val beforeX = game.readVariable(Variables.PADDLE_X)!!
         game.stepN(30, setOf(Button.LEFT))
         val afterLeftX = game.readVariable(Variables.PADDLE_X)!!
-        assertTrue(afterLeftX < beforeX, "Paddle should move left: before=$beforeX, after=$afterLeftX")
+        assertTrue(
+            afterLeftX < beforeX,
+            "Paddle should move left: before=$beforeX, after=$afterLeftX",
+        )
 
         // Phase 6: Screenshot Capture
         val file = game.captureScreenshot("breakout_integration")
@@ -97,6 +96,10 @@ class BreakoutStepAgentTest {
 
         val wrote = game.writeVariable(Variables.SCORE, 42)
         assertTrue(wrote, "writeVariable should succeed for score")
-        assertEquals(42, game.readVariable(Variables.SCORE), "score should read back 42 after write")
+        assertEquals(
+            42,
+            game.readVariable(Variables.SCORE),
+            "score should read back 42 after write",
+        )
     }
 }

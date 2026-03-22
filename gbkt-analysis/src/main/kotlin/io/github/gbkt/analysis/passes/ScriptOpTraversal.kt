@@ -30,7 +30,6 @@ import io.github.gbkt.core.ir.GotoXYOp
 import io.github.gbkt.core.ir.IfOp
 import io.github.gbkt.core.ir.LeverObjectIR
 import io.github.gbkt.core.ir.MathOp
-import io.github.gbkt.core.ir.MenuItemDef
 import io.github.gbkt.core.ir.MoveBy
 import io.github.gbkt.core.ir.NavigateTo
 import io.github.gbkt.core.ir.NpcObjectIR
@@ -65,23 +64,24 @@ import io.github.gbkt.core.ir.ZoneObjectIR
 /**
  * Recursively applies [transform] to every child [Expr] inside compound expression types.
  *
- * For [BinaryExpr], only the children (left/right) are transformed — the caller handles
- * the [BinaryExpr] node itself. For all other compound types (UnaryExpr, TernaryExpr,
- * ArrayAccessExpr, CallExpr, CastExpr), the node is rebuilt with transformed children.
- * Leaf nodes (Literal, VarRef, StringLiteral, PropertyAccessExpr, etc.) are returned as-is.
+ * For [BinaryExpr], only the children (left/right) are transformed — the caller handles the
+ * [BinaryExpr] node itself. For all other compound types (UnaryExpr, TernaryExpr, ArrayAccessExpr,
+ * CallExpr, CastExpr), the node is rebuilt with transformed children. Leaf nodes (Literal, VarRef,
+ * StringLiteral, PropertyAccessExpr, etc.) are returned as-is.
  *
- * This is the single source of truth for structural recursion into expression children,
- * used by [BitwiseOptimizationPass] and [ConstantFoldingPass].
+ * This is the single source of truth for structural recursion into expression children, used by
+ * [BitwiseOptimizationPass] and [ConstantFoldingPass].
  */
 internal fun mapExprChildren(expr: Expr, transform: (Expr) -> Expr): Expr =
     when (expr) {
         is BinaryExpr -> expr.copy(left = transform(expr.left), right = transform(expr.right))
         is UnaryExpr -> expr.copy(operand = transform(expr.operand))
-        is TernaryExpr -> expr.copy(
-            condition = transform(expr.condition),
-            thenExpr = transform(expr.thenExpr),
-            elseExpr = transform(expr.elseExpr),
-        )
+        is TernaryExpr ->
+            expr.copy(
+                condition = transform(expr.condition),
+                thenExpr = transform(expr.thenExpr),
+                elseExpr = transform(expr.elseExpr),
+            )
         is ArrayAccessExpr -> expr.copy(index = transform(expr.index))
         is CallExpr -> expr.copy(args = expr.args.map { transform(it) })
         is CastExpr -> expr.copy(inner = transform(expr.inner))
@@ -95,13 +95,16 @@ internal fun mapExprChildren(expr: Expr, transform: (Expr) -> Expr): Expr =
 /**
  * Invokes [action] on every nested [ScriptOp] list inside [op].
  *
- * This is the single source of truth for which [ScriptOp] subtypes contain nested op lists.
- * Used by [collectNavigations], [collectAllOps], and any other function that needs to walk
- * the op tree structure.
+ * This is the single source of truth for which [ScriptOp] subtypes contain nested op lists. Used by
+ * [collectNavigations], [collectAllOps], and any other function that needs to walk the op tree
+ * structure.
  */
 internal inline fun forEachNestedOpList(op: ScriptOp, action: (List<ScriptOp>) -> Unit) {
     when (op) {
-        is IfOp -> { action(op.then); action(op.otherwise) }
+        is IfOp -> {
+            action(op.then)
+            action(op.otherwise)
+        }
         is WhileOp -> action(op.body)
         is ForOp -> action(op.body)
         is FadeOp -> action(op.after)
@@ -249,16 +252,14 @@ internal fun transformExprsInOp(
 ): ScriptOp =
     when (op) {
         is Assign -> op.copy(value = transformExpr(op.value))
-        is ArrayAssign ->
-            op.copy(index = transformExpr(op.index), value = transformExpr(op.value))
+        is ArrayAssign -> op.copy(index = transformExpr(op.index), value = transformExpr(op.value))
         is IfOp ->
             op.copy(
                 condition = transformExpr(op.condition),
                 then = transformOps(op.then),
                 otherwise = transformOps(op.otherwise),
             )
-        is WhileOp ->
-            op.copy(condition = transformExpr(op.condition), body = transformOps(op.body))
+        is WhileOp -> op.copy(condition = transformExpr(op.condition), body = transformOps(op.body))
         is ForOp ->
             op.copy(
                 from = transformExpr(op.from),
@@ -284,58 +285,62 @@ internal fun transformExprsInOp(
                 deathCallbackOps = transformOps(op.deathCallbackOps),
             )
         is GotoXYOp -> op.copy(x = transformExpr(op.x), y = transformExpr(op.y))
-        is DialogSay -> op.copy(
-            segments = op.segments.map { seg ->
-                when (seg) {
-                    is DialogExprSegment -> seg.copy(expr = transformExpr(seg.expr))
-                    is DialogTextSegment -> seg
-                }
-            },
-        )
+        is DialogSay ->
+            op.copy(
+                segments =
+                    op.segments.map { seg ->
+                        when (seg) {
+                            is DialogExprSegment -> seg.copy(expr = transformExpr(seg.expr))
+                            is DialogTextSegment -> seg
+                        }
+                    }
+            )
         else -> op // NavigateTo, PlaySound, SpawnActor, DestroyActor, AnimateOp,
     // SetVisible, WaitFrames, RawOp — no expression fields
     }
 
-/**
- * Applies [transformExpr] to every [Expr] field in all ops, recursing into nested op lists.
- */
+/** Applies [transformExpr] to every [Expr] field in all ops, recursing into nested op lists. */
 internal fun transformExprsInOps(
     ops: List<ScriptOp>,
     transformExpr: (Expr) -> Expr,
-): List<ScriptOp> = ops.map { transformExprsInOp(it, transformExpr) { nested -> transformExprsInOps(nested, transformExpr) } }
+): List<ScriptOp> =
+    ops.map {
+        transformExprsInOp(it, transformExpr) { nested ->
+            transformExprsInOps(nested, transformExpr)
+        }
+    }
 
 /**
  * Applies [transformExpr] to all expression fields in scenes, systems, zones, collision rules,
  * puzzle objects, actor pools, dialogs, menus, and combat engine hooks of [game].
  */
-internal fun transformExprsInGame(
-    game: GameIR,
-    transformExpr: (Expr) -> Expr,
-): GameIR = game.copy(
-    scenes = game.scenes.map { transformExprsInScene(it, transformExpr) },
-    systems = game.systems.map { transformExprsInSystem(it, transformExpr) },
-    zones = game.zones.map { transformExprsInZone(it, transformExpr) },
-    collisionRules = game.collisionRules.map {
-        it.copy(onCollide = transformExprsInOps(it.onCollide, transformExpr))
-    },
-    actorPools = game.actorPools.map {
-        it.copy(deathCallback = transformExprsInOps(it.deathCallback, transformExpr))
-    },
-    menus = game.menus.map { menu ->
-        menu.copy(items = menu.items.map { item ->
-            item.copy(body = transformExprsInOps(item.body, transformExpr))
-        })
-    },
-    puzzleObjects = game.puzzleObjects.map { transformExprsInPuzzleObject(it, transformExpr) },
-)
+internal fun transformExprsInGame(game: GameIR, transformExpr: (Expr) -> Expr): GameIR =
+    game.copy(
+        scenes = game.scenes.map { transformExprsInScene(it, transformExpr) },
+        systems = game.systems.map { transformExprsInSystem(it, transformExpr) },
+        zones = game.zones.map { transformExprsInZone(it, transformExpr) },
+        collisionRules =
+            game.collisionRules.map {
+                it.copy(onCollide = transformExprsInOps(it.onCollide, transformExpr))
+            },
+        actorPools =
+            game.actorPools.map {
+                it.copy(deathCallback = transformExprsInOps(it.deathCallback, transformExpr))
+            },
+        menus =
+            game.menus.map { menu ->
+                menu.copy(
+                    items =
+                        menu.items.map { item ->
+                            item.copy(body = transformExprsInOps(item.body, transformExpr))
+                        }
+                )
+            },
+        puzzleObjects = game.puzzleObjects.map { transformExprsInPuzzleObject(it, transformExpr) },
+    )
 
-/**
- * Applies [transformExpr] to all expression fields in a single [scene].
- */
-internal fun transformExprsInScene(
-    scene: SceneIR,
-    transformExpr: (Expr) -> Expr,
-): SceneIR =
+/** Applies [transformExpr] to all expression fields in a single [scene]. */
+internal fun transformExprsInScene(scene: SceneIR, transformExpr: (Expr) -> Expr): SceneIR =
     scene.copy(
         enterOps = transformExprsInOps(scene.enterOps, transformExpr),
         frameOps = transformExprsInOps(scene.frameOps, transformExpr),
@@ -343,26 +348,25 @@ internal fun transformExprsInScene(
     )
 
 /**
- * Applies [transformExpr] to all expression fields in a single [system].
- * ExplorationSystem and CombatEngineSystem have ScriptOp lists; other systems pass through
- * unchanged.
+ * Applies [transformExpr] to all expression fields in a single [system]. ExplorationSystem and
+ * CombatEngineSystem have ScriptOp lists; other systems pass through unchanged.
  */
-internal fun transformExprsInSystem(
-    system: SystemIR,
-    transformExpr: (Expr) -> Expr,
-): SystemIR =
+internal fun transformExprsInSystem(system: SystemIR, transformExpr: (Expr) -> Expr): SystemIR =
     when (system) {
         is ExplorationSystem ->
             system.copy(
                 stepStatements = transformExprsInOps(system.stepStatements, transformExpr),
                 blockedStatements = transformExprsInOps(system.blockedStatements, transformExpr),
                 interactStatements = transformExprsInOps(system.interactStatements, transformExpr),
-                gauges = system.gauges.map { gauge ->
-                    gauge.copy(
-                        onLowStatements = transformExprsInOps(gauge.onLowStatements, transformExpr),
-                        onDepletedStatements = transformExprsInOps(gauge.onDepletedStatements, transformExpr),
-                    )
-                },
+                gauges =
+                    system.gauges.map { gauge ->
+                        gauge.copy(
+                            onLowStatements =
+                                transformExprsInOps(gauge.onLowStatements, transformExpr),
+                            onDepletedStatements =
+                                transformExprsInOps(gauge.onDepletedStatements, transformExpr),
+                        )
+                    },
             )
         is CombatEngineSystem ->
             system.copy(
@@ -370,59 +374,50 @@ internal fun transformExprsInSystem(
                 onDefeatCondition = transformExprsInOps(system.onDefeatCondition, transformExpr),
                 onVictoryOps = transformExprsInOps(system.onVictoryOps, transformExpr),
                 onDefeatOps = transformExprsInOps(system.onDefeatOps, transformExpr),
-                combatHooks = system.combatHooks.mapValues { (_, ops) ->
-                    transformExprsInOps(ops, transformExpr)
-                },
+                combatHooks =
+                    system.combatHooks.mapValues { (_, ops) ->
+                        transformExprsInOps(ops, transformExpr)
+                    },
             )
         else -> system
     }
 
-/**
- * Applies [transformExpr] to all expression fields in a single [zone].
- */
-internal fun transformExprsInZone(
-    zone: ZoneIR,
-    transformExpr: (Expr) -> Expr,
-): ZoneIR =
+/** Applies [transformExpr] to all expression fields in a single [zone]. */
+internal fun transformExprsInZone(zone: ZoneIR, transformExpr: (Expr) -> Expr): ZoneIR =
     zone.copy(
         onEnter = transformExprsInOps(zone.onEnter, transformExpr),
         onExit = transformExprsInOps(zone.onExit, transformExpr),
         objects = zone.objects.map { transformExprsInZoneObject(it, transformExpr) },
     )
 
-/**
- * Applies [transformExpr] to all expression fields in a single [zoneObj].
- */
+/** Applies [transformExpr] to all expression fields in a single [zoneObj]. */
 @Suppress("LongMethod") // Pattern match over all ZoneObjectIR subtypes — by design
 internal fun transformExprsInZoneObject(
     zoneObj: ZoneObjectIR,
     transformExpr: (Expr) -> Expr,
 ): ZoneObjectIR =
     when (zoneObj) {
-        is ChestObjectIR -> zoneObj.copy(
-            onInteract = transformExprsInOps(zoneObj.onInteract, transformExpr),
-        )
-        is SignObjectIR -> zoneObj.copy(
-            onInteract = transformExprsInOps(zoneObj.onInteract, transformExpr),
-        )
-        is SconceObjectIR -> zoneObj.copy(
-            onInteract = transformExprsInOps(zoneObj.onInteract, transformExpr),
-            onLit = transformExprsInOps(zoneObj.onLit, transformExpr),
-            onExtinguished = transformExprsInOps(zoneObj.onExtinguished, transformExpr),
-        )
-        is NpcObjectIR -> zoneObj.copy(
-            onInteract = transformExprsInOps(zoneObj.onInteract, transformExpr),
-        )
-        is LeverObjectIR -> zoneObj.copy(
-            onInteract = transformExprsInOps(zoneObj.onInteract, transformExpr),
-            onActivate = transformExprsInOps(zoneObj.onActivate, transformExpr),
-            onDeactivate = transformExprsInOps(zoneObj.onDeactivate, transformExpr),
-        )
+        is ChestObjectIR ->
+            zoneObj.copy(onInteract = transformExprsInOps(zoneObj.onInteract, transformExpr))
+        is SignObjectIR ->
+            zoneObj.copy(onInteract = transformExprsInOps(zoneObj.onInteract, transformExpr))
+        is SconceObjectIR ->
+            zoneObj.copy(
+                onInteract = transformExprsInOps(zoneObj.onInteract, transformExpr),
+                onLit = transformExprsInOps(zoneObj.onLit, transformExpr),
+                onExtinguished = transformExprsInOps(zoneObj.onExtinguished, transformExpr),
+            )
+        is NpcObjectIR ->
+            zoneObj.copy(onInteract = transformExprsInOps(zoneObj.onInteract, transformExpr))
+        is LeverObjectIR ->
+            zoneObj.copy(
+                onInteract = transformExprsInOps(zoneObj.onInteract, transformExpr),
+                onActivate = transformExprsInOps(zoneObj.onActivate, transformExpr),
+                onDeactivate = transformExprsInOps(zoneObj.onDeactivate, transformExpr),
+            )
     }
 
-/**
- * Applies [transformExpr] to all expression fields in a single [puzzleObj].
- */
+/** Applies [transformExpr] to all expression fields in a single [puzzleObj]. */
 @Suppress("LongMethod") // Pattern match over all PuzzleObjectIR subtypes — by design
 internal fun transformExprsInPuzzleObject(
     puzzleObj: PuzzleObjectIR,
@@ -432,27 +427,26 @@ internal fun transformExprsInPuzzleObject(
         handlers.map { it.copy(actions = transformExprsInOps(it.actions, transformExpr)) }
 
     return when (puzzleObj) {
-        is SwitchObjectIR -> puzzleObj.copy(
-            onActivate = transformExprsInOps(puzzleObj.onActivate, transformExpr),
-            onDeactivate = transformExprsInOps(puzzleObj.onDeactivate, transformExpr),
-            handlers = transformHandlers(puzzleObj.handlers),
-        )
-        is DoorObjectIR -> puzzleObj.copy(
-            onOpen = transformExprsInOps(puzzleObj.onOpen, transformExpr),
-            onClose = transformExprsInOps(puzzleObj.onClose, transformExpr),
-            handlers = transformHandlers(puzzleObj.handlers),
-        )
-        is PressurePlateObjectIR -> puzzleObj.copy(
-            onStepOn = transformExprsInOps(puzzleObj.onStepOn, transformExpr),
-            onStepOff = transformExprsInOps(puzzleObj.onStepOff, transformExpr),
-            handlers = transformHandlers(puzzleObj.handlers),
-        )
-        is TimedBlockObjectIR -> puzzleObj.copy(
-            handlers = transformHandlers(puzzleObj.handlers),
-        )
-        is TriggerObjectIR -> puzzleObj.copy(
-            handlers = transformHandlers(puzzleObj.handlers),
-        )
+        is SwitchObjectIR ->
+            puzzleObj.copy(
+                onActivate = transformExprsInOps(puzzleObj.onActivate, transformExpr),
+                onDeactivate = transformExprsInOps(puzzleObj.onDeactivate, transformExpr),
+                handlers = transformHandlers(puzzleObj.handlers),
+            )
+        is DoorObjectIR ->
+            puzzleObj.copy(
+                onOpen = transformExprsInOps(puzzleObj.onOpen, transformExpr),
+                onClose = transformExprsInOps(puzzleObj.onClose, transformExpr),
+                handlers = transformHandlers(puzzleObj.handlers),
+            )
+        is PressurePlateObjectIR ->
+            puzzleObj.copy(
+                onStepOn = transformExprsInOps(puzzleObj.onStepOn, transformExpr),
+                onStepOff = transformExprsInOps(puzzleObj.onStepOff, transformExpr),
+                handlers = transformHandlers(puzzleObj.handlers),
+            )
+        is TimedBlockObjectIR -> puzzleObj.copy(handlers = transformHandlers(puzzleObj.handlers))
+        is TriggerObjectIR -> puzzleObj.copy(handlers = transformHandlers(puzzleObj.handlers))
     }
 }
 

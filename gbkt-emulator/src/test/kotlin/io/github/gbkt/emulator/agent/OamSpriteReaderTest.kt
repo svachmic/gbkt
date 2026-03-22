@@ -22,6 +22,7 @@ class OamSpriteReaderTest {
         }
         return object : MemoryAccess {
             override fun readByte(address: Int): Int = mem[address]
+
             override fun writeByte(address: Int, value: Int) {
                 mem[address] = value
             }
@@ -29,7 +30,13 @@ class OamSpriteReaderTest {
     }
 
     /** Writes a 4-byte OAM entry at the given slot index. */
-    private fun oamPatches(slot: Int, rawY: Int, rawX: Int, tile: Int, attr: Int): List<Pair<Int, Int>> {
+    private fun oamPatches(
+        slot: Int,
+        rawY: Int,
+        rawX: Int,
+        tile: Int,
+        attr: Int,
+    ): List<Pair<Int, Int>> {
         val base = OamSpriteReader.OAM_START + slot * OamSpriteReader.BYTES_PER_SPRITE
         return listOf(base to rawY, base + 1 to rawX, base + 2 to tile, base + 3 to attr)
     }

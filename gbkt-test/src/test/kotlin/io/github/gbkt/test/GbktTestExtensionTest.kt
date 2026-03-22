@@ -14,8 +14,8 @@ import kotlin.test.assertFailsWith
 /**
  * Unit tests for [GbktTestExtension] assertion methods and [GbktGameAssertions].
  *
- * These tests verify assertion helper behavior against synthetic [Observation] instances —
- * no actual emulator or ROM is required.
+ * These tests verify assertion helper behavior against synthetic [Observation] instances — no
+ * actual emulator or ROM is required.
  */
 class GbktTestExtensionTest {
 
@@ -26,16 +26,17 @@ class GbktTestExtensionTest {
         actors: List<ActorState> = emptyList(),
         bgText: List<String> = emptyList(),
         winText: List<String> = emptyList(),
-    ): Observation = Observation(
-        frame = frame,
-        scene = scene,
-        variables = variables,
-        actors = actors,
-        bgText = bgText,
-        winText = winText,
-        sprites = emptyList(),
-        newLogEntries = emptyList(),
-    )
+    ): Observation =
+        Observation(
+            frame = frame,
+            scene = scene,
+            variables = variables,
+            actors = actors,
+            bgText = bgText,
+            winText = winText,
+            sprites = emptyList(),
+            newLogEntries = emptyList(),
+        )
 
     // ── assertScene ──────────────────────────────────────────────────────────
 
@@ -49,17 +50,13 @@ class GbktTestExtensionTest {
     @Test
     fun `assertScene throws AssertionError when scene does not match`() {
         val obs = makeObservation(frame = 10, scene = "title")
-        assertFailsWith<AssertionError> {
-            assertScene(obs, "gameplay")
-        }
+        assertFailsWith<AssertionError> { assertScene(obs, "gameplay") }
     }
 
     @Test
     fun `assertScene throws AssertionError when scene is null`() {
         val obs = makeObservation(frame = 5, scene = null)
-        assertFailsWith<AssertionError> {
-            assertScene(obs, "title")
-        }
+        assertFailsWith<AssertionError> { assertScene(obs, "title") }
     }
 
     // ── assertVariable ───────────────────────────────────────────────────────
@@ -73,17 +70,13 @@ class GbktTestExtensionTest {
     @Test
     fun `assertVariable throws AssertionError when variable value does not match`() {
         val obs = makeObservation(frame = 1, variables = mapOf("score" to 10))
-        assertFailsWith<AssertionError> {
-            assertVariable(obs, "score", 42)
-        }
+        assertFailsWith<AssertionError> { assertVariable(obs, "score", 42) }
     }
 
     @Test
     fun `assertVariable throws AssertionError when variable is absent`() {
         val obs = makeObservation(frame = 1, variables = emptyMap())
-        assertFailsWith<AssertionError> {
-            assertVariable(obs, "score", 0)
-        }
+        assertFailsWith<AssertionError> { assertVariable(obs, "score", 0) }
     }
 
     // ── assertActorVisible ───────────────────────────────────────────────────
@@ -98,9 +91,7 @@ class GbktTestExtensionTest {
     @Test
     fun `assertActorVisible throws AssertionError when actor is absent`() {
         val obs = makeObservation(frame = 1, actors = emptyList())
-        assertFailsWith<AssertionError> {
-            assertActorVisible(obs, "ball")
-        }
+        assertFailsWith<AssertionError> { assertActorVisible(obs, "ball") }
     }
 
     // ── assertTextOnScreen ───────────────────────────────────────────────────
@@ -119,31 +110,24 @@ class GbktTestExtensionTest {
 
     @Test
     fun `assertTextOnScreen passes when text found in winText but not bgText`() {
-        val obs = makeObservation(
-            frame = 1,
-            bgText = listOf("background content"),
-            winText = listOf("WIN TEXT SCORE: 100"),
-        )
+        val obs =
+            makeObservation(
+                frame = 1,
+                bgText = listOf("background content"),
+                winText = listOf("WIN TEXT SCORE: 100"),
+            )
         assertTextOnScreen(obs, "WIN TEXT")
     }
 
     @Test
     fun `assertTextOnScreen throws AssertionError when text not on screen`() {
-        val obs = makeObservation(
-            frame = 1,
-            bgText = listOf("hello"),
-            winText = listOf("world"),
-        )
-        assertFailsWith<AssertionError> {
-            assertTextOnScreen(obs, "MISSING")
-        }
+        val obs = makeObservation(frame = 1, bgText = listOf("hello"), winText = listOf("world"))
+        assertFailsWith<AssertionError> { assertTextOnScreen(obs, "MISSING") }
     }
 
     @Test
     fun `assertTextOnScreen throws AssertionError when both layers are empty`() {
         val obs = makeObservation(frame = 1)
-        assertFailsWith<AssertionError> {
-            assertTextOnScreen(obs, "anything")
-        }
+        assertFailsWith<AssertionError> { assertTextOnScreen(obs, "anything") }
     }
 }

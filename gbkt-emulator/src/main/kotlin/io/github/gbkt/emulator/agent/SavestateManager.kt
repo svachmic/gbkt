@@ -19,6 +19,7 @@ import java.io.File
  * are not saved; ROM is always available from the cartridge and VRAM resets on scene transitions.
  *
  * **File format:**
+ *
  * ```
  * Offset   Size    Content
  * 0        4       Magic: 'G' 'B' 'S' 'T'
@@ -51,7 +52,8 @@ object SavestateManager {
     const val HRAM_SIZE = 0x7F
 
     /** Four-byte file magic: ASCII "GBST". */
-    val MAGIC = byteArrayOf('G'.code.toByte(), 'B'.code.toByte(), 'S'.code.toByte(), 'T'.code.toByte())
+    val MAGIC =
+        byteArrayOf('G'.code.toByte(), 'B'.code.toByte(), 'S'.code.toByte(), 'T'.code.toByte())
 
     /**
      * Saves emulator memory state to [file].

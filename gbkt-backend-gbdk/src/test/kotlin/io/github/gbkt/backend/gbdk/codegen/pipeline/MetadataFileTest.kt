@@ -28,7 +28,6 @@ import io.github.gbkt.emulator.agent.GameMetadata
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 // =============================================================================
@@ -43,20 +42,18 @@ import kotlin.test.assertTrue
  * Minimal GameIR fixture for metadata round-trip testing.
  *
  * Actors:
- * - "player":   8x16 sprite, OAMSlot(0) -> oamCount = 1*2 = 2
- * - "enemy":    16x16 sprite, OAMSlot(2) -> oamCount = 2*2 = 4
- * - "bullet":   8x8 sprite, OAMSlot(6)  -> oamCount = 1*1 = 1
- * - "trigger":  NO sprite              -> excluded from JSON
- * - "particle": 8x8 sprite, null OAM   -> oamStart = -1
+ * - "player": 8x16 sprite, OAMSlot(0) -> oamCount = 1*2 = 2
+ * - "enemy": 16x16 sprite, OAMSlot(2) -> oamCount = 2*2 = 4
+ * - "bullet": 8x8 sprite, OAMSlot(6) -> oamCount = 1*1 = 1
+ * - "trigger": NO sprite -> excluded from JSON
+ * - "particle": 8x8 sprite, null OAM -> oamStart = -1
  */
 private val metadataTestFixture =
     GameIR(
         name = "MetadataTest",
         config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
-        variables = listOf(
-            VariableDef("score", VarType.U8, 0),
-            VariableDef("ballDx", VarType.I8, 1),
-        ),
+        variables =
+            listOf(VariableDef("score", VarType.U8, 0), VariableDef("ballDx", VarType.I8, 1)),
         actors =
             listOf(
                 ActorIR(
@@ -113,27 +110,29 @@ private val metadataTestFixture =
             listOf(
                 SceneIR(
                     id = "title",
-                    enterOps = listOf(
-                        PrintCentered("HELLO", 5),
-                        PrintAt(0, 1, "PRESS START"),
-                        // Duplicate — should be deduplicated
-                        PrintCentered("HELLO", 8),
-                    ),
+                    enterOps =
+                        listOf(
+                            PrintCentered("HELLO", 5),
+                            PrintAt(0, 1, "PRESS START"),
+                            // Duplicate — should be deduplicated
+                            PrintCentered("HELLO", 8),
+                        ),
                     frameOps = emptyList(),
                 ),
                 SceneIR(
                     id = "gameplay",
                     enterOps = emptyList(),
-                    frameOps = listOf(
-                        // Format string with values — should be SKIPPED
-                        PrintOp("P1:%d P2:%d", listOf(Literal(0), Literal(0))),
-                        // Nested in IfOp
-                        IfOp(
-                            condition = Literal(1),
-                            then = listOf(PrintCentered("GAME OVER", 9)),
-                            otherwise = listOf(PrintAt(0, 0, "VICTORY")),
+                    frameOps =
+                        listOf(
+                            // Format string with values — should be SKIPPED
+                            PrintOp("P1:%d P2:%d", listOf(Literal(0), Literal(0))),
+                            // Nested in IfOp
+                            IfOp(
+                                condition = Literal(1),
+                                then = listOf(PrintCentered("GAME OVER", 9)),
+                                otherwise = listOf(PrintAt(0, 0, "VICTORY")),
+                            ),
                         ),
-                    ),
                 ),
                 SceneIR(id = "gameover", enterOps = emptyList(), frameOps = emptyList()),
             ),
@@ -268,9 +267,10 @@ class MetadataFileTest {
     @Test
     fun `texts array extracts literals and deduplicates`() {
         val parsed = org.json.JSONObject(json)
-        val texts = (0 until parsed.getJSONArray("texts").length()).map {
-            parsed.getJSONArray("texts").getString(it)
-        }
+        val texts =
+            (0 until parsed.getJSONArray("texts").length()).map {
+                parsed.getJSONArray("texts").getString(it)
+            }
 
         // Literal strings should be present
         assertTrue("HELLO" in texts, "HELLO should be extracted from PrintCentered")
@@ -293,22 +293,25 @@ class MetadataFileTest {
     // =========================================================================
     @Test
     fun `padded text is trimmed`() {
-        val game = GameIR(
-            name = "TrimTest",
-            config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
-            scenes = listOf(
-                SceneIR(
-                    id = "main",
-                    enterOps = listOf(PrintAt(0, 0, "     SCORE!     ")),
-                    frameOps = emptyList(),
-                ),
-            ),
-            startScene = "main",
-        )
+        val game =
+            GameIR(
+                name = "TrimTest",
+                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                scenes =
+                    listOf(
+                        SceneIR(
+                            id = "main",
+                            enterOps = listOf(PrintAt(0, 0, "     SCORE!     ")),
+                            frameOps = emptyList(),
+                        )
+                    ),
+                startScene = "main",
+            )
         val parsed = org.json.JSONObject(pipeline.buildMetadataFile(game))
-        val texts = (0 until parsed.getJSONArray("texts").length()).map {
-            parsed.getJSONArray("texts").getString(it)
-        }
+        val texts =
+            (0 until parsed.getJSONArray("texts").length()).map {
+                parsed.getJSONArray("texts").getString(it)
+            }
         assertEquals(listOf("SCORE!"), texts, "Padded text should be trimmed")
     }
 
@@ -317,25 +320,29 @@ class MetadataFileTest {
     // =========================================================================
     @Test
     fun `padded and unpadded variants merge`() {
-        val game = GameIR(
-            name = "MergeTest",
-            config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
-            scenes = listOf(
-                SceneIR(
-                    id = "main",
-                    enterOps = listOf(
-                        PrintCentered("     SCORE!     ", 5),
-                        PrintAt(0, 1, "SCORE!"),
+        val game =
+            GameIR(
+                name = "MergeTest",
+                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                scenes =
+                    listOf(
+                        SceneIR(
+                            id = "main",
+                            enterOps =
+                                listOf(
+                                    PrintCentered("     SCORE!     ", 5),
+                                    PrintAt(0, 1, "SCORE!"),
+                                ),
+                            frameOps = emptyList(),
+                        )
                     ),
-                    frameOps = emptyList(),
-                ),
-            ),
-            startScene = "main",
-        )
+                startScene = "main",
+            )
         val parsed = org.json.JSONObject(pipeline.buildMetadataFile(game))
-        val texts = (0 until parsed.getJSONArray("texts").length()).map {
-            parsed.getJSONArray("texts").getString(it)
-        }
+        val texts =
+            (0 until parsed.getJSONArray("texts").length()).map {
+                parsed.getJSONArray("texts").getString(it)
+            }
         assertEquals(1, texts.size, "Padded and unpadded should merge")
         assertEquals("SCORE!", texts[0])
     }
@@ -345,25 +352,26 @@ class MetadataFileTest {
     // =========================================================================
     @Test
     fun `all whitespace string is excluded`() {
-        val game = GameIR(
-            name = "WhitespaceTest",
-            config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
-            scenes = listOf(
-                SceneIR(
-                    id = "main",
-                    enterOps = listOf(
-                        PrintAt(0, 0, "HELLO"),
-                        PrintAt(0, 1, "                "),
+        val game =
+            GameIR(
+                name = "WhitespaceTest",
+                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                scenes =
+                    listOf(
+                        SceneIR(
+                            id = "main",
+                            enterOps =
+                                listOf(PrintAt(0, 0, "HELLO"), PrintAt(0, 1, "                ")),
+                            frameOps = emptyList(),
+                        )
                     ),
-                    frameOps = emptyList(),
-                ),
-            ),
-            startScene = "main",
-        )
+                startScene = "main",
+            )
         val parsed = org.json.JSONObject(pipeline.buildMetadataFile(game))
-        val texts = (0 until parsed.getJSONArray("texts").length()).map {
-            parsed.getJSONArray("texts").getString(it)
-        }
+        val texts =
+            (0 until parsed.getJSONArray("texts").length()).map {
+                parsed.getJSONArray("texts").getString(it)
+            }
         assertEquals(listOf("HELLO"), texts, "All-whitespace should be excluded")
     }
 
@@ -372,22 +380,25 @@ class MetadataFileTest {
     // =========================================================================
     @Test
     fun `internal whitespace is preserved`() {
-        val game = GameIR(
-            name = "InternalSpaceTest",
-            config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
-            scenes = listOf(
-                SceneIR(
-                    id = "main",
-                    enterOps = listOf(PrintAt(0, 0, "  PRESS  START  ")),
-                    frameOps = emptyList(),
-                ),
-            ),
-            startScene = "main",
-        )
+        val game =
+            GameIR(
+                name = "InternalSpaceTest",
+                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                scenes =
+                    listOf(
+                        SceneIR(
+                            id = "main",
+                            enterOps = listOf(PrintAt(0, 0, "  PRESS  START  ")),
+                            frameOps = emptyList(),
+                        )
+                    ),
+                startScene = "main",
+            )
         val parsed = org.json.JSONObject(pipeline.buildMetadataFile(game))
-        val texts = (0 until parsed.getJSONArray("texts").length()).map {
-            parsed.getJSONArray("texts").getString(it)
-        }
+        val texts =
+            (0 until parsed.getJSONArray("texts").length()).map {
+                parsed.getJSONArray("texts").getString(it)
+            }
         assertEquals(listOf("PRESS  START"), texts, "Internal whitespace should be preserved")
     }
 
@@ -397,9 +408,10 @@ class MetadataFileTest {
     @Test
     fun `terminalScenes contains gameover`() {
         val parsed = org.json.JSONObject(json)
-        val terminal = (0 until parsed.getJSONArray("terminalScenes").length()).map {
-            parsed.getJSONArray("terminalScenes").getString(it)
-        }
+        val terminal =
+            (0 until parsed.getJSONArray("terminalScenes").length()).map {
+                parsed.getJSONArray("terminalScenes").getString(it)
+            }
         assertTrue("gameover" in terminal, "gameover should appear in terminalScenes")
     }
 
@@ -408,15 +420,17 @@ class MetadataFileTest {
     // =========================================================================
     @Test
     fun `terminalScenes empty when no terminal scenes`() {
-        val game = GameIR(
-            name = "NoTerminalTest",
-            config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
-            scenes = listOf(
-                SceneIR(id = "title", enterOps = emptyList(), frameOps = emptyList()),
-                SceneIR(id = "gameplay", enterOps = emptyList(), frameOps = emptyList()),
-            ),
-            startScene = "title",
-        )
+        val game =
+            GameIR(
+                name = "NoTerminalTest",
+                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                scenes =
+                    listOf(
+                        SceneIR(id = "title", enterOps = emptyList(), frameOps = emptyList()),
+                        SceneIR(id = "gameplay", enterOps = emptyList(), frameOps = emptyList()),
+                    ),
+                startScene = "title",
+            )
         val parsed = org.json.JSONObject(pipeline.buildMetadataFile(game))
         val terminal = parsed.getJSONArray("terminalScenes")
         assertEquals(0, terminal.length(), "Expected empty terminalScenes")

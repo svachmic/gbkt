@@ -145,6 +145,5 @@ object OamSpriteReader {
      * @param memory The emulator memory interface.
      * @return 16 if tall sprite mode, 8 otherwise.
      */
-    fun spriteHeight(memory: MemoryAccess): Int =
-        if (isTallSpriteMode(memory)) 16 else 8
+    fun spriteHeight(memory: MemoryAccess): Int = if (isTallSpriteMode(memory)) 16 else 8
 }

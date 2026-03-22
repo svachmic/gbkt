@@ -6,21 +6,21 @@
  */
 package io.github.gbkt.emulator.agent
 
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 class AgentSessionConfigTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     @Test
     fun `discoverFiles finds noi and metadata`() {
-        // Create standard layout: build/gbkt/output/test.gb + test.noi + ../generated/game_metadata.json
+        // Create standard layout: build/gbkt/output/test.gb + test.noi +
+        // ../generated/game_metadata.json
         val outputDir = File(tempDir, "build/gbkt/output").also { it.mkdirs() }
         val generatedDir = File(tempDir, "build/gbkt/generated").also { it.mkdirs() }
         val rom = File(outputDir, "test.gb").also { it.writeBytes(ByteArray(64)) }
@@ -54,10 +54,7 @@ class AgentSessionConfigTest {
         val rom = File(tempDir, "test.gb").also { it.writeBytes(ByteArray(64)) }
         val metaFile = File(tempDir, "meta.json").also { it.writeText("{}") }
 
-        val config = AgentSessionConfig(
-            romFile = rom,
-            metadataFile = metaFile,
-        )
+        val config = AgentSessionConfig(romFile = rom, metadataFile = metaFile)
 
         assertEquals(metaFile, config.metadataFile)
     }
@@ -84,7 +81,11 @@ class AgentSessionConfigTest {
         val config = AgentSessionConfig.discoverFiles(rom)
 
         assertNotNull(config.symFile)
-        assertEquals("test.sym", config.symFile!!.name, "Should fall back to .sym when .noi missing")
+        assertEquals(
+            "test.sym",
+            config.symFile!!.name,
+            "Should fall back to .sym when .noi missing",
+        )
     }
 
     @Test
@@ -94,6 +95,9 @@ class AgentSessionConfigTest {
         val config = AgentSessionConfig.discoverFiles(rom)
 
         assertNull(config.symFile, "symFile should be null for ROM outside standard layout")
-        assertNull(config.metadataFile, "metadataFile should be null for ROM outside standard layout")
+        assertNull(
+            config.metadataFile,
+            "metadataFile should be null for ROM outside standard layout",
+        )
     }
 }

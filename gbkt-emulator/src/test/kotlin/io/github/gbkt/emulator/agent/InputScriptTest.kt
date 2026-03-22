@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Test
 /**
  * Unit tests for [InputScript] DSL.
  *
- * Verifies that the builder constructs the correct [InputStep] list without
- * requiring any emulator instance.
+ * Verifies that the builder constructs the correct [InputStep] list without requiring any emulator
+ * instance.
  */
 class InputScriptTest {
 
@@ -72,7 +72,7 @@ class InputScriptTest {
 
     @Test
     fun `empty script has no steps`() {
-        val script = inputScript { }
+        val script = inputScript {}
         assertEquals(emptyList<InputStep>(), script.steps)
     }
 

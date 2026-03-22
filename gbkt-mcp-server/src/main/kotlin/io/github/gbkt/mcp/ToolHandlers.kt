@@ -11,6 +11,7 @@ import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
@@ -23,7 +24,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
-import java.io.File
 
 /** Valid button names for MCP tool input. */
 private val VALID_BUTTONS = Button.entries.map { it.name.lowercase() }.toSet()
@@ -43,8 +43,8 @@ internal fun jsonResult(json: String): CallToolResult =
 /**
  * Extracted handler logic for all 17 MCP tools.
  *
- * Each function parses arguments, calls [McpEmulatorSession], and returns a [CallToolResult].
- * This separation enables direct unit testing without the MCP Server/transport layer.
+ * Each function parses arguments, calls [McpEmulatorSession], and returns a [CallToolResult]. This
+ * separation enables direct unit testing without the MCP Server/transport layer.
  */
 internal object ToolHandlerLogic {
 
@@ -112,16 +112,17 @@ internal object ToolHandlerLogic {
         if (frames > MAX_FRAMES) {
             return errorResult(
                 "frames ($frames) exceeds maximum ($MAX_FRAMES). " +
-                    "Break into smaller steps or use wait_for_scene/wait_for_variable instead.",
+                    "Break into smaller steps or use wait_for_scene/wait_for_variable instead."
             )
         }
 
-        val buttonNames = args?.get("buttons")?.jsonArray
-            ?.map { it.jsonPrimitive.content } ?: emptyList()
+        val buttonNames =
+            args?.get("buttons")?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
         val buttons = mutableSetOf<Button>()
         for (name in buttonNames) {
-            val btn = parseButton(name)
-                ?: return errorResult("Invalid button '$name'. Valid: $VALID_BUTTONS")
+            val btn =
+                parseButton(name)
+                    ?: return errorResult("Invalid button '$name'. Valid: $VALID_BUTTONS")
             buttons.add(btn)
         }
 
@@ -131,10 +132,11 @@ internal object ToolHandlerLogic {
 
     suspend fun handlePress(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
         args ?: return errorResult("Missing arguments")
-        val buttonName = args["button"]?.jsonPrimitive?.contentOrNull
-            ?: return errorResult("button is required")
-        val button = parseButton(buttonName)
-            ?: return errorResult("Invalid button '$buttonName'. Valid: $VALID_BUTTONS")
+        val buttonName =
+            args["button"]?.jsonPrimitive?.contentOrNull ?: return errorResult("button is required")
+        val button =
+            parseButton(buttonName)
+                ?: return errorResult("Invalid button '$buttonName'. Valid: $VALID_BUTTONS")
         val frames = args["frames"]?.jsonPrimitive?.intOrNull ?: 1
         if (frames < 1) return errorResult("frames must be positive")
         if (frames > MAX_FRAMES) return errorResult("frames exceeds maximum")
@@ -149,10 +151,9 @@ internal object ToolHandlerLogic {
 
     suspend fun handleWaitForScene(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
         args ?: return errorResult("Missing arguments")
-        val scene = args["scene"]?.jsonPrimitive?.content
-            ?: return errorResult("scene is required")
-        val maxFrames = args["maxFrames"]?.jsonPrimitive?.int
-            ?: return errorResult("maxFrames is required")
+        val scene = args["scene"]?.jsonPrimitive?.content ?: return errorResult("scene is required")
+        val maxFrames =
+            args["maxFrames"]?.jsonPrimitive?.int ?: return errorResult("maxFrames is required")
         if (maxFrames < 1) return errorResult("maxFrames must be positive")
         if (maxFrames > MAX_FRAMES) {
             return errorResult("maxFrames ($maxFrames) exceeds maximum ($MAX_FRAMES)")
@@ -167,14 +168,16 @@ internal object ToolHandlerLogic {
         return jsonResult(json.toString())
     }
 
-    suspend fun handleWaitForVariable(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
+    suspend fun handleWaitForVariable(
+        session: McpEmulatorSession,
+        args: JsonObject?,
+    ): CallToolResult {
         args ?: return errorResult("Missing arguments")
-        val name = args["name"]?.jsonPrimitive?.content
-            ?: return errorResult("name is required")
-        val expected = args["expected"]?.jsonPrimitive?.int
-            ?: return errorResult("expected is required")
-        val maxFrames = args["maxFrames"]?.jsonPrimitive?.int
-            ?: return errorResult("maxFrames is required")
+        val name = args["name"]?.jsonPrimitive?.content ?: return errorResult("name is required")
+        val expected =
+            args["expected"]?.jsonPrimitive?.int ?: return errorResult("expected is required")
+        val maxFrames =
+            args["maxFrames"]?.jsonPrimitive?.int ?: return errorResult("maxFrames is required")
         if (maxFrames < 1) return errorResult("maxFrames must be positive")
         if (maxFrames > MAX_FRAMES) {
             return errorResult("maxFrames ($maxFrames) exceeds maximum ($MAX_FRAMES)")
@@ -189,12 +192,14 @@ internal object ToolHandlerLogic {
         return jsonResult(json.toString())
     }
 
-    suspend fun handleWaitUntilText(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
+    suspend fun handleWaitUntilText(
+        session: McpEmulatorSession,
+        args: JsonObject?,
+    ): CallToolResult {
         args ?: return errorResult("Missing arguments")
-        val text = args["text"]?.jsonPrimitive?.content
-            ?: return errorResult("text is required")
-        val maxFrames = args["maxFrames"]?.jsonPrimitive?.int
-            ?: return errorResult("maxFrames is required")
+        val text = args["text"]?.jsonPrimitive?.content ?: return errorResult("text is required")
+        val maxFrames =
+            args["maxFrames"]?.jsonPrimitive?.int ?: return errorResult("maxFrames is required")
         if (maxFrames < 1) return errorResult("maxFrames must be positive")
         if (maxFrames > MAX_FRAMES) {
             return errorResult("maxFrames ($maxFrames) exceeds maximum ($MAX_FRAMES)")
@@ -210,8 +215,8 @@ internal object ToolHandlerLogic {
     }
 
     suspend fun handleReadVariable(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        val name = args?.get("name")?.jsonPrimitive?.content
-            ?: return errorResult("name is required")
+        val name =
+            args?.get("name")?.jsonPrimitive?.content ?: return errorResult("name is required")
         val result = session.readVariable(name)
         val json = buildJsonObject {
             put("name", result.name)
@@ -220,24 +225,25 @@ internal object ToolHandlerLogic {
         return jsonResult(json.toString())
     }
 
-    suspend fun handleWriteVariable(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
+    suspend fun handleWriteVariable(
+        session: McpEmulatorSession,
+        args: JsonObject?,
+    ): CallToolResult {
         args ?: return errorResult("Missing arguments")
-        val name = args["name"]?.jsonPrimitive?.content
-            ?: return errorResult("name is required")
-        val value = args["value"]?.jsonPrimitive?.int
-            ?: return errorResult("value is required")
+        val name = args["name"]?.jsonPrimitive?.content ?: return errorResult("name is required")
+        val value = args["value"]?.jsonPrimitive?.int ?: return errorResult("value is required")
         val success = session.writeVariable(name, value)
         val json = buildJsonObject { put("success", success) }
         return jsonResult(json.toString())
     }
 
     suspend fun handleScreenshot(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        val label = args?.get("label")?.jsonPrimitive?.content
-            ?: return errorResult("label is required")
+        val label =
+            args?.get("label")?.jsonPrimitive?.content ?: return errorResult("label is required")
         if (!VALID_LABEL.matches(label)) {
             return errorResult(
                 "Invalid label '$label'. " +
-                    "Labels must match ${VALID_LABEL.pattern} (no path separators or special characters).",
+                    "Labels must match ${VALID_LABEL.pattern} (no path separators or special characters)."
             )
         }
         val file = session.screenshot(label)
@@ -256,12 +262,11 @@ internal object ToolHandlerLogic {
 
     suspend fun handleSaveState(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
         args ?: return errorResult("Missing arguments")
-        val label = args["label"]?.jsonPrimitive?.content
-            ?: return errorResult("label is required")
+        val label = args["label"]?.jsonPrimitive?.content ?: return errorResult("label is required")
         if (!VALID_LABEL.matches(label)) {
             return errorResult(
                 "Invalid label '$label'. " +
-                    "Labels must match ${VALID_LABEL.pattern} (no path separators or special characters).",
+                    "Labels must match ${VALID_LABEL.pattern} (no path separators or special characters)."
             )
         }
         return withContext(Dispatchers.IO) {
@@ -272,12 +277,11 @@ internal object ToolHandlerLogic {
 
     suspend fun handleLoadState(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
         args ?: return errorResult("Missing arguments")
-        val label = args["label"]?.jsonPrimitive?.content
-            ?: return errorResult("label is required")
+        val label = args["label"]?.jsonPrimitive?.content ?: return errorResult("label is required")
         if (!VALID_LABEL.matches(label)) {
             return errorResult(
                 "Invalid label '$label'. " +
-                    "Labels must match ${VALID_LABEL.pattern} (no path separators or special characters).",
+                    "Labels must match ${VALID_LABEL.pattern} (no path separators or special characters)."
             )
         }
         return withContext(Dispatchers.IO) {
@@ -288,14 +292,14 @@ internal object ToolHandlerLogic {
 
     suspend fun handleAssert(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
         args ?: return errorResult("Missing arguments")
-        val checksArray = args["checks"]?.jsonArray
-            ?: return errorResult("checks is required")
+        val checksArray = args["checks"]?.jsonArray ?: return errorResult("checks is required")
 
         val checks = mutableListOf<AssertCheck>()
         for (element in checksArray) {
             val obj = element.jsonObject
-            val type = obj["type"]?.jsonPrimitive?.content
-                ?: return errorResult("Each check must have a 'type' field")
+            val type =
+                obj["type"]?.jsonPrimitive?.content
+                    ?: return errorResult("Each check must have a 'type' field")
             val checkArgs = mutableMapOf<String, Any>()
             for ((k, v) in obj) {
                 if (k != "type") {
@@ -335,33 +339,39 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_start",
-        description = "Start a Game Boy emulator session. Accepts either romFile (path) or game " +
-            "(name) for convention-based discovery. Returns metadata summary.",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("romFile") {
-                    put("type", "string")
-                    put("description", "Path to the Game Boy ROM file (.gb or .gbc)")
-                }
-                putJsonObject("game") {
-                    put("type", "string")
-                    put("description", "Game name for convention-based discovery (e.g., 'pong'). Alternative to romFile.")
-                }
-                putJsonObject("symFile") {
-                    put("type", "string")
-                    put("description", "Optional path to the .noi/.sym symbol file")
-                }
-                putJsonObject("metadataFile") {
-                    put("type", "string")
-                    put("description", "Optional path to game_metadata.json")
-                }
-                putJsonObject("gbcMode") {
-                    put("type", "boolean")
-                    put("description", "Enable Game Boy Color mode")
-                }
-            },
-            required = emptyList(),
-        ),
+        description =
+            "Start a Game Boy emulator session. Accepts either romFile (path) or game " +
+                "(name) for convention-based discovery. Returns metadata summary.",
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("romFile") {
+                            put("type", "string")
+                            put("description", "Path to the Game Boy ROM file (.gb or .gbc)")
+                        }
+                        putJsonObject("game") {
+                            put("type", "string")
+                            put(
+                                "description",
+                                "Game name for convention-based discovery (e.g., 'pong'). Alternative to romFile.",
+                            )
+                        }
+                        putJsonObject("symFile") {
+                            put("type", "string")
+                            put("description", "Optional path to the .noi/.sym symbol file")
+                        }
+                        putJsonObject("metadataFile") {
+                            put("type", "string")
+                            put("description", "Optional path to game_metadata.json")
+                        }
+                        putJsonObject("gbcMode") {
+                            put("type", "boolean")
+                            put("description", "Enable Game Boy Color mode")
+                        }
+                    },
+                required = emptyList(),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -390,21 +400,27 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_step",
-        description = "Advance the emulator by N frames with optional buttons held. Returns full observation.",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("frames") {
-                    put("type", "integer")
-                    put("description", "Number of frames to advance (default 1)")
-                }
-                putJsonObject("buttons") {
-                    put("type", "array")
-                    put("description", "Buttons to hold: up, down, left, right, a, b, start, select")
-                    putJsonObject("items") { put("type", "string") }
-                }
-            },
-            required = emptyList(),
-        ),
+        description =
+            "Advance the emulator by N frames with optional buttons held. Returns full observation.",
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("frames") {
+                            put("type", "integer")
+                            put("description", "Number of frames to advance (default 1)")
+                        }
+                        putJsonObject("buttons") {
+                            put("type", "array")
+                            put(
+                                "description",
+                                "Buttons to hold: up, down, left, right, a, b, start, select",
+                            )
+                            putJsonObject("items") { put("type", "string") }
+                        }
+                    },
+                required = emptyList(),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -418,23 +434,32 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_press",
-        description = "Press a single button for N frames then release and advance 1 frame. " +
-            "Returns full Observation after release. Matches GBDK pressed() edge semantics. " +
-            "Advances frames+1 total frames (hold + release). Use instead of emulator_step " +
-            "for simple button taps.",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("button") {
-                    put("type", "string")
-                    put("description", "Button to press: up, down, left, right, a, b, start, select")
-                }
-                putJsonObject("frames") {
-                    put("type", "integer")
-                    put("description", "How many frames to hold the button (default 1 for a tap)")
-                }
-            },
-            required = listOf("button"),
-        ),
+        description =
+            "Press a single button for N frames then release and advance 1 frame. " +
+                "Returns full Observation after release. Matches GBDK pressed() edge semantics. " +
+                "Advances frames+1 total frames (hold + release). Use instead of emulator_step " +
+                "for simple button taps.",
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("button") {
+                            put("type", "string")
+                            put(
+                                "description",
+                                "Button to press: up, down, left, right, a, b, start, select",
+                            )
+                        }
+                        putJsonObject("frames") {
+                            put("type", "integer")
+                            put(
+                                "description",
+                                "How many frames to hold the button (default 1 for a tap)",
+                            )
+                        }
+                    },
+                required = listOf("button"),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -448,7 +473,8 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_observe",
-        description = "Get the current game state without advancing frames. Returns cached observation or steps 1 frame.",
+        description =
+            "Get the current game state without advancing frames. Returns cached observation or steps 1 frame.",
         inputSchema = ToolSchema(properties = buildJsonObject {}, required = emptyList()),
     ) { _ ->
         withContext(Dispatchers.IO) {
@@ -463,20 +489,23 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_wait_for_scene",
-        description = "Step frames until the current scene matches the target, or maxFrames is exhausted.",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("scene") {
-                    put("type", "string")
-                    put("description", "Target scene name")
-                }
-                putJsonObject("maxFrames") {
-                    put("type", "integer")
-                    put("description", "Maximum frames to wait")
-                }
-            },
-            required = listOf("scene", "maxFrames"),
-        ),
+        description =
+            "Step frames until the current scene matches the target, or maxFrames is exhausted.",
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("scene") {
+                            put("type", "string")
+                            put("description", "Target scene name")
+                        }
+                        putJsonObject("maxFrames") {
+                            put("type", "integer")
+                            put("description", "Maximum frames to wait")
+                        }
+                    },
+                required = listOf("scene", "maxFrames"),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -490,24 +519,27 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_wait_for_variable",
-        description = "Step frames until a variable equals the expected value, or maxFrames is exhausted.",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("name") {
-                    put("type", "string")
-                    put("description", "Variable name")
-                }
-                putJsonObject("expected") {
-                    put("type", "integer")
-                    put("description", "Expected value")
-                }
-                putJsonObject("maxFrames") {
-                    put("type", "integer")
-                    put("description", "Maximum frames to wait")
-                }
-            },
-            required = listOf("name", "expected", "maxFrames"),
-        ),
+        description =
+            "Step frames until a variable equals the expected value, or maxFrames is exhausted.",
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("name") {
+                            put("type", "string")
+                            put("description", "Variable name")
+                        }
+                        putJsonObject("expected") {
+                            put("type", "integer")
+                            put("description", "Expected value")
+                        }
+                        putJsonObject("maxFrames") {
+                            put("type", "integer")
+                            put("description", "Maximum frames to wait")
+                        }
+                    },
+                required = listOf("name", "expected", "maxFrames"),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -522,19 +554,21 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
     addTool(
         name = "emulator_wait_until_text",
         description = "Step frames until text appears on screen, or maxFrames is exhausted.",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("text") {
-                    put("type", "string")
-                    put("description", "Text to search for on screen")
-                }
-                putJsonObject("maxFrames") {
-                    put("type", "integer")
-                    put("description", "Maximum frames to wait")
-                }
-            },
-            required = listOf("text", "maxFrames"),
-        ),
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("text") {
+                            put("type", "string")
+                            put("description", "Text to search for on screen")
+                        }
+                        putJsonObject("maxFrames") {
+                            put("type", "integer")
+                            put("description", "Maximum frames to wait")
+                        }
+                    },
+                required = listOf("text", "maxFrames"),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -549,15 +583,17 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
     addTool(
         name = "emulator_read_variable",
         description = "Read the current value of a named game variable.",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("name") {
-                    put("type", "string")
-                    put("description", "Variable name (e.g., 'score', 'lives')")
-                }
-            },
-            required = listOf("name"),
-        ),
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("name") {
+                            put("type", "string")
+                            put("description", "Variable name (e.g., 'score', 'lives')")
+                        }
+                    },
+                required = listOf("name"),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -572,19 +608,21 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
     addTool(
         name = "emulator_write_variable",
         description = "Write a value to a named game variable.",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("name") {
-                    put("type", "string")
-                    put("description", "Variable name")
-                }
-                putJsonObject("value") {
-                    put("type", "integer")
-                    put("description", "Byte value to write (0-255)")
-                }
-            },
-            required = listOf("name", "value"),
-        ),
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("name") {
+                            put("type", "string")
+                            put("description", "Variable name")
+                        }
+                        putJsonObject("value") {
+                            put("type", "integer")
+                            put("description", "Byte value to write (0-255)")
+                        }
+                    },
+                required = listOf("name", "value"),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -599,15 +637,17 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
     addTool(
         name = "emulator_screenshot",
         description = "Capture a screenshot of the current game state.",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("label") {
-                    put("type", "string")
-                    put("description", "Label for the screenshot file name")
-                }
-            },
-            required = listOf("label"),
-        ),
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("label") {
+                            put("type", "string")
+                            put("description", "Label for the screenshot file name")
+                        }
+                    },
+                required = listOf("label"),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -621,7 +661,8 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_describe_game",
-        description = "Get full game metadata: scenes, actors, variables (with semantic categories), texts, terminal scenes, per-scene controls, and scene transition graph.",
+        description =
+            "Get full game metadata: scenes, actors, variables (with semantic categories), texts, terminal scenes, per-scene controls, and scene transition graph.",
         inputSchema = ToolSchema(properties = buildJsonObject {}, required = emptyList()),
     ) { _ ->
         withContext(Dispatchers.IO) {
@@ -636,17 +677,20 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_save_state",
-        description = "Save current emulator state with a label for later restore. " +
-            "State is written to build/gbkt/savestates/<label>.gbst.",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("label") {
-                    put("type", "string")
-                    put("description", "Identifier for the savestate (used as file name)")
-                }
-            },
-            required = listOf("label"),
-        ),
+        description =
+            "Save current emulator state with a label for later restore. " +
+                "State is written to build/gbkt/savestates/<label>.gbst.",
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("label") {
+                            put("type", "string")
+                            put("description", "Identifier for the savestate (used as file name)")
+                        }
+                    },
+                required = listOf("label"),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -660,17 +704,20 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_load_state",
-        description = "Load a previously saved emulator state by label. " +
-            "Reads from build/gbkt/savestates/<label>.gbst.",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("label") {
-                    put("type", "string")
-                    put("description", "The savestate label used when saving")
-                }
-            },
-            required = listOf("label"),
-        ),
+        description =
+            "Load a previously saved emulator state by label. " +
+                "Reads from build/gbkt/savestates/<label>.gbst.",
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("label") {
+                            put("type", "string")
+                            put("description", "The savestate label used when saving")
+                        }
+                    },
+                required = listOf("label"),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -684,32 +731,35 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_assert",
-        description = "Batch assert multiple conditions against current game state. " +
-            "Types: variable_equals, variable_in_range, scene_is, text_on_screen, " +
-            "actor_visible, sprite_count. " +
-            "text_on_screen returns x, y, layer when found. " +
-            "text_on_screen supports optional scrollAware field (default false) for games " +
-            "using BG scroll registers. " +
-            "Example: [{\"type\":\"variable_equals\",\"name\":\"p1Score\",\"expected\":\"5\"}]",
-        inputSchema = ToolSchema(
-            properties = buildJsonObject {
-                putJsonObject("checks") {
-                    put("type", "array")
-                    put(
-                        "description",
-                        "Array of assertion checks. Each item: {type, ...args}. " +
-                            "variable_equals: {name, expected}; " +
-                            "variable_in_range: {name, min, max}; " +
-                            "scene_is: {scene}; " +
-                            "text_on_screen: {text, scrollAware?}; " +
-                            "actor_visible: {name}; " +
-                            "sprite_count: {expected}",
-                    )
-                    putJsonObject("items") { put("type", "object") }
-                }
-            },
-            required = listOf("checks"),
-        ),
+        description =
+            "Batch assert multiple conditions against current game state. " +
+                "Types: variable_equals, variable_in_range, scene_is, text_on_screen, " +
+                "actor_visible, sprite_count. " +
+                "text_on_screen returns x, y, layer when found. " +
+                "text_on_screen supports optional scrollAware field (default false) for games " +
+                "using BG scroll registers. " +
+                "Example: [{\"type\":\"variable_equals\",\"name\":\"p1Score\",\"expected\":\"5\"}]",
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("checks") {
+                            put("type", "array")
+                            put(
+                                "description",
+                                "Array of assertion checks. Each item: {type, ...args}. " +
+                                    "variable_equals: {name, expected}; " +
+                                    "variable_in_range: {name, min, max}; " +
+                                    "scene_is: {scene}; " +
+                                    "text_on_screen: {text, scrollAware?}; " +
+                                    "actor_visible: {name}; " +
+                                    "sprite_count: {expected}",
+                            )
+                            putJsonObject("items") { put("type", "object") }
+                        }
+                    },
+                required = listOf("checks"),
+            ),
     ) { request ->
         withContext(Dispatchers.IO) {
             try {
@@ -723,8 +773,9 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_get_playbook",
-        description = "Get the PLAYBOOK.md content for the currently loaded game. " +
-            "Returns the file content and path, or null if not found.",
+        description =
+            "Get the PLAYBOOK.md content for the currently loaded game. " +
+                "Returns the file content and path, or null if not found.",
         inputSchema = ToolSchema(properties = buildJsonObject {}, required = emptyList()),
     ) { _ ->
         withContext(Dispatchers.IO) {
@@ -739,8 +790,9 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
 
     addTool(
         name = "emulator_list_games",
-        description = "List all built games found in the project. " +
-            "Scans both standalone (build/gbkt/output/) and multi-game (gbkt-examples/) layouts.",
+        description =
+            "List all built games found in the project. " +
+                "Scans both standalone (build/gbkt/output/) and multi-game (gbkt-examples/) layouts.",
         inputSchema = ToolSchema(properties = buildJsonObject {}, required = emptyList()),
     ) { _ ->
         withContext(Dispatchers.IO) {

@@ -10,6 +10,7 @@ import io.github.gbkt.emulator.EmulatorConfig
 import io.github.gbkt.emulator.GbEmulator
 import io.github.gbkt.emulator.MemoryAccess
 import io.github.gbkt.emulator.debug.DebugLogEntry
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -17,19 +18,17 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 /**
  * Unit tests for [AgentDebugSession] and [AgentSessionConfig].
  *
- * AgentDebugSession wraps a real [io.github.gbkt.emulator.CoffeeGbEmulator], so most tests use
- * a stub emulator injected via the testable constructor overload. A real ROM is needed only for
+ * AgentDebugSession wraps a real [io.github.gbkt.emulator.CoffeeGbEmulator], so most tests use a
+ * stub emulator injected via the testable constructor overload. A real ROM is needed only for
  * lifecycle tests.
  */
 class AgentDebugSessionTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -39,9 +38,7 @@ class AgentDebugSessionTest {
 
     /** Creates a sym file with two symbols: _score at C100, _lives at C101. */
     private fun writeSymFile(): File =
-        File(tempDir, "test.sym").also {
-            it.writeText("DEF _score 00:C100\nDEF _lives 00:C101\n")
-        }
+        File(tempDir, "test.sym").also { it.writeText("DEF _score 00:C100\nDEF _lives 00:C101\n") }
 
     /** Minimal MemoryAccess backed by a flat byte array. */
     private fun mockMemory(vararg patches: Pair<Int, Int>): MemoryAccess {
@@ -51,7 +48,10 @@ class AgentDebugSessionTest {
         }
         return object : MemoryAccess {
             override fun readByte(address: Int): Int = mem[address]
-            override fun writeByte(address: Int, value: Int) { mem[address] = value }
+
+            override fun writeByte(address: Int, value: Int) {
+                mem[address] = value
+            }
         }
     }
 
@@ -65,17 +65,36 @@ class AgentDebugSessionTest {
             private var _paused = paused
             private var _running = running
 
-            override fun start() { _running = true }
-            override fun stop() { _running = false }
-            override fun pause() { _paused = true }
-            override fun resume() { _paused = false }
+            override fun start() {
+                _running = true
+            }
+
+            override fun stop() {
+                _running = false
+            }
+
+            override fun pause() {
+                _paused = true
+            }
+
+            override fun resume() {
+                _paused = false
+            }
+
             override fun stepFrame() {} // no-op
+
             override fun setSpeed(multiplier: Float) = Unit
+
             override fun getFrameBuffer(): IntArray = IntArray(160 * 144) { 0x00FF00 } // green
+
             override fun getMemory(): MemoryAccess = memory
+
             override fun getDebugLog(): List<DebugLogEntry> = emptyList()
+
             override fun isRunning(): Boolean = _running
+
             override fun isPaused(): Boolean = _paused
+
             override val isHeadless: Boolean = true
         }
 
@@ -144,7 +163,9 @@ class AgentDebugSessionTest {
         }
         assertThrows(IllegalStateException::class.java) { session.readVariable("score") }
         assertThrows(IllegalStateException::class.java) { session.readAllVariables() }
-        assertThrows(IllegalStateException::class.java) { session.saveState(File(tempDir, "s.gbst")) }
+        assertThrows(IllegalStateException::class.java) {
+            session.saveState(File(tempDir, "s.gbst"))
+        }
         assertThrows(IllegalStateException::class.java) { session.getDebugLog() }
     }
 
@@ -232,10 +253,7 @@ class AgentDebugSessionTest {
     @Test
     fun `captureScreenshot writes PNG to screenshotDir`() {
         val rom = fakRom()
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val stub = stubEmulator()
 
         val session = AgentDebugSession(config, stubEmulatorFactory = { stub })
@@ -306,7 +324,9 @@ class AgentDebugSessionTest {
         assertThrows(IllegalStateException::class.java) { session.readVariable("score") }
         assertThrows(IllegalStateException::class.java) { session.readAllVariables() }
         assertThrows(IllegalStateException::class.java) { session.writeVariable("score", 1) }
-        assertThrows(IllegalStateException::class.java) { session.saveState(File(tempDir, "s.gbst")) }
+        assertThrows(IllegalStateException::class.java) {
+            session.saveState(File(tempDir, "s.gbst"))
+        }
         assertThrows(IllegalStateException::class.java) { session.getDebugLog() }
         assertThrows(IllegalStateException::class.java) { session.getFrameBuffer() }
         assertThrows(IllegalStateException::class.java) { session.getMemory() }
@@ -346,12 +366,13 @@ class AgentDebugSessionTest {
         val rom = fakRom()
         val symFile = writeSymFile()
         val memory = mockMemory(0xC100 to 99, 0xC101 to 2)
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-            watchVariables = listOf("score"), // only score, not lives
-        )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+                watchVariables = listOf("score"), // only score, not lives
+            )
         val stub = stubEmulator(memory = memory)
 
         val session = AgentDebugSession(config, stubEmulatorFactory = { stub })
@@ -364,7 +385,10 @@ class AgentDebugSessionTest {
         assertTrue(jsonFile.exists(), "JSON sidecar should exist")
         val jsonText = jsonFile.readText()
         assertTrue(jsonText.contains("\"score\""), "sidecar should contain score")
-        assertFalse(jsonText.contains("\"lives\""), "sidecar should not contain lives when filtered")
+        assertFalse(
+            jsonText.contains("\"lives\""),
+            "sidecar should not contain lives when filtered",
+        )
 
         session.stop()
     }

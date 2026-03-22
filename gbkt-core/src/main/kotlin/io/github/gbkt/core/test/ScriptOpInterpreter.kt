@@ -244,18 +244,41 @@ class ScriptOpInterpreter(private val game: GameIR) {
 
             // --- Hardware-dependent no-op stubs (not simulatable) ---
             is TriggerSystem,
-            is PlaySound, is MusicPlay, is MusicStop, is MusicPause, is MusicResume,
-            is DialogSay, is DialogChoice, is MenuShow, is MenuHide,
-            is HudShow, is HudHide,
-            is PrintAt, is PrintCentered, is PrintAligned,
-            is ClearRegion, is ScreenClear, is ScreenFill,
+            is PlaySound,
+            is MusicPlay,
+            is MusicStop,
+            is MusicPause,
+            is MusicResume,
+            is DialogSay,
+            is DialogChoice,
+            is MenuShow,
+            is MenuHide,
+            is HudShow,
+            is HudHide,
+            is PrintAt,
+            is PrintCentered,
+            is PrintAligned,
+            is ClearRegion,
+            is ScreenClear,
+            is ScreenFill,
             is SetPalette,
-            is PrintOp, is GotoXYOp, is FadeOp, is SetVisible,
-            is SpawnActor, is DestroyActor,
-            is AnimateOp, is CameraOp, is WaitFrames,
-            is ReturnOp, is RawOp, is SetAnimationState,
-            is PhysicsStep, is PathfindStep, is WaypointStep,
-            -> { /* no-op: hardware-dependent, not modeled in simulation */ }
+            is PrintOp,
+            is GotoXYOp,
+            is FadeOp,
+            is SetVisible,
+            is SpawnActor,
+            is DestroyActor,
+            is AnimateOp,
+            is CameraOp,
+            is WaitFrames,
+            is ReturnOp,
+            is RawOp,
+            is SetAnimationState,
+            is PhysicsStep,
+            is PathfindStep,
+            is WaypointStep -> {
+                /* no-op: hardware-dependent, not modeled in simulation */
+            }
 
             else -> throw UnsupportedOperationException("Unknown ScriptOp: ${op::class.simpleName}")
         }
@@ -552,8 +575,9 @@ class ScriptOpInterpreter(private val game: GameIR) {
 
     /** Hash table dispatch: `{name}_{op}` where op is insert/get/contains/remove/size/clear. */
     private fun evaluateHashTableCall(rest: String, args: List<Long>): Long {
-        val (name, op) = splitCollectionOp(rest, listOf("insert", "get", "contains", "remove", "size", "clear"))
-            ?: return 0L
+        val (name, op) =
+            splitCollectionOp(rest, listOf("insert", "get", "contains", "remove", "size", "clear"))
+                ?: return 0L
         return when (op) {
             "insert" -> {
                 hashTables.getOrPut(name) { mutableMapOf() }[args[0]] = args[1]
@@ -576,8 +600,8 @@ class ScriptOpInterpreter(private val game: GameIR) {
 
     /** Ring buffer dispatch: `{name}_{op}` where op is push/pop/peek/size/clear. */
     private fun evaluateRingBufferCall(rest: String, args: List<Long>): Long {
-        val (name, op) = splitCollectionOp(rest, listOf("push", "pop", "peek", "size", "clear"))
-            ?: return 0L
+        val (name, op) =
+            splitCollectionOp(rest, listOf("push", "pop", "peek", "size", "clear")) ?: return 0L
         return when (op) {
             "push" -> {
                 ringBuffers.getOrPut(name) { ArrayDeque() }.addLast(args[0])
@@ -600,8 +624,8 @@ class ScriptOpInterpreter(private val game: GameIR) {
      * Alloc scans for the lowest available index to match the C backend's bitmap-scan strategy.
      */
     private fun evaluatePoolCall(rest: String, args: List<Long>): Long {
-        val (name, op) = splitCollectionOp(rest, listOf("alloc", "free", "active_count"))
-            ?: return 0L
+        val (name, op) =
+            splitCollectionOp(rest, listOf("alloc", "free", "active_count")) ?: return 0L
         return when (op) {
             "alloc" -> {
                 val pool = pools.getOrPut(name) { mutableMapOf() }
@@ -620,8 +644,7 @@ class ScriptOpInterpreter(private val game: GameIR) {
 
     /** Fixed slot dispatch: `{name}_{op}` where op is set/get/clear. */
     private fun evaluateFixedSlotCall(rest: String, args: List<Long>): Long {
-        val (name, op) = splitCollectionOp(rest, listOf("set", "get", "clear"))
-            ?: return 0L
+        val (name, op) = splitCollectionOp(rest, listOf("set", "get", "clear")) ?: return 0L
         return when (op) {
             "set" -> {
                 fixedSlots.getOrPut(name) { mutableMapOf() }[args[0].toInt()] = args[1]

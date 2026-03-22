@@ -16,21 +16,19 @@ import kotlin.test.assertTrue
 /**
  * Headless smoke test for the Pong ROM using Coffee-GB embedded emulator.
  *
- * Runs the ROM for 600 frames (10 seconds at 60fps) and asserts no ERROR-level log entries.
- * Tests are skipped automatically if the ROM file does not exist (i.e., buildRom has not been run).
+ * Runs the ROM for 600 frames (10 seconds at 60fps) and asserts no ERROR-level log entries. Tests
+ * are skipped automatically if the ROM file does not exist (i.e., buildRom has not been run).
  *
- * Run headless emulator test task via:
- *   ./gradlew :gbkt-examples:pong:emulatorTest
+ * Run headless emulator test task via: ./gradlew :gbkt-examples:pong:emulatorTest
  *
- * Run this JUnit test via:
- *   ./gradlew :gbkt-examples:pong:test
+ * Run this JUnit test via: ./gradlew :gbkt-examples:pong:test
  */
 class PongEmulatorTest {
 
     companion object {
         /**
-         * ROM file path — resolved relative to the module project directory.
-         * The Gradle plugin writes the ROM to build/gbkt/output/<outputName>.gb.
+         * ROM file path — resolved relative to the module project directory. The Gradle plugin
+         * writes the ROM to build/gbkt/output/<outputName>.gb.
          */
         private val ROM_FILE: File = File("build/gbkt/output/pong.gb")
 
@@ -56,10 +54,11 @@ class PongEmulatorTest {
             return
         }
 
-        val config = AgentSessionConfig(
-            romFile = ROM_FILE,
-            symFile = if (SYM_FILE.exists()) SYM_FILE else null,
-        )
+        val config =
+            AgentSessionConfig(
+                romFile = ROM_FILE,
+                symFile = if (SYM_FILE.exists()) SYM_FILE else null,
+            )
 
         AgentDebugSession(config).use { session ->
             session.start()
@@ -77,8 +76,8 @@ class PongEmulatorTest {
     /**
      * Variable smoke test: run 300 frames, verify p1Score is accessible (>= 0).
      *
-     * Validates that the symbol table links to a readable WRAM address for the score variable.
-     * This test is skipped if the ROM or sym file does not exist.
+     * Validates that the symbol table links to a readable WRAM address for the score variable. This
+     * test is skipped if the ROM or sym file does not exist.
      */
     @Test
     fun `pong p1Score variable is readable after 300 frames`() {
@@ -87,11 +86,12 @@ class PongEmulatorTest {
             return
         }
 
-        val config = AgentSessionConfig(
-            romFile = ROM_FILE,
-            symFile = SYM_FILE,
-            watchVariables = listOf("p1Score", "p2Score"),
-        )
+        val config =
+            AgentSessionConfig(
+                romFile = ROM_FILE,
+                symFile = SYM_FILE,
+                watchVariables = listOf("p1Score", "p2Score"),
+            )
 
         AgentDebugSession(config).use { session ->
             session.start()

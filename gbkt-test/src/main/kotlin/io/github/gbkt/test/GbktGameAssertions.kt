@@ -11,8 +11,8 @@ import io.github.gbkt.emulator.agent.Observation
 /**
  * Fluent assertion DSL for Game Boy game state observations.
  *
- * Assertions throw [AssertionError] with descriptive failure messages that include the frame
- * number and current scene — making test failures easy to diagnose without needing the source line.
+ * Assertions throw [AssertionError] with descriptive failure messages that include the frame number
+ * and current scene — making test failures easy to diagnose without needing the source line.
  *
  * These functions are available both as top-level functions (for direct use in tests) and as
  * extension functions on [GbktTestExtension] (for use inside `@RegisterExtension` test classes).
@@ -37,7 +37,7 @@ fun assertScene(obs: Observation, expected: String, message: String? = null) {
     val prefix = if (message != null) "$message: " else ""
     if (obs.scene != expected) {
         throw AssertionError(
-            "${prefix}Frame ${obs.frame}: expected scene '$expected' but was '${obs.scene}'",
+            "${prefix}Frame ${obs.frame}: expected scene '$expected' but was '${obs.scene}'"
         )
     }
 }
@@ -53,14 +53,15 @@ fun assertScene(obs: Observation, expected: String, message: String? = null) {
  */
 fun assertVariable(obs: Observation, name: String, expected: Int, message: String? = null) {
     val prefix = if (message != null) "$message: " else ""
-    val actual = obs.variables[name]
-        ?: throw AssertionError(
-            "${prefix}Frame ${obs.frame}: variable '$name' not found in observation (scene='${obs.scene}'). " +
-                "Available: ${obs.variables.keys.sorted()}",
-        )
+    val actual =
+        obs.variables[name]
+            ?: throw AssertionError(
+                "${prefix}Frame ${obs.frame}: variable '$name' not found in observation (scene='${obs.scene}'). " +
+                    "Available: ${obs.variables.keys.sorted()}"
+            )
     if (actual != expected) {
         throw AssertionError(
-            "${prefix}Frame ${obs.frame}: variable '$name' expected $expected but was $actual (scene='${obs.scene}')",
+            "${prefix}Frame ${obs.frame}: variable '$name' expected $expected but was $actual (scene='${obs.scene}')"
         )
     }
 }
@@ -78,7 +79,7 @@ fun assertActorVisible(obs: Observation, actorName: String, message: String? = n
     if (obs.actors.none { it.name == actorName }) {
         throw AssertionError(
             "${prefix}Frame ${obs.frame}: actor '$actorName' not found in observation (scene='${obs.scene}'). " +
-                "Present actors: ${obs.actors.map { it.name }}",
+                "Present actors: ${obs.actors.map { it.name }}"
         )
     }
 }
@@ -98,7 +99,7 @@ fun assertTextOnScreen(obs: Observation, text: String, message: String? = null) 
         throw AssertionError(
             "${prefix}Frame ${obs.frame}: text '$text' not found on screen (scene='${obs.scene}'). " +
                 "BG: ${obs.bgText.filter { it.isNotBlank() }}, " +
-                "WIN: ${obs.winText.filter { it.isNotBlank() }}",
+                "WIN: ${obs.winText.filter { it.isNotBlank() }}"
         )
     }
 }
@@ -112,12 +113,19 @@ fun GbktTestExtension.assertScene(obs: Observation, expected: String, message: S
     io.github.gbkt.test.assertScene(obs, expected, message)
 
 /** @see assertVariable */
-fun GbktTestExtension.assertVariable(obs: Observation, name: String, expected: Int, message: String? = null) =
-    io.github.gbkt.test.assertVariable(obs, name, expected, message)
+fun GbktTestExtension.assertVariable(
+    obs: Observation,
+    name: String,
+    expected: Int,
+    message: String? = null,
+) = io.github.gbkt.test.assertVariable(obs, name, expected, message)
 
 /** @see assertActorVisible */
-fun GbktTestExtension.assertActorVisible(obs: Observation, actorName: String, message: String? = null) =
-    io.github.gbkt.test.assertActorVisible(obs, actorName, message)
+fun GbktTestExtension.assertActorVisible(
+    obs: Observation,
+    actorName: String,
+    message: String? = null,
+) = io.github.gbkt.test.assertActorVisible(obs, actorName, message)
 
 /** @see assertTextOnScreen */
 fun GbktTestExtension.assertTextOnScreen(obs: Observation, text: String, message: String? = null) =

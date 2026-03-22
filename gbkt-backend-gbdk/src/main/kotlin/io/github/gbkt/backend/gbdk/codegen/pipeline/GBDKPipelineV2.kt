@@ -61,6 +61,7 @@ import io.github.gbkt.core.ir.CallOp
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.CombatStateId
 import io.github.gbkt.core.ir.EntityCollisionMode
+import io.github.gbkt.core.ir.FadeOp
 import io.github.gbkt.core.ir.ForOp
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.GenericSystem
@@ -70,16 +71,15 @@ import io.github.gbkt.core.ir.LeverObjectIR
 import io.github.gbkt.core.ir.NavigateTo
 import io.github.gbkt.core.ir.NpcObjectIR
 import io.github.gbkt.core.ir.PathfindingSystem
-import io.github.gbkt.core.ir.PushDirection
-import io.github.gbkt.core.ir.SceneIR
-import io.github.gbkt.core.ir.SconceObjectIR
-import io.github.gbkt.core.ir.FadeOp
 import io.github.gbkt.core.ir.PoolDestroyActor
 import io.github.gbkt.core.ir.PoolForEachActive
 import io.github.gbkt.core.ir.PrintAligned
 import io.github.gbkt.core.ir.PrintAt
 import io.github.gbkt.core.ir.PrintCentered
 import io.github.gbkt.core.ir.PrintOp
+import io.github.gbkt.core.ir.PushDirection
+import io.github.gbkt.core.ir.SceneIR
+import io.github.gbkt.core.ir.SconceObjectIR
 import io.github.gbkt.core.ir.ScriptOp
 import io.github.gbkt.core.ir.SetPalette
 import io.github.gbkt.core.ir.StringLiteral
@@ -214,18 +214,18 @@ class GBDKPipelineV2 {
             val sprite = actor.sprite!!
             val tilesWide = (sprite.size.width + 7) / 8
             val tilesHigh = (sprite.size.height + 7) / 8
-            val actorJson = org.json.JSONObject()
-                .put("name", actor.id)
-                .put("oamStart", actor.oamSlot?.slot ?: -1)
-                .put("oamCount", tilesWide * tilesHigh)
-                .put("spriteWidth", sprite.size.width)
-                .put("spriteHeight", sprite.size.height)
-                .put(
-                    "vars",
-                    org.json.JSONObject()
-                        .put("x", "${actor.id}_x")
-                        .put("y", "${actor.id}_y"),
-                )
+            val actorJson =
+                org.json
+                    .JSONObject()
+                    .put("name", actor.id)
+                    .put("oamStart", actor.oamSlot?.slot ?: -1)
+                    .put("oamCount", tilesWide * tilesHigh)
+                    .put("spriteWidth", sprite.size.width)
+                    .put("spriteHeight", sprite.size.height)
+                    .put(
+                        "vars",
+                        org.json.JSONObject().put("x", "${actor.id}_x").put("y", "${actor.id}_y"),
+                    )
             actors.put(actorJson)
         }
         json.put("actors", actors)
@@ -234,10 +234,11 @@ class GBDKPipelineV2 {
         val variables = org.json.JSONArray()
         for (variable in gameIR.variables) {
             variables.put(
-                org.json.JSONObject()
+                org.json
+                    .JSONObject()
                     .put("name", variable.name)
                     .put("type", variable.type.name)
-                    .put("semantic", inferVariableSemantic(variable.name)),
+                    .put("semantic", inferVariableSemantic(variable.name))
             )
         }
         json.put("variables", variables)
@@ -265,9 +266,7 @@ class GBDKPipelineV2 {
             val mappingsArray = org.json.JSONArray()
             for (mapping in mappings) {
                 mappingsArray.put(
-                    org.json.JSONObject()
-                        .put("button", mapping.button)
-                        .put("type", mapping.type),
+                    org.json.JSONObject().put("button", mapping.button).put("type", mapping.type)
                 )
             }
             controlsJson.put(sceneId, mappingsArray)
@@ -277,11 +276,7 @@ class GBDKPipelineV2 {
         // Transitions: scene navigation graph extracted from NavigateTo ops
         val transitionsArray = org.json.JSONArray()
         for (edge in extractTransitions(gameIR)) {
-            transitionsArray.put(
-                org.json.JSONObject()
-                    .put("from", edge.from)
-                    .put("to", edge.to),
-            )
+            transitionsArray.put(org.json.JSONObject().put("from", edge.from).put("to", edge.to))
         }
         json.put("transitions", transitionsArray)
 
@@ -295,29 +290,30 @@ class GBDKPipelineV2 {
     }
 
     companion object {
-        private val TERMINAL_SCENE_PATTERNS = setOf(
-            "gameover", "game_over", "win", "victory", "defeat", "lose",
-        )
+        private val TERMINAL_SCENE_PATTERNS =
+            setOf("gameover", "game_over", "win", "victory", "defeat", "lose")
 
         /** Maps GBDK button constant names to human-readable button names. */
-        private val GBDK_BUTTON_NAMES = mapOf(
-            "J_UP" to "UP",
-            "J_DOWN" to "DOWN",
-            "J_LEFT" to "LEFT",
-            "J_RIGHT" to "RIGHT",
-            "J_A" to "A",
-            "J_B" to "B",
-            "J_START" to "START",
-            "J_SELECT" to "SELECT",
-        )
+        private val GBDK_BUTTON_NAMES =
+            mapOf(
+                "J_UP" to "UP",
+                "J_DOWN" to "DOWN",
+                "J_LEFT" to "LEFT",
+                "J_RIGHT" to "RIGHT",
+                "J_A" to "A",
+                "J_B" to "B",
+                "J_START" to "START",
+                "J_SELECT" to "SELECT",
+            )
 
         /** Maps input function names to their interaction type label. */
-        private val INPUT_FUNCTION_TYPES = mapOf(
-            "dpad_held" to "held",
-            "button_held" to "held",
-            "dpad_pressed" to "pressed",
-            "button_pressed" to "pressed",
-        )
+        private val INPUT_FUNCTION_TYPES =
+            mapOf(
+                "dpad_held" to "held",
+                "button_held" to "held",
+                "dpad_pressed" to "pressed",
+                "button_pressed" to "pressed",
+            )
     }
 
     /** Intermediate representation for a control mapping within a scene. */
@@ -330,12 +326,12 @@ class GBDKPipelineV2 {
      * Extracts per-scene input control mappings from the game IR.
      *
      * Walks each scene's enter, frame, and exit scripts recursively (depth-first into [IfOp]
-     * branches). For each [IfOp] whose condition is a [CallExpr] with a function name in the
-     * set of input functions (`dpad_held`, `dpad_pressed`, `button_held`, `button_pressed`),
-     * extracts the button from the first arg (a [VarRef] with a GBDK constant name like `J_UP`).
+     * branches). For each [IfOp] whose condition is a [CallExpr] with a function name in the set of
+     * input functions (`dpad_held`, `dpad_pressed`, `button_held`, `button_pressed`), extracts the
+     * button from the first arg (a [VarRef] with a GBDK constant name like `J_UP`).
      *
-     * Returns a map of scene ID to list of [ControlMapping]s. Scenes with no input ops are
-     * omitted from the result.
+     * Returns a map of scene ID to list of [ControlMapping]s. Scenes with no input ops are omitted
+     * from the result.
      */
     private fun extractControls(game: GameIR): Map<String, List<ControlMapping>> {
         val result = linkedMapOf<String, LinkedHashSet<ControlMapping>>()
@@ -352,7 +348,8 @@ class GBDKPipelineV2 {
                                 if (arg is VarRef) {
                                     val buttonName = GBDK_BUTTON_NAMES[arg.name]
                                     if (buttonName != null) {
-                                        result.getOrPut(sceneId) { linkedSetOf() }
+                                        result
+                                            .getOrPut(sceneId) { linkedSetOf() }
                                             .add(ControlMapping(buttonName, interactionType))
                                     }
                                 }
@@ -422,10 +419,10 @@ class GBDKPipelineV2 {
     /**
      * Recursively walks a list of [ScriptOp]s and collects literal display text strings.
      *
-     * Includes text from [PrintAt], [PrintCentered], [PrintAligned], and [PrintOp] (when it has
-     * no format values). Leading and trailing whitespace is trimmed so that display-padded strings
-     * like `"     SCORE!     "` normalize to their semantic content (`"SCORE!"`). Skips strings
-     * that are empty after trimming and deduplicates.
+     * Includes text from [PrintAt], [PrintCentered], [PrintAligned], and [PrintOp] (when it has no
+     * format values). Leading and trailing whitespace is trimmed so that display-padded strings
+     * like `" SCORE! "` normalize to their semantic content (`"SCORE!"`). Skips strings that are
+     * empty after trimming and deduplicates.
      */
     private fun collectTexts(ops: List<ScriptOp>): List<String> {
         val seen = linkedSetOf<String>()
@@ -442,7 +439,10 @@ class GBDKPipelineV2 {
                     is PrintCentered -> addText(op.text)
                     is PrintAligned -> addText(op.text)
                     is PrintOp -> if (op.values.isEmpty()) addText(op.text)
-                    is IfOp -> { walk(op.then); walk(op.otherwise) }
+                    is IfOp -> {
+                        walk(op.then)
+                        walk(op.otherwise)
+                    }
                     is WhileOp -> walk(op.body)
                     is ForOp -> walk(op.body)
                     is FadeOp -> walk(op.after)
@@ -3199,14 +3199,15 @@ class GBDKPipelineV2 {
 /**
  * Normalizes a variable name from camelCase/PascalCase to snake_case lowercase.
  *
- * Inserts underscores at case transitions (lowercase→uppercase) and digit boundaries
- * (digit→letter, letter→digit), then lowercases the entire result.
+ * Inserts underscores at case transitions (lowercase→uppercase) and digit boundaries (digit→letter,
+ * letter→digit), then lowercases the entire result.
  *
- * Examples: `"ballDx"` → `"ball_dx"`, `"playerHealth"` → `"player_health"`,
- * `"p1Score"` → `"p_1_score"`, `"hp"` → `"hp"`.
+ * Examples: `"ballDx"` → `"ball_dx"`, `"playerHealth"` → `"player_health"`, `"p1Score"` →
+ * `"p_1_score"`, `"hp"` → `"hp"`.
  */
 private fun normalize(name: String): String =
-    name.replace(Regex("([a-z])([A-Z])"), "$1_$2")
+    name
+        .replace(Regex("([a-z])([A-Z])"), "$1_$2")
         .replace(Regex("([0-9])([a-zA-Z])"), "$1_$2")
         .replace(Regex("([a-zA-Z])([0-9])"), "$1_$2")
         .lowercase()
@@ -3214,8 +3215,8 @@ private fun normalize(name: String): String =
 /**
  * Returns `true` if [name] contains [word] as a whole word in its normalized (snake_case) form.
  *
- * Word boundaries are start-of-string, end-of-string, or underscores. This prevents false
- * positives like `display` matching `sp` or `island` matching `is`.
+ * Word boundaries are start-of-string, end-of-string, or underscores. This prevents false positives
+ * like `display` matching `sp` or `island` matching `is`.
  */
 private fun hasWord(name: String, word: String): Boolean {
     val normalized = normalize(name)
@@ -3235,28 +3236,39 @@ private fun hasWord(name: String, word: String): Boolean {
  * 7. Word match `step`, `count`, `frame`, `timer` → "counter"
  * 8. Else → "unknown"
  *
- * Names are normalized from camelCase to snake_case before word-boundary matching to
- * prevent false positives (e.g. `display` no longer matches `sp`, `island` no longer
- * matches `is`).
+ * Names are normalized from camelCase to snake_case before word-boundary matching to prevent false
+ * positives (e.g. `display` no longer matches `sp`, `island` no longer matches `is`).
  */
 internal fun inferVariableSemantic(name: String): String {
     val lower = name.lowercase()
     return when {
         lower == "current_scene" -> "state"
         lower.endsWith("_x") || lower.endsWith("_y") -> "position"
-        hasWord(name, "dx") || hasWord(name, "dy") ||
-            hasWord(name, "vel") || hasWord(name, "speed") -> "velocity"
-        hasWord(name, "score") || hasWord(name, "point") ||
-            hasWord(name, "points") || hasWord(name, "gold") -> "score"
-        hasWord(name, "hp") || hasWord(name, "health") ||
-            hasWord(name, "mp") || hasWord(name, "sp") ||
-            hasWord(name, "atk") || hasWord(name, "def") ||
-            hasWord(name, "str") || hasWord(name, "exp") -> "stat"
-        hasWord(name, "flag") || hasWord(name, "met") ||
-            hasWord(name, "has") || hasWord(name, "defeated") ||
+        hasWord(name, "dx") ||
+            hasWord(name, "dy") ||
+            hasWord(name, "vel") ||
+            hasWord(name, "speed") -> "velocity"
+        hasWord(name, "score") ||
+            hasWord(name, "point") ||
+            hasWord(name, "points") ||
+            hasWord(name, "gold") -> "score"
+        hasWord(name, "hp") ||
+            hasWord(name, "health") ||
+            hasWord(name, "mp") ||
+            hasWord(name, "sp") ||
+            hasWord(name, "atk") ||
+            hasWord(name, "def") ||
+            hasWord(name, "str") ||
+            hasWord(name, "exp") -> "stat"
+        hasWord(name, "flag") ||
+            hasWord(name, "met") ||
+            hasWord(name, "has") ||
+            hasWord(name, "defeated") ||
             hasWord(name, "is") -> "flag"
-        hasWord(name, "step") || hasWord(name, "count") ||
-            hasWord(name, "frame") || hasWord(name, "timer") -> "counter"
+        hasWord(name, "step") ||
+            hasWord(name, "count") ||
+            hasWord(name, "frame") ||
+            hasWord(name, "timer") -> "counter"
         else -> "unknown"
     }
 }

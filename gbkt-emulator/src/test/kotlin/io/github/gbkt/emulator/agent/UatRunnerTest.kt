@@ -9,6 +9,9 @@ package io.github.gbkt.emulator.agent
 import io.github.gbkt.emulator.GbEmulator
 import io.github.gbkt.emulator.MemoryAccess
 import io.github.gbkt.emulator.debug.DebugLogEntry
+import java.awt.image.BufferedImage
+import java.io.File
+import javax.imageio.ImageIO
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -16,17 +19,11 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.awt.image.BufferedImage
-import java.io.File
-import javax.imageio.ImageIO
 
-/**
- * Unit tests for [UatRunner] using stub emulator.
- */
+/** Unit tests for [UatRunner] using stub emulator. */
 class UatRunnerTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -34,9 +31,7 @@ class UatRunnerTest {
         File(tempDir, name).also { it.writeBytes(ByteArray(64)) }
 
     private fun writeSymFile(): File =
-        File(tempDir, "test.sym").also {
-            it.writeText("DEF _score 00:C100\nDEF _lives 00:C101\n")
-        }
+        File(tempDir, "test.sym").also { it.writeText("DEF _score 00:C100\nDEF _lives 00:C101\n") }
 
     private fun mockMemory(vararg patches: Pair<Int, Int>): MemoryAccess {
         val mem = IntArray(0x10000) { 0 }
@@ -45,7 +40,10 @@ class UatRunnerTest {
         }
         return object : MemoryAccess {
             override fun readByte(address: Int): Int = mem[address]
-            override fun writeByte(address: Int, value: Int) { mem[address] = value }
+
+            override fun writeByte(address: Int, value: Int) {
+                mem[address] = value
+            }
         }
     }
 
@@ -57,17 +55,38 @@ class UatRunnerTest {
             private var _paused = true
             private var _running = false
 
-            override fun start() { _running = true }
-            override fun stop() { _running = false }
-            override fun pause() { _paused = true }
-            override fun resume() { _paused = false }
-            override fun stepFrame() { onStepFrame() }
+            override fun start() {
+                _running = true
+            }
+
+            override fun stop() {
+                _running = false
+            }
+
+            override fun pause() {
+                _paused = true
+            }
+
+            override fun resume() {
+                _paused = false
+            }
+
+            override fun stepFrame() {
+                onStepFrame()
+            }
+
             override fun setSpeed(multiplier: Float) = Unit
+
             override fun getFrameBuffer(): IntArray = IntArray(160 * 144) { 0x00FF00 }
+
             override fun getMemory(): MemoryAccess = memory
+
             override fun getDebugLog(): List<DebugLogEntry> = emptyList()
+
             override fun isRunning(): Boolean = _running
+
             override fun isPaused(): Boolean = _paused
+
             override val isHeadless: Boolean = true
         }
 
@@ -76,10 +95,7 @@ class UatRunnerTest {
     @Test
     fun `wait increments frameCount tracked by session`() {
         val rom = fakeRom()
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator() })
         runner.start()
 
@@ -96,10 +112,7 @@ class UatRunnerTest {
     @Test
     fun `press increments frameCount`() {
         val rom = fakeRom()
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator() })
         runner.start()
 
@@ -117,11 +130,12 @@ class UatRunnerTest {
         val rom = fakeRom()
         val symFile = writeSymFile()
         val memory = mockMemory(0xC100 to 42, 0xC101 to 3)
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator(memory) })
         runner.start()
 
@@ -148,11 +162,12 @@ class UatRunnerTest {
         val rom = fakeRom()
         val symFile = writeSymFile()
         val memory = mockMemory(0xC100 to 50)
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator(memory) })
         runner.start()
 
@@ -169,10 +184,7 @@ class UatRunnerTest {
     @Test
     fun `assertCustom records pass and fail`() {
         val rom = fakeRom()
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator() })
         runner.start()
 
@@ -192,11 +204,12 @@ class UatRunnerTest {
         val rom = fakeRom()
         val symFile = writeSymFile()
         val memory = mockMemory(0xC100 to 10, 0xC101 to 3)
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
         val runner = UatRunner("pong", config, stubEmulatorFactory = { stubEmulator(memory) })
         runner.start()
 
@@ -227,11 +240,12 @@ class UatRunnerTest {
         val rom = fakeRom()
         val symFile = writeSymFile()
         val memory = mockMemory(0xC100 to 0)
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator(memory) })
         runner.start()
 
@@ -265,11 +279,14 @@ class UatRunnerTest {
         val rom = fakeRom()
         val goldenDir = File(tempDir, "golden")
         createGoldenPng(goldenDir, "cp1", 0x00FF00) // same color as stub framebuffer
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, goldenDir = goldenDir, stubEmulatorFactory = { stubEmulator() })
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                goldenDir = goldenDir,
+                stubEmulatorFactory = { stubEmulator() },
+            )
         runner.start()
 
         val cp = runner.checkpoint("cp1")
@@ -284,11 +301,14 @@ class UatRunnerTest {
         val rom = fakeRom()
         val goldenDir = File(tempDir, "golden")
         createGoldenPng(goldenDir, "cp1", 0xFF0000) // different color
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, goldenDir = goldenDir, stubEmulatorFactory = { stubEmulator() })
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                goldenDir = goldenDir,
+                stubEmulatorFactory = { stubEmulator() },
+            )
         runner.start()
 
         val cp = runner.checkpoint("cp1")
@@ -305,11 +325,14 @@ class UatRunnerTest {
         val rom = fakeRom()
         val goldenDir = File(tempDir, "golden")
         goldenDir.mkdirs() // empty dir — no golden file
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, goldenDir = goldenDir, stubEmulatorFactory = { stubEmulator() })
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                goldenDir = goldenDir,
+                stubEmulatorFactory = { stubEmulator() },
+            )
         runner.start()
 
         val cp = runner.checkpoint("cp1")
@@ -321,10 +344,7 @@ class UatRunnerTest {
     @Test
     fun `no goldenDir means no comparison attempted`() {
         val rom = fakeRom()
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator() })
         runner.start()
 
@@ -340,12 +360,16 @@ class UatRunnerTest {
         val goldenDir = File(tempDir, "golden")
         // Create a golden that's slightly different (all red vs all green)
         createGoldenPng(goldenDir, "cp1", 0xFF0000)
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         // Default tolerance = 0 (strict) but override cp1 to allow 100% diff
-        val runner = UatRunner("test", config, goldenDir = goldenDir, goldenTolerance = 0.0, stubEmulatorFactory = { stubEmulator() })
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                goldenDir = goldenDir,
+                goldenTolerance = 0.0,
+                stubEmulatorFactory = { stubEmulator() },
+            )
         runner.setCheckpointTolerance("cp1", 1.0) // allow 100% difference
         runner.start()
 
@@ -362,11 +386,14 @@ class UatRunnerTest {
         val goldenDir = File(tempDir, "golden")
         createGoldenPng(goldenDir, "cp1", 0x00FF00) // matches
         createGoldenPng(goldenDir, "cp2", 0xFF0000) // mismatches
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, goldenDir = goldenDir, stubEmulatorFactory = { stubEmulator() })
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                goldenDir = goldenDir,
+                stubEmulatorFactory = { stubEmulator() },
+            )
         runner.start()
 
         runner.checkpoint("cp1")
@@ -387,12 +414,16 @@ class UatRunnerTest {
         val mem = IntArray(0x10000) { 0 }
         for ((text, x, y) in entries) {
             for ((i, c) in text.withIndex()) {
-                mem[VramTextVerifier.BG_TILEMAP_BASE + y * VramTextVerifier.ROW_STRIDE + x + i] = c.code - 0x20
+                mem[VramTextVerifier.BG_TILEMAP_BASE + y * VramTextVerifier.ROW_STRIDE + x + i] =
+                    c.code - 0x20
             }
         }
         return object : MemoryAccess {
             override fun readByte(address: Int): Int = mem[address]
-            override fun writeByte(address: Int, value: Int) { mem[address] = value }
+
+            override fun writeByte(address: Int, value: Int) {
+                mem[address] = value
+            }
         }
     }
 
@@ -400,10 +431,7 @@ class UatRunnerTest {
     fun `assertTextAt passes when text matches`() {
         val rom = fakeRom()
         val memory = memoryWithVramText(Triple("PONG", 8, 7))
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator(memory) })
         runner.start()
 
@@ -420,10 +448,7 @@ class UatRunnerTest {
     fun `assertTextAt fails when text does not match`() {
         val rom = fakeRom()
         val memory = memoryWithVramText(Triple("PONG", 8, 7))
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator(memory) })
         runner.start()
 
@@ -440,14 +465,8 @@ class UatRunnerTest {
     @Test
     fun `assertTextOnScreen finds text anywhere on screen`() {
         val rom = fakeRom()
-        val memory = memoryWithVramText(
-            Triple("PONG", 8, 7),
-            Triple("PRESS START", 5, 10),
-        )
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val memory = memoryWithVramText(Triple("PONG", 8, 7), Triple("PRESS START", 5, 10))
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator(memory) })
         runner.start()
 
@@ -467,10 +486,7 @@ class UatRunnerTest {
     @Test
     fun `pending assertions are flushed per checkpoint`() {
         val rom = fakeRom()
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator() })
         runner.start()
 
@@ -490,10 +506,7 @@ class UatRunnerTest {
     @Test
     fun `waitUntil returns immediately when condition is already true`() {
         val rom = fakeRom()
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator() })
         runner.start()
 
@@ -511,17 +524,23 @@ class UatRunnerTest {
         val symFile = writeSymFile()
         val memory = mockMemory(0xC100 to 0)
         var steps = 0
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, stubEmulatorFactory = {
-            stubEmulator(memory) {
-                steps++
-                if (steps == 10) memory.writeByte(0xC100, 42)
-            }
-        })
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                stubEmulatorFactory = {
+                    stubEmulator(memory) {
+                        steps++
+                        if (steps == 10) memory.writeByte(0xC100, 42)
+                    }
+                },
+            )
         runner.start()
 
         val result = runner.waitUntilVariable("score", 42, 100)
@@ -535,10 +554,7 @@ class UatRunnerTest {
     @Test
     fun `waitUntil returns met=false when maxFrames exhausted`() {
         val rom = fakeRom()
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator() })
         runner.start()
 
@@ -556,17 +572,23 @@ class UatRunnerTest {
         val symFile = writeSymFile()
         val memory = mockMemory(0xC100 to 10)
         var steps = 0
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, stubEmulatorFactory = {
-            stubEmulator(memory) {
-                steps++
-                if (steps == 5) memory.writeByte(0xC100, 99)
-            }
-        })
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                stubEmulatorFactory = {
+                    stubEmulator(memory) {
+                        steps++
+                        if (steps == 5) memory.writeByte(0xC100, 99)
+                    }
+                },
+            )
         runner.start()
 
         val result = runner.waitUntilVariable("score", 99, 100)
@@ -582,22 +604,27 @@ class UatRunnerTest {
         val rom = fakeRom()
         val memory = mockMemory()
         var steps = 0
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, stubEmulatorFactory = {
-            stubEmulator(memory) {
-                steps++
-                if (steps == 8) {
-                    // Write "PONG" at tile position (8, 7) in BG tilemap with GBDK encoding
-                    val base = VramTextVerifier.BG_TILEMAP_BASE
-                    for ((i, c) in "PONG".withIndex()) {
-                        memory.writeByte(base + 7 * VramTextVerifier.ROW_STRIDE + 8 + i, c.code - 0x20)
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                stubEmulatorFactory = {
+                    stubEmulator(memory) {
+                        steps++
+                        if (steps == 8) {
+                            // Write "PONG" at tile position (8, 7) in BG tilemap with GBDK encoding
+                            val base = VramTextVerifier.BG_TILEMAP_BASE
+                            for ((i, c) in "PONG".withIndex()) {
+                                memory.writeByte(
+                                    base + 7 * VramTextVerifier.ROW_STRIDE + 8 + i,
+                                    c.code - 0x20,
+                                )
+                            }
+                        }
                     }
-                }
-            }
-        })
+                },
+            )
         runner.start()
 
         val result = runner.waitUntilTextOnScreen("PONG", 100)
@@ -613,20 +640,27 @@ class UatRunnerTest {
     @Test
     fun `currentScene returns scene name via metadata`() {
         val rom = fakeRom()
-        val symFile = File(tempDir, "test.sym").also {
-            it.writeText("DEF _current_scene 00:C100\n")
-        }
+        val symFile =
+            File(tempDir, "test.sym").also { it.writeText("DEF _current_scene 00:C100\n") }
         val memory = mockMemory(0xC100 to 2)
-        val metadata = GameMetadata.of(
-            scenes = SceneMap.of("gameover" to 0, "game" to 1, "title" to 2),
-            actors = emptyList(),
-        )
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, metadata = metadata, stubEmulatorFactory = { stubEmulator(memory) })
+        val metadata =
+            GameMetadata.of(
+                scenes = SceneMap.of("gameover" to 0, "game" to 1, "title" to 2),
+                actors = emptyList(),
+            )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                metadata = metadata,
+                stubEmulatorFactory = { stubEmulator(memory) },
+            )
         runner.start()
 
         assertEquals("title", runner.currentScene())
@@ -637,15 +671,15 @@ class UatRunnerTest {
     @Test
     fun `currentScene returns scene_N fallback without sceneMap`() {
         val rom = fakeRom()
-        val symFile = File(tempDir, "test.sym").also {
-            it.writeText("DEF _current_scene 00:C100\n")
-        }
+        val symFile =
+            File(tempDir, "test.sym").also { it.writeText("DEF _current_scene 00:C100\n") }
         val memory = mockMemory(0xC100 to 2)
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator(memory) })
         runner.start()
 
@@ -657,26 +691,33 @@ class UatRunnerTest {
     @Test
     fun `waitForScene waits until current_scene matches`() {
         val rom = fakeRom()
-        val symFile = File(tempDir, "test.sym").also {
-            it.writeText("DEF _current_scene 00:C100\n")
-        }
+        val symFile =
+            File(tempDir, "test.sym").also { it.writeText("DEF _current_scene 00:C100\n") }
         val memory = mockMemory(0xC100 to 0) // starts at scene 0 (gameover)
         var steps = 0
-        val metadata = GameMetadata.of(
-            scenes = SceneMap.of("gameover" to 0, "game" to 1, "title" to 2),
-            actors = emptyList(),
-        )
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, metadata = metadata, stubEmulatorFactory = {
-            stubEmulator(memory) {
-                steps++
-                if (steps == 15) memory.writeByte(0xC100, 1) // transition to "game"
-            }
-        })
+        val metadata =
+            GameMetadata.of(
+                scenes = SceneMap.of("gameover" to 0, "game" to 1, "title" to 2),
+                actors = emptyList(),
+            )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                metadata = metadata,
+                stubEmulatorFactory = {
+                    stubEmulator(memory) {
+                        steps++
+                        if (steps == 15) memory.writeByte(0xC100, 1) // transition to "game"
+                    }
+                },
+            )
         runner.start()
 
         val result = runner.waitForScene("game", 100)
@@ -690,20 +731,27 @@ class UatRunnerTest {
     @Test
     fun `assertScene records soft assertion`() {
         val rom = fakeRom()
-        val symFile = File(tempDir, "test.sym").also {
-            it.writeText("DEF _current_scene 00:C100\n")
-        }
+        val symFile =
+            File(tempDir, "test.sym").also { it.writeText("DEF _current_scene 00:C100\n") }
         val memory = mockMemory(0xC100 to 2)
-        val metadata = GameMetadata.of(
-            scenes = SceneMap.of("gameover" to 0, "game" to 1, "title" to 2),
-            actors = emptyList(),
-        )
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, metadata = metadata, stubEmulatorFactory = { stubEmulator(memory) })
+        val metadata =
+            GameMetadata.of(
+                scenes = SceneMap.of("gameover" to 0, "game" to 1, "title" to 2),
+                actors = emptyList(),
+            )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                metadata = metadata,
+                stubEmulatorFactory = { stubEmulator(memory) },
+            )
         runner.start()
 
         runner.assertScene("title")
@@ -721,28 +769,44 @@ class UatRunnerTest {
     @Test
     fun `waitForScene works via metadata parameter end-to-end`() {
         val rom = fakeRom()
-        val symFile = File(tempDir, "test.sym").also {
-            it.writeText("DEF _current_scene 00:C100\n")
-        }
+        val symFile =
+            File(tempDir, "test.sym").also { it.writeText("DEF _current_scene 00:C100\n") }
         val memory = mockMemory(0xC100 to 0)
         var steps = 0
-        val metadata = GameMetadata.of(
-            scenes = SceneMap.of("gameover" to 0, "game" to 1, "title" to 2),
-            actors = listOf(
-                ActorMetadata("ball", oamStart = 0, oamCount = 1, spriteWidth = 4, spriteHeight = 4, xVar = "ball_x", yVar = "ball_y"),
-            ),
-        )
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, metadata = metadata, stubEmulatorFactory = {
-            stubEmulator(memory) {
-                steps++
-                if (steps == 5) memory.writeByte(0xC100, 1) // transition to "game"
-            }
-        })
+        val metadata =
+            GameMetadata.of(
+                scenes = SceneMap.of("gameover" to 0, "game" to 1, "title" to 2),
+                actors =
+                    listOf(
+                        ActorMetadata(
+                            "ball",
+                            oamStart = 0,
+                            oamCount = 1,
+                            spriteWidth = 4,
+                            spriteHeight = 4,
+                            xVar = "ball_x",
+                            yVar = "ball_y",
+                        )
+                    ),
+            )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                metadata = metadata,
+                stubEmulatorFactory = {
+                    stubEmulator(memory) {
+                        steps++
+                        if (steps == 5) memory.writeByte(0xC100, 1) // transition to "game"
+                    }
+                },
+            )
         runner.start()
 
         val result = runner.waitForScene("game", 50)
@@ -757,21 +821,28 @@ class UatRunnerTest {
     @Test
     fun `assertScene works via metadata parameter end-to-end`() {
         val rom = fakeRom()
-        val symFile = File(tempDir, "test.sym").also {
-            it.writeText("DEF _current_scene 00:C100\n")
-        }
+        val symFile =
+            File(tempDir, "test.sym").also { it.writeText("DEF _current_scene 00:C100\n") }
         val memory = mockMemory(0xC100 to 1) // scene 1 → "game"
-        val metadata = GameMetadata.of(
-            scenes = SceneMap.of("gameover" to 0, "game" to 1, "title" to 2),
-            actors = emptyList(),
-            variables = listOf(VariableDef("current_scene", "U8")),
-        )
-        val config = AgentSessionConfig(
-            romFile = rom,
-            symFile = symFile,
-            screenshotDir = File(tempDir, "shots"),
-        )
-        val runner = UatRunner("test", config, metadata = metadata, stubEmulatorFactory = { stubEmulator(memory) })
+        val metadata =
+            GameMetadata.of(
+                scenes = SceneMap.of("gameover" to 0, "game" to 1, "title" to 2),
+                actors = emptyList(),
+                variables = listOf(VariableDef("current_scene", "U8")),
+            )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                symFile = symFile,
+                screenshotDir = File(tempDir, "shots"),
+            )
+        val runner =
+            UatRunner(
+                "test",
+                config,
+                metadata = metadata,
+                stubEmulatorFactory = { stubEmulator(memory) },
+            )
         runner.start()
 
         runner.assertScene("game") // should pass
@@ -793,16 +864,14 @@ class UatRunnerTest {
         val rom = fakeRom()
         // Sprite at OAM slot 0: rawY=32, rawX=24 → screenY=16, screenX=16
         val oamBase = 0xFE00
-        val memory = mockMemory(
-            oamBase to 32,       // rawY
-            oamBase + 1 to 24,   // rawX
-            oamBase + 2 to 5,    // tile
-            oamBase + 3 to 0,    // attr
-        )
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val memory =
+            mockMemory(
+                oamBase to 32, // rawY
+                oamBase + 1 to 24, // rawX
+                oamBase + 2 to 5, // tile
+                oamBase + 3 to 0, // attr
+            )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator(memory) })
         runner.start()
 
@@ -821,10 +890,7 @@ class UatRunnerTest {
     fun `assertSpriteAt fails when no sprite at position`() {
         val rom = fakeRom()
         val memory = mockMemory() // all OAM zeroed → no visible sprites
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator(memory) })
         runner.start()
 
@@ -842,14 +908,18 @@ class UatRunnerTest {
         val rom = fakeRom()
         val oamBase = 0xFE00
         // Two visible sprites
-        val memory = mockMemory(
-            oamBase to 32, oamBase + 1 to 24, oamBase + 2 to 0, oamBase + 3 to 0,
-            oamBase + 4 to 48, oamBase + 5 to 80, oamBase + 6 to 1, oamBase + 7 to 0,
-        )
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "shots"),
-        )
+        val memory =
+            mockMemory(
+                oamBase to 32,
+                oamBase + 1 to 24,
+                oamBase + 2 to 0,
+                oamBase + 3 to 0,
+                oamBase + 4 to 48,
+                oamBase + 5 to 80,
+                oamBase + 6 to 1,
+                oamBase + 7 to 0,
+            )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "shots"))
         val runner = UatRunner("test", config, stubEmulatorFactory = { stubEmulator(memory) })
         runner.start()
 

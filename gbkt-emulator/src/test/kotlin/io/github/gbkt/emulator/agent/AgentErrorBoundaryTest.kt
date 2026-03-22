@@ -6,14 +6,13 @@
  */
 package io.github.gbkt.emulator.agent
 
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertContains
-import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 /**
  * Tests that agent-layer error boundaries wrap internal exceptions properly.
@@ -26,23 +25,17 @@ import java.io.File
  */
 class AgentErrorBoundaryTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     // ── Test 1: start with zero-byte ROM throws EmulatorStartException ──
 
     @Test
     fun `start with zero-byte ROM throws EmulatorStartException`() {
         val rom = File(tempDir, "rom.gb").also { it.writeBytes(ByteArray(0)) }
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "screenshots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "screenshots"))
 
         val session = AgentDebugSession(config)
-        assertThrows<EmulatorStartException> {
-            session.start()
-        }
+        assertThrows<EmulatorStartException> { session.start() }
     }
 
     // ── Test 2: EmulatorStartException message contains ROM name not path ──
@@ -50,15 +43,10 @@ class AgentErrorBoundaryTest {
     @Test
     fun `EmulatorStartException message contains ROM name not path`() {
         val rom = File(tempDir, "rom.gb").also { it.writeBytes(ByteArray(0)) }
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "screenshots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "screenshots"))
 
         val session = AgentDebugSession(config)
-        val ex = assertThrows<EmulatorStartException> {
-            session.start()
-        }
+        val ex = assertThrows<EmulatorStartException> { session.start() }
         assertContains(ex.message!!, "rom.gb", message = "Message should contain ROM file name")
         assertTrue(
             !ex.message!!.contains("/Users/") && !ex.message!!.contains("/home/"),
@@ -71,15 +59,10 @@ class AgentErrorBoundaryTest {
     @Test
     fun `EmulatorStartException preserves cause`() {
         val rom = File(tempDir, "rom.gb").also { it.writeBytes(ByteArray(0)) }
-        val config = AgentSessionConfig(
-            romFile = rom,
-            screenshotDir = File(tempDir, "screenshots"),
-        )
+        val config = AgentSessionConfig(romFile = rom, screenshotDir = File(tempDir, "screenshots"))
 
         val session = AgentDebugSession(config)
-        val ex = assertThrows<EmulatorStartException> {
-            session.start()
-        }
+        val ex = assertThrows<EmulatorStartException> { session.start() }
         assertNotNull(ex.cause, "EmulatorStartException should preserve the original cause")
     }
 

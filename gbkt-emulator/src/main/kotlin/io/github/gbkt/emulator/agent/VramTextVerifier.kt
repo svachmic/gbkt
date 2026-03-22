@@ -11,9 +11,9 @@ import io.github.gbkt.emulator.MemoryAccess
 /**
  * Reads text from Game Boy VRAM tile maps by decoding tile indices as ASCII characters.
  *
- * GBDK's default IBM font maps tile index directly to ASCII code (`'P'` = tile 0x50). This
- * verifier reads the background or window tilemap and converts tile indices back to characters,
- * enabling text-based assertions in UAT tests without relying on screenshot comparison.
+ * GBDK's default IBM font maps tile index directly to ASCII code (`'P'` = tile 0x50). This verifier
+ * reads the background or window tilemap and converts tile indices back to characters, enabling
+ * text-based assertions in UAT tests without relying on screenshot comparison.
  *
  * Tilemap layout:
  * - Background: 0x9800–0x9BFF (32×32 tiles, 20×18 visible)
@@ -58,8 +58,8 @@ object VramTextVerifier {
      * - **Background** (`printf`/`gotoxy`): tile = ASCII - 0x20 (e.g. 'P' (0x50) → tile 0x30)
      * - **Window** (`_win_print_at`): tile = ASCII directly (e.g. 'P' → tile 0x50)
      *
-     * Use [GBDK_BG_DECODER] for background, [DIRECT_ASCII_DECODER] for window, or
-     * [defaultDecoder] to select automatically based on the tilemap layer.
+     * Use [GBDK_BG_DECODER] for background, [DIRECT_ASCII_DECODER] for window, or [defaultDecoder]
+     * to select automatically based on the tilemap layer.
      */
     fun interface TileDecoder {
         fun decode(tile: Int): Char
@@ -77,32 +77,35 @@ object VramTextVerifier {
     }
 
     /** Returns the default [TileDecoder] for the given tilemap [layer]. */
-    fun defaultDecoder(layer: TilemapLayer): TileDecoder = when (layer) {
-        TilemapLayer.BACKGROUND -> GBDK_BG_DECODER
-        TilemapLayer.WINDOW -> DIRECT_ASCII_DECODER
-    }
+    fun defaultDecoder(layer: TilemapLayer): TileDecoder =
+        when (layer) {
+            TilemapLayer.BACKGROUND -> GBDK_BG_DECODER
+            TilemapLayer.WINDOW -> DIRECT_ASCII_DECODER
+        }
 
     /**
      * Reads [length] tiles starting at tile position ([x], [y]) and returns them as a string.
      *
-     * Input coordinates are always viewport-relative (0–19 columns, 0–17 rows). When
-     * [scrollAware] is `true` and [layer] is [TilemapLayer.BACKGROUND], the hardware scroll
-     * registers SCX (0xFF43) and SCY (0xFF42) are read and applied to compute tilemap-absolute
-     * coordinates. Coordinates wrap at 32 tiles using a bitwise AND with 31.
+     * Input coordinates are always viewport-relative (0–19 columns, 0–17 rows). When [scrollAware]
+     * is `true` and [layer] is [TilemapLayer.BACKGROUND], the hardware scroll registers SCX
+     * (0xFF43) and SCY (0xFF42) are read and applied to compute tilemap-absolute coordinates.
+     * Coordinates wrap at 32 tiles using a bitwise AND with 31.
      *
-     * The Window layer is unaffected by [scrollAware] — it has independent WX/WY registers and
-     * is always read at the given viewport position.
+     * The Window layer is unaffected by [scrollAware] — it has independent WX/WY registers and is
+     * always read at the given viewport position.
      *
      * @param memory The emulator memory interface.
      * @param x Tile column (0-based, 0–19 visible).
      * @param y Tile row (0-based, 0–17 visible).
      * @param length Number of tiles to read.
      * @param layer Which tilemap layer to read from.
-     * @param decoder Tile decoder to use. Null = per-layer default (GBDK offset for BG, direct for WIN).
+     * @param decoder Tile decoder to use. Null = per-layer default (GBDK offset for BG, direct for
+     *   WIN).
      * @param scrollAware When true and layer is BACKGROUND, apply SCX/SCY register offsets with
      *   32-tile wrap. Default false preserves existing behaviour.
      * @return String of [length] characters decoded from tile indices.
-     * @throws IllegalArgumentException if [x], [y], or [length] fall outside the visible tilemap area.
+     * @throws IllegalArgumentException if [x], [y], or [length] fall outside the visible tilemap
+     *   area.
      */
     fun readText(
         memory: MemoryAccess,
@@ -113,35 +116,36 @@ object VramTextVerifier {
         decoder: TileDecoder? = null,
         scrollAware: Boolean = false,
     ): String {
-        require(x in 0 until VISIBLE_WIDTH) {
-            "x=$x out of visible range 0..${VISIBLE_WIDTH - 1}"
-        }
+        require(x in 0 until VISIBLE_WIDTH) { "x=$x out of visible range 0..${VISIBLE_WIDTH - 1}" }
         require(y in 0 until VISIBLE_HEIGHT) {
             "y=$y out of visible range 0..${VISIBLE_HEIGHT - 1}"
         }
         require(length >= 0 && x + length <= VISIBLE_WIDTH) {
             "x=$x + length=$length exceeds visible width $VISIBLE_WIDTH"
         }
-        val base = when (layer) {
-            TilemapLayer.BACKGROUND -> BG_TILEMAP_BASE
-            TilemapLayer.WINDOW -> WIN_TILEMAP_BASE
-        }
+        val base =
+            when (layer) {
+                TilemapLayer.BACKGROUND -> BG_TILEMAP_BASE
+                TilemapLayer.WINDOW -> WIN_TILEMAP_BASE
+            }
         // Compute tilemap coordinates from viewport coords + scroll offset (BG only)
-        val (startTileX, tileY) = if (scrollAware && layer == TilemapLayer.BACKGROUND) {
-            val scx = memory.readByte(SCX_REG_ADDR)
-            val scy = memory.readByte(SCY_REG_ADDR)
-            ((x + scx / 8) and 31) to ((y + scy / 8) and 31)
-        } else {
-            x to y
-        }
+        val (startTileX, tileY) =
+            if (scrollAware && layer == TilemapLayer.BACKGROUND) {
+                val scx = memory.readByte(SCX_REG_ADDR)
+                val scy = memory.readByte(SCY_REG_ADDR)
+                ((x + scx / 8) and 31) to ((y + scy / 8) and 31)
+            } else {
+                x to y
+            }
         val dec = decoder ?: defaultDecoder(layer)
         val sb = StringBuilder(length)
         for (i in 0 until length) {
-            val tileX = if (scrollAware && layer == TilemapLayer.BACKGROUND) {
-                (startTileX + i) and 31
-            } else {
-                x + i
-            }
+            val tileX =
+                if (scrollAware && layer == TilemapLayer.BACKGROUND) {
+                    (startTileX + i) and 31
+                } else {
+                    x + i
+                }
             val addr = base + tileY * ROW_STRIDE + tileX
             val tile = memory.readByte(addr)
             sb.append(dec.decode(tile))
@@ -165,8 +169,7 @@ object VramTextVerifier {
         layer: TilemapLayer = TilemapLayer.BACKGROUND,
         decoder: TileDecoder? = null,
         scrollAware: Boolean = false,
-    ): String =
-        readText(memory, 0, y, VISIBLE_WIDTH, layer, decoder, scrollAware)
+    ): String = readText(memory, 0, y, VISIBLE_WIDTH, layer, decoder, scrollAware)
 
     /**
      * Reads all 18 visible rows from the tilemap.
@@ -188,8 +191,8 @@ object VramTextVerifier {
     /**
      * Searches the visible tilemap for a substring and returns its position.
      *
-     * Scans all 18 visible rows for [text] as a contiguous substring within each row.
-     * When [scrollAware] is true and layer is BACKGROUND, each row is read with SCX/SCY applied.
+     * Scans all 18 visible rows for [text] as a contiguous substring within each row. When
+     * [scrollAware] is true and layer is BACKGROUND, each row is read with SCX/SCY applied.
      * Returned coordinates are viewport-relative.
      *
      * @param memory The emulator memory interface.
@@ -217,8 +220,8 @@ object VramTextVerifier {
     /**
      * Searches both background and window tilemaps for a substring.
      *
-     * Checks background first, then window. When [scrollAware] is true, SCX/SCY offsets are
-     * applied to the BG layer read. The Window layer is never scroll-adjusted.
+     * Checks background first, then window. When [scrollAware] is true, SCX/SCY offsets are applied
+     * to the BG layer read. The Window layer is never scroll-adjusted.
      *
      * @param memory The emulator memory interface.
      * @param text The text to search for.

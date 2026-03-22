@@ -10,20 +10,19 @@ import io.github.gbkt.emulator.agent.AgentSessionConfig
 import io.github.gbkt.emulator.agent.Button
 import io.github.gbkt.emulator.agent.GameMetadata
 import io.github.gbkt.emulator.agent.UatRunner
-import io.github.gbkt.examples.pong.GameConstants.Actors
 import io.github.gbkt.examples.pong.GameConstants.Scenes
 import io.github.gbkt.examples.pong.GameConstants.Texts
 import io.github.gbkt.examples.pong.GameConstants.Variables
-import org.junit.jupiter.api.Assumptions
 import java.io.File
 import kotlin.test.Test
+import org.junit.jupiter.api.Assumptions
 
 /**
  * Comprehensive UAT scenario test for Pong, covering all 20 scenarios from `context/UAT-pong.md`.
  *
  * Uses [UatRunner] to drive the headless emulator through title, gameplay, scoring, win condition,
- * gameover, and edge-case scenarios. Screenshots and a JSON report are written to
- * `build/gbkt/uat/` for visual review.
+ * gameover, and edge-case scenarios. Screenshots and a JSON report are written to `build/gbkt/uat/`
+ * for visual review.
  *
  * This test is skipped automatically if the ROM file does not exist (i.e., `buildRom` has not been
  * run). Run `./gradlew :gbkt-examples:pong:buildRom` first.
@@ -40,33 +39,36 @@ class PongUatTest {
 
     @Test
     fun `pong full UAT - 20 scenarios`() {
-        Assumptions.assumeTrue(
-            ROM_FILE.exists(),
-            "pong.gb not found — run buildRom first",
-        )
+        Assumptions.assumeTrue(ROM_FILE.exists(), "pong.gb not found — run buildRom first")
 
-        val config = AgentSessionConfig(
-            romFile = ROM_FILE,
-            symFile = if (SYM_FILE.exists()) SYM_FILE else null,
-            screenshotDir = UAT_DIR,
-        )
+        val config =
+            AgentSessionConfig(
+                romFile = ROM_FILE,
+                symFile = if (SYM_FILE.exists()) SYM_FILE else null,
+                screenshotDir = UAT_DIR,
+            )
 
         val goldenDir = if (GOLDEN_DIR.exists()) GOLDEN_DIR else null
         if (goldenDir == null) {
-            println("GOLDEN DIR: $GOLDEN_DIR not found — golden comparisons disabled. Create it to enable.")
+            println(
+                "GOLDEN DIR: $GOLDEN_DIR not found — golden comparisons disabled. Create it to enable."
+            )
         }
 
-        val metadata = if (METADATA_FILE.exists()) {
-            try {
-                GameMetadata.fromJsonFile(METADATA_FILE)
-            } catch (e: Exception) {
-                println("METADATA: Failed to parse $METADATA_FILE — ${e.message}")
+        val metadata =
+            if (METADATA_FILE.exists()) {
+                try {
+                    GameMetadata.fromJsonFile(METADATA_FILE)
+                } catch (e: Exception) {
+                    println("METADATA: Failed to parse $METADATA_FILE — ${e.message}")
+                    null
+                }
+            } else {
+                println(
+                    "METADATA: $METADATA_FILE not found — scene-based waits will fall back to fixed frames."
+                )
                 null
             }
-        } else {
-            println("METADATA: $METADATA_FILE not found — scene-based waits will fall back to fixed frames.")
-            null
-        }
 
         UatRunner("Pong", config, goldenDir = goldenDir, metadata = metadata).use { runner ->
             runner.start()
@@ -256,7 +258,9 @@ class PongUatTest {
                 println("[$status] ${cp.label} (frame ${cp.frameNumber})")
                 for (a in cp.assertions) {
                     val icon = if (a.passed) "  OK" else "FAIL"
-                    println("  [$icon] ${a.description} (expected=${a.expected}, actual=${a.actual})")
+                    println(
+                        "  [$icon] ${a.description} (expected=${a.expected}, actual=${a.actual})"
+                    )
                 }
             }
             println()

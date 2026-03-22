@@ -23,6 +23,7 @@ class VramTextVerifierTest {
         }
         return object : MemoryAccess {
             override fun readByte(address: Int): Int = mem[address]
+
             override fun writeByte(address: Int, value: Int) {
                 mem[address] = value
             }
@@ -30,8 +31,8 @@ class VramTextVerifierTest {
     }
 
     /**
-     * Writes a string into the tilemap at the given tile position, encoding tiles
-     * according to the target layer (GBDK offset for BG, direct ASCII for WIN).
+     * Writes a string into the tilemap at the given tile position, encoding tiles according to the
+     * target layer (GBDK offset for BG, direct ASCII for WIN).
      */
     private fun writeText(
         patches: MutableList<Pair<Int, Int>>,
@@ -40,15 +41,17 @@ class VramTextVerifierTest {
         y: Int,
         layer: VramTextVerifier.TilemapLayer = VramTextVerifier.TilemapLayer.BACKGROUND,
     ) {
-        val base = when (layer) {
-            VramTextVerifier.TilemapLayer.BACKGROUND -> VramTextVerifier.BG_TILEMAP_BASE
-            VramTextVerifier.TilemapLayer.WINDOW -> VramTextVerifier.WIN_TILEMAP_BASE
-        }
-        for ((i, c) in text.withIndex()) {
-            val tile = when (layer) {
-                VramTextVerifier.TilemapLayer.BACKGROUND -> c.code - 0x20
-                VramTextVerifier.TilemapLayer.WINDOW -> c.code
+        val base =
+            when (layer) {
+                VramTextVerifier.TilemapLayer.BACKGROUND -> VramTextVerifier.BG_TILEMAP_BASE
+                VramTextVerifier.TilemapLayer.WINDOW -> VramTextVerifier.WIN_TILEMAP_BASE
             }
+        for ((i, c) in text.withIndex()) {
+            val tile =
+                when (layer) {
+                    VramTextVerifier.TilemapLayer.BACKGROUND -> c.code - 0x20
+                    VramTextVerifier.TilemapLayer.WINDOW -> c.code
+                }
             patches.add((base + y * VramTextVerifier.ROW_STRIDE + x + i) to tile)
         }
     }
@@ -108,7 +111,9 @@ class VramTextVerifierTest {
         val memory = mockMemory(*patches.toTypedArray())
 
         // Should not find in background
-        assertNull(VramTextVerifier.findText(memory, "VICTORY", VramTextVerifier.TilemapLayer.BACKGROUND))
+        assertNull(
+            VramTextVerifier.findText(memory, "VICTORY", VramTextVerifier.TilemapLayer.BACKGROUND)
+        )
 
         // Should find via findTextAnyLayer
         val result = VramTextVerifier.findTextAnyLayer(memory, "VICTORY")
@@ -122,14 +127,22 @@ class VramTextVerifierTest {
     fun `non-printable tiles render as dot with direct decoder`() {
         // Test raw DIRECT_ASCII_DECODER behavior — tile 0x00 and 0xFF are outside printable range
         val base = VramTextVerifier.BG_TILEMAP_BASE
-        val memory = mockMemory(
-            base to 0x00,       // non-printable → '.'
-            base + 1 to 0x41,   // 'A'
-            base + 2 to 0xFF,   // non-printable → '.'
-            base + 3 to 0x42,   // 'B'
-        )
+        val memory =
+            mockMemory(
+                base to 0x00, // non-printable → '.'
+                base + 1 to 0x41, // 'A'
+                base + 2 to 0xFF, // non-printable → '.'
+                base + 3 to 0x42, // 'B'
+            )
 
-        val text = VramTextVerifier.readText(memory, 0, 0, 4, decoder = VramTextVerifier.DIRECT_ASCII_DECODER)
+        val text =
+            VramTextVerifier.readText(
+                memory,
+                0,
+                0,
+                4,
+                decoder = VramTextVerifier.DIRECT_ASCII_DECODER,
+            )
         assertEquals(".A.B", text)
     }
 
@@ -143,7 +156,8 @@ class VramTextVerifierTest {
         assertEquals("WIN", text)
 
         // Background should NOT have this text — tile 0x00 decodes to ' ' via GBDK BG decoder
-        val bgText = VramTextVerifier.readText(memory, 0, 0, 3, VramTextVerifier.TilemapLayer.BACKGROUND)
+        val bgText =
+            VramTextVerifier.readText(memory, 0, 0, 3, VramTextVerifier.TilemapLayer.BACKGROUND)
         assertEquals("   ", bgText)
     }
 
@@ -151,12 +165,13 @@ class VramTextVerifierTest {
     fun `GBDK BG decoder adds 0x20 offset`() {
         // 'P' (0x50) is stored as tile 0x30 on the BG layer
         val base = VramTextVerifier.BG_TILEMAP_BASE
-        val memory = mockMemory(
-            base to 0x30,       // 0x30 + 0x20 = 0x50 = 'P'
-            base + 1 to 0x2F,   // 0x2F + 0x20 = 0x4F = 'O'
-            base + 2 to 0x2E,   // 0x2E + 0x20 = 0x4E = 'N'
-            base + 3 to 0x27,   // 0x27 + 0x20 = 0x47 = 'G'
-        )
+        val memory =
+            mockMemory(
+                base to 0x30, // 0x30 + 0x20 = 0x50 = 'P'
+                base + 1 to 0x2F, // 0x2F + 0x20 = 0x4F = 'O'
+                base + 2 to 0x2E, // 0x2E + 0x20 = 0x4E = 'N'
+                base + 3 to 0x27, // 0x27 + 0x20 = 0x47 = 'G'
+            )
 
         val text = VramTextVerifier.readText(memory, 0, 0, 4)
         assertEquals("PONG", text)
@@ -165,11 +180,12 @@ class VramTextVerifierTest {
     @Test
     fun `GBDK BG decoder boundary values`() {
         val base = VramTextVerifier.BG_TILEMAP_BASE
-        val memory = mockMemory(
-            base to 0x00,       // 0x00 + 0x20 = 0x20 = ' '
-            base + 1 to 0x5E,   // 0x5E + 0x20 = 0x7E = '~' (last printable)
-            base + 2 to 0x5F,   // 0x5F + 0x20 = 0x7F → non-printable → '.'
-        )
+        val memory =
+            mockMemory(
+                base to 0x00, // 0x00 + 0x20 = 0x20 = ' '
+                base + 1 to 0x5E, // 0x5E + 0x20 = 0x7E = '~' (last printable)
+                base + 2 to 0x5F, // 0x5F + 0x20 = 0x7F → non-printable → '.'
+            )
 
         val text = VramTextVerifier.readText(memory, 0, 0, 3)
         assertEquals(" ~.", text)
@@ -186,39 +202,40 @@ class VramTextVerifierTest {
         assertEquals("AB", VramTextVerifier.readText(memory, 0, 0, 2))
 
         // Direct decoder on BG tiles gives different result (tile 0x21 → '!', tile 0x22 → '"')
-        val direct = VramTextVerifier.readText(memory, 0, 0, 2, decoder = VramTextVerifier.DIRECT_ASCII_DECODER)
+        val direct =
+            VramTextVerifier.readText(
+                memory,
+                0,
+                0,
+                2,
+                decoder = VramTextVerifier.DIRECT_ASCII_DECODER,
+            )
         assertEquals("!\"", direct)
     }
 
     @Test
     fun `readText throws when x exceeds visible width`() {
         val memory = mockMemory()
-        assertThrows<IllegalArgumentException> {
-            VramTextVerifier.readText(memory, 20, 0, 1)
-        }
+        assertThrows<IllegalArgumentException> { VramTextVerifier.readText(memory, 20, 0, 1) }
     }
 
     @Test
     fun `readText throws when y exceeds visible height`() {
         val memory = mockMemory()
-        assertThrows<IllegalArgumentException> {
-            VramTextVerifier.readText(memory, 0, 18, 1)
-        }
+        assertThrows<IllegalArgumentException> { VramTextVerifier.readText(memory, 0, 18, 1) }
     }
 
     @Test
     fun `readText throws when length overflows visible width`() {
         val memory = mockMemory()
-        assertThrows<IllegalArgumentException> {
-            VramTextVerifier.readText(memory, 15, 0, 10)
-        }
+        assertThrows<IllegalArgumentException> { VramTextVerifier.readText(memory, 15, 0, 10) }
     }
 
     // ── scrollAware tests ─────────────────────────────────────────────────────
 
     /**
-     * Helper that writes tile data at a tilemap-absolute position (not viewport-relative).
-     * Used to verify scroll-aware reads land on the correct tilemap address.
+     * Helper that writes tile data at a tilemap-absolute position (not viewport-relative). Used to
+     * verify scroll-aware reads land on the correct tilemap address.
      */
     private fun writeTileAtAbsolute(
         patches: MutableList<Pair<Int, Int>>,
@@ -227,14 +244,16 @@ class VramTextVerifierTest {
         tileY: Int,
         layer: VramTextVerifier.TilemapLayer = VramTextVerifier.TilemapLayer.BACKGROUND,
     ) {
-        val base = when (layer) {
-            VramTextVerifier.TilemapLayer.BACKGROUND -> VramTextVerifier.BG_TILEMAP_BASE
-            VramTextVerifier.TilemapLayer.WINDOW -> VramTextVerifier.WIN_TILEMAP_BASE
-        }
-        val tile = when (layer) {
-            VramTextVerifier.TilemapLayer.BACKGROUND -> tileChar.code - 0x20
-            VramTextVerifier.TilemapLayer.WINDOW -> tileChar.code
-        }
+        val base =
+            when (layer) {
+                VramTextVerifier.TilemapLayer.BACKGROUND -> VramTextVerifier.BG_TILEMAP_BASE
+                VramTextVerifier.TilemapLayer.WINDOW -> VramTextVerifier.WIN_TILEMAP_BASE
+            }
+        val tile =
+            when (layer) {
+                VramTextVerifier.TilemapLayer.BACKGROUND -> tileChar.code - 0x20
+                VramTextVerifier.TilemapLayer.WINDOW -> tileChar.code
+            }
         patches.add((base + tileY * VramTextVerifier.ROW_STRIDE + tileX) to tile)
     }
 
@@ -311,11 +330,15 @@ class VramTextVerifierTest {
         val memory = mockMemory(*patches.toTypedArray())
 
         // scrollAware=true on WINDOW should read at viewport position (0,0) without offset
-        val text = VramTextVerifier.readText(
-            memory, 0, 0, 3,
-            layer = VramTextVerifier.TilemapLayer.WINDOW,
-            scrollAware = true,
-        )
+        val text =
+            VramTextVerifier.readText(
+                memory,
+                0,
+                0,
+                3,
+                layer = VramTextVerifier.TilemapLayer.WINDOW,
+                scrollAware = true,
+            )
         assertEquals("WIN", text)
     }
 

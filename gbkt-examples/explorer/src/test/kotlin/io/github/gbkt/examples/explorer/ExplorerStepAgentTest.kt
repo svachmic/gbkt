@@ -23,23 +23,26 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.extension.RegisterExtension
 
-/**
- * StepAgent integration tests for Explorer — proves the AI-testable workflow.
- */
+/** StepAgent integration tests for Explorer — proves the AI-testable workflow. */
 class ExplorerStepAgentTest {
 
-    @JvmField
-    @RegisterExtension
-    val game = GbktTestExtension("explorer")
+    @JvmField @RegisterExtension val game = GbktTestExtension("explorer")
 
     @Test
     fun `metadata and symbol table agree on variable names`() {
         game.verifyMetadataSymbolAgreement(
             MetadataExpectation(
                 expectedSceneCount = 5,
-                expectedScenes = setOf(Scenes.TITLE, Scenes.GAMEPLAY, Scenes.COMBAT_SCENE, Scenes.PAUSE, Scenes.GAMEOVER),
+                expectedScenes =
+                    setOf(
+                        Scenes.TITLE,
+                        Scenes.GAMEPLAY,
+                        Scenes.COMBAT_SCENE,
+                        Scenes.PAUSE,
+                        Scenes.GAMEOVER,
+                    ),
                 expectedActors = setOf(Actors.PLAYER),
-            ),
+            )
         )
     }
 
@@ -79,7 +82,10 @@ class ExplorerStepAgentTest {
         val beforeX = game.readVariable(Variables.PLAYER_X)!!
         game.stepN(30, setOf(Button.RIGHT))
         val afterRightX = game.readVariable(Variables.PLAYER_X)!!
-        assertTrue(afterRightX > beforeX, "Player should move right: before=$beforeX, after=$afterRightX")
+        assertTrue(
+            afterRightX > beforeX,
+            "Player should move right: before=$beforeX, after=$afterRightX",
+        )
 
         // Phase 6: Screenshot Capture
         val file = game.captureScreenshot("explorer_integration")

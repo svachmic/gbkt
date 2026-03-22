@@ -6,37 +6,36 @@
  */
 package io.github.gbkt.emulator.agent
 
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
-/**
- * Unit tests for [SceneMap].
- */
+/** Unit tests for [SceneMap]. */
 class SceneMapTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     @Test
     fun `fromGameHeader parses SCENE defines`() {
-        val header = File(tempDir, "game.h").also {
-            it.writeText(
-                """
-                #ifndef GAME_H
-                #define GAME_H
+        val header =
+            File(tempDir, "game.h").also {
+                it.writeText(
+                    """
+                    #ifndef GAME_H
+                    #define GAME_H
 
-                #define SCENE_GAMEOVER 0
-                #define SCENE_GAME 1
-                #define SCENE_TITLE 2
+                    #define SCENE_GAMEOVER 0
+                    #define SCENE_GAME 1
+                    #define SCENE_TITLE 2
 
-                extern UINT8 current_scene;
-                #endif
-                """.trimIndent(),
-            )
-        }
+                    extern UINT8 current_scene;
+                    #endif
+                    """
+                        .trimIndent()
+                )
+            }
 
         val map = SceneMap.fromGameHeader(header)
 
@@ -78,15 +77,17 @@ class SceneMapTest {
 
     @Test
     fun `fromGameHeader ignores non-SCENE defines`() {
-        val header = File(tempDir, "game.h").also {
-            it.writeText(
-                """
-                #define MAX_ACTORS 10
-                #define SCENE_TITLE 0
-                #define GAME_VERSION 1
-                """.trimIndent(),
-            )
-        }
+        val header =
+            File(tempDir, "game.h").also {
+                it.writeText(
+                    """
+                    #define MAX_ACTORS 10
+                    #define SCENE_TITLE 0
+                    #define GAME_VERSION 1
+                    """
+                        .trimIndent()
+                )
+            }
 
         val map = SceneMap.fromGameHeader(header)
 

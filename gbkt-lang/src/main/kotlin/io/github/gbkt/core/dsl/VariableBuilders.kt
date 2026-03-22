@@ -357,9 +357,12 @@ abstract class VarDelegate(
         val name = property.name
         resolvedName = name
         // Register with the current GameBuilder via thread-local context
-        val context = GameBuilderContext.current
-            ?: error("Variable '$name' declared outside a game {} block. " +
-                "Variable delegates must be used inside game { } to be registered.")
+        val context =
+            GameBuilderContext.current
+                ?: error(
+                    "Variable '$name' declared outside a game {} block. " +
+                        "Variable delegates must be used inside game { } to be registered."
+                )
         context.registerVariable(VariableDef(name, type, initialValue))
         // Mark as transient if requested — SaveDataBuilder excludes transient vars from SRAM
         if (transient) {
@@ -703,9 +706,12 @@ class ArrayDelegate(
     ): ReadWriteProperty<Any?, ArrayVar> {
         val name = nameOverride ?: property.name
         resolvedName = name
-        val context = GameBuilderContext.current
-            ?: error("Array '$name' declared outside a game {} block. " +
-                "Array delegates must be used inside game { } to be registered.")
+        val context =
+            GameBuilderContext.current
+                ?: error(
+                    "Array '$name' declared outside a game {} block. " +
+                        "Array delegates must be used inside game { } to be registered."
+                )
         context.registerArray(ArrayDef(name, elementType, size))
         return this
     }

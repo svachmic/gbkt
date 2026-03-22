@@ -21,10 +21,7 @@ import io.github.gbkt.emulator.GbEmulator
  * @param emulator The emulator instance to control.
  * @param eventBus The Coffee-GB event bus to dispatch joypad events onto.
  */
-class InputScriptPlayer(
-    private val emulator: GbEmulator,
-    private val eventBus: EventBus,
-) {
+class InputScriptPlayer(private val emulator: GbEmulator, private val eventBus: EventBus) {
 
     /**
      * Executes all steps in the given [InputScript].

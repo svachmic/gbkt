@@ -10,6 +10,7 @@ import io.github.gbkt.emulator.GbEmulator
 import io.github.gbkt.emulator.MemoryAccess
 import io.github.gbkt.emulator.agent.VramTextVerifier
 import io.github.gbkt.emulator.debug.DebugLogEntry
+import java.io.File
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -29,16 +30,14 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 /**
- * Tests for [ToolHandlerLogic] — directly invokes handler suspend functions
- * with real [McpEmulatorSession] instances backed by stub emulators.
+ * Tests for [ToolHandlerLogic] — directly invokes handler suspend functions with real
+ * [McpEmulatorSession] instances backed by stub emulators.
  */
 class ToolHandlersTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -46,11 +45,12 @@ class ToolHandlersTest {
         File(tempDir, name).also { it.writeBytes(ByteArray(64)) }
 
     private fun writeSymFile(
-        content: String = "DEF _score 00:C100\nDEF _lives 00:C101\nDEF _current_scene 00:C102\n",
+        content: String = "DEF _score 00:C100\nDEF _lives 00:C101\nDEF _current_scene 00:C102\n"
     ): File = File(tempDir, "test.sym").also { it.writeText(content) }
 
     private fun writeMetadataFile(): File {
-        val json = """
+        val json =
+            """
             {
               "scenes": { "title": 0, "game": 1, "gameover": 2 },
               "actors": [
@@ -77,7 +77,8 @@ class ToolHandlersTest {
                 { "from": "game", "to": "gameover" }
               ]
             }
-        """.trimIndent()
+            """
+                .trimIndent()
         return File(tempDir, "game_metadata.json").also { it.writeText(json) }
     }
 
@@ -88,6 +89,7 @@ class ToolHandlersTest {
         }
         return object : MemoryAccess {
             override fun readByte(address: Int): Int = mem[address]
+
             override fun writeByte(address: Int, value: Int) {
                 mem[address] = value
             }
@@ -98,17 +100,37 @@ class ToolHandlersTest {
         object : GbEmulator {
             private var _paused = true
             private var _running = false
-            override fun start() { _running = true }
-            override fun stop() { _running = false }
-            override fun pause() { _paused = true }
-            override fun resume() { _paused = false }
+
+            override fun start() {
+                _running = true
+            }
+
+            override fun stop() {
+                _running = false
+            }
+
+            override fun pause() {
+                _paused = true
+            }
+
+            override fun resume() {
+                _paused = false
+            }
+
             override fun stepFrame() = Unit
+
             override fun setSpeed(multiplier: Float) = Unit
+
             override fun getFrameBuffer(): IntArray = IntArray(160 * 144) { 0x00FF00 }
+
             override fun getMemory(): MemoryAccess = memory
+
             override fun getDebugLog(): List<DebugLogEntry> = emptyList()
+
             override fun isRunning(): Boolean = _running
+
             override fun isPaused(): Boolean = _paused
+
             override val isHeadless: Boolean = true
         }
 
@@ -132,13 +154,18 @@ class ToolHandlersTest {
         assertFalse(result.isError == true, "Start should succeed: ${result.textContent()}")
     }
 
-    private fun resultText(result: io.modelcontextprotocol.kotlin.sdk.types.CallToolResult): String =
-        (result.content.firstOrNull() as? io.modelcontextprotocol.kotlin.sdk.types.TextContent)?.text ?: ""
+    private fun resultText(
+        result: io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+    ): String =
+        (result.content.firstOrNull() as? io.modelcontextprotocol.kotlin.sdk.types.TextContent)
+            ?.text ?: ""
 
-    private fun resultJson(result: io.modelcontextprotocol.kotlin.sdk.types.CallToolResult): JsonObject =
-        Json.parseToJsonElement(resultText(result)).jsonObject
+    private fun resultJson(
+        result: io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+    ): JsonObject = Json.parseToJsonElement(resultText(result)).jsonObject
 
-    private fun io.modelcontextprotocol.kotlin.sdk.types.CallToolResult.textContent(): String = resultText(this)
+    private fun io.modelcontextprotocol.kotlin.sdk.types.CallToolResult.textContent(): String =
+        resultText(this)
 
     // ── handleStart tests ────────────────────────────────────────────────────
 
@@ -167,7 +194,7 @@ class ToolHandlersTest {
     @Test
     fun `handleStart rejects missing romFile`() = runTest {
         val session = makeSession()
-        val result = ToolHandlerLogic.handleStart(session, buildJsonObject { })
+        val result = ToolHandlerLogic.handleStart(session, buildJsonObject {})
 
         assertTrue(result.isError == true)
         assertTrue(resultText(result).contains("romFile"))
@@ -246,10 +273,13 @@ class ToolHandlersTest {
 
         val args = buildJsonObject {
             put("frames", 1)
-            put("buttons", buildJsonArray {
-                add(kotlinx.serialization.json.JsonPrimitive("a"))
-                add(kotlinx.serialization.json.JsonPrimitive("right"))
-            })
+            put(
+                "buttons",
+                buildJsonArray {
+                    add(kotlinx.serialization.json.JsonPrimitive("a"))
+                    add(kotlinx.serialization.json.JsonPrimitive("right"))
+                },
+            )
         }
         val result = ToolHandlerLogic.handleStep(session, args)
 
@@ -264,9 +294,10 @@ class ToolHandlersTest {
         startSession(session)
 
         val args = buildJsonObject {
-            put("buttons", buildJsonArray {
-                add(kotlinx.serialization.json.JsonPrimitive("turbo"))
-            })
+            put(
+                "buttons",
+                buildJsonArray { add(kotlinx.serialization.json.JsonPrimitive("turbo")) },
+            )
         }
         val result = ToolHandlerLogic.handleStep(session, args)
 
@@ -334,7 +365,10 @@ class ToolHandlersTest {
         val session = makeSession(memory)
         startSession(session)
 
-        val writeArgs = buildJsonObject { put("name", "score"); put("value", 99) }
+        val writeArgs = buildJsonObject {
+            put("name", "score")
+            put("value", 99)
+        }
         val writeResult = ToolHandlerLogic.handleWriteVariable(session, writeArgs)
         assertFalse(writeResult.isError == true)
 
@@ -355,7 +389,10 @@ class ToolHandlersTest {
         val meta = writeMetadataFile()
         startSession(session, metadata = meta)
 
-        val args = buildJsonObject { put("scene", "title"); put("maxFrames", 10) }
+        val args = buildJsonObject {
+            put("scene", "title")
+            put("maxFrames", 10)
+        }
         val result = ToolHandlerLogic.handleWaitForScene(session, args)
 
         assertFalse(result.isError == true)
@@ -378,7 +415,10 @@ class ToolHandlersTest {
         val session = makeSession(memory)
         startSession(session)
 
-        val args = buildJsonObject { put("text", "HELLO"); put("maxFrames", 10) }
+        val args = buildJsonObject {
+            put("text", "HELLO")
+            put("maxFrames", 10)
+        }
         val result = ToolHandlerLogic.handleWaitUntilText(session, args)
 
         assertFalse(result.isError == true)
@@ -465,13 +505,18 @@ class ToolHandlersTest {
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                add(buildJsonObject {
-                    put("type", "variable_equals")
-                    put("name", "score")
-                    put("expected", "42")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    add(
+                        buildJsonObject {
+                            put("type", "variable_equals")
+                            put("name", "score")
+                            put("expected", "42")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -494,12 +539,17 @@ class ToolHandlersTest {
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                add(buildJsonObject {
-                    put("type", "scene_is")
-                    put("scene", "title")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    add(
+                        buildJsonObject {
+                            put("type", "scene_is")
+                            put("scene", "title")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -522,19 +572,26 @@ class ToolHandlersTest {
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                // This passes: score is 42
-                add(buildJsonObject {
-                    put("type", "variable_equals")
-                    put("name", "score")
-                    put("expected", "42")
-                })
-                // This fails: scene is "title" (index 0), not "game"
-                add(buildJsonObject {
-                    put("type", "scene_is")
-                    put("scene", "game")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    // This passes: score is 42
+                    add(
+                        buildJsonObject {
+                            put("type", "variable_equals")
+                            put("name", "score")
+                            put("expected", "42")
+                        }
+                    )
+                    // This fails: scene is "title" (index 0), not "game"
+                    add(
+                        buildJsonObject {
+                            put("type", "scene_is")
+                            put("scene", "game")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -553,7 +610,7 @@ class ToolHandlersTest {
         startSession(session)
 
         // No "checks" key in args
-        val result = ToolHandlerLogic.handleAssert(session, buildJsonObject { })
+        val result = ToolHandlerLogic.handleAssert(session, buildJsonObject {})
 
         assertTrue(result.isError == true)
         assertTrue(resultText(result).contains("checks"))
@@ -662,9 +719,7 @@ class ToolHandlersTest {
         val outputDir = File(root, "build/gbkt/output")
         outputDir.mkdirs()
         val rom = File(outputDir, "test.gb").also { it.writeBytes(ByteArray(64)) }
-        val sym = File(root, "test.sym").also {
-            it.writeText("DEF _score 00:C100\n")
-        }
+        val sym = File(root, "test.sym").also { it.writeText("DEF _score 00:C100\n") }
 
         // Place PLAYBOOK.md at project root
         val playbookContent = "# Test Playbook\n\nStep 1: Press START"
@@ -689,9 +744,7 @@ class ToolHandlersTest {
         val isolatedDir = File(tempDir, "isolated")
         isolatedDir.mkdirs()
         val rom = File(isolatedDir, "test.gb").also { it.writeBytes(ByteArray(64)) }
-        val sym = File(isolatedDir, "test.sym").also {
-            it.writeText("DEF _score 00:C100\n")
-        }
+        val sym = File(isolatedDir, "test.sym").also { it.writeText("DEF _score 00:C100\n") }
 
         val session = makeSession()
         startSession(session, rom = rom, sym = sym)
@@ -718,14 +771,19 @@ class ToolHandlersTest {
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                add(buildJsonObject {
-                    put("type", "variable_in_range")
-                    put("name", "score")
-                    put("min", "40")
-                    put("max", "50")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    add(
+                        buildJsonObject {
+                            put("type", "variable_in_range")
+                            put("name", "score")
+                            put("min", "40")
+                            put("max", "50")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -749,14 +807,19 @@ class ToolHandlersTest {
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                add(buildJsonObject {
-                    put("type", "variable_in_range")
-                    put("name", "score")
-                    put("min", "50")
-                    put("max", "60")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    add(
+                        buildJsonObject {
+                            put("type", "variable_in_range")
+                            put("name", "score")
+                            put("min", "50")
+                            put("max", "60")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -776,9 +839,8 @@ class ToolHandlersTest {
     @Test
     fun `handleAssert text_on_screen passing`() = runTest {
         // Write GBDK-encoded "HELLO" to BG tilemap at 0x9800 (tile = char.code - 0x20)
-        val patches = "HELLO".mapIndexed { i, ch ->
-            (0x9800 + i) to (ch.code - 0x20)
-        }.toTypedArray()
+        val patches =
+            "HELLO".mapIndexed { i, ch -> (0x9800 + i) to (ch.code - 0x20) }.toTypedArray()
         val memory = mockMemory(*patches)
         val session = makeSession(memory)
         startSession(session)
@@ -786,12 +848,17 @@ class ToolHandlersTest {
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                add(buildJsonObject {
-                    put("type", "text_on_screen")
-                    put("text", "HELLO")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    add(
+                        buildJsonObject {
+                            put("type", "text_on_screen")
+                            put("text", "HELLO")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -819,12 +886,17 @@ class ToolHandlersTest {
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                add(buildJsonObject {
-                    put("type", "text_on_screen")
-                    put("text", "HELLO")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    add(
+                        buildJsonObject {
+                            put("type", "text_on_screen")
+                            put("text", "HELLO")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -843,9 +915,8 @@ class ToolHandlersTest {
     fun `handleAssert text_on_screen window layer`() = runTest {
         // Write "HI" to WIN tilemap at row 2, col 3 (0x9C00 + 2*32 + 3 = 0x9C43)
         // Window layer uses direct ASCII encoding (tile = char.code)
-        val patches = "HI".mapIndexed { i, ch ->
-            (0x9C00 + 2 * 32 + 3 + i) to ch.code
-        }.toTypedArray()
+        val patches =
+            "HI".mapIndexed { i, ch -> (0x9C00 + 2 * 32 + 3 + i) to ch.code }.toTypedArray()
         val memory = mockMemory(*patches)
         val session = makeSession(memory)
         startSession(session)
@@ -853,12 +924,17 @@ class ToolHandlersTest {
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                add(buildJsonObject {
-                    put("type", "text_on_screen")
-                    put("text", "HI")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    add(
+                        buildJsonObject {
+                            put("type", "text_on_screen")
+                            put("text", "HI")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -888,12 +964,17 @@ class ToolHandlersTest {
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                add(buildJsonObject {
-                    put("type", "actor_visible")
-                    put("name", "ball")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    add(
+                        buildJsonObject {
+                            put("type", "actor_visible")
+                            put("name", "ball")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -918,12 +999,17 @@ class ToolHandlersTest {
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                add(buildJsonObject {
-                    put("type", "actor_visible")
-                    put("name", "paddle")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    add(
+                        buildJsonObject {
+                            put("type", "actor_visible")
+                            put("name", "paddle")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -945,22 +1031,34 @@ class ToolHandlersTest {
         // Write 2 visible OAM sprites at 0xFE00 (4 bytes each: rawY, rawX, tile, flags)
         // Sprite 0 at OAM slot 0: rawY=32, rawX=24 -> visible (screenY=16, screenX=16)
         // Sprite 1 at OAM slot 1: rawY=48, rawX=40 -> visible (screenY=32, screenX=32)
-        val memory = mockMemory(
-            0xFE00 to 32, 0xFE01 to 24, 0xFE02 to 1, 0xFE03 to 0,
-            0xFE04 to 48, 0xFE05 to 40, 0xFE06 to 2, 0xFE07 to 0,
-        )
+        val memory =
+            mockMemory(
+                0xFE00 to 32,
+                0xFE01 to 24,
+                0xFE02 to 1,
+                0xFE03 to 0,
+                0xFE04 to 48,
+                0xFE05 to 40,
+                0xFE06 to 2,
+                0xFE07 to 0,
+            )
         val session = makeSession(memory)
         startSession(session)
 
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                add(buildJsonObject {
-                    put("type", "sprite_count")
-                    put("expected", "2")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    add(
+                        buildJsonObject {
+                            put("type", "sprite_count")
+                            put("expected", "2")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -978,22 +1076,34 @@ class ToolHandlersTest {
     @Test
     fun `handleAssert sprite_count failing`() = runTest {
         // Write 2 visible OAM sprites but expect 5
-        val memory = mockMemory(
-            0xFE00 to 32, 0xFE01 to 24, 0xFE02 to 1, 0xFE03 to 0,
-            0xFE04 to 48, 0xFE05 to 40, 0xFE06 to 2, 0xFE07 to 0,
-        )
+        val memory =
+            mockMemory(
+                0xFE00 to 32,
+                0xFE01 to 24,
+                0xFE02 to 1,
+                0xFE03 to 0,
+                0xFE04 to 48,
+                0xFE05 to 40,
+                0xFE06 to 2,
+                0xFE07 to 0,
+            )
         val session = makeSession(memory)
         startSession(session)
 
         ToolHandlerLogic.handleStep(session, buildJsonObject { put("frames", 1) })
 
         val args = buildJsonObject {
-            put("checks", buildJsonArray {
-                add(buildJsonObject {
-                    put("type", "sprite_count")
-                    put("expected", "5")
-                })
-            })
+            put(
+                "checks",
+                buildJsonArray {
+                    add(
+                        buildJsonObject {
+                            put("type", "sprite_count")
+                            put("expected", "5")
+                        }
+                    )
+                },
+            )
         }
         val result = ToolHandlerLogic.handleAssert(session, args)
 
@@ -1137,7 +1247,11 @@ class ToolHandlersTest {
 
         // observe() should return the cached result from press (frame 2)
         val obs = session.observe()
-        assertEquals(2, obs.frame, "observe() should return press result (frame 2), not step 1 more")
+        assertEquals(
+            2,
+            obs.frame,
+            "observe() should return press result (frame 2), not step 1 more",
+        )
 
         session.stop()
     }
@@ -1151,8 +1265,10 @@ class ToolHandlersTest {
             session.press(io.github.gbkt.emulator.agent.Button.A, 1)
             assertTrue(false, "press() on inactive session should throw IllegalStateException")
         } catch (e: IllegalStateException) {
-            assertTrue(e.message?.contains("No active session") == true,
-                "Error message should mention 'No active session', got: ${e.message}")
+            assertTrue(
+                e.message?.contains("No active session") == true,
+                "Error message should mention 'No active session', got: ${e.message}",
+            )
         }
     }
 
@@ -1171,8 +1287,11 @@ class ToolHandlersTest {
 
         assertFalse(result.isError == true)
         val json = resultJson(result)
-        assertEquals(2, json["frame"]?.jsonPrimitive?.content?.toIntOrNull(),
-            "press(a, 1) should result in frame=2")
+        assertEquals(
+            2,
+            json["frame"]?.jsonPrimitive?.content?.toIntOrNull(),
+            "press(a, 1) should result in frame=2",
+        )
 
         session.stop()
     }
@@ -1212,7 +1331,10 @@ class ToolHandlersTest {
         val session = makeSession()
         startSession(session)
 
-        val args = buildJsonObject { put("button", "a"); put("frames", 0) }
+        val args = buildJsonObject {
+            put("button", "a")
+            put("frames", 0)
+        }
         val result = ToolHandlerLogic.handlePress(session, args)
 
         assertTrue(result.isError == true)
@@ -1232,8 +1354,11 @@ class ToolHandlersTest {
 
         assertFalse(result.isError == true)
         val json = resultJson(result)
-        assertEquals(2, json["frame"]?.jsonPrimitive?.content?.toIntOrNull(),
-            "Default frames=1 should result in frame=2")
+        assertEquals(
+            2,
+            json["frame"]?.jsonPrimitive?.content?.toIntOrNull(),
+            "Default frames=1 should result in frame=2",
+        )
 
         session.stop()
     }

@@ -15,7 +15,8 @@ import org.junit.jupiter.api.assertThrows
 
 class GameMetadataTest {
 
-    private val sampleJson = """
+    private val sampleJson =
+        """
         {
           "scenes": {
             "gameover": 0,
@@ -49,7 +50,8 @@ class GameMetadataTest {
             }
           ]
         }
-    """.trimIndent()
+        """
+            .trimIndent()
 
     @Test
     fun `fromJsonString parses scenes and actors`() {
@@ -113,7 +115,8 @@ class GameMetadataTest {
 
     // ── Variables, texts, terminalScenes parsing ─────────────────────────────
 
-    private val fullJson = """
+    private val fullJson =
+        """
         {
           "scenes": { "title": 0, "game": 1, "gameover": 2 },
           "actors": [],
@@ -137,7 +140,8 @@ class GameMetadataTest {
             { "from": "game", "to": "gameover" }
           ]
         }
-    """.trimIndent()
+        """
+            .trimIndent()
 
     @Test
     fun `fromJsonString parses variables`() {
@@ -235,24 +239,24 @@ class GameMetadataTest {
 
     @Test
     fun `throws MetadataParseException on malformed JSON`() {
-        assertThrows<MetadataParseException> {
-            GameMetadata.fromJsonString("not valid json {{{")
-        }
+        assertThrows<MetadataParseException> { GameMetadata.fromJsonString("not valid json {{{") }
     }
 
     @Test
     fun `throws MetadataParseException on missing scenes field`() {
-        val e = assertThrows<MetadataParseException> {
-            GameMetadata.fromJsonString("""{"actors":[]}""")
-        }
+        val e =
+            assertThrows<MetadataParseException> {
+                GameMetadata.fromJsonString("""{"actors":[]}""")
+            }
         assertTrue(e.message!!.contains("scenes"))
     }
 
     @Test
     fun `throws MetadataParseException on missing actors field`() {
-        val e = assertThrows<MetadataParseException> {
-            GameMetadata.fromJsonString("""{"scenes":{"title":0}}""")
-        }
+        val e =
+            assertThrows<MetadataParseException> {
+                GameMetadata.fromJsonString("""{"scenes":{"title":0}}""")
+            }
         assertTrue(e.message!!.contains("actors"))
     }
 
@@ -265,9 +269,7 @@ class GameMetadataTest {
 
     @Test
     fun `throws MetadataParseException on empty string`() {
-        assertThrows<MetadataParseException> {
-            GameMetadata.fromJsonString("")
-        }
+        assertThrows<MetadataParseException> { GameMetadata.fromJsonString("") }
     }
 
     @Test
@@ -279,7 +281,8 @@ class GameMetadataTest {
 
     // ── TileDecoders parsing tests ────────────────────────────────────────────
 
-    private val jsonWithTileDecoders = """
+    private val jsonWithTileDecoders =
+        """
         {
           "scenes": { "title": 0, "game": 1 },
           "actors": [],
@@ -288,9 +291,11 @@ class GameMetadataTest {
             "win": { "type": "direct_ascii" }
           }
         }
-    """.trimIndent()
+        """
+            .trimIndent()
 
-    private val jsonWithCustomDecoder = """
+    private val jsonWithCustomDecoder =
+        """
         {
           "scenes": { "title": 0 },
           "actors": [],
@@ -301,7 +306,8 @@ class GameMetadataTest {
             }
           }
         }
-    """.trimIndent()
+        """
+            .trimIndent()
 
     @Test
     fun `fromJsonString parses tileDecoders with bg gbdk_offset and win direct_ascii`() {

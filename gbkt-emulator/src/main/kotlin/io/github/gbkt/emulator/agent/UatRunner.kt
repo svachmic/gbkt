@@ -7,18 +7,18 @@
 package io.github.gbkt.emulator.agent
 
 import io.github.gbkt.emulator.debug.DebugLogEntry
-import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
 import java.util.logging.Logger
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * Higher-level orchestrator for UAT gameplay testing, wrapping [AgentDebugSession].
  *
- * Provides a checkpoint-based workflow: advance emulation via [wait]/[press]/[hold]/[release],
- * then call [checkpoint] to capture a screenshot + all variables + debug log slice since the
- * last checkpoint. Soft assertions ([assertVariable], [assertVariableInRange], [assertCustom])
- * are recorded and included in the final [generateReport].
+ * Provides a checkpoint-based workflow: advance emulation via [wait]/[press]/[hold]/[release], then
+ * call [checkpoint] to capture a screenshot + all variables + debug log slice since the last
+ * checkpoint. Soft assertions ([assertVariable], [assertVariableInRange], [assertCustom]) are
+ * recorded and included in the final [generateReport].
  *
  * Usage:
  * ```kotlin
@@ -50,21 +50,26 @@ class UatRunner(
 
     private val logger = Logger.getLogger(UatRunner::class.java.name)
 
-    private val resolvedMetadata: GameMetadata? = metadata
-        ?: config.metadataFile?.takeIf { it.exists() }?.let { file ->
-            try {
-                GameMetadata.fromJsonFile(file)
-            } catch (e: MetadataParseException) {
-                logger.warning("Failed to parse metadata: ${e.message}")
-                null
-            }
-        }
+    private val resolvedMetadata: GameMetadata? =
+        metadata
+            ?: config.metadataFile
+                ?.takeIf { it.exists() }
+                ?.let { file ->
+                    try {
+                        GameMetadata.fromJsonFile(file)
+                    } catch (e: MetadataParseException) {
+                        logger.warning("Failed to parse metadata: ${e.message}")
+                        null
+                    }
+                }
 
     private val resolvedSceneMap: SceneMap? = resolvedMetadata?.scenes ?: sceneMap
 
     init {
         if (sceneMap != null && metadata == null) {
-            logger.warning("UatRunner sceneMap is deprecated. Use metadata = GameMetadata.of(scenes = sceneMap, ...) instead.")
+            logger.warning(
+                "UatRunner sceneMap is deprecated. Use metadata = GameMetadata.of(scenes = sceneMap, ...) instead."
+            )
         }
     }
 
@@ -95,11 +100,12 @@ class UatRunner(
     }
 
     /**
-     * Advances emulation one frame at a time until [condition] returns true or [maxFrames] is exhausted.
+     * Advances emulation one frame at a time until [condition] returns true or [maxFrames] is
+     * exhausted.
      *
      * The condition is checked **before** the first frame step, so if already true this returns
-     * immediately with `framesElapsed = 0`. After the last frame step the condition is checked
-     * once more to detect the boundary case.
+     * immediately with `framesElapsed = 0`. After the last frame step the condition is checked once
+     * more to detect the boundary case.
      *
      * @param maxFrames Maximum number of frames to step before giving up.
      * @param condition Predicate evaluated after each frame.
@@ -161,8 +167,8 @@ class UatRunner(
     /**
      * Captures a checkpoint: screenshot + all variables + debug log slice since last checkpoint.
      *
-     * All pending assertions (from [assertVariable], [assertVariableInRange], [assertCustom])
-     * are flushed into this checkpoint.
+     * All pending assertions (from [assertVariable], [assertVariableInRange], [assertCustom]) are
+     * flushed into this checkpoint.
      *
      * @param label Human-readable label (used as screenshot filename prefix).
      * @return The captured [UatCheckpoint].
@@ -174,41 +180,46 @@ class UatRunner(
 
         val variables = session.readAllVariables()
 
-        val screenshotFile = ScreenshotCapture.capture(
-            frameBuffer = getFrameBuffer(),
-            label = label,
-            frameNumber = session.frameCount,
-            outputDir = config.screenshotDir,
-            variableSnapshot = variables,
-            debugLogEntries = logSlice,
-        )
+        val screenshotFile =
+            ScreenshotCapture.capture(
+                frameBuffer = getFrameBuffer(),
+                label = label,
+                frameNumber = session.frameCount,
+                outputDir = config.screenshotDir,
+                variableSnapshot = variables,
+                debugLogEntries = logSlice,
+            )
 
         // Golden screenshot comparison
-        val diffResult = if (goldenDir != null) {
-            val goldenFile = File(goldenDir, "$label.png")
-            if (goldenFile.exists()) {
-                val tol = checkpointTolerances[label] ?: goldenTolerance
-                VisualDiff.compare(goldenFile, screenshotFile, tol, config.screenshotDir)
+        val diffResult =
+            if (goldenDir != null) {
+                val goldenFile = File(goldenDir, "$label.png")
+                if (goldenFile.exists()) {
+                    val tol = checkpointTolerances[label] ?: goldenTolerance
+                    VisualDiff.compare(goldenFile, screenshotFile, tol, config.screenshotDir)
+                } else {
+                    logger.info(
+                        "GOLDEN MISSING: $goldenFile — promote with: cp ${screenshotFile.absolutePath} ${goldenFile.absolutePath}"
+                    )
+                    null
+                }
             } else {
-                logger.info("GOLDEN MISSING: $goldenFile — promote with: cp ${screenshotFile.absolutePath} ${goldenFile.absolutePath}")
                 null
             }
-        } else {
-            null
-        }
 
         val assertions = pendingAssertions.toList()
         pendingAssertions.clear()
 
-        val cp = UatCheckpoint(
-            label = label,
-            frameNumber = session.frameCount,
-            screenshotFile = screenshotFile,
-            variables = variables,
-            debugLogSlice = logSlice,
-            assertions = assertions,
-            diffResult = diffResult,
-        )
+        val cp =
+            UatCheckpoint(
+                label = label,
+                frameNumber = session.frameCount,
+                screenshotFile = screenshotFile,
+                variables = variables,
+                debugLogSlice = logSlice,
+                assertions = assertions,
+                diffResult = diffResult,
+            )
         checkpoints += cp
         return cp
     }
@@ -233,12 +244,13 @@ class UatRunner(
      */
     fun assertVariable(name: String, expected: Int) {
         val actual = session.readVariable(name)
-        pendingAssertions += UatAssertion(
-            description = "$name == $expected",
-            passed = actual == expected,
-            expected = expected.toString(),
-            actual = actual?.toString() ?: "null",
-        )
+        pendingAssertions +=
+            UatAssertion(
+                description = "$name == $expected",
+                passed = actual == expected,
+                expected = expected.toString(),
+                actual = actual?.toString() ?: "null",
+            )
     }
 
     /**
@@ -248,12 +260,13 @@ class UatRunner(
      */
     fun assertVariableInRange(name: String, range: IntRange) {
         val actual = session.readVariable(name)
-        pendingAssertions += UatAssertion(
-            description = "$name in ${range.first}..${range.last}",
-            passed = actual != null && actual in range,
-            expected = "${range.first}..${range.last}",
-            actual = actual?.toString() ?: "null",
-        )
+        pendingAssertions +=
+            UatAssertion(
+                description = "$name in ${range.first}..${range.last}",
+                passed = actual != null && actual in range,
+                expected = "${range.first}..${range.last}",
+                actual = actual?.toString() ?: "null",
+            )
     }
 
     /**
@@ -262,12 +275,13 @@ class UatRunner(
      * The assertion is stored and flushed into the next [checkpoint]. Does not throw.
      */
     fun assertCustom(description: String, passed: Boolean) {
-        pendingAssertions += UatAssertion(
-            description = description,
-            passed = passed,
-            expected = "true",
-            actual = passed.toString(),
-        )
+        pendingAssertions +=
+            UatAssertion(
+                description = description,
+                passed = passed,
+                expected = "true",
+                actual = passed.toString(),
+            )
     }
 
     /**
@@ -288,12 +302,13 @@ class UatRunner(
     ) {
         val memory = session.getMemory()
         val actual = VramTextVerifier.readText(memory, x, y, text.length, layer)
-        pendingAssertions += UatAssertion(
-            description = "text at ($x,$y): \"$text\"",
-            passed = actual == text,
-            expected = text,
-            actual = actual,
-        )
+        pendingAssertions +=
+            UatAssertion(
+                description = "text at ($x,$y): \"$text\"",
+                passed = actual == text,
+                expected = text,
+                actual = actual,
+            )
     }
 
     /**
@@ -306,20 +321,24 @@ class UatRunner(
     fun assertTextOnScreen(text: String) {
         val memory = session.getMemory()
         val result = VramTextVerifier.findTextAnyLayer(memory, text)
-        pendingAssertions += UatAssertion(
-            description = "text on screen: \"$text\"",
-            passed = result != null,
-            expected = text,
-            actual = if (result != null) "found at (${result.first},${result.second}) on ${result.third}" else "not found",
-        )
+        pendingAssertions +=
+            UatAssertion(
+                description = "text on screen: \"$text\"",
+                passed = result != null,
+                expected = text,
+                actual =
+                    if (result != null)
+                        "found at (${result.first},${result.second}) on ${result.third}"
+                    else "not found",
+            )
     }
 
     /**
      * Returns the current scene name by reading the `current_scene` variable.
      *
-     * If a [SceneMap] was provided, the numeric index is resolved to its name.
-     * Otherwise, returns `"scene_N"` where N is the raw index. Returns null if
-     * `current_scene` is not found in the symbol table.
+     * If a [SceneMap] was provided, the numeric index is resolved to its name. Otherwise, returns
+     * `"scene_N"` where N is the raw index. Returns null if `current_scene` is not found in the
+     * symbol table.
      */
     fun currentScene(): String? {
         val index = readVariable("current_scene") ?: return null
@@ -336,8 +355,9 @@ class UatRunner(
      * @throws IllegalArgumentException if [sceneName] is not in the scene map.
      */
     fun waitForScene(sceneName: String, maxFrames: Int): WaitResult {
-        val index = resolvedSceneMap?.indexOf(sceneName)
-            ?: throw IllegalArgumentException("Unknown scene '$sceneName' — not in sceneMap")
+        val index =
+            resolvedSceneMap?.indexOf(sceneName)
+                ?: throw IllegalArgumentException("Unknown scene '$sceneName' — not in sceneMap")
         return waitUntilVariable("current_scene", index, maxFrames)
     }
 
@@ -348,12 +368,13 @@ class UatRunner(
      */
     fun assertScene(sceneName: String) {
         val actual = currentScene()
-        pendingAssertions += UatAssertion(
-            description = "scene == \"$sceneName\"",
-            passed = actual == sceneName,
-            expected = sceneName,
-            actual = actual ?: "null",
-        )
+        pendingAssertions +=
+            UatAssertion(
+                description = "scene == \"$sceneName\"",
+                passed = actual == sceneName,
+                expected = sceneName,
+                actual = actual ?: "null",
+            )
     }
 
     /**
@@ -364,33 +385,36 @@ class UatRunner(
     fun generateReport(): UatReport {
         val allAssertions = checkpoints.flatMap { it.assertions }
         val goldenResults = checkpoints.mapNotNull { it.diffResult }
-        val report = UatReport(
-            gameName = gameName,
-            checkpoints = checkpoints.toList(),
-            totalAssertions = allAssertions.size,
-            passedAssertions = allAssertions.count { it.passed },
-            failedAssertions = allAssertions.count { !it.passed },
-            goldenComparisons = goldenResults.size,
-            goldenPassed = goldenResults.count { it.match },
-            goldenFailed = goldenResults.count { !it.match },
-        )
+        val report =
+            UatReport(
+                gameName = gameName,
+                checkpoints = checkpoints.toList(),
+                totalAssertions = allAssertions.size,
+                passedAssertions = allAssertions.count { it.passed },
+                failedAssertions = allAssertions.count { !it.passed },
+                goldenComparisons = goldenResults.size,
+                goldenPassed = goldenResults.count { it.match },
+                goldenFailed = goldenResults.count { !it.match },
+            )
 
         // Write report JSON
-        val reportJson = JSONObject()
-            .put("gameName", report.gameName)
-            .put("totalAssertions", report.totalAssertions)
-            .put("passedAssertions", report.passedAssertions)
-            .put("failedAssertions", report.failedAssertions)
-            .put("goldenComparisons", report.goldenComparisons)
-            .put("goldenPassed", report.goldenPassed)
-            .put("goldenFailed", report.goldenFailed)
+        val reportJson =
+            JSONObject()
+                .put("gameName", report.gameName)
+                .put("totalAssertions", report.totalAssertions)
+                .put("passedAssertions", report.passedAssertions)
+                .put("failedAssertions", report.failedAssertions)
+                .put("goldenComparisons", report.goldenComparisons)
+                .put("goldenPassed", report.goldenPassed)
+                .put("goldenFailed", report.goldenFailed)
         val checkpointsArray = JSONArray()
         for (cp in report.checkpoints) {
-            val cpJson = JSONObject()
-                .put("label", cp.label)
-                .put("frameNumber", cp.frameNumber)
-                .put("screenshotFile", cp.screenshotFile.name)
-                .put("variables", JSONObject(cp.variables))
+            val cpJson =
+                JSONObject()
+                    .put("label", cp.label)
+                    .put("frameNumber", cp.frameNumber)
+                    .put("screenshotFile", cp.screenshotFile.name)
+                    .put("variables", JSONObject(cp.variables))
             val assertionsArray = JSONArray()
             for (a in cp.assertions) {
                 assertionsArray.put(
@@ -398,7 +422,7 @@ class UatRunner(
                         .put("description", a.description)
                         .put("passed", a.passed)
                         .put("expected", a.expected)
-                        .put("actual", a.actual),
+                        .put("actual", a.actual)
                 )
             }
             cpJson.put("assertions", assertionsArray)
@@ -426,23 +450,26 @@ class UatRunner(
     fun assertSpriteAt(x: Int, y: Int, tileIndex: Int? = null, tolerance: Int = 2) {
         val memory = session.getMemory()
         val visible = OamSpriteReader.readVisible(memory)
-        val match = visible.any { sprite ->
-            val xMatch = (sprite.screenX - x) in -tolerance..tolerance
-            val yMatch = (sprite.screenY - y) in -tolerance..tolerance
-            val tileMatch = tileIndex == null || sprite.tileIndex == tileIndex
-            xMatch && yMatch && tileMatch
-        }
-        val desc = if (tileIndex != null) {
-            "sprite at ($x,$y) tile=$tileIndex ±$tolerance"
-        } else {
-            "sprite at ($x,$y) ±$tolerance"
-        }
-        pendingAssertions += UatAssertion(
-            description = desc,
-            passed = match,
-            expected = "sprite present",
-            actual = if (match) "found" else "not found (${visible.size} visible sprites)",
-        )
+        val match =
+            visible.any { sprite ->
+                val xMatch = (sprite.screenX - x) in -tolerance..tolerance
+                val yMatch = (sprite.screenY - y) in -tolerance..tolerance
+                val tileMatch = tileIndex == null || sprite.tileIndex == tileIndex
+                xMatch && yMatch && tileMatch
+            }
+        val desc =
+            if (tileIndex != null) {
+                "sprite at ($x,$y) tile=$tileIndex ±$tolerance"
+            } else {
+                "sprite at ($x,$y) ±$tolerance"
+            }
+        pendingAssertions +=
+            UatAssertion(
+                description = desc,
+                passed = match,
+                expected = "sprite present",
+                actual = if (match) "found" else "not found (${visible.size} visible sprites)",
+            )
     }
 
     /**
@@ -453,12 +480,13 @@ class UatRunner(
     fun assertSpriteCount(expected: Int) {
         val memory = session.getMemory()
         val visible = OamSpriteReader.readVisible(memory)
-        pendingAssertions += UatAssertion(
-            description = "visible sprite count == $expected",
-            passed = visible.size == expected,
-            expected = expected.toString(),
-            actual = visible.size.toString(),
-        )
+        pendingAssertions +=
+            UatAssertion(
+                description = "visible sprite count == $expected",
+                passed = visible.size == expected,
+                expected = expected.toString(),
+                actual = visible.size.toString(),
+            )
     }
 
     override fun close() {

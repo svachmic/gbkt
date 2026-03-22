@@ -7,14 +7,14 @@
 package io.github.gbkt.mcp
 
 import io.github.gbkt.emulator.agent.Button
-import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assumptions
-import org.junit.jupiter.api.Test
 import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.Test
 
 /**
  * End-to-end MCP playthrough test for Pong using real CoffeeGbEmulator.
@@ -34,7 +34,10 @@ class PongMcpPlaythroughTest {
 
     @Test
     fun `agent plays Pong from title through gameplay via MCP session`() = runTest {
-        Assumptions.assumeTrue(ROM.exists(), "Pong ROM not built — run :gbkt-examples:pong:buildRom first")
+        Assumptions.assumeTrue(
+            ROM.exists(),
+            "Pong ROM not built — run :gbkt-examples:pong:buildRom first",
+        )
 
         val session = McpEmulatorSession() // NO stub — real emulator
 

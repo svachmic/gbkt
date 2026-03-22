@@ -15,7 +15,6 @@ import io.github.gbkt.analysis.Severity
 import io.github.gbkt.core.ir.ArrayAccessExpr
 import io.github.gbkt.core.ir.BinaryExpr
 import io.github.gbkt.core.ir.BinaryOp
-import io.github.gbkt.core.ir.CallExpr
 import io.github.gbkt.core.ir.CastExpr
 import io.github.gbkt.core.ir.Expr
 import io.github.gbkt.core.ir.Literal
@@ -101,10 +100,13 @@ class BitwiseOptimizationPass : AnalysisPass {
         return when (rebuiltExpr.op) {
             BinaryOp.MUL -> {
                 // Pick whichever side has the power-of-2 constant (prefer right)
-                val n = if (rightIsPow2) (optimizedRight as Literal).value else (optimizedLeft as Literal).value
+                val n =
+                    if (rightIsPow2) (optimizedRight as Literal).value
+                    else (optimizedLeft as Literal).value
                 val other = if (rightIsPow2) optimizedLeft else optimizedRight
                 val shift = log2(n)
-                val rewritten = rebuiltExpr.copy(left = other, op = BinaryOp.SHL, right = Literal(shift))
+                val rewritten =
+                    rebuiltExpr.copy(left = other, op = BinaryOp.SHL, right = Literal(shift))
                 emitRewriteDiagnostic("*$n", "<<$shift", rebuiltExpr)
                 rewritten
             }
@@ -170,9 +172,13 @@ class BitwiseOptimizationPass : AnalysisPass {
             is BinaryExpr -> isMaybeSigned(expr.left) || isMaybeSigned(expr.right)
             is UnaryExpr -> isMaybeSigned(expr.operand)
             is TernaryExpr -> isMaybeSigned(expr.thenExpr) || isMaybeSigned(expr.elseExpr)
-            is CastExpr -> expr.targetType == VarType.I8 || expr.targetType == VarType.I16 || isMaybeSigned(expr.inner)
+            is CastExpr ->
+                expr.targetType == VarType.I8 ||
+                    expr.targetType == VarType.I16 ||
+                    isMaybeSigned(expr.inner)
             is ArrayAccessExpr -> isMaybeSigned(expr.index)
-            else -> false // Literal, StringLiteral, PropertyAccessExpr, CallExpr, PoolGetActiveCount
+            else ->
+                false // Literal, StringLiteral, PropertyAccessExpr, CallExpr, PoolGetActiveCount
         }
 
     private fun emitRewriteDiagnostic(fromOp: String, toOp: String, original: BinaryExpr) {

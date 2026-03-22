@@ -7,18 +7,17 @@
 package io.github.gbkt.emulator.agent
 
 import io.github.gbkt.emulator.MemoryAccess
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 class VariableInspectorTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     /** Creates a mock MemoryAccess backed by a flat byte array for the full 64KB address space. */
     private fun mockMemory(vararg patches: Pair<Int, Int>): MemoryAccess {
@@ -28,6 +27,7 @@ class VariableInspectorTest {
         }
         return object : MemoryAccess {
             override fun readByte(address: Int): Int = mem[address]
+
             override fun writeByte(address: Int, value: Int) {
                 mem[address] = value
             }
@@ -109,13 +109,7 @@ class VariableInspectorTest {
 
     @Test
     fun `readAll returns snapshot of all loaded variables`() {
-        val symFile =
-            writeSym(
-                listOf(
-                    "DEF _score 00:C100",
-                    "DEF _lives 00:C101",
-                )
-            )
+        val symFile = writeSym(listOf("DEF _score 00:C100", "DEF _lives 00:C101"))
         val memory = mockMemory(0xC100 to 10, 0xC101 to 3)
         val inspector = VariableInspector(memory)
         inspector.loadSymbols(symFile)
@@ -129,13 +123,7 @@ class VariableInspectorTest {
     @Test
     fun `listVariables returns sorted names`() {
         val symFile =
-            writeSym(
-                listOf(
-                    "DEF _score 00:C100",
-                    "DEF _ballDx 00:C101",
-                    "DEF _lives 00:C102",
-                )
-            )
+            writeSym(listOf("DEF _score 00:C100", "DEF _ballDx 00:C101", "DEF _lives 00:C102"))
         val inspector = VariableInspector(mockMemory())
         inspector.loadSymbols(symFile)
 
@@ -152,13 +140,7 @@ class VariableInspectorTest {
 
     @Test
     fun `type inference dx and dy map to INT8`() {
-        val symFile =
-            writeSym(
-                listOf(
-                    "DEF _ballDx 00:C100",
-                    "DEF _velDy 00:C101",
-                )
-            )
+        val symFile = writeSym(listOf("DEF _ballDx 00:C100", "DEF _velDy 00:C101"))
         val inspector = VariableInspector(mockMemory())
         inspector.loadSymbols(symFile)
 
@@ -168,13 +150,7 @@ class VariableInspectorTest {
 
     @Test
     fun `type inference 16 and addr map to UINT16`() {
-        val symFile =
-            writeSym(
-                listOf(
-                    "DEF _ptr16 00:C100",
-                    "DEF _addr 00:C102",
-                )
-            )
+        val symFile = writeSym(listOf("DEF _ptr16 00:C100", "DEF _addr 00:C102"))
         val inspector = VariableInspector(mockMemory())
         inspector.loadSymbols(symFile)
 
@@ -195,13 +171,7 @@ class VariableInspectorTest {
     fun `loadSymbols parses GBDK noi format with 0x prefix and double underscores`() {
         // GBDK .noi format: DEF __symbolName 0xADDR (double underscore, hex with 0x prefix)
         val symFile =
-            writeSym(
-                listOf(
-                    "DEF __p1Score 0xC0D5",
-                    "DEF __p2Score 0xC0D6",
-                    "DEF __ballDx 0xC0D7",
-                )
-            )
+            writeSym(listOf("DEF __p1Score 0xC0D5", "DEF __p2Score 0xC0D6", "DEF __ballDx 0xC0D7"))
         val memory = mockMemory(0xC0D5 to 3, 0xC0D6 to 1, 0xC0D7 to 1)
         val inspector = VariableInspector(memory)
         inspector.loadSymbols(symFile)
@@ -222,13 +192,13 @@ class VariableInspectorTest {
         val symFile =
             writeSym(
                 listOf(
-                    "DEF _update_joypad 0x0200",    // ROM function — below WRAM
-                    "DEF _P1_REG 0xFF00",            // I/O register — above WRAM
-                    "DEF _banked_func 0x14000",      // Banked address — exceeds 16-bit
-                    "DEF _score 0xC0D5",             // WRAM — should be kept
-                    "DEF _lives 0xC0D6",             // WRAM — should be kept
-                    "DEF _highAddr 0xE000",          // Above WRAM end — should be excluded
-                    "DEF _lowWram 0xBFFF",           // Just below WRAM start — should be excluded
+                    "DEF _update_joypad 0x0200", // ROM function — below WRAM
+                    "DEF _P1_REG 0xFF00", // I/O register — above WRAM
+                    "DEF _banked_func 0x14000", // Banked address — exceeds 16-bit
+                    "DEF _score 0xC0D5", // WRAM — should be kept
+                    "DEF _lives 0xC0D6", // WRAM — should be kept
+                    "DEF _highAddr 0xE000", // Above WRAM end — should be excluded
+                    "DEF _lowWram 0xBFFF", // Just below WRAM start — should be excluded
                 )
             )
         val inspector = VariableInspector(mockMemory())
@@ -242,13 +212,7 @@ class VariableInspectorTest {
 
     @Test
     fun `readAll works without try-catch for WRAM-only symbols`() {
-        val symFile =
-            writeSym(
-                listOf(
-                    "DEF _score 0xC0D5",
-                    "DEF _lives 0xC0D6",
-                )
-            )
+        val symFile = writeSym(listOf("DEF _score 0xC0D5", "DEF _lives 0xC0D6"))
         val memory = mockMemory(0xC0D5 to 42, 0xC0D6 to 3)
         val inspector = VariableInspector(memory)
         inspector.loadSymbols(symFile)

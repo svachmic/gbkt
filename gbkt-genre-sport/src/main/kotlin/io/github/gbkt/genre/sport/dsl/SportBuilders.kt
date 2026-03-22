@@ -31,8 +31,11 @@ import io.github.gbkt.genre.sport.domain.WaypointDef
 import io.github.gbkt.genre.sport.domain.WinCondition
 
 /** Shared factory for sport pickup definitions, used by both racing and ball-sport builders. */
-private fun buildSportPickup(pickupId: String, type: SportPickupType, durationFrames: Int): SportPickupDef =
-    SportPickupDef(id = pickupId, type = type, durationFrames = durationFrames)
+private fun buildSportPickup(
+    pickupId: String,
+    type: SportPickupType,
+    durationFrames: Int,
+): SportPickupDef = SportPickupDef(id = pickupId, type = type, durationFrames = durationFrames)
 
 // =============================================================================
 // RACING DSL BUILDERS

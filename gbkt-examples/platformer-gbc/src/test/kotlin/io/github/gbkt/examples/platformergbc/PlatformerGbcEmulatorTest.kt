@@ -11,6 +11,8 @@ import io.github.gbkt.emulator.MemoryAccess
 import io.github.gbkt.emulator.agent.AgentDebugSession
 import io.github.gbkt.emulator.agent.AgentSessionConfig
 import io.github.gbkt.emulator.debug.DebugLogEntry
+import java.io.File
+import java.nio.file.Path
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -18,13 +20,11 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
-import java.nio.file.Path
 
 /**
- * Headless smoke test for Platformer GBC — verifies the AgentDebugSession runs the GBC ROM
- * variant with `gbcMode = true` without crashing, without ERROR log entries, and with correct
- * GBC mode configuration propagation.
+ * Headless smoke test for Platformer GBC — verifies the AgentDebugSession runs the GBC ROM variant
+ * with `gbcMode = true` without crashing, without ERROR log entries, and with correct GBC mode
+ * configuration propagation.
  *
  * Unit-test tier: uses a stub emulator (no real ROM required). The CI/emulatorTest task runs the
  * actual ROM via CoffeeGbEmulator in GBC mode.
@@ -38,8 +38,7 @@ import java.nio.file.Path
  */
 class PlatformerGbcEmulatorTest {
 
-    @TempDir
-    lateinit var tempDir: Path
+    @TempDir lateinit var tempDir: Path
 
     private var session: AgentDebugSession? = null
 
@@ -84,20 +83,24 @@ class PlatformerGbcEmulatorTest {
 
             override fun setSpeed(multiplier: Float) = Unit
 
-            /** GBC-mode frame buffer: non-zero colors simulate GBC color rendering (not grayscale). */
+            /**
+             * GBC-mode frame buffer: non-zero colors simulate GBC color rendering (not grayscale).
+             */
             override fun getFrameBuffer(): IntArray =
                 IntArray(160 * 144) { idx ->
                     when {
-                        idx < 160 * 48 -> 0x00C8F0C8  // greenish top strip (background)
-                        idx < 160 * 96 -> 0x00F0F0A0  // yellowish mid strip (platforms)
-                        else -> 0x00A0A0F0             // blueish bottom strip (ground)
+                        idx < 160 * 48 -> 0x00C8F0C8 // greenish top strip (background)
+                        idx < 160 * 96 -> 0x00F0F0A0 // yellowish mid strip (platforms)
+                        else -> 0x00A0A0F0 // blueish bottom strip (ground)
                     }
                 }
 
             override fun getMemory(): MemoryAccess =
                 object : MemoryAccess {
                     private val mem = IntArray(0x10000) { 0 }
+
                     override fun readByte(address: Int): Int = mem[address]
+
                     override fun writeByte(address: Int, value: Int) {
                         mem[address] = value
                     }
@@ -107,7 +110,9 @@ class PlatformerGbcEmulatorTest {
             override fun getDebugLog(): List<DebugLogEntry> = emptyList()
 
             override fun isRunning(): Boolean = _running
+
             override fun isPaused(): Boolean = _paused
+
             override val isHeadless: Boolean = true
         }
 
@@ -139,11 +144,12 @@ class PlatformerGbcEmulatorTest {
     @Test
     fun `GBC smoke test - 600 frames without crash or ERROR log entries`() {
         val rom = fakeRom()
-        val config = AgentSessionConfig(
-            romFile = rom,
-            gbcMode = true,
-            screenshotDir = File(tempDir.toFile(), "screenshots"),
-        )
+        val config =
+            AgentSessionConfig(
+                romFile = rom,
+                gbcMode = true,
+                screenshotDir = File(tempDir.toFile(), "screenshots"),
+            )
         val stub = stubGbcEmulator()
         val s = AgentDebugSession(config, stubEmulatorFactory = { stub })
         session = s
@@ -163,11 +169,8 @@ class PlatformerGbcEmulatorTest {
     fun `GBC screenshot has 160x144 frame buffer with color pixels`() {
         val rom = fakeRom()
         val screenshotDir = File(tempDir.toFile(), "screenshots")
-        val config = AgentSessionConfig(
-            romFile = rom,
-            gbcMode = true,
-            screenshotDir = screenshotDir,
-        )
+        val config =
+            AgentSessionConfig(romFile = rom, gbcMode = true, screenshotDir = screenshotDir)
         val stub = stubGbcEmulator()
         val s = AgentDebugSession(config, stubEmulatorFactory = { stub })
         session = s
@@ -188,12 +191,13 @@ class PlatformerGbcEmulatorTest {
         // Color mode verification: GBC frame buffer must not be all-grayscale.
         // Grayscale pixels have R==G==B; check that at least some pixels have R≠G or G≠B
         // (our stub uses distinct R/G/B channels, matching GBC color rendering behavior).
-        val colorPixelCount = frameBuffer.count { pixel ->
-            val r = (pixel shr 16) and 0xFF
-            val g = (pixel shr 8) and 0xFF
-            val b = pixel and 0xFF
-            r != g || g != b
-        }
+        val colorPixelCount =
+            frameBuffer.count { pixel ->
+                val r = (pixel shr 16) and 0xFF
+                val g = (pixel shr 8) and 0xFF
+                val b = pixel and 0xFF
+                r != g || g != b
+            }
         assertTrue(
             colorPixelCount > 0,
             "GBC frame buffer must have at least one non-grayscale pixel (colorPixelCount=$colorPixelCount)",

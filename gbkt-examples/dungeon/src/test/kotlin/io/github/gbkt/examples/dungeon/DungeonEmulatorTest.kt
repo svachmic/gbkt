@@ -19,14 +19,14 @@ import kotlin.test.assertTrue
  * Two tiers:
  * 1. IR integrity tests — run on JVM via SimulationContextV2, no ROM required. Validate game
  *    structure and that all 4 scenes are reachable and exit cleanly.
- * 2. ROM smoke test (emulatorTest Gradle task) — headless Coffee-GB validation run via
- *    `./gradlew :gbkt-examples:dungeon:emulatorTest`. This test class validates the IR tier;
- *    the Gradle task validates the ROM tier.
+ * 2. ROM smoke test (emulatorTest Gradle task) — headless Coffee-GB validation run via `./gradlew
+ *    :gbkt-examples:dungeon:emulatorTest`. This test class validates the IR tier; the Gradle task
+ *    validates the ROM tier.
  *
  * Scenarios validated:
  * - All 4 scenes (title, gameplay, battle, gameover) are enterable without crash
- * - Core state transitions: title reachable; torch depletion; encounter at 120;
- *   gameover renders; battle drive reachable
+ * - Core state transitions: title reachable; torch depletion; encounter at 120; gameover renders;
+ *   battle drive reachable
  * - ROM file existence is checked to confirm buildRom has been run (soft advisory)
  *
  * See context/UAT-dungeon.md for the full manual UAT checklist.
@@ -87,7 +87,8 @@ class DungeonEmulatorTest {
         val sim = SimulationContextV2(ir)
         sim.enterScene("gameover")
         assertEquals("gameover", sim.currentScene)
-        // Gameover enter ops: hideSprites, clear, print calls (GAME OVER, TORCH EXPIRED, PRESS START)
+        // Gameover enter ops: hideSprites, clear, print calls (GAME OVER, TORCH EXPIRED, PRESS
+        // START)
         assertTrue(ir.scenes.first { it.id == "gameover" }.enterOps.isNotEmpty())
     }
 
@@ -202,7 +203,10 @@ class DungeonEmulatorTest {
     @Test
     fun `gameplay scene has movement and encounter frame ops`() {
         val gameplay = ir.scenes.first { it.id == "gameplay" }
-        assertTrue(gameplay.frameOps.isNotEmpty(), "gameplay must have frame ops for movement + encounters")
+        assertTrue(
+            gameplay.frameOps.isNotEmpty(),
+            "gameplay must have frame ops for movement + encounters",
+        )
     }
 
     @Test
