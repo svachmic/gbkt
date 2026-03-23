@@ -4,12 +4,25 @@ on:
   push:
     branches: [master]
     paths:
+      - 'gbkt-ir/**'
+      - 'gbkt-lang/**'
+      - 'gbkt-engine/**'
+      - 'gbkt-world/**'
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
       - 'gbkt-backend-api/**'
       - 'gbkt-backend-gbdk/**'
+      - 'gbkt-analysis/**'
+      - 'gbkt-emulator/**'
+      - 'gbkt-test/**'
+      - 'gbkt-mcp-server/**'
+      - 'gbkt-all/**'
       - 'gbkt-bom/**'
+      - 'gbkt-genre-rpg/**'
+      - 'gbkt-genre-platformer/**'
+      - 'gbkt-genre-puzzle/**'
+      - 'gbkt-genre-sport/**'
       - 'gbkt-examples/**'
       - 'gbkt-intellij-plugin/**'
       - 'buildSrc/**'
@@ -21,12 +34,25 @@ on:
   pull_request:
     branches: [master]
     paths:
+      - 'gbkt-ir/**'
+      - 'gbkt-lang/**'
+      - 'gbkt-engine/**'
+      - 'gbkt-world/**'
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
       - 'gbkt-backend-api/**'
       - 'gbkt-backend-gbdk/**'
+      - 'gbkt-analysis/**'
+      - 'gbkt-emulator/**'
+      - 'gbkt-test/**'
+      - 'gbkt-mcp-server/**'
+      - 'gbkt-all/**'
       - 'gbkt-bom/**'
+      - 'gbkt-genre-rpg/**'
+      - 'gbkt-genre-platformer/**'
+      - 'gbkt-genre-puzzle/**'
+      - 'gbkt-genre-sport/**'
       - 'gbkt-examples/**'
       - 'gbkt-intellij-plugin/**'
       - 'buildSrc/**'
@@ -58,6 +84,24 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
+
+      - name: Publish library modules to mavenLocal
+        run: |
+          ./gradlew \
+            :gbkt-ir:publishToMavenLocal \
+            :gbkt-lang:publishToMavenLocal \
+            :gbkt-engine:publishToMavenLocal \
+            :gbkt-world:publishToMavenLocal \
+            :gbkt-core:publishToMavenLocal \
+            :gbkt-backend-api:publishToMavenLocal \
+            :gbkt-backend-gbdk:publishToMavenLocal \
+            :gbkt-emulator:publishToMavenLocal \
+            :gbkt-analysis:publishToMavenLocal \
+            :gbkt-genre-rpg:publishToMavenLocal \
+            :gbkt-genre-platformer:publishToMavenLocal \
+            :gbkt-genre-puzzle:publishToMavenLocal \
+            :gbkt-genre-sport:publishToMavenLocal \
+            --configure-on-demand --no-daemon
 
       - name: Build all modules
         run: ./gradlew :gbkt-core:build :gbkt-cli:build :gbkt-backend-api:build :gbkt-backend-gbdk:build :gbkt-intellij-plugin:build :gbkt-examples:pong:build :gbkt-examples:breakout:build :gbkt-examples:explorer:build --no-daemon
@@ -92,6 +136,24 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Publish library modules to mavenLocal
+        run: |
+          ./gradlew \
+            :gbkt-ir:publishToMavenLocal \
+            :gbkt-lang:publishToMavenLocal \
+            :gbkt-engine:publishToMavenLocal \
+            :gbkt-world:publishToMavenLocal \
+            :gbkt-core:publishToMavenLocal \
+            :gbkt-backend-api:publishToMavenLocal \
+            :gbkt-backend-gbdk:publishToMavenLocal \
+            :gbkt-emulator:publishToMavenLocal \
+            :gbkt-analysis:publishToMavenLocal \
+            :gbkt-genre-rpg:publishToMavenLocal \
+            :gbkt-genre-platformer:publishToMavenLocal \
+            :gbkt-genre-puzzle:publishToMavenLocal \
+            :gbkt-genre-sport:publishToMavenLocal \
+            --configure-on-demand --no-daemon
+
       - name: Check formatting
         run: ./gradlew spotlessCheck --no-daemon
 
@@ -109,6 +171,24 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish library modules to mavenLocal
+        run: |
+          ./gradlew \
+            :gbkt-ir:publishToMavenLocal \
+            :gbkt-lang:publishToMavenLocal \
+            :gbkt-engine:publishToMavenLocal \
+            :gbkt-world:publishToMavenLocal \
+            :gbkt-core:publishToMavenLocal \
+            :gbkt-backend-api:publishToMavenLocal \
+            :gbkt-backend-gbdk:publishToMavenLocal \
+            :gbkt-emulator:publishToMavenLocal \
+            :gbkt-analysis:publishToMavenLocal \
+            :gbkt-genre-rpg:publishToMavenLocal \
+            :gbkt-genre-platformer:publishToMavenLocal \
+            :gbkt-genre-puzzle:publishToMavenLocal \
+            :gbkt-genre-sport:publishToMavenLocal \
+            --configure-on-demand --no-daemon
 
       - name: Check version consistency
         run: ./gradlew checkVersionConsistency --no-daemon

@@ -7,6 +7,7 @@
 
 plugins {
     kotlin("jvm")
+    id("gbkt.publishing")
 }
 
 kotlin {

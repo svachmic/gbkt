@@ -4,12 +4,25 @@ on:
   push:
     branches: [master]
     paths:
+      - 'gbkt-ir/**'
+      - 'gbkt-lang/**'
+      - 'gbkt-engine/**'
+      - 'gbkt-world/**'
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
       - 'gbkt-backend-api/**'
       - 'gbkt-backend-gbdk/**'
+      - 'gbkt-analysis/**'
+      - 'gbkt-emulator/**'
+      - 'gbkt-test/**'
+      - 'gbkt-mcp-server/**'
+      - 'gbkt-all/**'
       - 'gbkt-bom/**'
+      - 'gbkt-genre-rpg/**'
+      - 'gbkt-genre-platformer/**'
+      - 'gbkt-genre-puzzle/**'
+      - 'gbkt-genre-sport/**'
       - 'buildSrc/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
@@ -19,12 +32,25 @@ on:
   pull_request:
     branches: [master]
     paths:
+      - 'gbkt-ir/**'
+      - 'gbkt-lang/**'
+      - 'gbkt-engine/**'
+      - 'gbkt-world/**'
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
       - 'gbkt-backend-api/**'
       - 'gbkt-backend-gbdk/**'
+      - 'gbkt-analysis/**'
+      - 'gbkt-emulator/**'
+      - 'gbkt-test/**'
+      - 'gbkt-mcp-server/**'
+      - 'gbkt-all/**'
       - 'gbkt-bom/**'
+      - 'gbkt-genre-rpg/**'
+      - 'gbkt-genre-platformer/**'
+      - 'gbkt-genre-puzzle/**'
+      - 'gbkt-genre-sport/**'
       - 'buildSrc/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
@@ -53,6 +79,24 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish library modules to mavenLocal
+        run: |
+          ./gradlew \
+            :gbkt-ir:publishToMavenLocal \
+            :gbkt-lang:publishToMavenLocal \
+            :gbkt-engine:publishToMavenLocal \
+            :gbkt-world:publishToMavenLocal \
+            :gbkt-core:publishToMavenLocal \
+            :gbkt-backend-api:publishToMavenLocal \
+            :gbkt-backend-gbdk:publishToMavenLocal \
+            :gbkt-emulator:publishToMavenLocal \
+            :gbkt-analysis:publishToMavenLocal \
+            :gbkt-genre-rpg:publishToMavenLocal \
+            :gbkt-genre-platformer:publishToMavenLocal \
+            :gbkt-genre-puzzle:publishToMavenLocal \
+            :gbkt-genre-sport:publishToMavenLocal \
+            --configure-on-demand --no-daemon
 
       - name: Run Kotlin tests with coverage
         run: ./gradlew :gbkt-core:test :gbkt-core:koverXmlReport --no-daemon
