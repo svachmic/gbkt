@@ -20,9 +20,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
-import io.github.gbkt.intellij.build.AssetPipelineDashboard
-import io.github.gbkt.intellij.build.BuildLogPanel
-import io.github.gbkt.intellij.build.RomSizeAnalyzer
+import io.github.gbkt.intellij.buildtools.AssetPipelineDashboard
+import io.github.gbkt.intellij.buildtools.BuildLogPanel
+import io.github.gbkt.intellij.buildtools.RomSizeAnalyzer
 
 /**
  * Factory for the gbkt tool window.

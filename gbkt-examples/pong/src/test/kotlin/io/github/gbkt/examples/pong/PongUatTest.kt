@@ -37,6 +37,7 @@ class PongUatTest {
         private val GOLDEN_DIR = File("src/test/resources/golden/pong")
     }
 
+    @Suppress("CyclomaticComplexMethod")
     @Test
     fun `pong full UAT - 20 scenarios`() {
         Assumptions.assumeTrue(ROM_FILE.exists(), "pong.gb not found — run buildRom first")
@@ -59,7 +60,7 @@ class PongUatTest {
             if (METADATA_FILE.exists()) {
                 try {
                     GameMetadata.fromJsonFile(METADATA_FILE)
-                } catch (e: Exception) {
+                } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                     println("METADATA: Failed to parse $METADATA_FILE — ${e.message}")
                     null
                 }

@@ -22,7 +22,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
-import io.github.gbkt.intellij.build.GradleRunner
+import io.github.gbkt.intellij.buildtools.GradleRunner
 
 /**
  * Action to build a gbkt project to a Game Boy ROM.
