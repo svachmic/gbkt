@@ -180,44 +180,36 @@ class IntegrationTest {
     fun `asset pipeline handles missing asset directory gracefully`() {
         createGameWithSpritesFixture()
         createBasicBuildFile()
-        // Don't create the assets directory — backend validation rejects missing sprites
+        // Don't create the assets directory — processAssets skips silently (graceful degradation)
 
         val result =
             GradleRunner.create()
                 .withProjectDir(testProjectDir)
                 .withArguments("generateC", "--stacktrace")
                 .withPluginClasspath()
-                .buildAndFail()
+                .build()
 
-        // Backend validates that referenced sprite files exist
-        assertTrue(
-            result.output.contains("Asset file not found") ||
-                result.output.contains("not found") ||
-                result.output.contains("ASSET_FILE"),
-            "Should report missing asset file: ${result.output}",
-        )
+        // generateC succeeds — asset file validation (file existence on disk) happens at
+        // convertSprites / compileRom time, not at C generation time
+        assertEquals(TaskOutcome.SUCCESS, result.task(":generateC")?.outcome)
     }
 
     @Test
     fun `asset pipeline handles missing sprite file gracefully`() {
         createGameWithSpritesFixture()
         createBasicBuildFile()
-        // Create assets directory but no sprite file — backend validation rejects this
+        // Create assets directory but no sprite file — processAssets skips silently
 
         val result =
             GradleRunner.create()
                 .withProjectDir(testProjectDir)
                 .withArguments("generateC", "--stacktrace")
                 .withPluginClasspath()
-                .buildAndFail()
+                .build()
 
-        // Backend validates that referenced sprite files exist
-        assertTrue(
-            result.output.contains("Asset file not found") ||
-                result.output.contains("not found") ||
-                result.output.contains("ASSET_FILE"),
-            "Should report missing sprite file: ${result.output}",
-        )
+        // generateC succeeds — missing individual sprite files are a compile-time concern
+        // (convertSprites / compileRom), not a C generation concern
+        assertEquals(TaskOutcome.SUCCESS, result.task(":generateC")?.outcome)
     }
 
     @Test
@@ -505,13 +497,13 @@ class IntegrationTest {
             """
             package test
 
-            import io.github.gbkt.core.*
+            import io.github.gbkt.core.dsl.*
 
-            val wrongGame = gbGame("TestGame") {
+            val wrongGame = game("TestGame") {
                 val mainScene = scene("main") {
-                    every.frame { }
+                    frame { }
                 }
-                start = mainScene
+                start = mainScene.id
             }
             """
                 .trimIndent()
@@ -577,19 +569,18 @@ class IntegrationTest {
             """
             package test
 
-            import io.github.gbkt.core.*
-            import io.github.gbkt.core.ir.*
+            import io.github.gbkt.core.dsl.*
 
-            val testGame = gbGame("TestGame") {
+            val testGame = game("TestGame") {
                 var score by u8Var(0)
 
                 val mainScene = scene("main") {
-                    every.frame {
+                    frame {
                         score += 1
                     }
                 }
 
-                start = mainScene
+                start = mainScene.id
             }
             """
                 .trimIndent()
@@ -603,24 +594,24 @@ class IntegrationTest {
             """
             package test
 
-            import io.github.gbkt.core.*
-            import io.github.gbkt.core.ir.*
-            import io.github.gbkt.core.builder.*
-            import io.github.gbkt.core.assets.SpriteAsset
+            import io.github.gbkt.core.dsl.*
 
-            val testGame = gbGame("TestGame") {
-                val player = sprite(SpriteAsset("player.png")) {
-                    size = 8 x 16
+            val testGame = game("TestGame") {
+                val player by actor {
                     position(80, 72)
+                    sprite(asset("sprites/player.png")) {
+                        size(8, 16)
+                        hitbox(0, 0, 8, 16)
+                    }
                 }
 
                 val mainScene = scene("main") {
-                    every.frame {
+                    frame {
                         player.x += 1
                     }
                 }
 
-                start = mainScene
+                start = mainScene.id
             }
             """
                 .trimIndent()
@@ -634,36 +625,34 @@ class IntegrationTest {
             """
             package test
 
-            import io.github.gbkt.core.*
-            import io.github.gbkt.core.ir.*
-            import io.github.gbkt.core.builder.*
-            import io.github.gbkt.core.input.*
-            import io.github.gbkt.core.collision.*
-            import io.github.gbkt.core.assets.SpriteAsset
+            import io.github.gbkt.core.dsl.*
+            import io.github.gbkt.core.ir.PositionDef
 
-            val testGame = gbGame("TestGame") {
+            val testGame = game("TestGame") {
                 var score by u16Var(0)
                 var lives by u8Var(3)
 
-                val playerPalette = palette("player") {
-                    colors(0xFFFFFF, 0x88FF88, 0x448844, 0x000000)
-                }
-
-                val player = sprite(SpriteAsset("player.png")) {
-                    size = 8 x 16
+                val player by actor {
                     position(80, 72)
-                    palette = playerPalette
+                    sprite(asset("sprites/player.png")) {
+                        size(8, 16)
+                        hitbox(0, 0, 8, 16)
+                    }
                 }
 
-                val enemy = sprite(SpriteAsset("enemy.png")) {
-                    size = 8 x 8
+                val enemy by actor {
                     position(150, 100)
+                    sprite(asset("sprites/enemy.png")) {
+                        size(8, 8)
+                        hitbox(0, 0, 8, 8)
+                    }
                 }
 
-                val titleScene = scene("title") {
+                val gameoverScene = scene("gameover") {
                     enter {
-                        screen.clear()
-                        printCentered("GAME") at 6
+                        clear()
+                        printCentered("GAME OVER") at 6
+                        print("SCORE: %d", score.toExpr(), position = PositionDef(4, 9))
                     }
                 }
 
@@ -673,31 +662,30 @@ class IntegrationTest {
                         player.y set 72
                     }
 
-                    every.frame {
+                    frame {
                         whenever(buttons.a.pressed) {
                             player.y -= 5
                         }
 
-                        whenever(player collidesWith enemy) {
+                        whenever(player.collides(enemy)) {
                             lives -= 1
                             score += 10
                         }
 
                         whenever(lives isEqualTo 0) {
-                            scene("gameover")
+                            navigate(gameoverScene)
                         }
                     }
                 }
 
-                scene("gameover") {
+                val titleScene = scene("title") {
                     enter {
-                        screen.clear()
-                        printCentered("GAME OVER") at 6
-                        print("SCORE: ", score) at (4 to 9)
+                        clear()
+                        printCentered("GAME") at 6
                     }
                 }
 
-                start = titleScene
+                start = titleScene.id
             }
             """
                 .trimIndent()
