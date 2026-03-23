@@ -98,6 +98,7 @@ The three example projects (`gbkt-examples/pong`, `gbkt-examples/breakout`, `gbk
 | [context/TOOLING.md](context/TOOLING.md) | Work with asset pipeline, GBC palettes, Gradle plugin, IntelliJ plugin |
 | [context/TESTING.md](context/TESTING.md) | Understand test tiers, GbktTestExtension, test recipes, GameConstants, playbook format, MCP tools |
 | [context/UAT_GUIDE.md](context/UAT_GUIDE.md) | Debug and play-test ROMs with MCP agent tools |
+| [context/CI_CD.md](context/CI_CD.md) | Understand CI/CD workflows, release pipeline, dependency pinning policy |
 
 ## Common Tasks Routing
 
@@ -115,6 +116,10 @@ The three example projects (`gbkt-examples/pong`, `gbkt-examples/breakout`, `gbk
 | Set up MCP agent testing | TESTING.md → "MCP Agent Testing" |
 | Create game playbook | TESTING.md → "Playbook Format" |
 | Write UAT tests | `gbkt-emulator/CLAUDE.md` → "Agent API for Game Testing" |
+| Understand CI/CD pipelines | CI_CD.md → "Workflows" |
+| Add/update a GitHub Action | CI_CD.md → "Adding a New Action" |
+| Pin action dependencies | CI_CD.md → "Dependency Pinning" |
+| Configure release secrets | CI_CD.md → "Release" → "Secrets" |
 | Debug a ROM with MCP agent tools | UAT_GUIDE.md |
 
 ## Claude Code Skills Setup
