@@ -5,33 +5,32 @@
 > Write Game Boy games in Kotlin. Compiles to GBDK-compatible C.
 
 ```kotlin
-val game = gbGame("MyGame") {
+val myGame = game("MyGame") {
 
     var score by u16Var(0)
 
-    val player by entity {
+    val player by actor {
         position(80, 72)
-        sprite(SpriteAsset("player.png")) { size = 8 x 16 }
+        sprite(asset("sprites/player.png")) { size(8, 16) }
     }
 
     start = scene("gameplay") {
         enter {
-            screen.clear()
-            screen.showSprites()
+            clear()
+            showSprites()
         }
 
-        every.frame {
-            whenever(dpad.right) { player.x += 2 }
-            whenever(dpad.left) { player.x -= 2 }
-            whenever(dpad.down) { player.y += 2 }
-            whenever(dpad.up) { player.y -= 2 }
+        frame {
+            whenever(dpad.right.held) { player.x += 2 }
+            whenever(dpad.left.held) { player.x -= 2 }
+            whenever(dpad.down.held) { player.y += 2 }
+            whenever(dpad.up.held) { player.y -= 2 }
 
             whenever(buttons.a.pressed) { score += 10 }
         }
     }
 }
-
-game.compile() // → GBDK-compatible C code
+// ./gradlew buildRom → GBDK-compatible C → .gb ROM
 ```
 
 ## Quick Start
@@ -57,7 +56,7 @@ export GBDK_HOME=/path/to/gbdk-2020
 ### Step 2: Clone and Build
 
 ```bash
-git clone https://github.com/anthropics/gbkt.git
+git clone https://github.com/svachmic/gbkt.git
 cd gbkt
 ./gradlew build
 ```
@@ -67,21 +66,19 @@ cd gbkt
 Create a new Kotlin file `src/main/kotlin/MyGame.kt`:
 
 ```kotlin
-import io.github.gbkt.core.builder.*
-import io.github.gbkt.core.assets.SpriteAsset
-import io.github.gbkt.core.ir.*
+import io.github.gbkt.core.dsl.*
 
-val myFirstGame = gbGame("HelloGB") {
+val myFirstGame = game("HelloGB") {
     // Define a variable
     var counter by u8Var(0)
 
     // Define the starting scene
     start = scene("main") {
         enter {
-            screen.clear()
+            clear()
         }
 
-        every.frame {
+        frame {
             // Increment counter each frame
             counter += 1
 
@@ -104,6 +101,7 @@ plugins {
 
 gbkt {
     game("MyGameKt::myFirstGame")
+    assets("res")
     outputName.set("hello")
 }
 ```
@@ -125,31 +123,31 @@ Your ROM will be at `build/gbkt/output/hello.gb`.
 Add a player sprite with D-pad movement:
 
 ```kotlin
-val myFirstGame = gbGame("HelloGB") {
-    val player by entity {
+val myFirstGame = game("HelloGB") {
+    val player by actor {
         position(80, 72)  // Center of screen
-        sprite(SpriteAsset("player.png")) {
-            size = 8 x 8
+        sprite(asset("sprites/player.png")) {
+            size(8, 8)
         }
     }
 
     start = scene("main") {
         enter {
-            screen.clear()
-            screen.showSprites()
+            clear()
+            showSprites()
         }
 
-        every.frame {
-            whenever(dpad.right) { player.x += 1 }
-            whenever(dpad.left) { player.x -= 1 }
-            whenever(dpad.up) { player.y -= 1 }
-            whenever(dpad.down) { player.y += 1 }
+        frame {
+            whenever(dpad.right.held) { player.x += 1 }
+            whenever(dpad.left.held) { player.x -= 1 }
+            whenever(dpad.up.held) { player.y -= 1 }
+            whenever(dpad.down.held) { player.y += 1 }
         }
     }
 }
 ```
 
-Place your `player.png` in `src/main/resources/assets/` (8x8 or 8x16 pixels, using 4 shades of gray).
+Place your `player.png` in `res/sprites/` (8x8 or 8x16 pixels, using 4 shades of gray).
 
 ## Example Games
 
@@ -181,19 +179,20 @@ The `gbkt-examples/` directory contains complete games demonstrating the framewo
 | C (GBDK)                                       | gbkt                                    |
 |------------------------------------------------|-----------------------------------------|
 | `UINT8 playerX = 80;`                          | `var playerX by u8Var(80)`              |
-| `if (joypad() & J_RIGHT) { playerX++; }`       | `whenever(dpad.right) { playerX += 1 }` |
+| `if (joypad() & J_RIGHT) { playerX++; }`       | `whenever(dpad.right.held) { playerX += 1 }` |
 | `if ((joypad() & J_A) && !(prev & J_A)) {...}` | `whenever(buttons.a.pressed) { ... }`   |
-| Manual sprite/OAM management                   | `entity { sprite(...) }`                |
+| Manual sprite/OAM management                   | `actor { sprite(...) }`                 |
 | Manual scene state machines                    | `scene("name") { ... }`                 |
 
 ## Documentation
 
 | Topic | Document |
 |-------|----------|
-| System architecture | [context/ARCHITECTURE.md](context/ARCHITECTURE.md) |
+| System architecture & extending the framework | [context/ARCHITECTURE.md](context/ARCHITECTURE.md) |
 | Complete DSL reference | [context/DSL_REFERENCE.md](context/DSL_REFERENCE.md) |
-| Contributing guide | [context/DEVELOPER_EXPERIENCE.md](context/DEVELOPER_EXPERIENCE.md) |
+| Contributing guide | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Build tools & assets | [context/TOOLING.md](context/TOOLING.md) |
+| Testing (unit → emulator → AI agent) | [context/TESTING.md](context/TESTING.md) |
 
 ## License
 
