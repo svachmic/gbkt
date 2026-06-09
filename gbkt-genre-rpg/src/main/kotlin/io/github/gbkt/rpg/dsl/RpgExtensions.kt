@@ -322,7 +322,8 @@ fun GameBuilder.characterClass(block: ClassBuilder.() -> Unit): ClassDelegate =
  * IDs.
  */
 data class BattleRef(val id: String) : SystemRef {
-    override val systemId: String get() = id
+    override val systemId: String
+        get() = id
 }
 
 // =============================================================================

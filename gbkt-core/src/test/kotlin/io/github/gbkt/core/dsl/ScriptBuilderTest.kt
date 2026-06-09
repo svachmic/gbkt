@@ -187,10 +187,11 @@ class ScriptBuilderTest {
     fun `whenever inside frame block records to correct ops list`() {
         val ir =
             game("TestGame") {
-                    val gameScene = scene("game") {
-                        enter { hideSprites() }
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("game")) } }
-                    }
+                    val gameScene =
+                        scene("game") {
+                            enter { hideSprites() }
+                            frame { whenever(buttons.start.pressed) { navigate(SceneRef("game")) } }
+                        }
                     start = gameScene
                 }
                 .build()

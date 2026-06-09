@@ -52,8 +52,8 @@ class ScreenPrimitiveEmissionTest {
          * Evidence written under the active checkout root (worktree-safe).
          *
          * Same pattern as LevelCardSceneEmissionTest — `user.dir` resolves to the
-         * `:gbkt-backend-gbdk:test` working directory; we ascend one level to the
-         * repo (or worktree) root then descend into the phase-local evidence dir.
+         * `:gbkt-backend-gbdk:test` working directory; we ascend one level to the repo (or
+         * worktree) root then descend into the phase-local evidence dir.
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -106,7 +106,8 @@ class ScreenPrimitiveEmissionTest {
     //   2. hide_sprites_range(0u, MAX_HARDWARE_SPRITES)
     //   3. move_bkg(0u, 0u)
     //   4. fill_bkg_rect(0u, 0u, 32u, 32u, 0u)
-    //   5. _bkg_tiles_load_banked(<bank>, (DEVICE_SCREEN_WIDTH - _zone__screen_title_tilemap_WIDTH) / 2u,
+    //   5. _bkg_tiles_load_banked(<bank>, (DEVICE_SCREEN_WIDTH - _zone__screen_title_tilemap_WIDTH)
+    // / 2u,
     //        (DEVICE_SCREEN_HEIGHT - _zone__screen_title_tilemap_HEIGHT) / 2u,
     //        _zone__screen_title_tilemap_WIDTH, _zone__screen_title_tilemap_HEIGHT,
     //        _zone__screen_title_tilemap)
@@ -123,9 +124,7 @@ class ScreenPrimitiveEmissionTest {
     fun `screen() on title scene synthesizes _screen_title zone and emits screenMode superset`() {
         val gameIR =
             game("ScreenPrimitiveTest") {
-                    val titleScene = scene("title") {
-                        screen(asset("graphics/title-screen.png"))
-                    }
+                    val titleScene = scene("title") { screen(asset("graphics/title-screen.png")) }
                     start = titleScene
                 }
                 .build()
@@ -228,9 +227,7 @@ class ScreenPrimitiveEmissionTest {
     fun `setup_current_level switch does NOT include _screen_title (A2 title-filter)`() {
         val gameIR =
             game("ScreenPrimitiveTitleFilterTest") {
-                    val titleScene = scene("title") {
-                        screen(asset("graphics/title-screen.png"))
-                    }
+                    val titleScene = scene("title") { screen(asset("graphics/title-screen.png")) }
                     start = titleScene
                 }
                 .build()

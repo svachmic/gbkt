@@ -43,9 +43,8 @@ class ZoneTilesetsBankFieldTest {
     private val pipeline = GBDKPipeline()
 
     /**
-     * Test 1: For a GameIR with one new-path zone (`zone.tilesetPath != null`),
-     * the generated `game_metadata.json` zoneTilesets[0] object contains a
-     * `bank` integer field >= 2.
+     * Test 1: For a GameIR with one new-path zone (`zone.tilesetPath != null`), the generated
+     * `game_metadata.json` zoneTilesets[0] object contains a `bank` integer field >= 2.
      */
     @Test
     fun `single new-path zone receives a bank field at or above 2`() {
@@ -93,8 +92,8 @@ class ZoneTilesetsBankFieldTest {
     }
 
     /**
-     * Test 2: For a GameIR with multiple new-path zones, every zoneTilesets
-     * entry has a `bank` field present.
+     * Test 2: For a GameIR with multiple new-path zones, every zoneTilesets entry has a `bank`
+     * field present.
      */
     @Test
     fun `every new-path zone in a multi-zone fixture has a bank field`() {
@@ -105,10 +104,7 @@ class ZoneTilesetsBankFieldTest {
                 scenes =
                     listOf(
                         SceneIR(id = "title"),
-                        SceneIR(
-                            id = "play",
-                            zoneRefs = listOf("zoneA", "zoneB", "zoneC"),
-                        ),
+                        SceneIR(id = "play", zoneRefs = listOf("zoneA", "zoneB", "zoneC")),
                     ),
                 systems = listOf(ExplorationSystem(id = "test")),
                 zones =
@@ -163,9 +159,8 @@ class ZoneTilesetsBankFieldTest {
     }
 
     /**
-     * Test 3: Existing zoneTilesets fields (id, path, sanitizedSymbol,
-     * mapWidth, mapHeight) remain unchanged when `bank` is added — strictly
-     * additive.
+     * Test 3: Existing zoneTilesets fields (id, path, sanitizedSymbol, mapWidth, mapHeight) remain
+     * unchanged when `bank` is added — strictly additive.
      */
     @Test
     fun `existing zoneTilesets fields are preserved when bank is added`() {
@@ -206,10 +201,9 @@ class ZoneTilesetsBankFieldTest {
     }
 
     /**
-     * Test 4: For a GameIR with NO new-path zones, the zoneTilesets array is
-     * empty (unchanged behavior — no zoneTilesets entries, so no `bank`
-     * field-presence assertion is needed; allocateZoneBanks emits nothing
-     * for this case).
+     * Test 4: For a GameIR with NO new-path zones, the zoneTilesets array is empty (unchanged
+     * behavior — no zoneTilesets entries, so no `bank` field-presence assertion is needed;
+     * allocateZoneBanks emits nothing for this case).
      */
     @Test
     fun `game with no new-path zones still emits empty zoneTilesets array`() {
@@ -218,7 +212,9 @@ class ZoneTilesetsBankFieldTest {
                 name = "PongLikeFixture",
                 config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
-                    listOf(SceneIR(id = "gameplay", enterOps = emptyList(), frameOps = emptyList())),
+                    listOf(
+                        SceneIR(id = "gameplay", enterOps = emptyList(), frameOps = emptyList())
+                    ),
                 startScene = "gameplay",
             )
 

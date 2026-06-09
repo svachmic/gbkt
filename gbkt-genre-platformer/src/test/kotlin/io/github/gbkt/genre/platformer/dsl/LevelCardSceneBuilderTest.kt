@@ -10,7 +10,6 @@ import io.github.gbkt.core.dsl.game
 import io.github.gbkt.core.ir.BindCurrentLevel
 import io.github.gbkt.core.ir.IfOp
 import io.github.gbkt.core.ir.NavigateTo
-import io.github.gbkt.core.ir.RawOp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -22,21 +21,20 @@ import kotlin.test.fail
 // matched against a substring, not just the exception type.
 
 /**
- * Plan 12.6-04 Task 2 — locks the new `levelCardScene { }` delegate-pattern DSL surface
- * introduced in `PlatformerExtensions.kt`.
+ * Plan 12.6-04 Task 2 — locks the new `levelCardScene { }` delegate-pattern DSL surface introduced
+ * in `PlatformerExtensions.kt`.
  *
  * The helper closes Phase 12.6 DEFECT-1 at the DSL tier:
- *  - Property name is captured via `provideDelegate` (Project Rule #1 — no magic strings).
- *  - The lowered scene's frame handler emits [BindCurrentLevel] (Phase 13.5 Req #17 —
- *    typed IR node replacing the old `cEmit` → `RawOp` approach) BEFORE
- *    `navigate_to_scene(<gameplay>)` (via `navigate` → `NavigateTo`), all inside a
- *    `whenever(buttons.start.pressed) { ... }` guard (lowered to an [IfOp]).
+ * - Property name is captured via `provideDelegate` (Project Rule #1 — no magic strings).
+ * - The lowered scene's frame handler emits [BindCurrentLevel] (Phase 13.5 Req #17 — typed IR node
+ *   replacing the old `cEmit` → `RawOp` approach) BEFORE `navigate_to_scene(<gameplay>)` (via
+ *   `navigate` → `NavigateTo`), all inside a `whenever(buttons.start.pressed) { ... }` guard
+ *   (lowered to an [IfOp]).
  *
- * Round-trip contract (PSEUDO-04 in 12.6-RESEARCH § Validation Architecture, updated for
- * Phase 13.5 Plan 06):
- *  `val nextLevelScene by levelCardScene { onStartPress(gameplayScene) }` →
- *  GameIR contains a scene with id == "nextLevelScene" whose frame body contains an IfOp
- *  whose then-branch contains a [BindCurrentLevel] followed by NavigateTo(gameplayScene.id).
+ * Round-trip contract (PSEUDO-04 in 12.6-RESEARCH § Validation Architecture, updated for Phase 13.5
+ * Plan 06): `val nextLevelScene by levelCardScene { onStartPress(gameplayScene) }` → GameIR
+ * contains a scene with id == "nextLevelScene" whose frame body contains an IfOp whose then-branch
+ * contains a [BindCurrentLevel] followed by NavigateTo(gameplayScene.id).
  */
 class LevelCardSceneBuilderTest {
 
@@ -48,17 +46,19 @@ class LevelCardSceneBuilderTest {
     fun `levelCardScene delegate captures property name as scene id`() {
         val ir =
             game("test_levelcard_capture") {
-                val gameplayScene = scene("gameplay") {}
-                val nextLevelScene by levelCardScene {
-                    onStartPress(gameplayScene)
-                }
-                @Suppress("UNUSED_VARIABLE") val _unused = nextLevelScene
+                    val gameplayScene = scene("gameplay") {}
+                    val nextLevelScene by levelCardScene { onStartPress(gameplayScene) }
+                    @Suppress("UNUSED_VARIABLE") val _unused = nextLevelScene
 
-                start = gameplayScene
-            }.build()
+                    start = gameplayScene
+                }
+                .build()
 
         val nextLevel = ir.scenes.find { it.id == "nextLevelScene" }
-        assertNotNull(nextLevel, "Expected a scene registered with id == property name 'nextLevelScene'")
+        assertNotNull(
+            nextLevel,
+            "Expected a scene registered with id == property name 'nextLevelScene'",
+        )
     }
 
     // =========================================================================
@@ -69,14 +69,13 @@ class LevelCardSceneBuilderTest {
     fun `levelCardScene frame emits bindCurrentLevel then navigate to gameplay (Phase 13_5 Req17)`() {
         val ir =
             game("test_levelcard_emission") {
-                val gameplayScene = scene("gameplay") {}
-                val nextLevelScene by levelCardScene {
-                    onStartPress(gameplayScene)
-                }
-                @Suppress("UNUSED_VARIABLE") val _unused = nextLevelScene
+                    val gameplayScene = scene("gameplay") {}
+                    val nextLevelScene by levelCardScene { onStartPress(gameplayScene) }
+                    @Suppress("UNUSED_VARIABLE") val _unused = nextLevelScene
 
-                start = gameplayScene
-            }.build()
+                    start = gameplayScene
+                }
+                .build()
 
         val nextLevel =
             ir.scenes.find { it.id == "nextLevelScene" }
@@ -91,17 +90,23 @@ class LevelCardSceneBuilderTest {
                 ?: fail(
                     "Expected an IfOp (lowered from whenever(buttons.start.pressed)) in frame ops " +
                         "whose then-branch contains BindCurrentLevel (Phase 13.5 Req #17 typed IR node). " +
-                        "frameOps: ${nextLevel.frameOps}",
+                        "frameOps: ${nextLevel.frameOps}"
                 )
 
-        val bindOp = ifOp.then.filterIsInstance<BindCurrentLevel>().firstOrNull()
-            ?: fail("Expected a BindCurrentLevel inside the IfOp's then-branch (typed IR for setup_current_level)")
+        val bindOp =
+            ifOp.then.filterIsInstance<BindCurrentLevel>().firstOrNull()
+                ?: fail(
+                    "Expected a BindCurrentLevel inside the IfOp's then-branch (typed IR for setup_current_level)"
+                )
 
         // Presence of BindCurrentLevel is the typed binding gate; no code string to assert.
         assertNotNull(bindOp, "BindCurrentLevel IR node must be present in then-branch (Req #17)")
 
-        val nav = ifOp.then.filterIsInstance<NavigateTo>().firstOrNull()
-            ?: fail("Expected a NavigateTo inside the IfOp's then-branch (lowered from navigate)")
+        val nav =
+            ifOp.then.filterIsInstance<NavigateTo>().firstOrNull()
+                ?: fail(
+                    "Expected a NavigateTo inside the IfOp's then-branch (lowered from navigate)"
+                )
         assertEquals(
             "gameplay",
             nav.sceneId,
@@ -124,18 +129,21 @@ class LevelCardSceneBuilderTest {
 
     @Test
     fun `levelCardScene without onStartPress throws helpful error`() {
-        val thrown = try {
-            game("test_levelcard_missing_target") {
-                val nextLevelScene by levelCardScene {
-                    // Intentionally no onStartPress(...) — must error at delegate-provision time.
-                }
-                @Suppress("UNUSED_VARIABLE") val _unused = nextLevelScene
-                start = nextLevelScene
-            }.build()
-            null
-        } catch (t: Throwable) {
-            t
-        }
+        val thrown =
+            try {
+                game("test_levelcard_missing_target") {
+                        val nextLevelScene by levelCardScene {
+                            // Intentionally no onStartPress(...) — must error at delegate-provision
+                            // time.
+                        }
+                        @Suppress("UNUSED_VARIABLE") val _unused = nextLevelScene
+                        start = nextLevelScene
+                    }
+                    .build()
+                null
+            } catch (t: Throwable) {
+                t
+            }
         assertNotNull(thrown, "Expected an error when onStartPress(...) is omitted")
         val msg = thrown.message.orEmpty()
         assertTrue(

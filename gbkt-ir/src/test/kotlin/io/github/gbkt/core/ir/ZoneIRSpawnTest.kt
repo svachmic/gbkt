@@ -35,12 +35,7 @@ class ZoneIRSpawnTest {
     @Test
     fun `ZoneIR explicit spawnX and spawnY values round-trip through data class`() {
         val zone =
-            ZoneIR(
-                id = "z2",
-                name = "Zone 2",
-                spawnX = 40u.toUByte(),
-                spawnY = 120u.toUByte(),
-            )
+            ZoneIR(id = "z2", name = "Zone 2", spawnX = 40u.toUByte(), spawnY = 120u.toUByte())
         assertEquals(40u.toUByte(), zone.spawnX)
         assertEquals(120u.toUByte(), zone.spawnY)
     }
@@ -48,12 +43,7 @@ class ZoneIRSpawnTest {
     @Test
     fun `ZoneIR accepts edge UByte values 0u and 255u without overflow`() {
         val zone =
-            ZoneIR(
-                id = "z3",
-                name = "Zone 3",
-                spawnX = 0u.toUByte(),
-                spawnY = 255u.toUByte(),
-            )
+            ZoneIR(id = "z3", name = "Zone 3", spawnX = 0u.toUByte(), spawnY = 255u.toUByte())
         assertEquals(0u.toUByte(), zone.spawnX)
         assertEquals(255u.toUByte(), zone.spawnY)
     }

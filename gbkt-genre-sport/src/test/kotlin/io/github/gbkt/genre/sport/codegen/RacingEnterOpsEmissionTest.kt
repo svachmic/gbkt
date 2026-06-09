@@ -50,8 +50,8 @@ class RacingEnterOpsEmissionTest {
      * Player actor `pCar` at (10, 20). Rival actor `rCar` at (80, 96) — pixel coords flow into the
      * emitted `pool_carAi_spawn(80u, 96u);` RawOp args.
      *
-     * Racing id == "track1", AI vehicle id == "carAi". Race scene id == "race". start = raceScene so
-     * the scene-discovery fallback resolves to "race".
+     * Racing id == "track1", AI vehicle id == "carAi". Race scene id == "race". start = raceScene
+     * so the scene-discovery fallback resolves to "race".
      */
     private fun buildRacerLikeIR(): GameIR =
         game("EnterT") {

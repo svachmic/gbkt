@@ -7,9 +7,9 @@
 package io.github.gbkt.core.dsl
 
 import io.github.gbkt.core.ir.CameraSystem
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.EnvelopeConfig
 import io.github.gbkt.core.ir.ExplorationSystem
-import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.GbcTarget
 import io.github.gbkt.core.ir.PathfindingSystem
 import io.github.gbkt.core.ir.SaveSystem
@@ -591,8 +591,8 @@ class ConfigBuilder {
 /**
  * Marker interface for typed system references.
  *
- * Implementations: [SaveDataRef] (and future system kinds).
- * Consumed by [ScriptBuilder.triggerSystem] to resolve the system id at DSL recording time.
+ * Implementations: [SaveDataRef] (and future system kinds). Consumed by
+ * [ScriptBuilder.triggerSystem] to resolve the system id at DSL recording time.
  */
 interface SystemRef {
     val systemId: String
@@ -601,11 +601,12 @@ interface SystemRef {
 /**
  * Typed reference to a save/load system registered via [saveData].
  *
- * Returned by [SaveDataDelegate] when `val saves by saveData { }` is evaluated inside a
- * `game { }` block. The [id] is inferred from the Kotlin property name (Project Rule #1).
+ * Returned by [SaveDataDelegate] when `val saves by saveData { }` is evaluated inside a `game { }`
+ * block. The [id] is inferred from the Kotlin property name (Project Rule #1).
  */
 data class SaveDataRef(val id: String) : SystemRef {
-    override val systemId: String get() = id
+    override val systemId: String
+        get() = id
 }
 
 // =============================================================================
@@ -620,24 +621,24 @@ data class SaveDataRef(val id: String) : SystemRef {
  * val saves by saveData { slots(2) }
  * ```
  *
- * The delegate captures the property name in [provideDelegate], builds a [SaveDataBuilder],
- * and registers the resulting [SaveSystem] with the enclosing [GameBuilder]. The [getValue]
- * method returns a [SaveDataRef] for use in [ScriptBuilder.triggerSystem].
+ * The delegate captures the property name in [provideDelegate], builds a [SaveDataBuilder], and
+ * registers the resulting [SaveSystem] with the enclosing [GameBuilder]. The [getValue] method
+ * returns a [SaveDataRef] for use in [ScriptBuilder.triggerSystem].
  *
  * @see saveData
  * @see SaveDataRef
  */
 /**
- * Single-use: each `val x by saveData { }` binding must use its own delegate instance.
- * Reusing one instance across two `by` bindings throws [IllegalStateException] at build time.
+ * Single-use: each `val x by saveData { }` binding must use its own delegate instance. Reusing one
+ * instance across two `by` bindings throws [IllegalStateException] at build time.
  */
 class SaveDataDelegate(private val block: SaveDataBuilder.() -> Unit) :
     ReadOnlyProperty<Any?, SaveDataRef> {
     private var ref: SaveDataRef? = null
 
     /**
-     * Single-use guard. Prevents silent double-registration when the same delegate instance
-     * is accidentally bound to two `val` properties.
+     * Single-use guard. Prevents silent double-registration when the same delegate instance is
+     * accidentally bound to two `val` properties.
      */
     private var delegateUsed: Boolean = false
 
@@ -660,8 +661,8 @@ class SaveDataDelegate(private val block: SaveDataBuilder.() -> Unit) :
         }
         delegateUsed = true
         val name = property.name
-        val gameBuilder = GameBuilderContext.current
-            ?: error("saveData {} must be called inside a game {} block")
+        val gameBuilder =
+            GameBuilderContext.current ?: error("saveData {} must be called inside a game {} block")
         val builder = SaveDataBuilder(name)
         builder.block()
         val system = builder.build()
@@ -677,8 +678,8 @@ class SaveDataDelegate(private val block: SaveDataBuilder.() -> Unit) :
 /**
  * Creates a [SaveDataDelegate] for use with the `by` keyword inside a `game { }` block.
  *
- * The save system id is inferred from the Kotlin property name (Project Rule #1 — no magic
- * string parameter). If the compiler warns about the unused binding, add
+ * The save system id is inferred from the Kotlin property name (Project Rule #1 — no magic string
+ * parameter). If the compiler warns about the unused binding, add
  * `@file:Suppress("UNUSED_VARIABLE")` at the top of your game file.
  *
  * Usage:

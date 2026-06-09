@@ -12,17 +12,17 @@ import io.github.gbkt.core.ir.GbcTarget
 import io.github.gbkt.core.ir.SpriteMode
 
 // Constants — mirror metasprites.c #define block
-internal const val NUM_FRAMES = 5       // 5-frame elephant animation
-internal const val SPR_NUM_START = 0    // OAM slot start
-internal const val TILE_NUM_START = 0   // VRAM tile start
-internal const val MAX_SPEED = 32       // sub-pixels/frame (ACC limit)
-internal const val ACCEL = 2            // acceleration per frame
+internal const val NUM_FRAMES = 5 // 5-frame elephant animation
+internal const val SPR_NUM_START = 0 // OAM slot start
+internal const val TILE_NUM_START = 0 // VRAM tile start
+internal const val MAX_SPEED = 32 // sub-pixels/frame (ACC limit)
+internal const val ACCEL = 2 // acceleration per frame
 
 /**
  * Metasprites — idiomatic gbkt port of GBDK's `metasprites` cross-platform example.
  *
- * Asset-driven OAM composition: `sprite(asset(...)) { mode/pivot/frameSize }` + `frames(N)`.
- * No tile transcription or baseId hand-coding — the asset pipeline invokes png2asset.
+ * Asset-driven OAM composition: `sprite(asset(...)) { mode/pivot/frameSize }` + `frames(N)`. No
+ * tile transcription or baseId hand-coding — the asset pipeline invokes png2asset.
  *
  * Behaviors mirror the reference (metasprites.c):
  * - D-pad held: per-axis accel + clamp to ±MAX_SPEED; decel to zero when released.
@@ -56,8 +56,10 @@ val metasprites =
         // end. The prior DMG-descending order (color0=lightest) mapped the light body to black =
         // the user's "inverted/wrongly set" residual. color0 is the sprite transparent key.
         val gray by spritePalette {
-            color0(Color.rgb555(0, 0, 0));    color1(Color.rgb555(10, 10, 10))
-            color2(Color.rgb555(21, 21, 21)); color3(Color.rgb555(31, 31, 31))
+            color0(Color.rgb555(0, 0, 0))
+            color1(Color.rgb555(10, 10, 10))
+            color2(Color.rgb555(21, 21, 21))
+            color3(Color.rgb555(31, 31, 31))
         }
         // 13.3-24 — same COLOR-VALUE index-polarity fix extended to the `rot>>2` cycle palettes
         // (pink/cyan/green) so each tinted elephant renders with correct, non-inverted shading. The
@@ -66,16 +68,22 @@ val metasprites =
         // outline on the DARK hue — keeping each elephant recognizably coloured (NOT a white body
         // with coloured trim, which a full reversal like gray would produce).
         val pink by spritePalette {
-            color0(Color.rgb555(31, 31, 31)); color1(Color.rgb555(10, 0, 10))
-            color2(Color.rgb555(21, 0, 21));  color3(Color.rgb555(31, 0, 31))
+            color0(Color.rgb555(31, 31, 31))
+            color1(Color.rgb555(10, 0, 10))
+            color2(Color.rgb555(21, 0, 21))
+            color3(Color.rgb555(31, 0, 31))
         }
         val cyan by spritePalette {
-            color0(Color.rgb555(31, 31, 31)); color1(Color.rgb555(0, 10, 10))
-            color2(Color.rgb555(0, 21, 21));  color3(Color.rgb555(10, 31, 31))
+            color0(Color.rgb555(31, 31, 31))
+            color1(Color.rgb555(0, 10, 10))
+            color2(Color.rgb555(0, 21, 21))
+            color3(Color.rgb555(10, 31, 31))
         }
         val green by spritePalette {
-            color0(Color.rgb555(31, 31, 31)); color1(Color.rgb555(0, 10, 0))
-            color2(Color.rgb555(0, 21, 0));   color3(Color.rgb555(21, 31, 21))
+            color0(Color.rgb555(31, 31, 31))
+            color1(Color.rgb555(0, 10, 0))
+            color2(Color.rgb555(0, 21, 0))
+            color3(Color.rgb555(21, 31, 21))
         }
 
         // Asset-driven elephant — png2asset cuts elephant.png (64×240px, 5 frames at 64×48px each)
@@ -92,22 +100,44 @@ val metasprites =
 
         val playScene =
             scene("play") {
-                palette(gray); palette(pink); palette(cyan); palette(green)
+                palette(gray)
+                palette(pink)
+                palette(cyan)
+                palette(green)
                 enter {
-                    showSprites(); bgFillCheckerboard()
-                    posX set (80 shl 4); posY set (72 shl 4)
-                    spdX set 0; spdY set 0; idx set 0; rot set 0
+                    showSprites()
+                    bgFillCheckerboard()
+                    posX set (80 shl 4)
+                    posY set (72 shl 4)
+                    spdX set 0
+                    spdY set 0
+                    idx set 0
+                    rot set 0
                 }
                 frame {
-                    whenever(dpad.up.held)    { spdY -= ACCEL; runIf(spdY isBelow -MAX_SPEED) { spdY set -MAX_SPEED } }
-                    whenever(dpad.down.held)  { spdY += ACCEL; runIf(spdY isAbove  MAX_SPEED) { spdY set  MAX_SPEED } }
-                    whenever(dpad.left.held)  { spdX -= ACCEL; runIf(spdX isBelow -MAX_SPEED) { spdX set -MAX_SPEED } }
-                    whenever(dpad.right.held) { spdX += ACCEL; runIf(spdX isAbove  MAX_SPEED) { spdX set  MAX_SPEED } }
+                    whenever(dpad.up.held) {
+                        spdY -= ACCEL
+                        runIf(spdY isBelow -MAX_SPEED) { spdY set -MAX_SPEED }
+                    }
+                    whenever(dpad.down.held) {
+                        spdY += ACCEL
+                        runIf(spdY isAbove MAX_SPEED) { spdY set MAX_SPEED }
+                    }
+                    whenever(dpad.left.held) {
+                        spdX -= ACCEL
+                        runIf(spdX isBelow -MAX_SPEED) { spdX set -MAX_SPEED }
+                    }
+                    whenever(dpad.right.held) {
+                        spdX += ACCEL
+                        runIf(spdX isAbove MAX_SPEED) { spdX set MAX_SPEED }
+                    }
                     whenever(buttons.b.pressed) { idx++ }
                     whenever(buttons.a.pressed) { rot++ }
-                    posX += spdX; posY += spdY
+                    posX += spdX
+                    posY += spdY
                     moveMetasprite(elephant)
-                    spdY.easeToZero(); spdX.easeToZero()
+                    spdY.easeToZero()
+                    spdX.easeToZero()
                 }
             }
 

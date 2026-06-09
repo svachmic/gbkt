@@ -53,13 +53,15 @@ class MetaspritesGeneratedSpriteByteIdentityTest {
          * Loaded via classloader to work from both Gradle test runner and IDE.
          */
         private fun loadBaseline(name: String): ByteArray {
-            val stream = MetaspritesGeneratedSpriteByteIdentityTest::class.java
-                .classLoader
-                .getResourceAsStream("baseline/$name")
-                ?: error(
-                    "Baseline file not found in test resources: baseline/$name\n" +
-                        "Ensure src/test/resources/baseline/$name is committed to git."
-                )
+            val stream =
+                MetaspritesGeneratedSpriteByteIdentityTest::class
+                    .java
+                    .classLoader
+                    .getResourceAsStream("baseline/$name")
+                    ?: error(
+                        "Baseline file not found in test resources: baseline/$name\n" +
+                            "Ensure src/test/resources/baseline/$name is committed to git."
+                    )
             return stream.use { it.readBytes() }
         }
     }
@@ -70,7 +72,7 @@ class MetaspritesGeneratedSpriteByteIdentityTest {
         assumeTrue(
             GENERATED_ELEPHANT.exists(),
             "Generated sprite C not found at ${GENERATED_ELEPHANT.absolutePath} — " +
-                "run ./gradlew :gbkt-examples:metasprites:convertSprites first; skipping test"
+                "run ./gradlew :gbkt-examples:metasprites:convertSprites first; skipping test",
         )
 
         val actualBytes = GENERATED_ELEPHANT.readBytes()
@@ -84,18 +86,20 @@ class MetaspritesGeneratedSpriteByteIdentityTest {
             for (i in 0 until limit) {
                 if (actualBytes[i] != baselineBytes[i]) {
                     diffOffsets.add(
-                        "offset $i: actual=0x%02X baseline=0x%02X".format(
-                            actualBytes[i].toInt() and 0xFF,
-                            baselineBytes[i].toInt() and 0xFF
-                        )
+                        "offset $i: actual=0x%02X baseline=0x%02X"
+                            .format(
+                                actualBytes[i].toInt() and 0xFF,
+                                baselineBytes[i].toInt() and 0xFF,
+                            )
                     )
                     diffCount++
                     if (diffCount >= 5) break
                 }
             }
-            val sizeDiff = if (actualBytes.size != baselineBytes.size)
-                "\nSize mismatch: actual=${actualBytes.size} baseline=${baselineBytes.size}"
-            else ""
+            val sizeDiff =
+                if (actualBytes.size != baselineBytes.size)
+                    "\nSize mismatch: actual=${actualBytes.size} baseline=${baselineBytes.size}"
+                else ""
             error(
                 "elephant.c byte sequence differs from pre-12.4 baseline!\n" +
                     "This means png2asset output has changed — a -noflip flag may have been dropped,\n" +
@@ -108,7 +112,7 @@ class MetaspritesGeneratedSpriteByteIdentityTest {
             baselineBytes,
             actualBytes,
             "elephant.c must be byte-identical to the 13.6-07 deterministic-name baseline " +
-                "(baseline SHA-256: 0296ec36...)"
+                "(baseline SHA-256: 0296ec36...)",
         )
     }
 }

@@ -21,10 +21,11 @@ class GameBuilderTest {
     fun `game builder produces GameIR with correct name`() {
         val ir =
             game("TestGame") {
-                    val titleScene = scene("title") {
-                        enter { hideSprites() }
-                        frame {}
-                    }
+                    val titleScene =
+                        scene("title") {
+                            enter { hideSprites() }
+                            frame {}
+                        }
                     start = titleScene
                 }
                 .build()
@@ -77,12 +78,13 @@ class GameBuilderTest {
     fun `game builder scene enter block produces non-empty enterOps`() {
         val ir =
             game("TestGame") {
-                    val titleScene = scene("title") {
-                        enter {
-                            hideSprites()
-                            clear()
+                    val titleScene =
+                        scene("title") {
+                            enter {
+                                hideSprites()
+                                clear()
+                            }
                         }
-                    }
                     start = titleScene
                 }
                 .build()
@@ -95,9 +97,12 @@ class GameBuilderTest {
     fun `game builder scene frame block produces non-empty frameOps`() {
         val ir =
             game("TestGame") {
-                    val titleScene = scene("title") {
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("title")) } }
-                    }
+                    val titleScene =
+                        scene("title") {
+                            frame {
+                                whenever(buttons.start.pressed) { navigate(SceneRef("title")) }
+                            }
+                        }
                     start = titleScene
                 }
                 .build()
@@ -298,21 +303,23 @@ class GameBuilderTest {
                             sprite(asset("sprites/player.png")) { size(8, 16) }
                         }
 
-                    val gameScene = scene("game") {
-                        enter { showSprites() }
-                        frame {
-                            whenever(dpad.up.held) { moveBy(player, 0, -2) }
-                            whenever(dpad.down.held) { moveBy(player, 0, 2) }
+                    val gameScene =
+                        scene("game") {
+                            enter { showSprites() }
+                            frame {
+                                whenever(dpad.up.held) { moveBy(player, 0, -2) }
+                                whenever(dpad.down.held) { moveBy(player, 0, 2) }
+                            }
                         }
-                    }
 
-                    val titleScene = scene("title") {
-                        enter {
-                            hideSprites()
-                            clear()
+                    val titleScene =
+                        scene("title") {
+                            enter {
+                                hideSprites()
+                                clear()
+                            }
+                            frame { whenever(buttons.start.pressed) { navigate(gameScene) } }
                         }
-                        frame { whenever(buttons.start.pressed) { navigate(gameScene) } }
-                    }
 
                     start = titleScene
                 }

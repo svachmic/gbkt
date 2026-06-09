@@ -165,11 +165,7 @@ class MetaspriteCameraOffsetEmissionTest {
      * pattern as `MetaspriteEmissionTest.playFrameBody()` (Phase 10.1).
      */
     private fun extractGameplayFrame(output: PipelineOutput): String {
-        val sources =
-            listOfNotNull(
-                output.files["bank1.c"],
-                output.files["main.c"],
-            )
+        val sources = listOfNotNull(output.files["bank1.c"], output.files["main.c"])
         for (src in sources) {
             val body = extractFunctionBody(src, "void gameplay_frame")
             if (body.isNotEmpty()) return body
@@ -179,8 +175,8 @@ class MetaspriteCameraOffsetEmissionTest {
 
     /**
      * Opaque physicsConfig stand-in. The reflection helper only reads `solidThreshold` via
-     * `javaClass.getDeclaredField("solidThreshold")`, so any class with a non-null
-     * `solidThreshold` field will trip Path A of `derivePlatformerCameraOffsetX` step 1.
+     * `javaClass.getDeclaredField("solidThreshold")`, so any class with a non-null `solidThreshold`
+     * field will trip Path A of `derivePlatformerCameraOffsetX` step 1.
      *
      * NOT a shared production type — we deliberately avoid importing
      * `gbkt-genre-platformer.PlatformerPhysicsConfig` because gbkt-backend-gbdk does NOT depend on
@@ -215,16 +211,16 @@ class MetaspriteCameraOffsetEmissionTest {
 
     /**
      * Positive fixture — tilemap-collision active (via `platformer_physics.solidThreshold`) AND
-     * `platformer_camera` with HORIZONTAL + SMOOTH_FOLLOW. A `player` metasprite is registered
-     * with binders, and `MoveMetasprite` runs in the `gameplay` scene's frame block.
+     * `platformer_camera` with HORIZONTAL + SMOOTH_FOLLOW. A `player` metasprite is registered with
+     * binders, and `MoveMetasprite` runs in the `gameplay` scene's frame block.
      *
      * Reflection trip path (Plan 12.3-06 §Step 1 Path A + Step 2):
-     *  - `gameIR.systems[platformer_physics].config["physicsConfig"]` is a [FakePhysicsConfig]
-     *    with `solidThreshold = 17` → Path A fires → tilemap-collision active.
-     *  - `gameIR.systems[platformer_camera].config["cameraConfig"]` is a [FakeCameraConfig] with
-     *    `mode = SMOOTH_FOLLOW` and `scrollDirections = HORIZONTAL` → Step 2 fires.
-     *  - `derivePlatformerCameraOffsetX(gameIR)` returns `"_camera_x"` → MetaspriteVisitor emits
-     *    the screen-relative formula.
+     * - `gameIR.systems[platformer_physics].config["physicsConfig"]` is a [FakePhysicsConfig] with
+     *   `solidThreshold = 17` → Path A fires → tilemap-collision active.
+     * - `gameIR.systems[platformer_camera].config["cameraConfig"]` is a [FakeCameraConfig] with
+     *   `mode = SMOOTH_FOLLOW` and `scrollDirections = HORIZONTAL` → Step 2 fires.
+     * - `derivePlatformerCameraOffsetX(gameIR)` returns `"_camera_x"` → MetaspriteVisitor emits the
+     *   screen-relative formula.
      */
     private fun buildPositiveGameIR(): GameIR {
         val playerMetasprite =
@@ -286,11 +282,11 @@ class MetaspriteCameraOffsetEmissionTest {
      * Negative (D-08 back-compat) fixture — a single metasprite + a MoveMetasprite op in the
      * `gameplay` scene's frame. NO platformer systems registered (no `platformer_physics`, no
      * `platformer_camera`, no `tilemap_collision`, no zones with platformerPhysicsOverride). The
-     * reflection helper's step 1 and step 2 BOTH miss; `derivePlatformerCameraOffsetX` returns
-     * null → MetaspriteVisitor emits the absolute formula.
+     * reflection helper's step 1 and step 2 BOTH miss; `derivePlatformerCameraOffsetX` returns null
+     * → MetaspriteVisitor emits the absolute formula.
      *
-     * The scene id matches the positive fixture (`gameplay`) so the extraction logic is
-     * symmetric across both test cases.
+     * The scene id matches the positive fixture (`gameplay`) so the extraction logic is symmetric
+     * across both test cases.
      */
     private fun buildNegativeGameIR(): GameIR {
         val elephant =
@@ -300,13 +296,7 @@ class MetaspriteCameraOffsetEmissionTest {
                 // No binders — falls back to canonical _posX/_posY/_idx/_rot globals.
             )
         val gameplayScene =
-            SceneIR(
-                id = "gameplay",
-                frameOps =
-                    listOf(
-                        MoveMetasprite(metaspriteId = "elephant")
-                    ),
-            )
+            SceneIR(id = "gameplay", frameOps = listOf(MoveMetasprite(metaspriteId = "elephant")))
         return GameIR(
             name = "NegativeBackCompatGame",
             config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),

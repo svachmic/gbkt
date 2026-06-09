@@ -44,23 +44,24 @@ class ZonePlatformerPhysicsTest {
     /**
      * Test 1 — explicit fields land in the override map with the documented keys.
      *
-     * Locks the PlatformerVisitor (Plan 12-08) contract: keys must be the
-     * PlatformerPhysicsConfig field names verbatim (`solidThreshold`, `gravity`).
+     * Locks the PlatformerVisitor (Plan 12-08) contract: keys must be the PlatformerPhysicsConfig
+     * field names verbatim (`solidThreshold`, `gravity`).
      */
     @Test
     fun `platformerPhysics with two set fields populates exactly those two keys`() {
         val ir =
             game("test1") {
-                val z1 by zone {
-                    platformerPhysics {
-                        solidThreshold(68)
-                        gravity(3)
+                    val z1 by zone {
+                        platformerPhysics {
+                            solidThreshold(68)
+                            gravity(3)
+                        }
                     }
+                    @Suppress("UNUSED_VARIABLE") val _unused = z1
+                    val s = scene("s") { enter {} }
+                    start = s
                 }
-                @Suppress("UNUSED_VARIABLE") val _unused = z1
-                val s = scene("s") { enter {} }
-                start = s
-            }.build()
+                .build()
 
         val zone = ir.zones.single()
         val override = zone.platformerPhysicsOverride
@@ -81,15 +82,16 @@ class ZonePlatformerPhysicsTest {
     fun `platformerPhysics with empty block records an empty override map (not null)`() {
         val ir =
             game("test2") {
-                val z2 by zone {
-                    platformerPhysics {
-                        // intentionally empty — locks the empty-block contract
+                    val z2 by zone {
+                        platformerPhysics {
+                            // intentionally empty — locks the empty-block contract
+                        }
                     }
+                    @Suppress("UNUSED_VARIABLE") val _unused = z2
+                    val s = scene("s") { enter {} }
+                    start = s
                 }
-                @Suppress("UNUSED_VARIABLE") val _unused = z2
-                val s = scene("s") { enter {} }
-                start = s
-            }.build()
+                .build()
 
         val zone = ir.zones.single()
         assertEquals(
@@ -102,20 +104,21 @@ class ZonePlatformerPhysicsTest {
     /**
      * Test 3 — when the block is NEVER called the override field stays null.
      *
-     * Locks the default ZoneIR shape (also verified at gbkt-lang tier by
-     * WorldBuilderOverrideTest from Plan 12-06).
+     * Locks the default ZoneIR shape (also verified at gbkt-lang tier by WorldBuilderOverrideTest
+     * from Plan 12-06).
      */
     @Test
     fun `zone without platformerPhysics block leaves override null`() {
         val ir =
             game("test3") {
-                val z3 by zone {
-                    // no platformerPhysics block — override stays null
+                    val z3 by zone {
+                        // no platformerPhysics block — override stays null
+                    }
+                    @Suppress("UNUSED_VARIABLE") val _unused = z3
+                    val s = scene("s") { enter {} }
+                    start = s
                 }
-                @Suppress("UNUSED_VARIABLE") val _unused = z3
-                val s = scene("s") { enter {} }
-                start = s
-            }.build()
+                .build()
 
         val zone = ir.zones.single()
         assertNull(
@@ -125,32 +128,34 @@ class ZonePlatformerPhysicsTest {
     }
 
     /**
-     * Test 4 — calling the block TWICE on the same zone REPLACES (does not merge) the
-     * previous override map; the second call wins.
+     * Test 4 — calling the block TWICE on the same zone REPLACES (does not merge) the previous
+     * override map; the second call wins.
      *
-     * Locks the "last-writer-wins" semantic so per-zone authoring stays predictable.
-     * Note: each `platformerPhysics { }` invocation builds a fresh OverrideTrackingPhysicsBuilder
-     * and overwrites the slot via setPlatformerPhysicsOverride(...).
+     * Locks the "last-writer-wins" semantic so per-zone authoring stays predictable. Note: each
+     * `platformerPhysics { }` invocation builds a fresh OverrideTrackingPhysicsBuilder and
+     * overwrites the slot via setPlatformerPhysicsOverride(...).
      */
     @Test
     fun `calling platformerPhysics twice on the same zone replaces, not merges`() {
         val ir =
             game("test4") {
-                val z4 by zone {
-                    platformerPhysics {
-                        gravity(2)
-                        jumpForce(8)
+                    val z4 by zone {
+                        platformerPhysics {
+                            gravity(2)
+                            jumpForce(8)
+                        }
+                        platformerPhysics {
+                            // second block — sets ONLY solidThreshold; previous gravity/jumpForce
+                            // dropped
+                            solidThreshold(68)
+                            jumpHold(12)
+                        }
                     }
-                    platformerPhysics {
-                        // second block — sets ONLY solidThreshold; previous gravity/jumpForce dropped
-                        solidThreshold(68)
-                        jumpHold(12)
-                    }
+                    @Suppress("UNUSED_VARIABLE") val _unused = z4
+                    val s = scene("s") { enter {} }
+                    start = s
                 }
-                @Suppress("UNUSED_VARIABLE") val _unused = z4
-                val s = scene("s") { enter {} }
-                start = s
-            }.build()
+                .build()
 
         val zone = ir.zones.single()
         val override = zone.platformerPhysicsOverride

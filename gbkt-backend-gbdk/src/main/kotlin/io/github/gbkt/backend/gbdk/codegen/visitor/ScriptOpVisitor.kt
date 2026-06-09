@@ -33,8 +33,8 @@ import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.AnimateOp
 import io.github.gbkt.core.ir.ArrayAssign
 import io.github.gbkt.core.ir.Assign
-import io.github.gbkt.core.ir.BindCurrentLevel
 import io.github.gbkt.core.ir.AssignOp
+import io.github.gbkt.core.ir.BindCurrentLevel
 import io.github.gbkt.core.ir.CallExpr
 import io.github.gbkt.core.ir.CallOp
 import io.github.gbkt.core.ir.CameraAction
@@ -1610,7 +1610,10 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
     // -------------------------------------------------------------------------
 
     override fun visitBindCurrentLevel(op: BindCurrentLevel): CStatement =
-        CExprStatement(CCall("setup_current_level", emptyList()), sourceLocation = op.sourceLocation)
+        CExprStatement(
+            CCall("setup_current_level", emptyList()),
+            sourceLocation = op.sourceLocation,
+        )
 
     // -------------------------------------------------------------------------
     // RawOp: pass-through to CRawCode
@@ -1940,8 +1943,8 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
     }
 
     /**
-     * Phase 12.3 R4 / D-07 Option A — derive the metasprite X-coord camera offset string when
-     * the game uses tilemap-camera mode. Returns `"_camera_x"` when:
+     * Phase 12.3 R4 / D-07 Option A — derive the metasprite X-coord camera offset string when the
+     * game uses tilemap-camera mode. Returns `"_camera_x"` when:
      *
      * 1. Game uses tilemap-collision (mirrors `GBDKPipeline.gameUsesTilemapCollision` reflection
      *    pattern at GBDKPipeline.kt:2031-2082 — Path A `platformer_physics` reflective
@@ -1955,10 +1958,10 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
      * platformer fixtures not in tilemap-camera horizontal-smooth mode).
      *
      * **Layering invariant:** gbkt-backend-gbdk does NOT depend on gbkt-genre-platformer (per
-     * `gbkt-backend-gbdk/CLAUDE.md` §Dependencies — only `gbkt-genre-rpg` is a compile-time
-     * dep; the reverse dep `gbkt-genre-platformer` → `gbkt-backend-gbdk` would form a cycle if
-     * the forward dep were added). Genre config objects are opaque `Any` instances; we read
-     * their fields via Java reflection and match Enum constants by `.name` only. ZERO
+     * `gbkt-backend-gbdk/CLAUDE.md` §Dependencies — only `gbkt-genre-rpg` is a compile-time dep;
+     * the reverse dep `gbkt-genre-platformer` → `gbkt-backend-gbdk` would form a cycle if the
+     * forward dep were added). Genre config objects are opaque `Any` instances; we read their
+     * fields via Java reflection and match Enum constants by `.name` only. ZERO
      * platformer-genre-package imports in this file (revision-1 BLOCKING #2 fix).
      */
     private fun derivePlatformerCameraOffsetX(gameIR: GameIR): String? {
@@ -1988,8 +1991,7 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
             gameIR.zones.any { zone ->
                 zone.platformerPhysicsOverride?.containsKey("solidThreshold") == true
             }
-        val tilemapActive =
-            tilemapCollisionSystem || tilemapViaPhysics || tilemapViaZoneOverride
+        val tilemapActive = tilemapCollisionSystem || tilemapViaPhysics || tilemapViaZoneOverride
         if (!tilemapActive) return null
 
         // --- Step 2: platformer_camera detection — horizontal smooth-follow mode ---

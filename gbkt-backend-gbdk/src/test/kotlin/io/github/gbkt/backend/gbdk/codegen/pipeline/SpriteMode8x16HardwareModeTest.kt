@@ -54,8 +54,8 @@ class SpriteMode8x16HardwareModeTest {
     /**
      * Build a minimal GameIR with one metasprite declaring `spriteMode = SPR8x16`. Mirrors the
      * shape used by the platformer-template (player duck): 24×32 sprite cut from a PNG with the
-     * SPR8x16 png2asset flag. Tile content is irrelevant to this test — only the spriteMode
-     * field drives the hardware-mode-macro selection.
+     * SPR8x16 png2asset flag. Tile content is irrelevant to this test — only the spriteMode field
+     * drives the hardware-mode-macro selection.
      */
     private fun buildGameIrWithSpr8x16Metasprite(): GameIR =
         GameIR(

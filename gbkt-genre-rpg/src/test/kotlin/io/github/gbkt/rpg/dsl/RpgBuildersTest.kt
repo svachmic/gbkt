@@ -6,7 +6,6 @@
  */
 package io.github.gbkt.rpg.dsl
 
-import io.github.gbkt.core.dsl.SceneRef
 import io.github.gbkt.core.dsl.game
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.CombatType
@@ -317,10 +316,11 @@ class RpgBuildersTest {
                         encounter { +goblin }
                     }
 
-                    val combat_sceneScene = scene("combat_scene") {
-                        enter {}
-                        frame { battleUpdate("combat") }
-                    }
+                    val combat_sceneScene =
+                        scene("combat_scene") {
+                            enter {}
+                            frame { battleUpdate("combat") }
+                        }
                     start = combat_sceneScene
                 }
                 .build()

@@ -12,9 +12,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 /**
- * Unit tests covering Phase 12 D-12 (`solidThreshold`) and D-14 (`jumpHoldMaxFrames`) additions
- * to [PlatformerPhysicsConfig] and [PlatformerPhysicsBuilder]. These fields are pure-DSL until
- * Plans 12-08 / 12-13 wire codegen.
+ * Unit tests covering Phase 12 D-12 (`solidThreshold`) and D-14 (`jumpHoldMaxFrames`) additions to
+ * [PlatformerPhysicsConfig] and [PlatformerPhysicsBuilder]. These fields are pure-DSL until Plans
+ * 12-08 / 12-13 wire codegen.
  */
 class PlatformerPhysicsBuilderTest {
 

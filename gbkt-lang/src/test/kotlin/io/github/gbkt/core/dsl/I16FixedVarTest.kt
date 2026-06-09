@@ -52,24 +52,29 @@ class I16FixedVarTest {
     fun `toPixel uses fractionalBits from i16FixedVar when non-default`() {
         var capturedExpr: io.github.gbkt.core.ir.Expr? = null
         game("Test") {
-            var posX by i16FixedVar(80, fractionalBits = 8)
-            val sScene = scene("s") {
-                frame {
-                    capturedExpr = posX.toPixel()
-                }
+                var posX by i16FixedVar(80, fractionalBits = 8)
+                val sScene = scene("s") { frame { capturedExpr = posX.toPixel() } }
+                start = sScene
             }
-            start = sScene
-        }.build()
+            .build()
 
         val expr = capturedExpr ?: error("toPixel() expression was not captured")
-        val binaryExpr = assertIs<BinaryExpr>(expr,
-            "toPixel() must return a BinaryExpr (CR-01)")
-        assertEquals(BinaryOp.SHR, binaryExpr.op,
-            "toPixel() must produce SHR (right-shift) operation (CR-01)")
-        assertEquals(VarRef("posX"), binaryExpr.left,
-            "toPixel() must reference variable by name via VarRef (CR-01)")
-        assertEquals(Literal(8), binaryExpr.right,
-            "toPixel() must emit shr 8 when i16FixedVar was declared with fractionalBits=8 (CR-01)")
+        val binaryExpr = assertIs<BinaryExpr>(expr, "toPixel() must return a BinaryExpr (CR-01)")
+        assertEquals(
+            BinaryOp.SHR,
+            binaryExpr.op,
+            "toPixel() must produce SHR (right-shift) operation (CR-01)",
+        )
+        assertEquals(
+            VarRef("posX"),
+            binaryExpr.left,
+            "toPixel() must reference variable by name via VarRef (CR-01)",
+        )
+        assertEquals(
+            Literal(8),
+            binaryExpr.right,
+            "toPixel() must emit shr 8 when i16FixedVar was declared with fractionalBits=8 (CR-01)",
+        )
     }
 
     // =========================================================================
@@ -79,18 +84,23 @@ class I16FixedVarTest {
 
     @Test
     fun `i16FixedVar(64) registers VariableDef with initialValue 1024`() {
-        val ir = game("Test") {
-            var posX by i16FixedVar(64)   // compile-fail today — i16FixedVar does not exist
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val ir =
+            game("Test") {
+                    var posX by i16FixedVar(64) // compile-fail today — i16FixedVar does not exist
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
-        val def = ir.variables.firstOrNull { it.name == "posX" }
-            ?: error("Variable 'posX' not registered")
-        assertEquals(VarType.I16, def.type,
-            "i16FixedVar must register as VarType.I16")
-        assertEquals(1024, def.initialValue,
-            "i16FixedVar(64) must store initialValue = 64 shl 4 = 1024 (D-10 default fractionalBits=4)")
+        val def =
+            ir.variables.firstOrNull { it.name == "posX" }
+                ?: error("Variable 'posX' not registered")
+        assertEquals(VarType.I16, def.type, "i16FixedVar must register as VarType.I16")
+        assertEquals(
+            1024,
+            def.initialValue,
+            "i16FixedVar(64) must store initialValue = 64 shl 4 = 1024 (D-10 default fractionalBits=4)",
+        )
     }
 
     // =========================================================================
@@ -101,24 +111,35 @@ class I16FixedVarTest {
     fun `posX toPixel returns BinaryExpr with SHR 4`() {
         var capturedExpr: io.github.gbkt.core.ir.Expr? = null
         game("Test") {
-            var posX by i16FixedVar(64)   // compile-fail today
-            val sScene = scene("s") {
-                frame {
-                    capturedExpr = posX.toPixel()   // compile-fail today — toPixel does not exist
-                }
+                var posX by i16FixedVar(64) // compile-fail today
+                val sScene =
+                    scene("s") {
+                        frame {
+                            capturedExpr =
+                                posX.toPixel() // compile-fail today — toPixel does not exist
+                        }
+                    }
+                start = sScene
             }
-            start = sScene
-        }.build()
+            .build()
 
         val expr = capturedExpr ?: error("toPixel() expression was not captured")
-        val binaryExpr = assertIs<BinaryExpr>(expr,
-            "toPixel() must return a BinaryExpr (D-11)")
-        assertEquals(BinaryOp.SHR, binaryExpr.op,
-            "toPixel() must produce SHR (right-shift) operation (D-11)")
-        assertEquals(VarRef("posX"), binaryExpr.left,
-            "toPixel() must reference the variable by name via VarRef (D-11)")
-        assertEquals(Literal(4), binaryExpr.right,
-            "toPixel() with default fractionalBits=4 must shift by Literal(4) (D-11)")
+        val binaryExpr = assertIs<BinaryExpr>(expr, "toPixel() must return a BinaryExpr (D-11)")
+        assertEquals(
+            BinaryOp.SHR,
+            binaryExpr.op,
+            "toPixel() must produce SHR (right-shift) operation (D-11)",
+        )
+        assertEquals(
+            VarRef("posX"),
+            binaryExpr.left,
+            "toPixel() must reference the variable by name via VarRef (D-11)",
+        )
+        assertEquals(
+            Literal(4),
+            binaryExpr.right,
+            "toPixel() with default fractionalBits=4 must shift by Literal(4) (D-11)",
+        )
     }
 
     // =========================================================================
@@ -128,24 +149,34 @@ class I16FixedVarTest {
 
     @Test
     fun `i16FixedVar(64, fractionalBits=4) produces same VariableDef as i16FixedVar(64)`() {
-        val ir1 = game("Default") {
-            var posX by i16FixedVar(64)                          // compile-fail today
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val ir1 =
+            game("Default") {
+                    var posX by i16FixedVar(64) // compile-fail today
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
-        val ir2 = game("Explicit") {
-            var posX by i16FixedVar(64, fractionalBits = 4)     // compile-fail today
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val ir2 =
+            game("Explicit") {
+                    var posX by i16FixedVar(64, fractionalBits = 4) // compile-fail today
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
         val def1 = ir1.variables.first { it.name == "posX" }
         val def2 = ir2.variables.first { it.name == "posX" }
 
-        assertEquals(def1.type, def2.type,
-            "Default and explicit fractionalBits=4 must produce identical VarType (D-12)")
-        assertEquals(def1.initialValue, def2.initialValue,
-            "Default and explicit fractionalBits=4 must produce identical initialValue (D-12)")
+        assertEquals(
+            def1.type,
+            def2.type,
+            "Default and explicit fractionalBits=4 must produce identical VarType (D-12)",
+        )
+        assertEquals(
+            def1.initialValue,
+            def2.initialValue,
+            "Default and explicit fractionalBits=4 must produce identical initialValue (D-12)",
+        )
     }
 }

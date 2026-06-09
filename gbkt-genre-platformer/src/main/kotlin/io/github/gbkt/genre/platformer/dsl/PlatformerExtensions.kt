@@ -257,9 +257,9 @@ fun GameBuilder.ladder(
 // =============================================================================
 
 /**
- * Re-entrant per-zone platformer-physics override (D-12). Fields set in this
- * block SHADOW the game-level [platformerPhysics] config for the active zone.
- * Fields NOT set in this block fall through to the game-level defaults.
+ * Re-entrant per-zone platformer-physics override (D-12). Fields set in this block SHADOW the
+ * game-level [platformerPhysics] config for the active zone. Fields NOT set in this block fall
+ * through to the game-level defaults.
  *
  * ```kotlin
  * val world2Area1Zone by zone {
@@ -272,16 +272,15 @@ fun GameBuilder.ladder(
  * }
  * ```
  *
- * Calling the block TWICE on the same zone REPLACES the previous override
- * (does not merge) — the second invocation wins. Calling with an empty block
- * stores an EMPTY map (distinct from `null`, which means the block was never
- * called and the zone inherits all game-level defaults).
+ * Calling the block TWICE on the same zone REPLACES the previous override (does not merge) — the
+ * second invocation wins. Calling with an empty block stores an EMPTY map (distinct from `null`,
+ * which means the block was never called and the zone inherits all game-level defaults).
  *
- * **Design constraint:** NO new sealed IR subtypes are created — the override
- * is stored as an opaque `Map<String, Any>` payload on `ZoneIR`.
+ * **Design constraint:** NO new sealed IR subtypes are created — the override is stored as an
+ * opaque `Map<String, Any>` payload on `ZoneIR`.
  *
- * @param block Configuration block executed against an [OverrideTrackingPhysicsBuilder]
- *   that records which fields were explicitly set.
+ * @param block Configuration block executed against an [OverrideTrackingPhysicsBuilder] that
+ *   records which fields were explicitly set.
  */
 fun ZoneBuilder.platformerPhysics(block: PlatformerPhysicsBuilder.() -> Unit) {
     // Use a marker subclass that exposes which fields were set so shadowing
@@ -295,16 +294,16 @@ fun ZoneBuilder.platformerPhysics(block: PlatformerPhysicsBuilder.() -> Unit) {
 /**
  * [PlatformerPhysicsBuilder] subclass that tracks WHICH setters were invoked, so per-level
  * overrides can shadow only the explicitly-set fields. Keys in the resulting map use the
- * `PlatformerPhysicsConfig` field names verbatim — Plan 12-08's `PlatformerVisitor` reads
- * them back via `Int` cast at codegen time.
+ * `PlatformerPhysicsConfig` field names verbatim — Plan 12-08's `PlatformerVisitor` reads them back
+ * via `Int` cast at codegen time.
  *
- * If a [PlatformerPhysicsBuilder] method is NOT overridden here, its set-call falls through
- * to `super` and is NOT recorded in the override map (it becomes a game-level-only setting —
- * intentional for fields like `wallJump` / `variableHeightJump` which are not currently
- * per-level overridable).
+ * If a [PlatformerPhysicsBuilder] method is NOT overridden here, its set-call falls through to
+ * `super` and is NOT recorded in the override map (it becomes a game-level-only setting —
+ * intentional for fields like `wallJump` / `variableHeightJump` which are not currently per-level
+ * overridable).
  *
- * Kept `internal` so the helper class is invisible to end-users (they call
- * `platformerPhysics { }`, not the tracking builder directly).
+ * Kept `internal` so the helper class is invisible to end-users (they call `platformerPhysics { }`,
+ * not the tracking builder directly).
  */
 internal class OverrideTrackingPhysicsBuilder : PlatformerPhysicsBuilder() {
     private val setFields = mutableMapOf<String, Any>()
@@ -359,14 +358,12 @@ internal class OverrideTrackingPhysicsBuilder : PlatformerPhysicsBuilder() {
 // =============================================================================
 
 /**
- * Configures and registers the platformer input + walk-cycle system at game scope
- * (Phase 12.3 R1).
+ * Configures and registers the platformer input + walk-cycle system at game scope (Phase 12.3 R1).
  *
  * Produces a [GenericSystem] with type `"platformer_input"` carrying numeric defaults
- * + captured `AssignableVar.name` references. Wave 2 (Plans 12.3-02 / -04 / -06 / -08)
- * extends `PlatformerVisitor` + `MetaspriteVisitor` to read this system's config map
- * and emit input → playerVx, camera-update call, metasprite camera-offset, and
- * walk-cycle increments.
+ * + captured `AssignableVar.name` references. Wave 2 (Plans 12.3-02 / -04 / -06 / -08) extends
+ *   `PlatformerVisitor` + `MetaspriteVisitor` to read this system's config map and emit input →
+ *   playerVx, camera-update call, metasprite camera-offset, and walk-cycle increments.
  *
  * ```kotlin
  * game("PlatformerTemplate") {
@@ -386,8 +383,8 @@ internal class OverrideTrackingPhysicsBuilder : PlatformerPhysicsBuilder() {
  *
  * Mirrors [platformerPhysics] verbatim (D-01). NO new sealed IR subtypes are created.
  *
- * @param id Unique system identifier (default "input"; the type-tag `"platformer_input"`
- *   is the discriminator, not the id).
+ * @param id Unique system identifier (default "input"; the type-tag `"platformer_input"` is the
+ *   discriminator, not the id).
  * @param block Configuration block executed against a [PlatformerInputBuilder].
  */
 fun GameBuilder.platformerInput(
@@ -402,9 +399,9 @@ fun GameBuilder.platformerInput(
 }
 
 /**
- * Re-entrant per-zone platformer-input override (Phase 12.3 R1). Numeric fields set in
- * this block SHADOW the game-level [platformerInput] config for the active zone.
- * Fields NOT set fall through to the game-level defaults at codegen time.
+ * Re-entrant per-zone platformer-input override (Phase 12.3 R1). Numeric fields set in this block
+ * SHADOW the game-level [platformerInput] config for the active zone. Fields NOT set fall through
+ * to the game-level defaults at codegen time.
  *
  * ```kotlin
  * val speedRun by zone {
@@ -415,22 +412,21 @@ fun GameBuilder.platformerInput(
  * }
  * ```
  *
- * Calling the block TWICE on the same zone REPLACES the previous override (does NOT
- * merge) — the second invocation wins. Calling with an empty block stores an EMPTY map
- * (distinct from `null`, which means the block was never called and the zone inherits
- * all game-level defaults).
+ * Calling the block TWICE on the same zone REPLACES the previous override (does NOT merge) — the
+ * second invocation wins. Calling with an empty block stores an EMPTY map (distinct from `null`,
+ * which means the block was never called and the zone inherits all game-level defaults).
  *
- * **AssignableVar binders are GAME-LEVEL ONLY** (D-03 / L-2.2). Calling
- * `walkFrameIdx(...)` or `threeFrameCounter(...)` inside a zone-level block is silently
- * ignored at the override-map level — [OverrideTrackingInputBuilder] does NOT override
- * those binder methods, so the calls record into the base builder but do not appear in
- * the override map. Per-zone shadowing of binder names is not semantically meaningful.
+ * **AssignableVar binders are GAME-LEVEL ONLY** (D-03 / L-2.2). Calling `walkFrameIdx(...)` or
+ * `threeFrameCounter(...)` inside a zone-level block is silently ignored at the override-map level
+ * — [OverrideTrackingInputBuilder] does NOT override those binder methods, so the calls record into
+ * the base builder but do not appear in the override map. Per-zone shadowing of binder names is not
+ * semantically meaningful.
  *
- * **Design constraint:** NO new sealed IR subtypes — override is an opaque
- * `Map<String, Any>` payload on `ZoneIR`.
+ * **Design constraint:** NO new sealed IR subtypes — override is an opaque `Map<String, Any>`
+ * payload on `ZoneIR`.
  *
- * @param block Configuration block executed against an [OverrideTrackingInputBuilder]
- *   that records which numeric fields were explicitly set.
+ * @param block Configuration block executed against an [OverrideTrackingInputBuilder] that records
+ *   which numeric fields were explicitly set.
  */
 fun ZoneBuilder.platformerInput(block: PlatformerInputBuilder.() -> Unit) {
     val builder = OverrideTrackingInputBuilder()
@@ -439,21 +435,20 @@ fun ZoneBuilder.platformerInput(block: PlatformerInputBuilder.() -> Unit) {
 }
 
 /**
- * [PlatformerInputBuilder] subclass that tracks WHICH numeric setters were invoked, so
- * per-zone overrides shadow only the explicitly-set fields. Keys in the resulting map
- * use the `PlatformerInputConfig` field names verbatim — Wave 2 plans read them back
- * via `Int` cast at codegen time.
+ * [PlatformerInputBuilder] subclass that tracks WHICH numeric setters were invoked, so per-zone
+ * overrides shadow only the explicitly-set fields. Keys in the resulting map use the
+ * `PlatformerInputConfig` field names verbatim — Wave 2 plans read them back via `Int` cast at
+ * codegen time.
  *
- * Overrides ONLY the 5 numeric setters (walkSpeed / friction / airFriction /
- * walkFrameCount / cyclePeriod). AssignableVar binders (walkFrameIdx /
- * threeFrameCounter) are intentionally NOT overridden — they're game-level only
- * (D-03 / L-2.2). Calls to those binders inside a zone-level block flow through to
- * the base [PlatformerInputBuilder] super-method (which records the name on the
- * builder instance) but do NOT land in the override map — matching the RESEARCH
- * §Pattern 2 absent-vs-default contract.
+ * Overrides ONLY the 5 numeric setters (walkSpeed / friction / airFriction / walkFrameCount /
+ * cyclePeriod). AssignableVar binders (walkFrameIdx / threeFrameCounter) are intentionally NOT
+ * overridden — they're game-level only (D-03 / L-2.2). Calls to those binders inside a zone-level
+ * block flow through to the base [PlatformerInputBuilder] super-method (which records the name on
+ * the builder instance) but do NOT land in the override map — matching the RESEARCH §Pattern 2
+ * absent-vs-default contract.
  *
- * Kept `internal` so the helper class is invisible to end-users (they call
- * `platformerInput { }`, not the tracking builder directly).
+ * Kept `internal` so the helper class is invisible to end-users (they call `platformerInput { }`,
+ * not the tracking builder directly).
  */
 internal class OverrideTrackingInputBuilder : PlatformerInputBuilder("input-override") {
     private val setFields = mutableMapOf<String, Any>()
@@ -518,10 +513,10 @@ internal class OverrideTrackingInputBuilder : PlatformerInputBuilder("input-over
 /**
  * Configures and registers the per-game tilemap-collision substrate.
  *
- * Captures the user-DSL property names for player position, velocity, and
- * grounded flag — flowing them through to the visitor (Plan 12.1-06) so the
- * tilemap-physics code path emits `_<userPropertyName>` references instead of
- * the legacy `_player_x` / `_player_y` / `_grounded` magic strings.
+ * Captures the user-DSL property names for player position, velocity, and grounded flag — flowing
+ * them through to the visitor (Plan 12.1-06) so the tilemap-physics code path emits
+ * `_<userPropertyName>` references instead of the legacy `_player_x` / `_player_y` / `_grounded`
+ * magic strings.
  *
  * ```kotlin
  * var playerX by i16Var(80 shl 4)
@@ -547,13 +542,13 @@ internal class OverrideTrackingInputBuilder : PlatformerInputBuilder("input-over
  * - `"hitboxX"` / `"hitboxY"` / `"hitboxW"` / `"hitboxH"` → hitbox rect (pixels)
  * - `"solidThreshold"` → tile index threshold for solid vs. non-solid tiles
  *
- * **Coexistence with `platformerPhysics { solidThreshold(N) }`:** both can be
- * registered side-by-side. `gameUsesTilemapCollision` ORs all three paths
- * (A: platformer_physics.solidThreshold, B: per-zone override, C: this system),
- * so games that haven't migrated continue to work unchanged.
+ * **Coexistence with `platformerPhysics { solidThreshold(N) }`:** both can be registered
+ * side-by-side. `gameUsesTilemapCollision` ORs all three paths (A:
+ * platformer_physics.solidThreshold, B: per-zone override, C: this system), so games that haven't
+ * migrated continue to work unchanged.
  *
- * **Design constraint:** NO new sealed IR subtypes — config is an opaque
- * `Map<String, Any?>` payload on `GenericSystem`.
+ * **Design constraint:** NO new sealed IR subtypes — config is an opaque `Map<String, Any?>`
+ * payload on `GenericSystem`.
  *
  * @param id Unique system identifier (default `"tilemap_collision"`).
  * @param block Configuration block executed against a [TilemapCollisionBuilder].
@@ -572,15 +567,13 @@ fun GameBuilder.tilemapCollision(
 /**
  * Builder for the tilemap-collision substrate (Plan 12.1-05).
  *
- * Captures per-game tilemap-physics symbol binding + hitbox + solidThreshold
- * via 5 setters; produces a [GenericSystem] read by `PlatformerVisitor`
- * (Plan 12.1-06) and gated by `GBDKPipeline.gameUsesTilemapCollision`
- * Path C (this plan's Task 2).
+ * Captures per-game tilemap-physics symbol binding + hitbox + solidThreshold via 5 setters;
+ * produces a [GenericSystem] read by `PlatformerVisitor` (Plan 12.1-06) and gated by
+ * `GBDKPipeline.gameUsesTilemapCollision` Path C (this plan's Task 2).
  *
- * Setters store into a flat `Map<String, Any?>` under the config keys
- * documented on [tilemapCollision]. The visitor reads each key via
- * reflective `config["<key>"] as? String / Int` lookups (RESEARCH §Risks #6
- * — established pattern for opaque genre-config inspection).
+ * Setters store into a flat `Map<String, Any?>` under the config keys documented on
+ * [tilemapCollision]. The visitor reads each key via reflective `config["<key>"] as? String / Int`
+ * lookups (RESEARCH §Risks #6 — established pattern for opaque genre-config inspection).
  *
  * @param id Unique system identifier.
  */
@@ -598,15 +591,13 @@ class TilemapCollisionBuilder(val id: String) {
     private var solidThreshold: Int = 17
 
     /**
-     * Binds the player position to user-DSL [AssignableVar]s. The variable
-     * names (`AssignableVar.name`, inferred from the Kotlin property name via
-     * `provideDelegate`) are captured into `posXVar` / `posYVar` and flow
-     * through to `PlatformerVisitor` (Plan 12.1-06) as `_<propertyName>`
-     * symbol references in the tilemap-physics emission.
+     * Binds the player position to user-DSL [AssignableVar]s. The variable names
+     * (`AssignableVar.name`, inferred from the Kotlin property name via `provideDelegate`) are
+     * captured into `posXVar` / `posYVar` and flow through to `PlatformerVisitor` (Plan 12.1-06) as
+     * `_<propertyName>` symbol references in the tilemap-physics emission.
      *
-     * Per `feedback_no_magic_strings.md`: this binder takes [AssignableVar]
-     * (not a `String`), so the binding is type-safe and the symbol contract
-     * is enforced by the compiler.
+     * Per `feedback_no_magic_strings.md`: this binder takes [AssignableVar] (not a `String`), so
+     * the binding is type-safe and the symbol contract is enforced by the compiler.
      */
     fun position(x: AssignableVar, y: AssignableVar) {
         posXVar = x.name
@@ -614,14 +605,12 @@ class TilemapCollisionBuilder(val id: String) {
     }
 
     /**
-     * Binds the player velocity components to user-DSL [AssignableVar]s.
-     * The names flow through to `_<propertyName>` references in the
-     * tilemap-physics emission (Plan 12.1-06).
+     * Binds the player velocity components to user-DSL [AssignableVar]s. The names flow through to
+     * `_<propertyName>` references in the tilemap-physics emission (Plan 12.1-06).
      *
-     * Per RESEARCH §D-claude-1: `vy` MUST be backed by an `i16Var` (must
-     * hold the -800 jump-init value); `vx` is typically `i8Var`. The
-     * builder does not enforce the type — that's a user-DSL constraint
-     * caught at codegen.
+     * Per RESEARCH §D-claude-1: `vy` MUST be backed by an `i16Var` (must hold the -800 jump-init
+     * value); `vx` is typically `i8Var`. The builder does not enforce the type — that's a user-DSL
+     * constraint caught at codegen.
      */
     fun velocity(vx: AssignableVar, vy: AssignableVar) {
         vxVar = vx.name
@@ -629,23 +618,22 @@ class TilemapCollisionBuilder(val id: String) {
     }
 
     /**
-     * Binds the grounded flag to a user-DSL [AssignableVar]. The flag is
-     * set by the tilemap-physics path when the player lands on a solid tile
-     * and cleared when airborne. Closes the `_grounded` portion of Defect 4
-     * per RESEARCH §D-claude-1 static-lock: the visitor references bare
-     * `_grounded` at lines 610/631/672/918 without declaring it — this DSL
-     * call provides the symbol.
+     * Binds the grounded flag to a user-DSL [AssignableVar]. The flag is set by the tilemap-physics
+     * path when the player lands on a solid tile and cleared when airborne. Closes the `_grounded`
+     * portion of Defect 4 per RESEARCH §D-claude-1 static-lock: the visitor references bare
+     * `_grounded` at lines 610/631/672/918 without declaring it — this DSL call provides the
+     * symbol.
      */
     fun grounded(g: AssignableVar) {
         groundedVar = g.name
     }
 
     /**
-     * Sets the player hitbox rect relative to the position origin (pixels).
-     * Used by the visitor's 5-point bounding-box probe (Phase 12 D-12b).
+     * Sets the player hitbox rect relative to the position origin (pixels). Used by the visitor's
+     * 5-point bounding-box probe (Phase 12 D-12b).
      *
-     * Default: `(0, 0, 8, 24)` — matches a 1-tile-wide, 3-tile-tall player
-     * (the platformer_template reference sprite shape).
+     * Default: `(0, 0, 8, 24)` — matches a 1-tile-wide, 3-tile-tall player (the platformer_template
+     * reference sprite shape).
      */
     fun hitbox(x: Int, y: Int, w: Int, h: Int) {
         hitboxX = x
@@ -655,26 +643,24 @@ class TilemapCollisionBuilder(val id: String) {
     }
 
     /**
-     * Sets the tilemap solid-tile threshold. Tiles with index `< value` are
-     * treated as non-solid; tiles with index `>= value` are solid in the
-     * tilemap-collision codegen path (Plan 12-08 / 12-11 / 12.1-06).
+     * Sets the tilemap solid-tile threshold. Tiles with index `< value` are treated as non-solid;
+     * tiles with index `>= value` are solid in the tilemap-collision codegen path (Plan 12-08 /
+     * 12-11 / 12.1-06).
      *
-     * Coexists with [PlatformerPhysicsBuilder.solidThreshold] — both Path A
-     * (platformerPhysics) and Path C (this builder) can carry a threshold;
-     * the visitor uses whichever fires first in the predicate.
+     * Coexists with [PlatformerPhysicsBuilder.solidThreshold] — both Path A (platformerPhysics) and
+     * Path C (this builder) can carry a threshold; the visitor uses whichever fires first in the
+     * predicate.
      */
     fun solidThreshold(v: Int) {
         solidThreshold = v
     }
 
     /**
-     * Builds a [GenericSystem] with type `"tilemap_collision"` containing
-     * the captured config keys.
+     * Builds a [GenericSystem] with type `"tilemap_collision"` containing the captured config keys.
      *
-     * The config map carries `null` for any unset symbol binding — the
-     * visitor's `as? String` lookups degrade gracefully (no synthesis if
-     * the binding is absent, matching the bound-var path's existing shape
-     * in `MetaspriteVisitor.lowerMoveMetasprite`).
+     * The config map carries `null` for any unset symbol binding — the visitor's `as? String`
+     * lookups degrade gracefully (no synthesis if the binding is absent, matching the bound-var
+     * path's existing shape in `MetaspriteVisitor.lowerMoveMetasprite`).
      */
     fun build(): GenericSystem {
         // Build the config as a `Map<String, Any>` (GenericSystem.config requires
@@ -725,28 +711,25 @@ class TilemapCollisionBuilder(val id: String) {
 // player.c lines 44–82.
 
 /**
- * Builder for a level-card scene that mirrors the GBDK platformer_template's
- * NextLevel card flow (player.c:44–82).
+ * Builder for a level-card scene that mirrors the GBDK platformer_template's NextLevel card flow
+ * (player.c:44–82).
  *
- * The card scene shows level-transition graphics (via the author-supplied
- * [SceneBuilder.screen] call in the DSL block), waits for Start press, then
- * triggers [bindCurrentLevel] (typed [io.github.gbkt.core.ir.BindCurrentLevel]
- * IR) + navigates to the gameplay scene. This is the OWNED LIFECYCLE that
- * closes Phase 12.6 DEFECT-1: the show-card → wait-for-Start → setup →
- * navigate sequence runs across multiple frames with vblanks between, so the
- * card art renders for ≥ 1 vblank before the new level's tilemap stomps VRAM.
+ * The card scene shows level-transition graphics (via the author-supplied [SceneBuilder.screen]
+ * call in the DSL block), waits for Start press, then triggers [bindCurrentLevel] (typed
+ * [io.github.gbkt.core.ir.BindCurrentLevel] IR) + navigates to the gameplay scene. This is the
+ * OWNED LIFECYCLE that closes Phase 12.6 DEFECT-1: the show-card → wait-for-Start → setup →
+ * navigate sequence runs across multiple frames with vblanks between, so the card art renders for ≥
+ * 1 vblank before the new level's tilemap stomps VRAM.
  *
- * The centered-draw ceremony is absorbed by the SceneVisitor screenMode
- * superset path, triggered when the author calls `screen(asset(...))` inside
- * the DSL block. Zero raw-C escape hatches remain (Phase 13.5 Req #17 + #18).
+ * The centered-draw ceremony is absorbed by the SceneVisitor screenMode superset path, triggered
+ * when the author calls `screen(asset(...))` inside the DSL block. Zero raw-C escape hatches remain
+ * (Phase 13.5 Req #17 + #18).
  *
- * Reuses the standard [SceneBuilder] surface internally — the lowering
- * produces a regular [SceneRef] compatible with all existing
- * `navigate(sceneRef)` call sites.
+ * Reuses the standard [SceneBuilder] surface internally — the lowering produces a regular
+ * [SceneRef] compatible with all existing `navigate(sceneRef)` call sites.
  *
  * @property id The scene identifier (captured from the property name via
- *   [LevelCardSceneDelegate.provideDelegate] — Project Rule #1 / no magic
- *   strings).
+ *   [LevelCardSceneDelegate.provideDelegate] — Project Rule #1 / no magic strings).
  */
 @GbktDsl
 class LevelCardSceneBuilder(val id: String) {
@@ -756,62 +739,59 @@ class LevelCardSceneBuilder(val id: String) {
     /**
      * Declares the gameplay [SceneRef] to navigate to after Start press.
      *
-     * The codegen emits [bindCurrentLevel] (typed [io.github.gbkt.core.ir.BindCurrentLevel]
-     * IR, lowered to `setup_current_level()`) BEFORE `navigate_to_scene(<gameplay>)`,
-     * ensuring the new level's data is initialized in the same frame the player
-     * perceives as "after the card", not the same frame as "showing the card".
+     * The codegen emits [bindCurrentLevel] (typed [io.github.gbkt.core.ir.BindCurrentLevel] IR,
+     * lowered to `setup_current_level()`) BEFORE `navigate_to_scene(<gameplay>)`, ensuring the new
+     * level's data is initialized in the same frame the player perceives as "after the card", not
+     * the same frame as "showing the card".
      *
-     * Per RESEARCH §Pitfall 5: callers must declare `gameplayScene` BEFORE
-     * the `levelCardScene { onStartPress(gameplayScene) }` declaration so
-     * the Kotlin reference resolves at DSL-recording time.
+     * Per RESEARCH §Pitfall 5: callers must declare `gameplayScene` BEFORE the `levelCardScene {
+     * onStartPress(gameplayScene) }` declaration so the Kotlin reference resolves at DSL-recording
+     * time.
      */
     fun onStartPress(gameplayScene: SceneRef) {
         gameplaySceneRef = gameplayScene
     }
 
     /**
-     * Declares the card's full-screen graphic using the typed [SceneBuilder.screen]
-     * primitive (Phase 13.5 Req #18).
+     * Declares the card's full-screen graphic using the typed [SceneBuilder.screen] primitive
+     * (Phase 13.5 Req #18).
      *
-     * Forwards the [assetRef] into a `sceneBuilderBlocks` entry so it executes
-     * inside the underlying [SceneBuilder] (where the scene ID is already set).
-     * [SceneBuilder.screen] synthesises a `_screen_<id>` [io.github.gbkt.core.ir.ZoneIR]
-     * with `screenMode=true`; SceneVisitor's screenMode superset branch emits:
-     * `hide_sprites_range + move_bkg(0,0) + fill_bkg_rect(0,0,32,32,0) +
-     * centered _bkg_tiles_load_banked + DISPLAY_ON`.
+     * Forwards the [assetRef] into a `sceneBuilderBlocks` entry so it executes inside the
+     * underlying [SceneBuilder] (where the scene ID is already set). [SceneBuilder.screen]
+     * synthesises a `_screen_<id>` [io.github.gbkt.core.ir.ZoneIR] with `screenMode=true`;
+     * SceneVisitor's screenMode superset branch emits: `hide_sprites_range + move_bkg(0,0) +
+     * fill_bkg_rect(0,0,32,32,0) + centered _bkg_tiles_load_banked + DISPLAY_ON`.
      */
     fun screen(assetRef: AssetRef) {
         sceneBuilderBlocks += { this.screen(assetRef) }
     }
 
     /**
-     * Forwards a configuration block to the inner [SceneBuilder] so users can
-     * declare `screen(asset(...))`, `enter { }`, `palette(...)`, `frame { }`,
-     * etc. on the card scene — the same surface they get from `scene("...") { }`.
+     * Forwards a configuration block to the inner [SceneBuilder] so users can declare
+     * `screen(asset(...))`, `enter { }`, `palette(...)`, `frame { }`, etc. on the card scene — the
+     * same surface they get from `scene("...") { }`.
      *
-     * The primary entry point for card visuals is `screen(asset("..."))` (Req
-     * #18) which triggers the SceneVisitor screenMode superset (hide sprites,
-     * scroll reset, BG clear, centered tilemap placement). Multiple `scene { }`
-     * calls accumulate (in declaration order) into one underlying scene
-     * definition; this lets callers split concerns (visuals vs lifecycle).
+     * The primary entry point for card visuals is `screen(asset("..."))` (Req #18) which triggers
+     * the SceneVisitor screenMode superset (hide sprites, scroll reset, BG clear, centered tilemap
+     * placement). Multiple `scene { }` calls accumulate (in declaration order) into one underlying
+     * scene definition; this lets callers split concerns (visuals vs lifecycle).
      */
     fun scene(block: SceneBuilder.() -> Unit) {
         sceneBuilderBlocks += block
     }
 
     /**
-     * Lowers the captured configuration to a regular [SceneRef] by calling
-     * `gb.scene(id) { ... }`. User-supplied blocks (from the `levelCardScene { }`
-     * lambda) are applied first; the frame handler (Start-press → bindCurrentLevel
-     * + navigate) is appended last so it composes with any user-authored frame
-     * logic without clobbering it.
+     * Lowers the captured configuration to a regular [SceneRef] by calling `gb.scene(id) { ... }`.
+     * User-supplied blocks (from the `levelCardScene { }` lambda) are applied first; the frame
+     * handler (Start-press → bindCurrentLevel
+     * + navigate) is appended last so it composes with any user-authored frame logic without
+     *   clobbering it.
      *
-     * Throws if [onStartPress] was never called — the post-card navigation
-     * target is mandatory.
+     * Throws if [onStartPress] was never called — the post-card navigation target is mandatory.
      */
     internal fun materialize(gb: GameBuilder): SceneRef {
-        val gameplay = gameplaySceneRef
-            ?: error("levelCardScene '$id' must call onStartPress(gameplayScene)")
+        val gameplay =
+            gameplaySceneRef ?: error("levelCardScene '$id' must call onStartPress(gameplayScene)")
         // Hoist the user-supplied blocks into a local so the inner SceneBuilder
         // lambda (a `@GbktDsl`-scoped receiver) does not need an implicit
         // outer-receiver lookup back to LevelCardSceneBuilder. Required because
@@ -839,14 +819,12 @@ class LevelCardSceneBuilder(val id: String) {
 }
 
 /**
- * Property delegate that captures the Kotlin property name as the
- * level-card scene's identifier and registers the scene with the current
- * [GameBuilder].
+ * Property delegate that captures the Kotlin property name as the level-card scene's identifier and
+ * registers the scene with the current [GameBuilder].
  *
  * Mirrors the canonical `ActorDelegate.provideDelegate` shape from
- * `gbkt-lang/.../ActorBuilder.kt:1218–1241` — uses
- * [GameBuilderContext.current] (or errors with the standard "must be called
- * inside a game {} block" message) and returns a [ReadOnlyProperty] so the
+ * `gbkt-lang/.../ActorBuilder.kt:1218–1241` — uses [GameBuilderContext.current] (or errors with the
+ * standard "must be called inside a game {} block" message) and returns a [ReadOnlyProperty] so the
  * `by` keyword exposes the registered [SceneRef].
  *
  * Usage:
@@ -857,8 +835,7 @@ class LevelCardSceneBuilder(val id: String) {
  * }
  * ```
  *
- * The property name `nextLevelScene` becomes the scene's id (Project Rule #1
- * / no magic strings).
+ * The property name `nextLevelScene` becomes the scene's id (Project Rule #1 / no magic strings).
  */
 class LevelCardSceneDelegate(private val block: LevelCardSceneBuilder.() -> Unit) :
     ReadOnlyProperty<Any?, SceneRef> {
@@ -867,9 +844,8 @@ class LevelCardSceneDelegate(private val block: LevelCardSceneBuilder.() -> Unit
     /**
      * Called by Kotlin when `val x by levelCardScene { ... }` is evaluated.
      *
-     * Captures the property name, builds + materializes a
-     * [LevelCardSceneBuilder] against the current [GameBuilder], and stores
-     * the resulting [SceneRef] for retrieval by [getValue].
+     * Captures the property name, builds + materializes a [LevelCardSceneBuilder] against the
+     * current [GameBuilder], and stores the resulting [SceneRef] for retrieval by [getValue].
      */
     operator fun provideDelegate(
         thisRef: Any?,
@@ -888,18 +864,18 @@ class LevelCardSceneDelegate(private val block: LevelCardSceneBuilder.() -> Unit
 }
 
 /**
- * Declares a level-card scene that mirrors the GBDK platformer_template's
- * NextLevel card flow (player.c:44–82).
+ * Declares a level-card scene that mirrors the GBDK platformer_template's NextLevel card flow
+ * (player.c:44–82).
  *
- * The card scene shows level-transition graphics, waits for Start press, then
- * triggers `setup_current_level()` + navigates to the gameplay scene. This is
- * the OWNED LIFECYCLE that closes Phase 12.6 DEFECT-1 — the show-card → wait
- * → setup → navigate sequence runs across multiple frames with vblanks
- * between, so card art renders before the new level's tilemap stomps VRAM.
+ * The card scene shows level-transition graphics, waits for Start press, then triggers
+ * `setup_current_level()` + navigates to the gameplay scene. This is the OWNED LIFECYCLE that
+ * closes Phase 12.6 DEFECT-1 — the show-card → wait → setup → navigate sequence runs across
+ * multiple frames with vblanks between, so card art renders before the new level's tilemap stomps
+ * VRAM.
  *
- * The scene's id is captured from the Kotlin property name via the delegate
- * (Project Rule #1 — no magic-string ID). The lowered scene's frame handler
- * emits `setup_current_level();` BEFORE `navigate_to_scene(<gameplay>)`.
+ * The scene's id is captured from the Kotlin property name via the delegate (Project Rule #1 — no
+ * magic-string ID). The lowered scene's frame handler emits `setup_current_level();` BEFORE
+ * `navigate_to_scene(<gameplay>)`.
  *
  * Usage:
  * ```kotlin
@@ -916,9 +892,8 @@ class LevelCardSceneDelegate(private val block: LevelCardSceneBuilder.() -> Unit
  * Mirrors the reference behavior at
  * `gbdk/examples/cross-platform/platformer_template/src/main.c:44–82`.
  *
- * @param block Configuration block executed against a [LevelCardSceneBuilder].
- *   Must call `onStartPress(gameplayScene)` — the post-card navigation target
- *   is mandatory.
+ * @param block Configuration block executed against a [LevelCardSceneBuilder]. Must call
+ *   `onStartPress(gameplayScene)` — the post-card navigation target is mandatory.
  */
 fun GameBuilder.levelCardScene(block: LevelCardSceneBuilder.() -> Unit): LevelCardSceneDelegate =
     LevelCardSceneDelegate(block)

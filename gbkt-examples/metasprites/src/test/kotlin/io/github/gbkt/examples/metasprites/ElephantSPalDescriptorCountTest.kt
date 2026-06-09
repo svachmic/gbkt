@@ -69,17 +69,17 @@ class ElephantSPalDescriptorCountTest {
          * **Value: 161 (post-permutation count from Plan 03 run 2026-06-05)**
          *
          * Background (13.3 D-19 / RESEARCH Pitfall 7):
-         * - `remapMetaspriteSubPalette` (Plan 13.3-20) rewrites S_PAL(1) → S_PAL(0) in
-         *   metasprite descriptor entries to ensure uniform gray palette slot assignment.
-         * - The Plan 03 palette permutation changes png2asset's 8×8 tile deduplication
-         *   (compact 4-entry palette → different deduplicated tile set → 161 METASPR_ITEM
-         *   entries instead of the pre-permutation 149). This is correct behavior.
-         * - All 161 descriptors are S_PAL(0) because the compact palette has transparent
-         *   at index 0 which png2asset assigns directly to sub-palette slot 0.
-         *   remapMetaspriteSubPalette finds 0 S_PAL(1) entries to rewrite (already correct).
+         * - `remapMetaspriteSubPalette` (Plan 13.3-20) rewrites S_PAL(1) → S_PAL(0) in metasprite
+         *   descriptor entries to ensure uniform gray palette slot assignment.
+         * - The Plan 03 palette permutation changes png2asset's 8×8 tile deduplication (compact
+         *   4-entry palette → different deduplicated tile set → 161 METASPR_ITEM entries instead of
+         *   the pre-permutation 149). This is correct behavior.
+         * - All 161 descriptors are S_PAL(0) because the compact palette has transparent at index 0
+         *   which png2asset assigns directly to sub-palette slot 0. remapMetaspriteSubPalette finds
+         *   0 S_PAL(1) entries to rewrite (already correct).
          *
-         * Deviation from plan-time estimate: the plan specified 149 (pre-fix baseline count).
-         * The actual post-permutation count is 161. See class KDoc for explanation.
+         * Deviation from plan-time estimate: the plan specified 149 (pre-fix baseline count). The
+         * actual post-permutation count is 161. See class KDoc for explanation.
          *
          * Plan 05 baseline re-pin must target this validated count, NOT the old 149.
          */
@@ -92,7 +92,7 @@ class ElephantSPalDescriptorCountTest {
         assumeTrue(
             GENERATED_ELEPHANT.exists(),
             "Generated sprite C not found at ${GENERATED_ELEPHANT.absolutePath} — " +
-                "run ./gradlew :gbkt-examples:metasprites:convertSprites first; skipping test"
+                "run ./gradlew :gbkt-examples:metasprites:convertSprites first; skipping test",
         )
 
         val text = GENERATED_ELEPHANT.readText()
@@ -104,7 +104,7 @@ class ElephantSPalDescriptorCountTest {
             "permuted elephant.c emitted $actualCount S_PAL(0) descriptors, expected $EXPECTED_S_PAL0_DESCRIPTORS — " +
                 "remapMetaspriteSubPalette regressed under palette permutation (Open Question 2). " +
                 "If this count changed after a pipeline modification, investigate " +
-                "ConvertSpritesTask.remapMetaspriteSubPalette and prePermuteIndexedPng."
+                "ConvertSpritesTask.remapMetaspriteSubPalette and prePermuteIndexedPng.",
         )
     }
 }

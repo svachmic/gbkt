@@ -80,8 +80,10 @@ class ColorTest {
             System.setErr(oldErr)
         }
         val captured2 = out2.toString()
-        assertFalse(captured2.contains("WARNING"),
-            "Color.rgb888(248,0,0) must not emit WARNING but got: $captured2")
+        assertFalse(
+            captured2.contains("WARNING"),
+            "Color.rgb888(248,0,0) must not emit WARNING but got: $captured2",
+        )
     }
 
     @Test
@@ -95,8 +97,10 @@ class ColorTest {
             System.setErr(oldErr)
         }
         val captured = out.toString()
-        assertTrue(captured.contains("WARNING"),
-            "Color.rgb888(255,0,0) must emit WARNING to stderr but got nothing")
+        assertTrue(
+            captured.contains("WARNING"),
+            "Color.rgb888(255,0,0) must emit WARNING to stderr but got nothing",
+        )
     }
 
     @Test
@@ -112,8 +116,10 @@ class ColorTest {
             System.setErr(oldErr)
         }
         val captured = out.toString()
-        assertTrue(captured.contains("WARNING"),
-            "Color.rgb888(255,0,128) must emit WARNING to stderr (red channel has precision loss)")
+        assertTrue(
+            captured.contains("WARNING"),
+            "Color.rgb888(255,0,128) must emit WARNING to stderr (red channel has precision loss)",
+        )
     }
 
     @Test
@@ -127,8 +133,10 @@ class ColorTest {
             System.setErr(oldErr)
         }
         val captured = out.toString()
-        assertFalse(captured.contains("WARNING"),
-            "Color.rgb888(0,0,0) must NOT emit WARNING but got: $captured")
+        assertFalse(
+            captured.contains("WARNING"),
+            "Color.rgb888(0,0,0) must NOT emit WARNING but got: $captured",
+        )
     }
 
     // =========================================================================
@@ -293,24 +301,25 @@ class ColorTest {
 
     @Test
     fun `Color has 16 named constants`() {
-        val colorConstants = listOf(
-            Color.WHITE,
-            Color.BLACK,
-            Color.RED,
-            Color.GREEN,
-            Color.BLUE,
-            Color.YELLOW,
-            Color.CYAN,
-            Color.MAGENTA,
-            Color.ORANGE,
-            Color.LIGHT_GRAY,
-            Color.DARK_GRAY,
-            Color.BROWN,
-            Color.PINK,
-            Color.LIME,
-            Color.NAVY,
-            Color.TEAL,
-        )
+        val colorConstants =
+            listOf(
+                Color.WHITE,
+                Color.BLACK,
+                Color.RED,
+                Color.GREEN,
+                Color.BLUE,
+                Color.YELLOW,
+                Color.CYAN,
+                Color.MAGENTA,
+                Color.ORANGE,
+                Color.LIGHT_GRAY,
+                Color.DARK_GRAY,
+                Color.BROWN,
+                Color.PINK,
+                Color.LIME,
+                Color.NAVY,
+                Color.TEAL,
+            )
         assertEquals(16, colorConstants.size)
     }
 }

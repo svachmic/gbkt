@@ -19,9 +19,9 @@ package io.github.gbkt.backend.gbdk.codegen.pipeline
  * Replaces two parallel `var nextTile = 0` counters that previously lived in
  * [GBDKPipeline.buildSpriteDataLoadStatements] (actor sprites) and
  * [GBDKPipeline.buildMetaspriteTileDataLoadStatements] (metasprites). Both counters started at
- * `nextTile = 0` independently; concatenated into `main()` by [GBDKPipeline.buildMainFunction],
- * the result was two `set_sprite_data(0u, …)` calls when a game had BOTH actors and metasprites —
- * the second silently overwrote the first's tiles in VRAM with no compile-time or runtime warning.
+ * `nextTile = 0` independently; concatenated into `main()` by [GBDKPipeline.buildMainFunction], the
+ * result was two `set_sprite_data(0u, …)` calls when a game had BOTH actors and metasprites — the
+ * second silently overwrote the first's tiles in VRAM with no compile-time or runtime warning.
  *
  * Latent in Phase 10's `metasprites` example (no actor sprites). Guaranteed to surface in Phase 12
  * (`platformer_template` — actors + metasprites + tilemap together) and any user game that mixes

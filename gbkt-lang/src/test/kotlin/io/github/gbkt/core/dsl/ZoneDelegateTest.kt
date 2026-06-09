@@ -56,14 +56,15 @@ class ZoneDelegateTest {
 
     @Test
     fun `ZoneDelegate reuse on second by binding throws IllegalStateException`() {
-        val d = zone { }
+        val d = zone {}
         assertFailsWith<IllegalStateException> {
             game("Test") {
-                val a by d   // first provideDelegate — OK
-                val b by d   // second provideDelegate on SAME instance — must throw
-                val sScene = scene("s") {}
-                start = sScene
-            }.build()
+                    val a by d // first provideDelegate — OK
+                    val b by d // second provideDelegate on SAME instance — must throw
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
         }
     }
 
@@ -75,7 +76,7 @@ class ZoneDelegateTest {
     fun `by zone outside game block throws IllegalStateException with expected message`() {
         val ex =
             assertFailsWith<IllegalStateException> {
-                val z by zone { }
+                val z by zone {}
                 // Touch the reference to ensure provideDelegate actually fires
                 @Suppress("UNUSED_VARIABLE") val _touch = z
             }

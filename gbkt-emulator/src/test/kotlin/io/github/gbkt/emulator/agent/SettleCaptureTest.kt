@@ -31,8 +31,8 @@ import org.junit.jupiter.api.io.TempDir
  * stale frame while [StepAgent.settle] returns the rendered frame — the exact bug the primitive
  * fixes. This runs with NO ROM dependency (CI-safe).
  *
- * RED→GREEN note: this test does not compile against pre-Task-1 code (no `settle()` symbol); it goes
- * GREEN once the primitive exists.
+ * RED→GREEN note: this test does not compile against pre-Task-1 code (no `settle()` symbol); it
+ * goes GREEN once the primitive exists.
  */
 class SettleCaptureTest {
 
@@ -98,9 +98,7 @@ class SettleCaptureTest {
 
     private fun makeAgent(stub: GbEmulator): StepAgent {
         val rom = File(tempDir, "test.gb").also { it.writeBytes(ByteArray(64)) }
-        val sym =
-            File(tempDir, "test.sym")
-                .also { it.writeText("DEF _current_scene 00:C102\n") }
+        val sym = File(tempDir, "test.sym").also { it.writeText("DEF _current_scene 00:C102\n") }
         val config =
             AgentSessionConfig(
                 romFile = rom,
@@ -157,7 +155,8 @@ class SettleCaptureTest {
 
     @Test
     fun settleReturnsLastFrameWhenNeverStable() {
-        // Best-effort cap=30 contract (D-02): a stub that NEVER stabilizes (fresh distinct buffer on
+        // Best-effort cap=30 contract (D-02): a stub that NEVER stabilizes (fresh distinct buffer
+        // on
         // every call) → settle() returns the last frame and does NOT throw.
         val agent =
             makeAgent(
@@ -190,7 +189,7 @@ class SettleCaptureTest {
                         0 -> IntArray(pixelCount) { 0x010101 } // initial stale frame
                         else -> // every rendered call is a fresh, content-equal instance
                         IntArray(pixelCount) { renderedFill }
-                            .also { if (firstRendered == null) firstRendered = it }
+                                .also { if (firstRendered == null) firstRendered = it }
                     }
                 }
             )

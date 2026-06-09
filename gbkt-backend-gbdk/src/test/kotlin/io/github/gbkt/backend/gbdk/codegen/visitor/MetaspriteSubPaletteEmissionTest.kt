@@ -18,7 +18,6 @@ import io.github.gbkt.core.ir.MetaspriteIR
 import io.github.gbkt.core.ir.MetaspriteTile
 import io.github.gbkt.core.ir.PaletteType
 import io.github.gbkt.core.ir.SceneIR
-import io.github.gbkt.core.ir.SpriteMode
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -48,7 +47,8 @@ import kotlin.test.assertTrue
 // Construction: GameIR is built directly (not via DSL) — mirrors MetaspritePathAEmissionTest
 // and MetaspriteAssetTileLoadEmissionTest. Asset-driven shape: spritePath != null, frames empty.
 // Procedural shape: spritePath == null, frames with tiles.
-// GBC target is required (set_sprite_palette is GBC-gated; the metasprites example uses GBC_COMPATIBLE).
+// GBC target is required (set_sprite_palette is GBC-gated; the metasprites example uses
+// GBC_COMPATIBLE).
 // =============================================================================
 
 class MetaspriteSubPaletteEmissionTest {
@@ -61,59 +61,59 @@ class MetaspriteSubPaletteEmissionTest {
 
     /** Asset-driven MetaspriteIR (Path A): spritePath set, frames empty. */
     private fun assetDrivenMetasprite(id: String, spritePath: String): MetaspriteIR =
-        MetaspriteIR(
-            id = id,
-            frames = emptyList(),
-            spritePath = spritePath,
-        )
+        MetaspriteIR(id = id, frames = emptyList(), spritePath = spritePath)
 
     /** Procedural MetaspriteIR (escape-hatch D-04): spritePath null, frames with tiles. */
     private fun proceduralMetasprite(id: String): MetaspriteIR =
         MetaspriteIR(
             id = id,
-            frames = listOf(
-                MetaspriteFrame(
-                    tiles = listOf(
-                        MetaspriteTile(relX = 0, relY = 0, tileId = 0),
-                        MetaspriteTile(relX = 8, relY = 0, tileId = 1),
+            frames =
+                listOf(
+                    MetaspriteFrame(
+                        tiles =
+                            listOf(
+                                MetaspriteTile(relX = 0, relY = 0, tileId = 0),
+                                MetaspriteTile(relX = 8, relY = 0, tileId = 1),
+                            )
                     )
-                )
-            ),
+                ),
             spritePath = null,
         )
 
     /**
-     * A minimal GBCPalette(type=SPRITE) — simulates a spritePalette{} DSL declaration.
-     * Required to preserve 13.3-17 Direction B: when a spritePalette{} is present,
-     * asset-driven metasprites must NOT get an auto set_sprite_palette (Phase 13.7-03 fix
-     * only adds the auto upload when NO GBCPalette(type=SPRITE) exists in the game).
+     * A minimal GBCPalette(type=SPRITE) — simulates a spritePalette{} DSL declaration. Required to
+     * preserve 13.3-17 Direction B: when a spritePalette{} is present, asset-driven metasprites
+     * must NOT get an auto set_sprite_palette (Phase 13.7-03 fix only adds the auto upload when NO
+     * GBCPalette(type=SPRITE) exists in the game).
      */
     private fun graySpritePalette(): GBCPalette =
         GBCPalette(
             name = "gray",
-            colors = listOf(
-                GBCColor.fromRGB888(0, 0, 0),
-                GBCColor.fromRGB888(82, 82, 82),
-                GBCColor.fromRGB888(165, 165, 165),
-                GBCColor.fromRGB888(248, 248, 248),
-            ),
+            colors =
+                listOf(
+                    GBCColor.fromRGB888(0, 0, 0),
+                    GBCColor.fromRGB888(82, 82, 82),
+                    GBCColor.fromRGB888(165, 165, 165),
+                    GBCColor.fromRGB888(248, 248, 248),
+                ),
             type = PaletteType.SPRITE,
         )
 
     /**
-     * Build a GBC game WITH a spritePalette{} (GBCPalette type=SPRITE).
-     * This models the metasprites-example shape: the game declares explicit sprite palettes,
-     * so Direction B suppression applies — asset-driven metasprites must NOT get auto upload.
-     * After Phase 13.7-03, hasSpritePalette=true suppresses the new asset-driven fallback arm.
+     * Build a GBC game WITH a spritePalette{} (GBCPalette type=SPRITE). This models the
+     * metasprites-example shape: the game declares explicit sprite palettes, so Direction B
+     * suppression applies — asset-driven metasprites must NOT get auto upload. After Phase 13.7-03,
+     * hasSpritePalette=true suppresses the new asset-driven fallback arm.
      */
     private fun buildGame(metasprites: List<MetaspriteIR>): GameIR =
         GameIR(
             name = "SubPaletteEmissionGame",
-            config = CartridgeConfig(
-                cartridge = Cartridge.ROM_ONLY,
-                romBanks = 2,
-                gbcTarget = GbcTarget.GBC_COMPATIBLE,
-            ),
+            config =
+                CartridgeConfig(
+                    cartridge = Cartridge.ROM_ONLY,
+                    romBanks = 2,
+                    gbcTarget = GbcTarget.GBC_COMPATIBLE,
+                ),
             scenes = listOf(SceneIR(id = "play")),
             metasprites = metasprites,
             palettes = listOf(graySpritePalette()),
@@ -141,7 +141,8 @@ class MetaspriteSubPaletteEmissionTest {
         val game = buildGame(listOf(assetDrivenMetasprite("elephant", "sprites/elephant.png")))
 
         val output = pipeline.generate(game)
-        val mainC = output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
+        val mainC =
+            output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
 
         assertFalse(
             mainC.contains("elephant_palettes"),
@@ -225,12 +226,13 @@ class MetaspriteSubPaletteEmissionTest {
     // =========================================================================
     @Test
     fun `mixed game asset-driven upload suppressed procedural upload kept`() {
-        val game = buildGame(
-            listOf(
-                assetDrivenMetasprite("elephant", "sprites/elephant.png"),
-                proceduralMetasprite("player"),
+        val game =
+            buildGame(
+                listOf(
+                    assetDrivenMetasprite("elephant", "sprites/elephant.png"),
+                    proceduralMetasprite("player"),
+                )
             )
-        )
 
         val output = pipeline.generate(game)
         val mainC = output.files["main.c"] ?: error("main.c not generated")

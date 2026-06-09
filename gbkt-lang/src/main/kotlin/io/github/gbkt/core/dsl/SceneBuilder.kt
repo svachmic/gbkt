@@ -159,15 +159,16 @@ class SceneBuilder(val id: String, private val refs: RefRegistry) {
      * Binds a full-screen static image to this scene (Req #18 / D-03/D-04/D-05/D-06).
      *
      * Synthesizes an internal `_screen_<sceneId>` [ZoneIR] with [ZoneIR.screenMode] = true,
-     * registers it with the enclosing [GameBuilder] (via [GameBuilderContext.current]), and
-     * adds its ID to [zoneRefs] so SceneVisitor emits the screenMode superset on scene-enter:
+     * registers it with the enclosing [GameBuilder] (via [GameBuilderContext.current]), and adds
+     * its ID to [zoneRefs] so SceneVisitor emits the screenMode superset on scene-enter:
      * hide_sprites_range + move_bkg(0,0) + fill_bkg_rect(full-plane clear) + centered
      * _bkg_tiles_load_banked placement (auto-derived from PNG IHDR via ConvertZoneTilesetsTask).
      *
      * **Must be called at scene scope** (parallel to `zone()`), NOT inside `enter { }`.
      * ScriptBuilder cannot add to [SceneIR.zoneRefs] nor register a [ZoneIR] with GameBuilder.
      *
-     * **One `screen()` or `zone()` per scene** — multi-zone-per-scene is deferred (Phase 13 CONTEXT).
+     * **One `screen()` or `zone()` per scene** — multi-zone-per-scene is deferred (Phase 13
+     * CONTEXT).
      *
      * Usage:
      * ```kotlin
@@ -177,10 +178,10 @@ class SceneBuilder(val id: String, private val refs: RefRegistry) {
      * }
      * ```
      *
-     * The synthetic zone id `_screen_<sceneId>` (e.g. `_screen_title`) is automatically
-     * excluded from the `setup_current_level()` switch by the title/nextlevel filter in
-     * GBDKPipeline (Assumption A2 — the lower-cased id contains the scene id which
-     * contains "title" or "nextlevel" for the typical use cases).
+     * The synthetic zone id `_screen_<sceneId>` (e.g. `_screen_title`) is automatically excluded
+     * from the `setup_current_level()` switch by the title/nextlevel filter in GBDKPipeline
+     * (Assumption A2 — the lower-cased id contains the scene id which contains "title" or
+     * "nextlevel" for the typical use cases).
      *
      * @param assetRef Typed reference to the full-screen PNG image (from `asset("...")`).
      */
@@ -229,12 +230,12 @@ class SceneBuilder(val id: String, private val refs: RefRegistry) {
     /**
      * Assigns a GBC palette to this scene's enter handler with an explicit hardware slot override.
      *
-     * The [slot] value (0..7) is used directly — the palette's own [GBCPalette.slot] declaration
-     * is ignored. This gives authors precise control ("always load the enemy palette into slot 3")
+     * The [slot] value (0..7) is used directly — the palette's own [GBCPalette.slot] declaration is
+     * ignored. This gives authors precise control ("always load the enemy palette into slot 3")
      * independent of the palette's default slot assignment.
      *
-     * Throws [IllegalArgumentException] at build site (call time) if [slot] is outside 0..7
-     * (D-11 range guard). A duplicate-slot check within the same scene runs at [build] time.
+     * Throws [IllegalArgumentException] at build site (call time) if [slot] is outside 0..7 (D-11
+     * range guard). A duplicate-slot check within the same scene runs at [build] time.
      *
      * Usage:
      * ```kotlin

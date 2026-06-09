@@ -93,10 +93,10 @@ class PlatformerPhysicsSnapToTileTopEmissionTest {
          * Evidence is written under the **active checkout root** (worktree-safe).
          *
          * `user.dir` resolves to `<repo>/gbkt-genre-platformer` for the
-         * `:gbkt-genre-platformer:test` task. Ascending one level (`..`) reaches the active
-         * repo (or worktree) root, then we descend into the Phase 12.7 evidence directory.
-         * Hard-coding an absolute path would silently route evidence files outside the
-         * active worktree and miss the commit (#3099 worktree path safety).
+         * `:gbkt-genre-platformer:test` task. Ascending one level (`..`) reaches the active repo
+         * (or worktree) root, then we descend into the Phase 12.7 evidence directory. Hard-coding
+         * an absolute path would silently route evidence files outside the active worktree and miss
+         * the commit (#3099 worktree path safety).
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -113,31 +113,28 @@ class PlatformerPhysicsSnapToTileTopEmissionTest {
     // -------------------------------------------------------------------------
 
     /**
-     * Extracts a C function body by brace-walking from the first line whose contents start
-     * with [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the
-     * matching closing brace at depth zero.
+     * Extracts a C function body by brace-walking from the first line whose contents start with
+     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching closing
+     * brace at depth zero.
      *
      * The returned blob includes the signature line and the closing brace, so downstream
-     * `.contains()` checks operate ONLY on tokens that live inside the named function —
-     * never on tokens from unrelated functions in the same file (per CLAUDE.md
-     * §"Scope-level grep gates" corollary).
+     * `.contains()` checks operate ONLY on tokens that live inside the named function — never on
+     * tokens from unrelated functions in the same file (per CLAUDE.md §"Scope-level grep gates"
+     * corollary).
      *
      * This is the Kotlin-side mirror of the awk pattern documented in VALIDATION.md row 2:
-     *
      * ```
      * awk '/^void platformer_physics_update/{p=1;d=0} p{d+=gsub(/{/,""); d-=gsub(/}/,""); if(d<0)exit} p'
      * ```
      *
      * Matching is anchored to the START of a line (the prefix must appear at column 0) so
-     * occurrences inside string literals, comments, or argument lists of a different
-     * function cannot false-match. This is the literal counterpart of awk's `/^prefix/`
-     * anchor.
+     * occurrences inside string literals, comments, or argument lists of a different function
+     * cannot false-match. This is the literal counterpart of awk's `/^prefix/` anchor.
      *
      * The helper is BYTE-IDENTICAL (modulo anchor change at call site) to the copy in
-     * `TilemapCollisionEmissionTest.kt` lines 90–110. Convention: the helper is INLINED in
-     * each sibling test class — not factored to a shared utility — per
-     * `12.7-PATTERNS.md` §"Shared Patterns / brace-walk extractFunctionBody — inline per
-     * test class".
+     * `TilemapCollisionEmissionTest.kt` lines 90–110. Convention: the helper is INLINED in each
+     * sibling test class — not factored to a shared utility — per `12.7-PATTERNS.md` §"Shared
+     * Patterns / brace-walk extractFunctionBody — inline per test class".
      */
     private fun extractFunctionBody(cSource: String, functionSignaturePrefix: String): String {
         val lines = cSource.lines()
@@ -164,20 +161,18 @@ class PlatformerPhysicsSnapToTileTopEmissionTest {
     /**
      * Build a minimal GameIR carrying a single `platformer_physics` GenericSystem.
      *
-     * IMPORTANT: This GameIR DELIBERATELY OMITS a `tilemap_collision` system. That
-     * routes `posYSym` resolution down the legacy-fallback path in PlatformerVisitor
-     * (kt:554):
+     * IMPORTANT: This GameIR DELIBERATELY OMITS a `tilemap_collision` system. That routes `posYSym`
+     * resolution down the legacy-fallback path in PlatformerVisitor (kt:554):
      *
-     *   val posYSym = "_" + ((tcSystem?.config?.get("posYVar") as? String) ?: "player_y")
+     * val posYSym = "_" + ((tcSystem?.config?.get("posYVar") as? String) ?: "player_y")
      *
-     * — so `posYSym` resolves to the literal `_player_y` (RESEARCH Finding 6 +
-     * Pitfall 6). The snap-assertion below anchors on `_player_y` accordingly. Picking
-     * one of the two posYSym forms and keeping the test GameIR consistent with it is
-     * the explicit guidance from Pitfall 6.
+     * — so `posYSym` resolves to the literal `_player_y` (RESEARCH Finding 6 + Pitfall 6). The
+     * snap-assertion below anchors on `_player_y` accordingly. Picking one of the two posYSym forms
+     * and keeping the test GameIR consistent with it is the explicit guidance from Pitfall 6.
      *
-     * Shape mirrors `TilemapCollisionEmissionTest.buildPlatformerGameIR` (the canonical
-     * analog per 12.7-PATTERNS.md), modulo: name string, and default solidThreshold
-     * (kept at 17 — the platformer-template value).
+     * Shape mirrors `TilemapCollisionEmissionTest.buildPlatformerGameIR` (the canonical analog per
+     * 12.7-PATTERNS.md), modulo: name string, and default solidThreshold (kept at 17 — the
+     * platformer-template value).
      */
     private fun buildPlatformerGameIR(solidThreshold: Int? = 17): GameIR {
         val config =

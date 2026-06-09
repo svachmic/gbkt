@@ -55,24 +55,22 @@ class MetaspriteAssetTileLoadEmissionTest {
 
     /** Asset-driven MetaspriteIR (Path A): spritePath set, frames empty. */
     private fun assetDrivenMetasprite(id: String, spritePath: String): MetaspriteIR =
-        MetaspriteIR(
-            id = id,
-            frames = emptyList(),
-            spritePath = spritePath,
-        )
+        MetaspriteIR(id = id, frames = emptyList(), spritePath = spritePath)
 
     /** Procedural MetaspriteIR (escape-hatch D-04): spritePath null, frames with tiles. */
     private fun proceduralMetasprite(id: String): MetaspriteIR =
         MetaspriteIR(
             id = id,
-            frames = listOf(
-                MetaspriteFrame(
-                    tiles = listOf(
-                        MetaspriteTile(relX = 0, relY = 0, tileId = 0),
-                        MetaspriteTile(relX = 8, relY = 0, tileId = 1),
+            frames =
+                listOf(
+                    MetaspriteFrame(
+                        tiles =
+                            listOf(
+                                MetaspriteTile(relX = 0, relY = 0, tileId = 0),
+                                MetaspriteTile(relX = 8, relY = 0, tileId = 1),
+                            )
                     )
-                )
-            ),
+                ),
             spritePath = null,
         )
 
@@ -153,19 +151,21 @@ class MetaspriteAssetTileLoadEmissionTest {
     //
     // GREEN after Task 3: second metasprite start = 0u + sprites_elephant_tiles_count
     //   set_sprite_data(0u, sprites_elephant_tiles_count, sprites_elephant_tiles);
-    //   set_sprite_data(0u + sprites_elephant_tiles_count, sprites_tiger_tiles_count, sprites_tiger_tiles);
+    //   set_sprite_data(0u + sprites_elephant_tiles_count, sprites_tiger_tiles_count,
+    // sprites_tiger_tiles);
     //
     // Note: the test accepts any ordering/formatting of the two set_sprite_data calls.
     // The key invariant is that the second metasprite's start includes the first's count.
     // -------------------------------------------------------------------------
     @Test
     fun `two asset-driven metasprites chain start offsets using count macros`() {
-        val game = buildGame(
-            listOf(
-                assetDrivenMetasprite("elephant", "sprites/elephant.png"),
-                assetDrivenMetasprite("tiger", "sprites/tiger.png"),
+        val game =
+            buildGame(
+                listOf(
+                    assetDrivenMetasprite("elephant", "sprites/elephant.png"),
+                    assetDrivenMetasprite("tiger", "sprites/tiger.png"),
+                )
             )
-        )
 
         val output = pipeline.generate(game)
         val mainC = output.files["main.c"] ?: ""

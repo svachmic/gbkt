@@ -183,9 +183,11 @@ class PlatformerVisitor : GenreSystemVisitor {
                 // Plan 12-05 SUMMARY §"decisions"). Lockstep gate keeps the global out of the
                 // abstract path's WRAM footprint when the tilemap branch is not active.
                 //
-                // Initial value 0 — the jump-initiation site inside `buildTilemapPhysicsUpdateFunction`
+                // Initial value 0 — the jump-initiation site inside
+                // `buildTilemapPhysicsUpdateFunction`
                 // (Plan 12-11 §section 5) sets the timer to `cfg.jumpHoldMaxFrames` at the moment a
-                // grounded jump fires; the new gravity-suppression branch decrements it each airborne
+                // grounded jump fires; the new gravity-suppression branch decrements it each
+                // airborne
                 // frame and zeroes it on button release or timer expiry (Plan 12-13 §section 5b).
                 if (physicsConfig.jumpHoldMaxFrames > 0 && gameUsesTilemapCollision(gameIR)) {
                     add(
@@ -583,8 +585,7 @@ class PlatformerVisitor : GenreSystemVisitor {
         val posYSym = "_" + ((tcSystem?.config?.get("posYVar") as? String) ?: "player_y")
         val vxSym = "_" + ((tcSystem?.config?.get("vxVar") as? String) ?: "player_vx")
         val vySym = "_" + ((tcSystem?.config?.get("vyVar") as? String) ?: "player_vy")
-        val groundedSym =
-            "_" + ((tcSystem?.config?.get("groundedVar") as? String) ?: "grounded")
+        val groundedSym = "_" + ((tcSystem?.config?.get("groundedVar") as? String) ?: "grounded")
 
         // Round-5 H1 (Plan 12.7-19) — metasprite render-vs-hitbox-foot correction.
         // The hitbox foot (the snap target) and the rendered metasprite-bottom can DIFFER
@@ -624,26 +625,26 @@ class PlatformerVisitor : GenreSystemVisitor {
         val playerMetasprite =
             gameIR.metasprites.firstOrNull { ms ->
                 tcPosYVar != null && ms.posYVarName == tcPosYVar
-            } ?: gameIR.metasprites.firstOrNull { ms ->
-                // Fallback to the first metasprite with full geometry. Mirrors the
-                // playerHitbox fallback above ("first non-null hitbox = player by
-                // convention").
-                ms.frameHeight != null && ms.pivotY != null
             }
-        val pivotAdjust: Int =
-            run {
-                val frameH = playerMetasprite?.frameHeight ?: REFERENCE_FRAME_HEIGHT
-                val pivotY = playerMetasprite?.pivotY ?: REFERENCE_PIVOT_Y
-                // Algebraic identity: frameHeight − pivotY − hitbox.height
-                // — see evidence/round-5-diagnostic.md Section 2 for the derivation.
-                // Clamped at >= 0 so a metasprite whose render extent fits INSIDE the
-                // hitbox (no overshoot — render-bottom equals OR sits above hitbox foot)
-                // contributes a zero correction, not a negative one. This matches the
-                // semantic: pivot_adjust is "how many extra pixels does the rendered
-                // sprite extend below the hitbox foot"; if the answer is ≤ 0, no
-                // correction is required and the snap stays at the hitbox foot.
-                (frameH - pivotY - height).coerceAtLeast(0)
-            }
+                ?: gameIR.metasprites.firstOrNull { ms ->
+                    // Fallback to the first metasprite with full geometry. Mirrors the
+                    // playerHitbox fallback above ("first non-null hitbox = player by
+                    // convention").
+                    ms.frameHeight != null && ms.pivotY != null
+                }
+        val pivotAdjust: Int = run {
+            val frameH = playerMetasprite?.frameHeight ?: REFERENCE_FRAME_HEIGHT
+            val pivotY = playerMetasprite?.pivotY ?: REFERENCE_PIVOT_Y
+            // Algebraic identity: frameHeight − pivotY − hitbox.height
+            // — see evidence/round-5-diagnostic.md Section 2 for the derivation.
+            // Clamped at >= 0 so a metasprite whose render extent fits INSIDE the
+            // hitbox (no overshoot — render-bottom equals OR sits above hitbox foot)
+            // contributes a zero correction, not a negative one. This matches the
+            // semantic: pivot_adjust is "how many extra pixels does the rendered
+            // sprite extend below the hitbox foot"; if the answer is ≤ 0, no
+            // correction is required and the snap stays at the hitbox foot.
+            (frameH - pivotY - height).coerceAtLeast(0)
+        }
 
         // Phase 12.3 Plan 02 — platformer_input GenericSystem (Plan 12.3-01 substrate)
         // carries the walkSpeed/friction/airFriction tuning numbers. Defaults match the
@@ -671,14 +672,14 @@ class PlatformerVisitor : GenreSystemVisitor {
         // (L-5.4 / feedback_no_magic_strings.md). When BOTH are set, we emit the cycle.
         // walkFrameCount + cyclePeriod fall back to the D-01a defaults (3 + 6) when absent.
         val walkFrameIdxVar: String? = piSystem?.config?.get("walkFrameIdxVar") as? String
-        val threeFrameCounterVar: String? =
-            piSystem?.config?.get("threeFrameCounterVar") as? String
+        val threeFrameCounterVar: String? = piSystem?.config?.get("threeFrameCounterVar") as? String
         val walkFrameCount: Int = (piSystem?.config?.get("walkFrameCount") as? Int) ?: 3
         val cyclePeriod: Int = (piSystem?.config?.get("cyclePeriod") as? Int) ?: 6
 
         val body =
             buildList<CStatement> {
-                // --- 0. Input → playerVx wiring (Phase 12.3 Plan 02 / gap #1, D-05 input-first) ---
+                // --- 0. Input → playerVx wiring (Phase 12.3 Plan 02 / gap #1, D-05 input-first)
+                // ---
                 // Reference player.c lines 218-235 — dpad held → set vx to ±walkSpeed; on release,
                 // apply friction (ground vs air via _grounded) toward zero. Emitted BEFORE the
                 // sub-pixel integration (D-05 emission order: input → physics_update body) so the
@@ -704,18 +705,13 @@ class PlatformerVisitor : GenreSystemVisitor {
                             thenBody =
                                 listOf(
                                     CExprStatement(
-                                        CBinaryExpr(
-                                            CVar(vxSym),
-                                            "=",
-                                            CIntLiteral(walkSpeed),
-                                        )
+                                        CBinaryExpr(CVar(vxSym), "=", CIntLiteral(walkSpeed))
                                     )
                                 ),
                             elseBody =
                                 listOf(
                                     CIf(
-                                        condition =
-                                            CCall("button_held", listOf(CVar("J_LEFT"))),
+                                        condition = CCall("button_held", listOf(CVar("J_LEFT"))),
                                         thenBody =
                                             listOf(
                                                 CExprStatement(
@@ -823,43 +819,27 @@ class PlatformerVisitor : GenreSystemVisitor {
                 // for assignments + comparisons, `CIntLiteral(0)` for the signed `!= 0`
                 // RHS, `CLiteral(N)` for unsigned counter/index RHS. NO CRawExpr needed
                 // here — the cycle body has no cast-heavy expressions.
-                if (gameUsesPlatformerInput(gameIR) &&
-                    walkFrameIdxVar != null &&
-                    threeFrameCounterVar != null
+                if (
+                    gameUsesPlatformerInput(gameIR) &&
+                        walkFrameIdxVar != null &&
+                        threeFrameCounterVar != null
                 ) {
                     val wfiSym = "_$walkFrameIdxVar"
                     val tfcSym = "_$threeFrameCounterVar"
-                    add(
-                        CComment(
-                            "Phase 12.3 — Walk-cycle (3-frame counter → frame-index advance)"
-                        )
-                    )
+                    add(CComment("Phase 12.3 — Walk-cycle (3-frame counter → frame-index advance)"))
                     add(
                         CIf(
-                            condition =
-                                CBinaryExpr(
-                                    CVar(vxSym),
-                                    "!=",
-                                    CIntLiteral(0),
-                                ),
+                            condition = CBinaryExpr(CVar(vxSym), "!=", CIntLiteral(0)),
                             thenBody =
                                 listOf(
                                     CExprStatement(CUnaryExpr("++", CVar(tfcSym))),
                                     CIf(
                                         condition =
-                                            CBinaryExpr(
-                                                CVar(tfcSym),
-                                                ">=",
-                                                CLiteral(cyclePeriod),
-                                            ),
+                                            CBinaryExpr(CVar(tfcSym), ">=", CLiteral(cyclePeriod)),
                                         thenBody =
                                             listOf(
                                                 CExprStatement(
-                                                    CBinaryExpr(
-                                                        CVar(tfcSym),
-                                                        "=",
-                                                        CLiteral(0),
-                                                    )
+                                                    CBinaryExpr(CVar(tfcSym), "=", CLiteral(0))
                                                 ),
                                                 CExprStatement(CUnaryExpr("++", CVar(wfiSym))),
                                                 CIf(
@@ -885,20 +865,8 @@ class PlatformerVisitor : GenreSystemVisitor {
                                 ),
                             elseBody =
                                 listOf(
-                                    CExprStatement(
-                                        CBinaryExpr(
-                                            CVar(wfiSym),
-                                            "=",
-                                            CLiteral(0),
-                                        )
-                                    ),
-                                    CExprStatement(
-                                        CBinaryExpr(
-                                            CVar(tfcSym),
-                                            "=",
-                                            CLiteral(0),
-                                        )
-                                    ),
+                                    CExprStatement(CBinaryExpr(CVar(wfiSym), "=", CLiteral(0))),
+                                    CExprStatement(CBinaryExpr(CVar(tfcSym), "=", CLiteral(0))),
                                 ),
                         )
                     )
@@ -971,12 +939,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                 add(CComment("Stuck-in-ground resolve: pop up until feet clear of solid"))
                 add(
                     CIf(
-                        condition =
-                            CBinaryExpr(
-                                CVar(groundedSym),
-                                "==",
-                                CIntLiteral(0),
-                            ),
+                        condition = CBinaryExpr(CVar(groundedSym), "==", CIntLiteral(0)),
                         thenBody =
                             listOf(
                                 CWhile(
@@ -1029,11 +992,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                             listOf(
                                 CIf(
                                     condition =
-                                        CBinaryExpr(
-                                            CVar(groundedSym),
-                                            "!=",
-                                            CIntLiteral(0),
-                                        ),
+                                        CBinaryExpr(CVar(groundedSym), "!=", CIntLiteral(0)),
                                     thenBody =
                                         listOf(
                                             CExprStatement(
@@ -1083,19 +1042,19 @@ class PlatformerVisitor : GenreSystemVisitor {
                 // `_grounded == 0` comparison uses CIntLiteral(0) to match the line 586 jump-
                 // initiation site's discipline (UINT8 actually permits CLiteral, but matching
                 // the local-scope convention keeps the tilemap-physics branch internally
-                // consistent and avoids drift in scope-level grep gates). The `_jump_increase_timer`
+                // consistent and avoids drift in scope-level grep gates). The
+                // `_jump_increase_timer`
                 // comparisons use CLiteral(0) — UINT8 is unsigned-context, so the unsigned `0u`
                 // literal is correct (no Phase 07.9 hazard).
                 if (cfg.jumpHoldMaxFrames > 0) {
-                    add(CComment("Phase 12 D-14 — gravity gated by jumpHold timer (suppress while A/Up held)"))
+                    add(
+                        CComment(
+                            "Phase 12 D-14 — gravity gated by jumpHold timer (suppress while A/Up held)"
+                        )
+                    )
                     add(
                         CIf(
-                            condition =
-                                CBinaryExpr(
-                                    CVar(groundedSym),
-                                    "==",
-                                    CIntLiteral(0),
-                                ),
+                            condition = CBinaryExpr(CVar(groundedSym), "==", CIntLiteral(0)),
                             thenBody =
                                 listOf(
                                     CIf(
@@ -1108,10 +1067,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                                         thenBody =
                                             listOf(
                                                 CExprStatement(
-                                                    CUnaryExpr(
-                                                        "--",
-                                                        CVar("_jump_increase_timer"),
-                                                    )
+                                                    CUnaryExpr("--", CVar("_jump_increase_timer"))
                                                 )
                                             ),
                                     ),
@@ -1182,11 +1138,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                 add(
                     CIf(
                         condition =
-                            CBinaryExpr(
-                                CVar("player_real_x"),
-                                ">=",
-                                CLiteral(halfScreenPx),
-                            ),
+                            CBinaryExpr(CVar("player_real_x"), ">=", CLiteral(halfScreenPx)),
                         thenBody =
                             listOf(
                                 CExprStatement(
@@ -1208,7 +1160,11 @@ class PlatformerVisitor : GenreSystemVisitor {
                 // --- 8. Level-end trigger (mirrors player.c line 351) ------------------------
                 // Plan 12-17 may switch to a `goalZone`-based trigger (D-claude-6); this plan
                 // ships the explicit threshold form which is simpler and matches the reference.
-                add(CComment("Level-end trigger: increment _next_level when past the right margin (grounded-only — Round-6 H3 fix per Plan 12.7-26 verdict; player must be on the floor at trigger fire per SPEC R-03 wording)"))
+                add(
+                    CComment(
+                        "Level-end trigger: increment _next_level when past the right margin (grounded-only — Round-6 H3 fix per Plan 12.7-26 verdict; player must be on the floor at trigger fire per SPEC R-03 wording)"
+                    )
+                )
                 add(
                     CIf(
                         condition =
@@ -1223,14 +1179,9 @@ class PlatformerVisitor : GenreSystemVisitor {
                                     ),
                                 ),
                                 "&&",
-                                CBinaryExpr(
-                                    CVar(groundedSym),
-                                    "!=",
-                                    CIntLiteral(0),
-                                ),
+                                CBinaryExpr(CVar(groundedSym), "!=", CIntLiteral(0)),
                             ),
-                        thenBody =
-                            listOf(CExprStatement(CUnaryExpr("++", CVar("_next_level")))),
+                        thenBody = listOf(CExprStatement(CUnaryExpr("++", CVar("_next_level")))),
                     )
                 )
             }
@@ -1251,9 +1202,9 @@ class PlatformerVisitor : GenreSystemVisitor {
      * passed via [vxSym] — Phase 12.1 Plan 06 Defect-4 rewrite) to block the move.
      *
      * Probes (per RESEARCH §"D-12b Recommendations" — groups 1 + 2):
-     *   - top edge: (x ± halfW, y + 2)
-     *   - mid edge: (x ± halfW, y + halfH)
-     *   - bot edge: (x ± halfW, y + height - 2)
+     * - top edge: (x ± halfW, y + 2)
+     * - mid edge: (x ± halfW, y + halfH)
+     * - bot edge: (x ± halfW, y + height - 2)
      *
      * Velocity sign is guarded by a CIntLiteral(0) comparison (signed) — mirrors RESEARCH §Pitfall
      * 7 (signed-literal hygiene). Using CLiteral(0) here would emit `<vxSym> > 0u` and silently
@@ -1261,8 +1212,8 @@ class PlatformerVisitor : GenreSystemVisitor {
      * negative.
      *
      * @param vxSym Resolved player-horizontal-velocity C symbol (Phase 12.1 Plan 06). When the
-     *   `tilemap_collision` system is present, this is `_<vxVar>` from its config map; otherwise
-     *   it falls back to the legacy `_player_vx` shape.
+     *   `tilemap_collision` system is present, this is `_<vxVar>` from its config map; otherwise it
+     *   falls back to the legacy `_player_vx` shape.
      */
     private fun buildHorizontalProbe(
         direction: String,
@@ -1290,68 +1241,55 @@ class PlatformerVisitor : GenreSystemVisitor {
             )
 
         val anyHit =
-            CBinaryExpr(
-                CBinaryExpr(probe(2), "||", probe(halfH)),
-                "||",
-                probe(heightMinus2),
-            )
+            CBinaryExpr(CBinaryExpr(probe(2), "||", probe(halfH)), "||", probe(heightMinus2))
 
         return CIf(
-            condition =
-                CBinaryExpr(
-                    CVar(vxSym),
-                    velocityOp,
-                    CIntLiteral(0),
-                ),
+            condition = CBinaryExpr(CVar(vxSym), velocityOp, CIntLiteral(0)),
             thenBody =
                 listOf(
                     CIf(
                         condition = anyHit,
                         thenBody =
-                            listOf(
-                                CExprStatement(
-                                    CBinaryExpr(CVar(vxSym), "=", CLiteral(0))
-                                )
-                            ),
+                            listOf(CExprStatement(CBinaryExpr(CVar(vxSym), "=", CLiteral(0)))),
                     )
                 ),
         )
     }
 
     /**
-     * Emits the 2-point foot probe for falling. When the resolved vertical velocity ([vySym]) is
-     * `> 0` AND either foot probe hits a solid tile, zeros the velocity and sets the resolved
-     * grounded flag ([groundedSym]) to `TRUE` — Phase 12.1 Plan 06 Defect-4 rewrite.
+     * Emits the 2-point foot probe for falling. When the resolved vertical velocity ([vySym]) is `>
+     * 0` AND either foot probe hits a solid tile, zeros the velocity and sets the resolved grounded
+     * flag ([groundedSym]) to `TRUE` — Phase 12.1 Plan 06 Defect-4 rewrite.
      *
      * Foot probe x-offset is `halfW - 2` (NOT halfW) — RESEARCH §D-12b note: the corner-inset
      * prevents the foot probe from catching the wall when the player is hugging a wall vertically.
      * Without the -2 inset, the player would fall when the foot probe hits the wall under them
      * (which is wrong — that's the wall-collision case, already handled by the horizontal probe).
      *
-     * @param vySym Resolved player-vertical-velocity C symbol (Plan 12.1 Plan 06). Legacy
-     *   fallback: `_player_vy`.
+     * @param vySym Resolved player-vertical-velocity C symbol (Plan 12.1 Plan 06). Legacy fallback:
+     *   `_player_vy`.
      * @param groundedSym Resolved grounded-flag C symbol. Legacy fallback: `_grounded`.
-     * @param posYSym Resolved player-y-position C symbol. Legacy fallback: `_player_y`. Written
-     *   by the snap-to-tile-top step via intermediate CVarDecl locals (D-02 formula,
-     *   precedence-immune emission per Plan 12.7-11; the math is identical to the D-02 formula's
-     *   algebra, only the emission shape is split across intermediate vars to defeat C's
-     *   `+`/`-` > `<<`/`>>` precedence trap that broke Plan 12.7-04 — see SEED for the
-     *   CParenExpr AST surgery follow-up).
-     * @param pivotAdjust The Round-5 H1 metasprite-vs-hitbox-foot correction in pixels.
-     *   Per Plan 12.7-17 Round-5 diagnostic Section 2: the rendered metasprite-bottom under
-     *   SPRITES_8x16 + pivot(pivotX, pivotY) + frameSize(frameW, frameH) lands `frameHeight −
-     *   pivotY − hitbox.height` pixels BELOW the hitbox-foot snap target. For the
-     *   platformer-template's geometry (frameSize(24, 32), pivot(12, 6), hitbox 8×24):
-     *   `pivot_adjust = 32 − 6 − 24 = 2`. Without this correction the rendered sprite overlays
-     *   the top 2 px of the ground tile (user UAT 2026-05-26 anchor-2 report). Resolved by the
-     *   caller from `gameIR.metasprites` matched against `posYSym` — see
-     *   [buildTilemapPhysicsUpdateFunction] for the IR-driven derivation and the documented
-     *   fallback. Plan 12.7-19 — Round-5 H1 fix; see evidence/round-5-diagnostic.md Section 2.
+     * @param posYSym Resolved player-y-position C symbol. Legacy fallback: `_player_y`. Written by
+     *   the snap-to-tile-top step via intermediate CVarDecl locals (D-02 formula, precedence-immune
+     *   emission per Plan 12.7-11; the math is identical to the D-02 formula's algebra, only the
+     *   emission shape is split across intermediate vars to defeat C's `+`/`-` > `<<`/`>>`
+     *   precedence trap that broke Plan 12.7-04 — see SEED for the CParenExpr AST surgery
+     *   follow-up).
+     * @param pivotAdjust The Round-5 H1 metasprite-vs-hitbox-foot correction in pixels. Per Plan
+     *   12.7-17 Round-5 diagnostic Section 2: the rendered metasprite-bottom under SPRITES_8x16 +
+     *   pivot(pivotX, pivotY) + frameSize(frameW, frameH) lands `frameHeight − pivotY −
+     *   hitbox.height` pixels BELOW the hitbox-foot snap target. For the platformer-template's
+     *   geometry (frameSize(24, 32), pivot(12, 6), hitbox 8×24): `pivot_adjust = 32 − 6 − 24 = 2`.
+     *   Without this correction the rendered sprite overlays the top 2 px of the ground tile (user
+     *   UAT 2026-05-26 anchor-2 report). Resolved by the caller from `gameIR.metasprites` matched
+     *   against `posYSym` — see [buildTilemapPhysicsUpdateFunction] for the IR-driven derivation
+     *   and the documented fallback. Plan 12.7-19 — Round-5 H1 fix; see
+     *   evidence/round-5-diagnostic.md Section 2.
      *
      *   TODO Phase 13+: lift the resolution into the GenericSystem config layer once
      *   `tilemapCollision { ... }` learns to read the bound metasprite directly. Tracked as
-     *   `SEED-PHASE-13-PIVOT-ADJUST-AUTO-DERIVE.md`. Today's resolution is at the visitor's
-     *   call site (one level above), which is sufficient for Round-5 closure.
+     *   `SEED-PHASE-13-PIVOT-ADJUST-AUTO-DERIVE.md`. Today's resolution is at the visitor's call
+     *   site (one level above), which is sufficient for Round-5 closure.
      */
     private fun buildVerticalFootProbe(
         halfWMinus2: Int,
@@ -1373,24 +1311,15 @@ class PlatformerVisitor : GenreSystemVisitor {
         val anyHit = CBinaryExpr(probe("+"), "||", probe("-"))
 
         return CIf(
-            condition =
-                CBinaryExpr(
-                    CVar(vySym),
-                    ">",
-                    CIntLiteral(0),
-                ),
+            condition = CBinaryExpr(CVar(vySym), ">", CIntLiteral(0)),
             thenBody =
                 listOf(
                     CIf(
                         condition = anyHit,
                         thenBody =
                             listOf(
-                                CExprStatement(
-                                    CBinaryExpr(CVar(vySym), "=", CLiteral(0))
-                                ),
-                                CExprStatement(
-                                    CBinaryExpr(CVar(groundedSym), "=", CLiteral(1))
-                                ),
+                                CExprStatement(CBinaryExpr(CVar(vySym), "=", CLiteral(0))),
+                                CExprStatement(CBinaryExpr(CVar(groundedSym), "=", CLiteral(1))),
                                 CComment(
                                     "Snap to tile-top: precedence-immune via intermediate " +
                                         "CVarDecl locals (one binary-op class per line). Pins " +
@@ -1423,11 +1352,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                                     name = "foot_pixel_top",
                                     type = CU16,
                                     initializer =
-                                        CBinaryExpr(
-                                            CVar("foot_tile_row"),
-                                            "<<",
-                                            CLiteral(3),
-                                        ),
+                                        CBinaryExpr(CVar("foot_tile_row"), "<<", CLiteral(3)),
                                 ),
                                 CVarDecl(
                                     name = "pivot_adjust",
@@ -1452,11 +1377,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                                     CBinaryExpr(
                                         CVar(posYSym),
                                         "=",
-                                        CBinaryExpr(
-                                            CVar("foot_pixel_anchor"),
-                                            "<<",
-                                            CLiteral(4),
-                                        ),
+                                        CBinaryExpr(CVar("foot_pixel_anchor"), "<<", CLiteral(4)),
                                     )
                                 ),
                                 CComment(
@@ -1486,9 +1407,9 @@ class PlatformerVisitor : GenreSystemVisitor {
     }
 
     /**
-     * Emits the 2-point head probe for rising. When the resolved vertical velocity ([vySym]) is
-     * `< 0` AND either head probe hits a solid tile, zeros the velocity (head bonk — drops back
-     * to gravity) — Phase 12.1 Plan 06 Defect-4 rewrite.
+     * Emits the 2-point head probe for rising. When the resolved vertical velocity ([vySym]) is `<
+     * 0` AND either head probe hits a solid tile, zeros the velocity (head bonk — drops back to
+     * gravity) — Phase 12.1 Plan 06 Defect-4 rewrite.
      *
      * Head probe x-offset is `halfW - 2` (NOT halfW) — same RESEARCH §D-12b corner-inset note as
      * the foot probe: prevents the head probe from triggering on side walls when the player is
@@ -1509,22 +1430,13 @@ class PlatformerVisitor : GenreSystemVisitor {
         val anyHit = CBinaryExpr(probe("+"), "||", probe("-"))
 
         return CIf(
-            condition =
-                CBinaryExpr(
-                    CVar(vySym),
-                    "<",
-                    CIntLiteral(0),
-                ),
+            condition = CBinaryExpr(CVar(vySym), "<", CIntLiteral(0)),
             thenBody =
                 listOf(
                     CIf(
                         condition = anyHit,
                         thenBody =
-                            listOf(
-                                CExprStatement(
-                                    CBinaryExpr(CVar(vySym), "=", CLiteral(0))
-                                )
-                            ),
+                            listOf(CExprStatement(CBinaryExpr(CVar(vySym), "=", CLiteral(0)))),
                     )
                 ),
         )
@@ -1714,21 +1626,18 @@ class PlatformerVisitor : GenreSystemVisitor {
                 ?: gameIR.scenes.firstOrNull()?.id
 
         val frameOps: Map<String, List<ScriptOp>> =
-            if (gameplaySceneId != null &&
-                gameUsesTilemapCollision(gameIR) &&
-                cameraConfig.scrollDirections == ScrollDirection.HORIZONTAL &&
-                cameraConfig.mode == CameraScrollMode.SMOOTH_FOLLOW
+            if (
+                gameplaySceneId != null &&
+                    gameUsesTilemapCollision(gameIR) &&
+                    cameraConfig.scrollDirections == ScrollDirection.HORIZONTAL &&
+                    cameraConfig.mode == CameraScrollMode.SMOOTH_FOLLOW
             ) {
                 mapOf(gameplaySceneId to listOf(RawOp("platformer_camera_update();")))
             } else {
                 emptyMap()
             }
 
-        return GenreVisitorResult(
-            functions = functions,
-            varDecls = varDecls,
-            frameOps = frameOps,
-        )
+        return GenreVisitorResult(functions = functions, varDecls = varDecls, frameOps = frameOps)
     }
 
     /**
@@ -1737,11 +1646,11 @@ class PlatformerVisitor : GenreSystemVisitor {
      * Returns `true` when the game opts into tilemap-collision physics — detected via either:
      * - **Path A:** a `platformer_physics` `GenericSystem` whose `physicsConfig` is a
      *   `PlatformerPhysicsConfig` with a non-null `solidThreshold`.
-     * - **Path B:** any `ZoneIR` in `gameIR.zones` whose `platformerPhysicsOverride` map contains
-     *   a `"solidThreshold"` key.
+     * - **Path B:** any `ZoneIR` in `gameIR.zones` whose `platformerPhysicsOverride` map contains a
+     *   `"solidThreshold"` key.
      *
-     * Mirrors `GBDKPipeline.gameUsesTilemapCollision(gameIR)` exactly (Plan 12-08). Duplicated
-     * here because `gbkt-genre-platformer` has direct compile-time access to
+     * Mirrors `GBDKPipeline.gameUsesTilemapCollision(gameIR)` exactly (Plan 12-08). Duplicated here
+     * because `gbkt-genre-platformer` has direct compile-time access to
      * `PlatformerPhysicsConfig.solidThreshold` (no reflection needed), but the backend predicate
      * uses reflection because `gbkt-backend-gbdk` does NOT depend on the platformer genre module.
      * The two predicates MUST stay in lockstep — see the consolidation TODO in `visitCamera`.
@@ -1763,16 +1672,16 @@ class PlatformerVisitor : GenreSystemVisitor {
     }
 
     /**
-     * Phase 12.3 Plan 02 — predicate that gates auto-emission of the dpad → playerVx input
-     * wiring + friction-on-release branch (gap #1) and the walk-cycle emission (gap #4, Plan
-     * 12.3-08) inside [buildTilemapPhysicsUpdateFunction].
+     * Phase 12.3 Plan 02 — predicate that gates auto-emission of the dpad → playerVx input wiring +
+     * friction-on-release branch (gap #1) and the walk-cycle emission (gap #4, Plan 12.3-08) inside
+     * [buildTilemapPhysicsUpdateFunction].
      *
      * Whether `platformer_input` config (game-level or per-zone override) is present in [gameIR].
      * Mirrors [gameUsesTilemapCollision] structure (Plan 12.3-02):
      * - **Path A:** a `platformer_input` `GenericSystem` is registered (via
      *   `GameBuilder.platformerInput { ... }` extension — Plan 12.3-01 substrate).
-     * - **Path B:** any `ZoneIR` in `gameIR.zones` has a non-null `platformerInputOverride`
-     *   payload (per-zone numeric shadow via `ZoneBuilder.platformerInput { ... }`).
+     * - **Path B:** any `ZoneIR` in `gameIR.zones` has a non-null `platformerInputOverride` payload
+     *   (per-zone numeric shadow via `ZoneBuilder.platformerInput { ... }`).
      *
      * Returns `false` for back-compat: non-platformer-input games (existing JumpHold /
      * TilemapCollision / HorizontalScroll / Defect4SymbolRewrite emission test fixtures) leave
@@ -1787,10 +1696,7 @@ class PlatformerVisitor : GenreSystemVisitor {
         return gameIR.zones.any { zone -> zone.platformerInputOverride != null }
     }
 
-    private fun buildCameraUpdateFunction(
-        cfg: PlatformerCameraConfig,
-        gameIR: GameIR,
-    ): CFunction {
+    private fun buildCameraUpdateFunction(cfg: PlatformerCameraConfig, gameIR: GameIR): CFunction {
         // Phase 12 D-13 — when the game opts into tilemap-collision AND uses horizontal smooth-
         // follow camera, route to a SEPARATE camera body that performs column-by-column tilemap
         // scrolling via `_bkg_set_level_submap_banked()` (Plan 12-10 HOME helper). The existing
@@ -1806,9 +1712,10 @@ class PlatformerVisitor : GenreSystemVisitor {
         // prose said `.contains(HORIZONTAL)` — that does not type-check. Using `==` is the only
         // form that compiles against the current domain model. Tracked as a Rule 1 plan-prose
         // bug fix in the SUMMARY.
-        if (gameUsesTilemapCollision(gameIR) &&
-            cfg.scrollDirections == ScrollDirection.HORIZONTAL &&
-            cfg.mode == CameraScrollMode.SMOOTH_FOLLOW
+        if (
+            gameUsesTilemapCollision(gameIR) &&
+                cfg.scrollDirections == ScrollDirection.HORIZONTAL &&
+                cfg.mode == CameraScrollMode.SMOOTH_FOLLOW
         ) {
             return buildTilemapCameraUpdateFunction(cfg, gameIR)
         }
@@ -1843,7 +1750,8 @@ class PlatformerVisitor : GenreSystemVisitor {
     //       if (_camera_x < _old_camera_x) {
     //           _bkg_set_level_submap_banked(_map_pos_x + 1u, 0u, 1u, DEVICE_SCREEN_HEIGHT);
     //       } else if ((_current_level_width_in_tiles - DEVICE_SCREEN_WIDTH) > _map_pos_x) {
-    //           _bkg_set_level_submap_banked(_map_pos_x + DEVICE_SCREEN_WIDTH, 0u, 1u, DEVICE_SCREEN_HEIGHT);
+    //           _bkg_set_level_submap_banked(_map_pos_x + DEVICE_SCREEN_WIDTH, 0u, 1u,
+    // DEVICE_SCREEN_HEIGHT);
     //       }
     //       _old_map_pos_x = _map_pos_x;
     //   }
@@ -1875,11 +1783,7 @@ class PlatformerVisitor : GenreSystemVisitor {
         val body =
             buildList<CStatement> {
                 add(CComment("Apply background scroll to GPU (horizontal-only tilemap camera)"))
-                add(
-                    CExprStatement(
-                        CCall("move_bkg", listOf(CVar("_camera_x"), CLiteral(0)))
-                    )
-                )
+                add(CExprStatement(CCall("move_bkg", listOf(CVar("_camera_x"), CLiteral(0)))))
                 add(CBlankLine)
                 add(CComment("Compute current tile column (camera_x / 8 → tilemap column index)"))
                 add(
@@ -1887,10 +1791,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                         CBinaryExpr(
                             CVar("_map_pos_x"),
                             "=",
-                            CCast(
-                                CU8,
-                                CBinaryExpr(CVar("_camera_x"), ">>", CLiteral(3)),
-                            ),
+                            CCast(CU8, CBinaryExpr(CVar("_camera_x"), ">>", CLiteral(3))),
                         )
                     )
                 )
@@ -1902,12 +1803,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                 )
                 add(
                     CIf(
-                        condition =
-                            CBinaryExpr(
-                                CVar("_map_pos_x"),
-                                "!=",
-                                CVar("_old_map_pos_x"),
-                            ),
+                        condition = CBinaryExpr(CVar("_map_pos_x"), "!=", CVar("_old_map_pos_x")),
                         thenBody =
                             buildList {
                                 add(CComment("Scrolling left: redraw the new LEFT-edge column"))
@@ -1946,7 +1842,9 @@ class PlatformerVisitor : GenreSystemVisitor {
                                                     condition =
                                                         CBinaryExpr(
                                                             CBinaryExpr(
-                                                                CVar("_current_level_width_in_tiles"),
+                                                                CVar(
+                                                                    "_current_level_width_in_tiles"
+                                                                ),
                                                                 "-",
                                                                 CVar("DEVICE_SCREEN_WIDTH"),
                                                             ),
@@ -1962,7 +1860,9 @@ class PlatformerVisitor : GenreSystemVisitor {
                                                                         CBinaryExpr(
                                                                             CVar("_map_pos_x"),
                                                                             "+",
-                                                                            CVar("DEVICE_SCREEN_WIDTH"),
+                                                                            CVar(
+                                                                                "DEVICE_SCREEN_WIDTH"
+                                                                            ),
                                                                         ),
                                                                         CLiteral(0),
                                                                         CLiteral(1),
@@ -1979,11 +1879,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                                 add(CComment("Latch new column index for next frame's delta check"))
                                 add(
                                     CExprStatement(
-                                        CBinaryExpr(
-                                            CVar("_old_map_pos_x"),
-                                            "=",
-                                            CVar("_map_pos_x"),
-                                        )
+                                        CBinaryExpr(CVar("_old_map_pos_x"), "=", CVar("_map_pos_x"))
                                     )
                                 )
                             },
@@ -1991,15 +1887,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                 )
                 add(CBlankLine)
                 add(CComment("Latch current camera_x for next frame's direction-of-scroll check"))
-                add(
-                    CExprStatement(
-                        CBinaryExpr(
-                            CVar("_old_camera_x"),
-                            "=",
-                            CVar("_camera_x"),
-                        )
-                    )
-                )
+                add(CExprStatement(CBinaryExpr(CVar("_old_camera_x"), "=", CVar("_camera_x"))))
             }
 
         return CFunction(

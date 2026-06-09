@@ -88,10 +88,10 @@ data class ZoneIR(
     /** Interactive objects within this zone (chests, signs, sconces, NPCs, levers, doors). */
     val objects: List<ZoneObjectIR> = emptyList(),
     /**
-     * When `true`, this zone was synthesized by [SceneBuilder.screen][io.github.gbkt.core.dsl.SceneBuilder]
-     * and gates the SceneVisitor screenMode superset:
-     * hide_sprites_range + move_bkg(0,0) + fill_bkg_rect(full BG plane clear) + centered
-     * _bkg_tiles_load_banked placement.
+     * When `true`, this zone was synthesized by
+     * [SceneBuilder.screen][io.github.gbkt.core.dsl.SceneBuilder] and gates the SceneVisitor
+     * screenMode superset: hide_sprites_range + move_bkg(0,0) + fill_bkg_rect(full BG plane
+     * clear) + centered _bkg_tiles_load_banked placement.
      *
      * Set only by `SceneBuilder.screen(assetRef)` — never by the user-facing `zone { }` DSL.
      * Default `false` preserves backward-compat for all existing [ZoneIR] construction sites.

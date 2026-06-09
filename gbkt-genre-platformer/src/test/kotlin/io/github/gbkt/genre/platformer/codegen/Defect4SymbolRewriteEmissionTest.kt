@@ -63,17 +63,17 @@ class Defect4SymbolRewriteEmissionTest {
 
     /**
      * Extracts a C function body by brace-walking from the first line whose contents start with
-     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching
-     * closing brace at depth zero.
+     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching closing
+     * brace at depth zero.
      *
      * Mirror of the same helper in `JumpHoldEmissionTest.kt`, `TilemapCollisionEmissionTest.kt`,
-     * and `HorizontalScrollEmissionTest.kt`. The returned blob includes the signature line and
-     * the closing brace so downstream `.contains()` checks operate ONLY on tokens inside the
-     * named function — never on tokens from unrelated functions or top-of-file extern
-     * declarations (per CLAUDE.md §"Scope-level grep gates" corollary).
+     * and `HorizontalScrollEmissionTest.kt`. The returned blob includes the signature line and the
+     * closing brace so downstream `.contains()` checks operate ONLY on tokens inside the named
+     * function — never on tokens from unrelated functions or top-of-file extern declarations (per
+     * CLAUDE.md §"Scope-level grep gates" corollary).
      *
-     * Matching is anchored to the START of a line (the prefix must appear at column 0). This is
-     * the Kotlin counterpart of awk's `/^prefix/` anchor.
+     * Matching is anchored to the START of a line (the prefix must appear at column 0). This is the
+     * Kotlin counterpart of awk's `/^prefix/` anchor.
      */
     private fun extractFunctionBody(cSource: String, functionSignaturePrefix: String): String {
         val lines = cSource.lines()
@@ -99,14 +99,14 @@ class Defect4SymbolRewriteEmissionTest {
 
     /**
      * Build a minimal GameIR with a `platformer_physics` GenericSystem (to fire Path A of
-     * `gameUsesTilemapCollision`, which makes the pipeline emit `platformer_physics_update`) and
-     * an optional `tilemap_collision` GenericSystem (Path C — the new substrate from Plan
-     * 12.1-05) whose config map carries user-DSL property names.
+     * `gameUsesTilemapCollision`, which makes the pipeline emit `platformer_physics_update`) and an
+     * optional `tilemap_collision` GenericSystem (Path C — the new substrate from Plan 12.1-05)
+     * whose config map carries user-DSL property names.
      *
      * When [bindings] is null, NO tilemap_collision system is registered — the visitor must fall
      * back to the legacy `_player_x` / `_player_y` / `_player_vx` / `_player_vy` / `_grounded`
-     * shape (regression guard for any caller that opts into tilemap collision via Path A only,
-     * e.g. the existing JumpHold / TilemapCollision / HorizontalScroll emission tests).
+     * shape (regression guard for any caller that opts into tilemap collision via Path A only, e.g.
+     * the existing JumpHold / TilemapCollision / HorizontalScroll emission tests).
      */
     private fun buildGameIR(
         bindings: Map<String, String>? = null,
@@ -133,10 +133,7 @@ class Defect4SymbolRewriteEmissionTest {
             } else {
                 val tcConfig = mutableMapOf<String, Any>("type" to "tilemap_collision")
                 bindings.forEach { (k, v) -> tcConfig[k] = v }
-                listOf(
-                    physicsSystem,
-                    GenericSystem(id = "tilemap_collision", config = tcConfig),
-                )
+                listOf(physicsSystem, GenericSystem(id = "tilemap_collision", config = tcConfig))
             }
         return GameIR(
             name = "TestDefect4Game",

@@ -49,10 +49,10 @@ class BindCurrentLevelEmissionTest {
         /**
          * Evidence is written under the **active checkout root** (worktree-safe).
          *
-         * `user.dir` resolves to the `:gbkt-backend-gbdk:test` task's working directory;
-         * we ascend one level to the repo (or worktree) root, then descend into the
-         * phase-local evidence directory. Hard-coding an absolute path would silently route
-         * evidence files outside the active worktree (#3099 worktree path safety).
+         * `user.dir` resolves to the `:gbkt-backend-gbdk:test` task's working directory; we ascend
+         * one level to the repo (or worktree) root, then descend into the phase-local evidence
+         * directory. Hard-coding an absolute path would silently route evidence files outside the
+         * active worktree (#3099 worktree path safety).
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -105,7 +105,8 @@ class BindCurrentLevelEmissionTest {
                 // setup_current_level — the function that bindCurrentLevel() lowers to).
                 platformerPhysics { solidThreshold(17) }
 
-                // Bind symbol names so the per-case body emits _playerX/_playerY/_playerVx/_playerVy.
+                // Bind symbol names so the per-case body emits
+                // _playerX/_playerY/_playerVx/_playerVy.
                 val playerX = AssignableVar("playerX")
                 val playerY = AssignableVar("playerY")
                 val playerVx = AssignableVar("playerVx")
@@ -128,25 +129,18 @@ class BindCurrentLevelEmissionTest {
                 }
 
                 // Title scene — required for `start =` assignment.
-                val titleScene = scene("title") {
-                    enter {
-                        cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);")
+                val titleScene =
+                    scene("title") {
+                        enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
+                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                     }
-                    frame {
-                        whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
-                    }
-                }
 
                 // Gameplay scene — SUBJECT: enter { bindCurrentLevel() }
                 // The typed call lowers to setup_current_level() in gameplay_enter.
                 scene("gameplay") {
                     zone(gameplayZone1)
-                    enter {
-                        bindCurrentLevel()
-                    }
-                    frame {
-                        whenever(buttons.start.pressed) { navigate(SceneRef("title")) }
-                    }
+                    enter { bindCurrentLevel() }
+                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("title")) } }
                 }
 
                 // Hidden scene binding the 2nd gameplay zone so it surfaces in gameIR.zones
@@ -154,9 +148,7 @@ class BindCurrentLevelEmissionTest {
                 // be reachable for the case count to hit ≥2).
                 scene("gameplay2") {
                     zone(gameplayZone2)
-                    frame {
-                        whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
-                    }
+                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                 }
 
                 start = titleScene
@@ -174,7 +166,8 @@ class BindCurrentLevelEmissionTest {
     fun `enter bindCurrentLevel lowers to setup_current_level in gameplay_enter`() {
         val gameIR = buildBindCurrentLevelGameDsl()
         val output = pipeline.generate(gameIR)
-        val bank1C = output.files["bank1.c"] ?: error("bank1.c not generated. Files: ${output.files.keys}")
+        val bank1C =
+            output.files["bank1.c"] ?: error("bank1.c not generated. Files: ${output.files.keys}")
 
         EVIDENCE_DIR.mkdirs()
 
@@ -211,7 +204,8 @@ class BindCurrentLevelEmissionTest {
     fun `gameplay_enter from bindCurrentLevel contains no raw C escape markers`() {
         val gameIR = buildBindCurrentLevelGameDsl()
         val output = pipeline.generate(gameIR)
-        val bank1C = output.files["bank1.c"] ?: error("bank1.c not generated. Files: ${output.files.keys}")
+        val bank1C =
+            output.files["bank1.c"] ?: error("bank1.c not generated. Files: ${output.files.keys}")
 
         EVIDENCE_DIR.mkdirs()
 

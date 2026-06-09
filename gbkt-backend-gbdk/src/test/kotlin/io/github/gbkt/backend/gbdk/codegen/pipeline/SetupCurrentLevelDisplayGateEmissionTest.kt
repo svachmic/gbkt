@@ -118,22 +118,25 @@ private fun buildTilemapCollisionGame(target: GbcTarget = GbcTarget.GBC_COMPATIB
     GameIR(
         name = "SetupCurrentLevelDisplayGateTest",
         config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY, romBanks = 4, gbcTarget = target),
-        scenes = listOf(
-            SceneIR(id = "title"),
-            SceneIR(id = "gameplay"),
-        ),
-        zones = listOf(
-            ZoneIR(
-                id = "world1Area1Zone",
-                name = "World 1 Area 1",
-                tilesetPath = "tiles/world1.png", // NON-NULL → mirrors real gameplay zone (Pitfall 10)
-                mapWidth = 60,
-                mapHeight = 18,
-            )
-        ),
-        systems = listOf(
-            GenericSystem(id = "tilemapCollision", config = mapOf("type" to "tilemap_collision")),
-        ),
+        scenes = listOf(SceneIR(id = "title"), SceneIR(id = "gameplay")),
+        zones =
+            listOf(
+                ZoneIR(
+                    id = "world1Area1Zone",
+                    name = "World 1 Area 1",
+                    tilesetPath =
+                        "tiles/world1.png", // NON-NULL → mirrors real gameplay zone (Pitfall 10)
+                    mapWidth = 60,
+                    mapHeight = 18,
+                )
+            ),
+        systems =
+            listOf(
+                GenericSystem(
+                    id = "tilemapCollision",
+                    config = mapOf("type" to "tilemap_collision"),
+                )
+            ),
         startScene = "title",
     )
 
@@ -171,16 +174,20 @@ private fun buildLevelCardSceneGameDsl() =
                 spawn(40u, 120u)
             }
 
-            val titleScene = scene("title") {
-                enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
-                frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
-            }
+            val titleScene =
+                scene("title") {
+                    enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
+                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                }
 
             // Gameplay scene declared BEFORE levelCardScene (RESEARCH Pitfall 5).
-            val gameplayScene = scene("gameplay") {
-                zone(gameplayZone1)
-                frame { whenever(buttons.start.pressed) { navigate(SceneRef("nextLevelScene")) } }
-            }
+            val gameplayScene =
+                scene("gameplay") {
+                    zone(gameplayZone1)
+                    frame {
+                        whenever(buttons.start.pressed) { navigate(SceneRef("nextLevelScene")) }
+                    }
+                }
 
             // Hidden scene binding the 2nd gameplay zone so it surfaces in gameIR.zones.
             scene("gameplay2") {
@@ -378,8 +385,7 @@ class SetupCurrentLevelDisplayGateEmissionTest {
         val body = extractFunctionBody(mainC, "void setup_current_level(void) NONBANKED")
         assertTrue(
             body.isNotEmpty(),
-            "setup_current_level body must be extractable. " +
-                "main.c head:\n${mainC.take(4000)}",
+            "setup_current_level body must be extractable. " + "main.c head:\n${mainC.take(4000)}",
         )
 
         // Scope-hygiene assertion (T-12.11-04):

@@ -68,13 +68,11 @@ import kotlin.test.assertTrue
  * - 2 zones share `world1-tileset.png` (World1Area1 + World1Area2)
  * - 1 zone uses `world2-tileset.png` (World2Area1)
  *
- * **DOCUMENTED GAP — RESEARCH §D-15 recommendation (a):** accept duplication for
- * Phase 12; Plan 12-26 creates `SEED-PHASE-12-SHARED-TILESET.md` for Phase 13
- * dedup work. This test asserts the gap EXISTS today (two zones sharing
- * `world1-tileset.png` produce TWO distinct `sanitizedSymbol` entries in the
- * `zoneTilesets` manifest, which `ConvertZoneTilesetsTask` consumes as two
- * separate png2asset invocations) — so when a future dedup fix lands, this is
- * the right test to update.
+ * **DOCUMENTED GAP — RESEARCH §D-15 recommendation (a):** accept duplication for Phase 12; Plan
+ * 12-26 creates `SEED-PHASE-12-SHARED-TILESET.md` for Phase 13 dedup work. This test asserts the
+ * gap EXISTS today (two zones sharing `world1-tileset.png` produce TWO distinct `sanitizedSymbol`
+ * entries in the `zoneTilesets` manifest, which `ConvertZoneTilesetsTask` consumes as two separate
+ * png2asset invocations) — so when a future dedup fix lands, this is the right test to update.
  */
 class MultiTilesetAllocationTest {
 

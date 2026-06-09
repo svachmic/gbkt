@@ -29,13 +29,13 @@ class ConfigBuilderCartridgeTest {
 
     @Test
     fun `cartridge MBC5_RAM_BATTERY sets typed enum on CartridgeConfig`() {
-        val ir = game("Test") {
-            config {
-                cartridge(Cartridge.MBC5_RAM_BATTERY)
-            }
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val ir =
+            game("Test") {
+                    config { cartridge(Cartridge.MBC5_RAM_BATTERY) }
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
         assertEquals(Cartridge.MBC5_RAM_BATTERY, ir.config.cartridge)
     }
@@ -46,20 +46,24 @@ class ConfigBuilderCartridgeTest {
 
     @Test
     fun `default config build yields Cartridge ROM_ONLY`() {
-        val ir = game("Test") {
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val ir =
+            game("Test") {
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
         assertEquals(Cartridge.ROM_ONLY, ir.config.cartridge)
     }
 
     @Test
     fun `default config build yields romBanks null (D-05 derive sentinel)`() {
-        val ir = game("Test") {
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val ir =
+            game("Test") {
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
         assertNull(ir.config.romBanks)
     }
@@ -70,14 +74,16 @@ class ConfigBuilderCartridgeTest {
 
     @Test
     fun `target GBC_COMPATIBLE and cartridge MBC1 can be combined`() {
-        val ir = game("Test") {
-            config {
-                cartridge(Cartridge.MBC1)
-                target(GbcTarget.GBC_COMPATIBLE)
-            }
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val ir =
+            game("Test") {
+                    config {
+                        cartridge(Cartridge.MBC1)
+                        target(GbcTarget.GBC_COMPATIBLE)
+                    }
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
         assertEquals(Cartridge.MBC1, ir.config.cartridge)
         assertEquals(GbcTarget.GBC_COMPATIBLE, ir.config.gbcTarget)
@@ -89,18 +95,20 @@ class ConfigBuilderCartridgeTest {
 
     @Test
     fun `explicitly setting cartridge ROM_ONLY matches the default`() {
-        val irDefault = game("Test") {
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val irDefault =
+            game("Test") {
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
-        val irExplicit = game("Test") {
-            config {
-                cartridge(Cartridge.ROM_ONLY)
-            }
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val irExplicit =
+            game("Test") {
+                    config { cartridge(Cartridge.ROM_ONLY) }
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
         assertEquals(irDefault.config.cartridge, irExplicit.config.cartridge)
     }
@@ -111,13 +119,13 @@ class ConfigBuilderCartridgeTest {
 
     @Test
     fun `cartridge field is typed Cartridge enum not String`() {
-        val ir = game("Test") {
-            config {
-                cartridge(Cartridge.MBC5_RAM_BATTERY)
-            }
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val ir =
+            game("Test") {
+                    config { cartridge(Cartridge.MBC5_RAM_BATTERY) }
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
         // Type-check: accessing .mbcByte proves the field is a Cartridge, not a String
         assertEquals(0x1B, ir.config.cartridge.mbcByte)

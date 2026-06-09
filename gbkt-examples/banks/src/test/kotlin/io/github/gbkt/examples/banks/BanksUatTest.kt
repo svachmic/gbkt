@@ -116,21 +116,17 @@ class BanksUatTest {
      * @param label A short label included in all failure messages to identify which anchor failed
      *   (e.g. "anchor1-play-scene").
      * @param region Optional analysis window (x, y, w, h) in pixels. When null (default) the whole
-     *   frame is analysed. When supplied, the SAME gate (>= 2 distinct colours AND dominant
-     *   ratio < 0.95 — threshold UNCHANGED) is applied only to that region. Phase 15 F5/F6: the
-     *   banks codegen-demo paints a 2x2 (16x16px) banked checker swatch at the top-left (tileset-only
-     *   `playZone` -> 2x2 tilemap {0,1,1,0} bank-loaded from bank 2). A 16x16 swatch is <= 1.1% of the
-     *   160x144 frame, so a FULL-FRAME dominant<0.95 gate is arithmetically unsatisfiable no matter
-     *   how correctly the banked tilemap renders — the wrong premise. Scoping the SAME gate to the
-     *   painted swatch (where the live D-03 screenshot measures dominant=0.50) proves the banked
-     *   tilemap loaded and rendered, WITHOUT lowering the 0.95 threshold (see
+     *   frame is analysed. When supplied, the SAME gate (>= 2 distinct colours AND dominant ratio <
+     *   0.95 — threshold UNCHANGED) is applied only to that region. Phase 15 F5/F6: the banks
+     *   codegen-demo paints a 2x2 (16x16px) banked checker swatch at the top-left (tileset-only
+     *   `playZone` -> 2x2 tilemap {0,1,1,0} bank-loaded from bank 2). A 16x16 swatch is <= 1.1% of
+     *   the 160x144 frame, so a FULL-FRAME dominant<0.95 gate is arithmetically unsatisfiable no
+     *   matter how correctly the banked tilemap renders — the wrong premise. Scoping the SAME gate
+     *   to the painted swatch (where the live D-03 screenshot measures dominant=0.50) proves the
+     *   banked tilemap loaded and rendered, WITHOUT lowering the 0.95 threshold (see
      *   evidence/diagnosis/banks.md + evidence/banks-anchor*.png).
      */
-    private fun assertScreenshotIsNonUniform(
-        file: File,
-        label: String,
-        region: IntArray? = null,
-    ) {
+    private fun assertScreenshotIsNonUniform(file: File, label: String, region: IntArray? = null) {
         val img =
             ImageIO.read(file) ?: fail("$label: file is not a valid PNG: ${file.absolutePath}")
 
@@ -429,7 +425,8 @@ class BanksUatTest {
             // F5/F6: the banked zone checker is a 2x2 (16x16px) swatch at the top-left. Scope the
             // SAME non-uniformity gate (0.95 unchanged) to the painted region — within the swatch
             // the live D-03 capture measures dominant=0.50, proving the SWITCH_ROM-from-HOME banked
-            // tilemap loaded and rendered. See evidence/diagnosis/banks.md + evidence/banks-anchor2*.
+            // tilemap loaded and rendered. See evidence/diagnosis/banks.md +
+            // evidence/banks-anchor2*.
             assertScreenshotIsNonUniform(
                 screenshotPath,
                 "anchor2-tilemap",

@@ -156,12 +156,13 @@ class BanksEmissionTest {
         //       hardcode "pause_exit" as the canonical, since emission order determines
         //       which exit stub is chosen as canonical.
         val dedupCanonicalPattern = Regex("""/\* Deduplicated: see (\w+) \*/""")
-        val dedupCanonicals = dedupCanonicalPattern.findAll(bank1C).map { it.groupValues[1] }.toList()
+        val dedupCanonicals =
+            dedupCanonicalPattern.findAll(bank1C).map { it.groupValues[1] }.toList()
         val anyDedupCanonicalIsBanked = dedupCanonicals.any { canonical ->
             extractFunctionBody(bank1C, canonical).contains(" BANKED")
         }
-        val playExitBANKED = exitBody.contains(" BANKED") ||
-            (exitBody.isEmpty() && anyDedupCanonicalIsBanked)
+        val playExitBANKED =
+            exitBody.contains(" BANKED") || (exitBody.isEmpty() && anyDedupCanonicalIsBanked)
         assertTrue(
             playExitBANKED,
             "play_exit must be auto-synthesized as BANKED (Req #15 isMbcGame gate), " +
@@ -647,9 +648,10 @@ class BanksEmissionTest {
         // it produces a 4-byte one-invocation-path stub. This stub is structurally different from
         // the 360-element screen-sized tilemap the test verifies. Skip in that case too.
         val tilemapContentRaw = if (tilemapCFile.exists()) tilemapCFile.readText() else ""
-        val tilemapHasScreenSize = tilemapContentRaw.contains(
-            Regex("""_zone_playZone_tilemap\s*\[\s*(360|20\s*\*\s*18)\s*\]""")
-        )
+        val tilemapHasScreenSize =
+            tilemapContentRaw.contains(
+                Regex("""_zone_playZone_tilemap\s*\[\s*(360|20\s*\*\s*18)\s*\]""")
+            )
         Assumptions.assumeTrue(
             tilemapCFile.exists() && tilemapHasScreenSize,
             "INV-8 prerequisite missing: requires a screen-sized (360-element) tilemap. " +

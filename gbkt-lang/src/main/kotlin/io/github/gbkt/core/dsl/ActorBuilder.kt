@@ -1216,16 +1216,16 @@ class ActorPropDelegate(
  * @param block The actor configuration block.
  */
 /**
- * Single-use: each `val x by actor { }` binding must use its own delegate instance.
- * Reusing one instance across two `by` bindings throws [IllegalStateException] at build time.
+ * Single-use: each `val x by actor { }` binding must use its own delegate instance. Reusing one
+ * instance across two `by` bindings throws [IllegalStateException] at build time.
  */
 class ActorDelegate(private val nameOverride: String?, private val block: ActorBuilder.() -> Unit) :
     ReadOnlyProperty<Any?, ActorRef> {
     private var ref: ActorRef? = null
 
     /**
-     * Single-use guard. Prevents silent double-registration when the same delegate instance
-     * is accidentally bound to two `val` properties.
+     * Single-use guard. Prevents silent double-registration when the same delegate instance is
+     * accidentally bound to two `val` properties.
      */
     private var delegateUsed: Boolean = false
 

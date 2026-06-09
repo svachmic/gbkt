@@ -93,12 +93,13 @@ class MetaspriteBuilderMirrorDedupTest {
                     // No mirrorDedup() opt-in -- stays false.
                     frame { tile(0, 0, 0) }
                 }
-                val playScene = scene("play") {
-                    frame {
-                        moveMetasprite(deduped)
-                        moveMetasprite(canonical)
+                val playScene =
+                    scene("play") {
+                        frame {
+                            moveMetasprite(deduped)
+                            moveMetasprite(canonical)
+                        }
                     }
-                }
                 start = playScene
             }
         val ir = g.build()

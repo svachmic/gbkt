@@ -46,22 +46,21 @@ import kotlin.test.assertTrue
 
 private val minimalMetaspriteFrame =
     MetaspriteFrame(
-        tiles = listOf(
-            MetaspriteTile(relX = 0, relY = 0, tileId = 0),
-            MetaspriteTile(relX = 0, relY = 8, tileId = 1),
-        )
+        tiles =
+            listOf(
+                MetaspriteTile(relX = 0, relY = 0, tileId = 0),
+                MetaspriteTile(relX = 0, relY = 8, tileId = 1),
+            )
     )
 
-private fun buildMetaspriteGameIR(
-    target: GbcTarget,
-    metasprites: List<MetaspriteIR>,
-) = GameIR(
-    name = "MetaspriteSpritePaletteTest",
-    config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY, romBanks = 2, gbcTarget = target),
-    scenes = listOf(SceneIR(id = "gameplay")),
-    metasprites = metasprites,
-    startScene = "gameplay",
-)
+private fun buildMetaspriteGameIR(target: GbcTarget, metasprites: List<MetaspriteIR>) =
+    GameIR(
+        name = "MetaspriteSpritePaletteTest",
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY, romBanks = 2, gbcTarget = target),
+        scenes = listOf(SceneIR(id = "gameplay")),
+        metasprites = metasprites,
+        startScene = "gameplay",
+    )
 
 class MetaspriteSpritePaletteEmissionTest {
 
@@ -79,7 +78,10 @@ class MetaspriteSpritePaletteEmissionTest {
             val line = lines[i]
             body.appendLine(line)
             for (ch in line) {
-                if (ch == '{') { depth++; started = true }
+                if (ch == '{') {
+                    depth++
+                    started = true
+                }
                 if (ch == '}') depth--
             }
             if (started && depth == 0) break
@@ -98,18 +100,21 @@ class MetaspriteSpritePaletteEmissionTest {
 
     @Test
     fun `main emits set_sprite_palette for metasprite on GBC target (D2b)`() {
-        val gameIR = buildMetaspriteGameIR(
-            target = GbcTarget.GBC_COMPATIBLE,
-            metasprites = listOf(
-                MetaspriteIR(
-                    id = "player",
-                    frames = listOf(minimalMetaspriteFrame),
-                    spriteMode = SpriteMode.SPR8x16,
-                )
-            ),
-        )
+        val gameIR =
+            buildMetaspriteGameIR(
+                target = GbcTarget.GBC_COMPATIBLE,
+                metasprites =
+                    listOf(
+                        MetaspriteIR(
+                            id = "player",
+                            frames = listOf(minimalMetaspriteFrame),
+                            spriteMode = SpriteMode.SPR8x16,
+                        )
+                    ),
+            )
         val output = pipeline.generate(gameIR)
-        val mainC = output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
+        val mainC =
+            output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
 
         // Brace-walk main() body to lock the assertion inside the right scope.
         val mainBody = extractFunctionBody(mainC, "void main(void)")
@@ -122,7 +127,8 @@ class MetaspriteSpritePaletteEmissionTest {
 
         // D2b positive: set_sprite_palette must be emitted for the "player" metasprite.
         // The palette symbol is player_palettes (png2asset naming convention: <id>_palettes).
-        // Slot 0 = first (and only) metasprite. Count = 1u (one 4-color sub-palette per metasprite).
+        // Slot 0 = first (and only) metasprite. Count = 1u (one 4-color sub-palette per
+        // metasprite).
         assertTrue(
             mainBody.contains("set_sprite_palette(") && mainBody.contains("player_palettes"),
             "main() body must contain set_sprite_palette(..., player_palettes) for the player " +
@@ -141,16 +147,18 @@ class MetaspriteSpritePaletteEmissionTest {
 
     @Test
     fun `main does NOT emit set_sprite_palette on DMG-only target (gate off)`() {
-        val gameIR = buildMetaspriteGameIR(
-            target = GbcTarget.DMG,
-            metasprites = listOf(
-                MetaspriteIR(
-                    id = "player",
-                    frames = listOf(minimalMetaspriteFrame),
-                    spriteMode = SpriteMode.SPR8x16,
-                )
-            ),
-        )
+        val gameIR =
+            buildMetaspriteGameIR(
+                target = GbcTarget.DMG,
+                metasprites =
+                    listOf(
+                        MetaspriteIR(
+                            id = "player",
+                            frames = listOf(minimalMetaspriteFrame),
+                            spriteMode = SpriteMode.SPR8x16,
+                        )
+                    ),
+            )
         val output = pipeline.generate(gameIR)
         val mainC = output.files["main.c"] ?: error("main.c not generated")
 
@@ -170,10 +178,8 @@ class MetaspriteSpritePaletteEmissionTest {
 
     @Test
     fun `main does NOT emit set_sprite_palette when no metasprites (back-compat)`() {
-        val gameIR = buildMetaspriteGameIR(
-            target = GbcTarget.GBC_COMPATIBLE,
-            metasprites = emptyList(),
-        )
+        val gameIR =
+            buildMetaspriteGameIR(target = GbcTarget.GBC_COMPATIBLE, metasprites = emptyList())
         val output = pipeline.generate(gameIR)
         val mainC = output.files["main.c"] ?: error("main.c not generated")
 

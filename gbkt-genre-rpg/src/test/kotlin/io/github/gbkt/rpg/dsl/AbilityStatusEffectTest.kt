@@ -240,7 +240,9 @@ class AbilityStatusEffectTest {
                     val thorns by statusEffect {
                         name("Thorns")
                         buff()
-                        onTrigger(EffectTrigger.ON_DAMAGE_TAKEN) { navigate(SceneRef("battle_result")) }
+                        onTrigger(EffectTrigger.ON_DAMAGE_TAKEN) {
+                            navigate(SceneRef("battle_result"))
+                        }
                     }
                     scene("battle_result") { enter {} }
                     val startSceneRef = scene("start") { enter {} }

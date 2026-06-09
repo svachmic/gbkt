@@ -35,9 +35,7 @@ import io.github.gbkt.core.ir.SoundPreset
 @Suppress("LongMethod")
 val pong =
     game("Pong") {
-        config {
-            cartridge(Cartridge.ROM_ONLY)
-        }
+        config { cartridge(Cartridge.ROM_ONLY) }
 
         // Forward-declare titleRef for circular navigation (title defined after gameover)
         val titleRef = sceneRef("title")

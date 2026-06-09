@@ -62,54 +62,68 @@ class EaseToZeroTest {
     @Test
     fun `easeToZero emits exactly two IfOp nodes`() {
         val spdY = AssignableVar("spdY")
-        val ops = buildScript { spdY.easeToZero() }   // compile-fail today — easeToZero does not exist
+        val ops = buildScript {
+            spdY.easeToZero()
+        } // compile-fail today — easeToZero does not exist
 
-        assertEquals(2, ops.size,
-            "easeToZero() must emit exactly 2 IfOp nodes (Pitfall 3: NOT one if-else)")
+        assertEquals(
+            2,
+            ops.size,
+            "easeToZero() must emit exactly 2 IfOp nodes (Pitfall 3: NOT one if-else)",
+        )
     }
 
     @Test
     fun `easeToZero first IfOp condition is LT 0`() {
         val spdY = AssignableVar("spdY")
-        val ops = buildScript { spdY.easeToZero() }   // compile-fail today
+        val ops = buildScript { spdY.easeToZero() } // compile-fail today
 
         val first = assertIs<IfOp>(ops[0], "first op must be IfOp")
-        val cond = assertIs<BinaryExpr>(first.condition,
-            "first IfOp condition must be a BinaryExpr")
-        assertEquals(BinaryOp.LT, cond.op,
-            "first IfOp condition must be LT (less-than zero check)")
-        assertEquals(VarRef("spdY"), cond.left,
-            "first IfOp condition left must be VarRef(\"spdY\")")
-        assertEquals(Literal(0), cond.right,
-            "first IfOp condition right must be Literal(0)")
+        val cond =
+            assertIs<BinaryExpr>(first.condition, "first IfOp condition must be a BinaryExpr")
+        assertEquals(BinaryOp.LT, cond.op, "first IfOp condition must be LT (less-than zero check)")
+        assertEquals(
+            VarRef("spdY"),
+            cond.left,
+            "first IfOp condition left must be VarRef(\"spdY\")",
+        )
+        assertEquals(Literal(0), cond.right, "first IfOp condition right must be Literal(0)")
     }
 
     @Test
     fun `easeToZero first IfOp body is ADD 1 assign`() {
         val spdY = AssignableVar("spdY")
-        val ops = buildScript { spdY.easeToZero() }   // compile-fail today
+        val ops = buildScript { spdY.easeToZero() } // compile-fail today
 
         val first = assertIs<IfOp>(ops[0])
         assertEquals(1, first.then.size, "first IfOp body must have exactly 1 op")
         val assign = assertIs<Assign>(first.then[0], "first IfOp body op must be Assign")
-        assertEquals("spdY", assign.target,
-            "first IfOp body assign target must be spdY")
-        assertEquals(AssignOp.ADD, assign.op,
-            "first IfOp body must use ADD (increment toward zero from negative side)")
-        assertEquals(Literal(1), assign.value,
-            "first IfOp body default by=1 must assign Literal(1)")
+        assertEquals("spdY", assign.target, "first IfOp body assign target must be spdY")
+        assertEquals(
+            AssignOp.ADD,
+            assign.op,
+            "first IfOp body must use ADD (increment toward zero from negative side)",
+        )
+        assertEquals(
+            Literal(1),
+            assign.value,
+            "first IfOp body default by=1 must assign Literal(1)",
+        )
     }
 
     @Test
     fun `easeToZero second IfOp condition is GT 0`() {
         val spdY = AssignableVar("spdY")
-        val ops = buildScript { spdY.easeToZero() }   // compile-fail today
+        val ops = buildScript { spdY.easeToZero() } // compile-fail today
 
         val second = assertIs<IfOp>(ops[1], "second op must be IfOp")
-        val cond = assertIs<BinaryExpr>(second.condition,
-            "second IfOp condition must be a BinaryExpr")
-        assertEquals(BinaryOp.GT, cond.op,
-            "second IfOp condition must be GT (greater-than zero check)")
+        val cond =
+            assertIs<BinaryExpr>(second.condition, "second IfOp condition must be a BinaryExpr")
+        assertEquals(
+            BinaryOp.GT,
+            cond.op,
+            "second IfOp condition must be GT (greater-than zero check)",
+        )
         assertEquals(VarRef("spdY"), cond.left)
         assertEquals(Literal(0), cond.right)
     }
@@ -117,14 +131,17 @@ class EaseToZeroTest {
     @Test
     fun `easeToZero second IfOp body is SUB 1 assign`() {
         val spdY = AssignableVar("spdY")
-        val ops = buildScript { spdY.easeToZero() }   // compile-fail today
+        val ops = buildScript { spdY.easeToZero() } // compile-fail today
 
         val second = assertIs<IfOp>(ops[1])
         assertEquals(1, second.then.size, "second IfOp body must have exactly 1 op")
         val assign = assertIs<Assign>(second.then[0])
         assertEquals("spdY", assign.target)
-        assertEquals(AssignOp.SUB, assign.op,
-            "second IfOp body must use SUB (decrement toward zero from positive side)")
+        assertEquals(
+            AssignOp.SUB,
+            assign.op,
+            "second IfOp body must use SUB (decrement toward zero from positive side)",
+        )
         assertEquals(Literal(1), assign.value)
     }
 
@@ -135,19 +152,25 @@ class EaseToZeroTest {
     @Test
     fun `easeToZero(by=2) emits ADD 2 and SUB 2 assigns`() {
         val spdX = AssignableVar("spdX")
-        val ops = buildScript { spdX.easeToZero(by = 2) }   // compile-fail today
+        val ops = buildScript { spdX.easeToZero(by = 2) } // compile-fail today
 
         assertEquals(2, ops.size, "easeToZero(by=2) must still emit exactly 2 IfOp nodes")
 
         val firstAssign = assertIs<Assign>(assertIs<IfOp>(ops[0]).then[0])
         assertEquals(AssignOp.ADD, firstAssign.op)
-        assertEquals(Literal(2), firstAssign.value,
-            "easeToZero(by=2) first branch must add Literal(2)")
+        assertEquals(
+            Literal(2),
+            firstAssign.value,
+            "easeToZero(by=2) first branch must add Literal(2)",
+        )
 
         val secondAssign = assertIs<Assign>(assertIs<IfOp>(ops[1]).then[0])
         assertEquals(AssignOp.SUB, secondAssign.op)
-        assertEquals(Literal(2), secondAssign.value,
-            "easeToZero(by=2) second branch must subtract Literal(2)")
+        assertEquals(
+            Literal(2),
+            secondAssign.value,
+            "easeToZero(by=2) second branch must subtract Literal(2)",
+        )
     }
 
     // =========================================================================
@@ -157,13 +180,19 @@ class EaseToZeroTest {
     @Test
     fun `easeToZero two IfOp nodes each have empty otherwise (not one if-else)`() {
         val spdY = AssignableVar("spdY")
-        val ops = buildScript { spdY.easeToZero() }   // compile-fail today
+        val ops = buildScript { spdY.easeToZero() } // compile-fail today
 
-        val first  = assertIs<IfOp>(ops[0])
+        val first = assertIs<IfOp>(ops[0])
         val second = assertIs<IfOp>(ops[1])
-        assertEquals(emptyList(), first.otherwise,
-            "Pitfall 3: first IfOp must have no otherwise branch (two separate IfOp, not if-else)")
-        assertEquals(emptyList(), second.otherwise,
-            "Pitfall 3: second IfOp must have no otherwise branch (two separate IfOp, not if-else)")
+        assertEquals(
+            emptyList(),
+            first.otherwise,
+            "Pitfall 3: first IfOp must have no otherwise branch (two separate IfOp, not if-else)",
+        )
+        assertEquals(
+            emptyList(),
+            second.otherwise,
+            "Pitfall 3: second IfOp must have no otherwise branch (two separate IfOp, not if-else)",
+        )
     }
 }

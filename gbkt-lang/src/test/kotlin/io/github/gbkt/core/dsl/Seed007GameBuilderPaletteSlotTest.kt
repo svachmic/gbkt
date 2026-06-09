@@ -58,7 +58,13 @@ class Seed007GameBuilderPaletteSlotTest {
     private fun autoSpritePalette(name: String): GBCPalette =
         GBCPalette(
             name = name,
-            colors = listOf(Color.rgb555(31, 31, 31), Color.rgb555(20, 20, 20), Color.rgb555(10, 10, 10), Color.rgb555(0, 0, 0)),
+            colors =
+                listOf(
+                    Color.rgb555(31, 31, 31),
+                    Color.rgb555(20, 20, 20),
+                    Color.rgb555(10, 10, 10),
+                    Color.rgb555(0, 0, 0),
+                ),
             slot = -1,
             type = PaletteType.SPRITE,
         )
@@ -67,7 +73,13 @@ class Seed007GameBuilderPaletteSlotTest {
     private fun explicitSpritePalette(name: String, slot: Int): GBCPalette =
         GBCPalette(
             name = name,
-            colors = listOf(Color.rgb555(31, 31, 31), Color.rgb555(20, 20, 20), Color.rgb555(10, 10, 10), Color.rgb555(0, 0, 0)),
+            colors =
+                listOf(
+                    Color.rgb555(31, 31, 31),
+                    Color.rgb555(20, 20, 20),
+                    Color.rgb555(10, 10, 10),
+                    Color.rgb555(0, 0, 0),
+                ),
             slot = slot,
             type = PaletteType.SPRITE,
         )
@@ -76,7 +88,13 @@ class Seed007GameBuilderPaletteSlotTest {
     private fun autoBgPalette(name: String): GBCPalette =
         GBCPalette(
             name = name,
-            colors = listOf(Color.rgb555(31, 31, 31), Color.rgb555(20, 20, 20), Color.rgb555(10, 10, 10), Color.rgb555(0, 0, 0)),
+            colors =
+                listOf(
+                    Color.rgb555(31, 31, 31),
+                    Color.rgb555(20, 20, 20),
+                    Color.rgb555(10, 10, 10),
+                    Color.rgb555(0, 0, 0),
+                ),
             slot = -1,
             type = PaletteType.BACKGROUND,
         )
@@ -194,10 +212,11 @@ class Seed007GameBuilderPaletteSlotTest {
 
         val ir =
             game("D09ExplicitSlot") {
-                    val mainScene = scene("main") {
-                        palette(gray, slot = 2)
-                        enter {}
-                    }
+                    val mainScene =
+                        scene("main") {
+                            palette(gray, slot = 2)
+                            enter {}
+                        }
                     start = mainScene
                 }
                 .build()
@@ -207,7 +226,11 @@ class Seed007GameBuilderPaletteSlotTest {
 
         assertEquals(1, setPals.size)
         assertEquals("gray", setPals[0].paletteName)
-        assertEquals(2, setPals[0].slot, "Expected explicit slot 2 in SetPalette, got ${setPals[0].slot}")
+        assertEquals(
+            2,
+            setPals[0].slot,
+            "Expected explicit slot 2 in SetPalette, got ${setPals[0].slot}",
+        )
     }
 
     // =========================================================================
@@ -224,13 +247,14 @@ class Seed007GameBuilderPaletteSlotTest {
 
         val ir =
             game("D10AutoIncrement") {
-                    val mainScene = scene("main") {
-                        palette(p0)
-                        palette(p1)
-                        palette(p2)
-                        palette(p3)
-                        enter {}
-                    }
+                    val mainScene =
+                        scene("main") {
+                            palette(p0)
+                            palette(p1)
+                            palette(p2)
+                            palette(p3)
+                            enter {}
+                        }
                     start = mainScene
                 }
                 .build()
@@ -255,16 +279,18 @@ class Seed007GameBuilderPaletteSlotTest {
         // slot = 8 is out of range 0..7 — must fail loudly with the slot number in message
         val p = autoBgPalette("outOfRange")
 
-        val ex = assertFailsWith<IllegalArgumentException> {
-            game("D11RangeCheck") {
-                    val mainScene = scene("main") {
-                        palette(p, slot = 8)
-                        enter {}
+        val ex =
+            assertFailsWith<IllegalArgumentException> {
+                game("D11RangeCheck") {
+                        val mainScene =
+                            scene("main") {
+                                palette(p, slot = 8)
+                                enter {}
+                            }
+                        start = mainScene
                     }
-                    start = mainScene
-                }
-                .build()
-        }
+                    .build()
+            }
         assertTrue(
             ex.message?.contains("8") == true,
             "Exception message must name the offending slot (8), got: '${ex.message}'",
@@ -280,17 +306,19 @@ class Seed007GameBuilderPaletteSlotTest {
         val a = autoBgPalette("alpha")
         val b = autoBgPalette("beta")
 
-        val ex = assertFailsWith<IllegalArgumentException> {
-            game("D11DuplicateSlot") {
-                    val mainScene = scene("main") {
-                        palette(a, slot = 3)
-                        palette(b, slot = 3)
-                        enter {}
+        val ex =
+            assertFailsWith<IllegalArgumentException> {
+                game("D11DuplicateSlot") {
+                        val mainScene =
+                            scene("main") {
+                                palette(a, slot = 3)
+                                palette(b, slot = 3)
+                                enter {}
+                            }
+                        start = mainScene
                     }
-                    start = mainScene
-                }
-                .build()
-        }
+                    .build()
+            }
         assertTrue(
             ex.message?.contains("3") == true,
             "Exception message must name the duplicate slot (3), got: '${ex.message}'",
@@ -306,10 +334,11 @@ class Seed007GameBuilderPaletteSlotTest {
         // Must NOT throw
         val ir =
             game("D11CrossSceneSlot") {
-                    val sceneXScene = scene("sceneX") {
-                        palette(a, slot = 3)
-                        enter {}
-                    }
+                    val sceneXScene =
+                        scene("sceneX") {
+                            palette(a, slot = 3)
+                            enter {}
+                        }
                     scene("sceneY") {
                         palette(b, slot = 3)
                         enter {}

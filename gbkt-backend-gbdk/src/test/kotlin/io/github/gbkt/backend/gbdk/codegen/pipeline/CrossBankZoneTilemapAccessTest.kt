@@ -222,10 +222,11 @@ class CrossBankZoneTilemapAccessTest {
                         waypoint(x = 5, y = 15)
                     }
                 }
-                val raceScene = scene("race") {
-                    enter { print("LAP:", position = PositionDef(1, 1)) }
-                    frame { /* empty */ }
-                }
+                val raceScene =
+                    scene("race") {
+                        enter { print("LAP:", position = PositionDef(1, 1)) }
+                        frame { /* empty */ }
+                    }
                 start = raceScene
             }
             .build()

@@ -6,11 +6,6 @@
  */
 package io.github.gbkt.examples.platformer_template
 
-import io.github.gbkt.core.ir.VarType
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
-
 /**
  * IR validation tests for the PlatformerTemplate DSL definition (Phase 12 Wave 0 scaffold).
  *

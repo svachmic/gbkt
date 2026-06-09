@@ -42,7 +42,7 @@ class ZoneBuilderSpawnTest {
 
     @Test
     fun `omitted spawn leaves spawnX and spawnY null`() {
-        val zone = buildZone("z") { }
+        val zone = buildZone("z") {}
         assertNull(zone.spawnX, "spawnX must be null when spawn() is not called")
         assertNull(zone.spawnY, "spawnY must be null when spawn() is not called")
     }

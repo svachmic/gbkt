@@ -81,19 +81,21 @@ private fun buildZoneWithPaletteGame(target: GbcTarget = GbcTarget.GBC_COMPATIBL
     GameIR(
         name = "ZonePaletteTest",
         config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY, romBanks = 2, gbcTarget = target),
-        scenes = listOf(
-            SceneIR(id = "title"),          // empty stub — forces multi-scene path → bank1.c
-            SceneIR(id = "play", zoneRefs = listOf("playZone")),
-        ),
-        zones = listOf(
-            ZoneIR(
-                id = "playZone",
-                name = "Play Zone",
-                tilesetPath = "tiles/play.png",  // NON-NULL → triggers NEW-path branch
-                mapWidth = 20,
-                mapHeight = 18,
-            )
-        ),
+        scenes =
+            listOf(
+                SceneIR(id = "title"), // empty stub — forces multi-scene path → bank1.c
+                SceneIR(id = "play", zoneRefs = listOf("playZone")),
+            ),
+        zones =
+            listOf(
+                ZoneIR(
+                    id = "playZone",
+                    name = "Play Zone",
+                    tilesetPath = "tiles/play.png", // NON-NULL → triggers NEW-path branch
+                    mapWidth = 20,
+                    mapHeight = 18,
+                )
+            ),
         startScene = "title",
     )
 
@@ -118,14 +120,17 @@ class ZoneLoadSetBkgPaletteEmissionTest {
         val allFiles = pipeline.generate(gameIR).files
         val bank1C = allFiles["bank1.c"] ?: error("bank1.c not generated. Files: ${allFiles.keys}")
 
-        val enterBody = extractFunctionBodyForPaletteTest(bank1C, "void play_enter(void)")
-            ?: error("Could not extract play_enter() body from bank1.c")
+        val enterBody =
+            extractFunctionBodyForPaletteTest(bank1C, "void play_enter(void)")
+                ?: error("Could not extract play_enter() body from bank1.c")
 
         // Positive: set_bkg_palette with PALETTE_COUNT macro (D-02 contract)
         assertTrue(
-            enterBody.contains("set_bkg_palette(0u, _zone_playZone_tileset_PALETTE_COUNT, _zone_playZone_tileset_palettes)"),
+            enterBody.contains(
+                "set_bkg_palette(0u, _zone_playZone_tileset_PALETTE_COUNT, _zone_playZone_tileset_palettes)"
+            ),
             "play_enter body must contain set_bkg_palette with PALETTE_COUNT macro (D-01/D-02). " +
-                "body:\n$enterBody"
+                "body:\n$enterBody",
         )
 
         // Ordering: set_bkg_palette BEFORE DISPLAY_ON (D-01 ordering contract)
@@ -134,7 +139,7 @@ class ZoneLoadSetBkgPaletteEmissionTest {
         assertTrue(
             paletteIdx >= 0 && displayOnIdx > paletteIdx,
             "set_bkg_palette must appear BEFORE DISPLAY_ON in play_enter body (D-01). " +
-                "paletteIdx=$paletteIdx displayOnIdx=$displayOnIdx. body:\n$enterBody"
+                "paletteIdx=$paletteIdx displayOnIdx=$displayOnIdx. body:\n$enterBody",
         )
     }
 
@@ -152,14 +157,15 @@ class ZoneLoadSetBkgPaletteEmissionTest {
         val allFiles = pipeline.generate(gameIR).files
         val bank1C = allFiles["bank1.c"] ?: error("bank1.c not generated")
 
-        val enterBody = extractFunctionBodyForPaletteTest(bank1C, "void play_enter(void)")
-            ?: error("Could not extract play_enter() body from bank1.c")
+        val enterBody =
+            extractFunctionBodyForPaletteTest(bank1C, "void play_enter(void)")
+                ?: error("Could not extract play_enter() body from bank1.c")
 
         // Negative: DMG target must NOT emit set_bkg_palette (GBC-gated per D-01)
         assertFalse(
             enterBody.contains("set_bkg_palette"),
             "play_enter body must NOT contain set_bkg_palette for DMG target (GBC-gated). " +
-                "body:\n$enterBody"
+                "body:\n$enterBody",
         )
     }
 
@@ -175,29 +181,38 @@ class ZoneLoadSetBkgPaletteEmissionTest {
 
     @Test
     fun `LEGACY-path zone (tilesetPath null) does NOT emit set_bkg_palette`() {
-        val gameIR = GameIR(
-            name = "LegacyZoneTest",
-            config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY, romBanks = 2, gbcTarget = GbcTarget.GBC_COMPATIBLE),
-            scenes = listOf(
-                SceneIR(id = "title"),
-                SceneIR(id = "play", zoneRefs = listOf("legacyZone")),
-            ),
-            zones = listOf(
-                ZoneIR(
-                    id = "legacyZone",
-                    name = "Legacy",
-                    tilesetPath = null,  // LEGACY-path — no palette upload
-                    mapWidth = 20,
-                    mapHeight = 18,
-                )
-            ),
-            startScene = "title",
-        )
+        val gameIR =
+            GameIR(
+                name = "LegacyZoneTest",
+                config =
+                    CartridgeConfig(
+                        cartridge = Cartridge.ROM_ONLY,
+                        romBanks = 2,
+                        gbcTarget = GbcTarget.GBC_COMPATIBLE,
+                    ),
+                scenes =
+                    listOf(
+                        SceneIR(id = "title"),
+                        SceneIR(id = "play", zoneRefs = listOf("legacyZone")),
+                    ),
+                zones =
+                    listOf(
+                        ZoneIR(
+                            id = "legacyZone",
+                            name = "Legacy",
+                            tilesetPath = null, // LEGACY-path — no palette upload
+                            mapWidth = 20,
+                            mapHeight = 18,
+                        )
+                    ),
+                startScene = "title",
+            )
         val allFiles = pipeline.generate(gameIR).files
         val bank1C = allFiles["bank1.c"] ?: error("bank1.c not generated")
 
-        val enterBody = extractFunctionBodyForPaletteTest(bank1C, "void play_enter(void)")
-            ?: error("Could not extract play_enter() body")
+        val enterBody =
+            extractFunctionBodyForPaletteTest(bank1C, "void play_enter(void)")
+                ?: error("Could not extract play_enter() body")
 
         // Negative: LEGACY-path (tilesetPath null) must NOT emit set_bkg_palette
         // (SEED-017 deferred unification — only NEW-path zones get palette upload)
@@ -205,7 +220,7 @@ class ZoneLoadSetBkgPaletteEmissionTest {
             enterBody.contains("set_bkg_palette"),
             "play_enter body must NOT contain set_bkg_palette for LEGACY-path zone " +
                 "(SEED-017 deferred unification — only NEW-path zones get palette upload). " +
-                "body:\n$enterBody"
+                "body:\n$enterBody",
         )
     }
 }

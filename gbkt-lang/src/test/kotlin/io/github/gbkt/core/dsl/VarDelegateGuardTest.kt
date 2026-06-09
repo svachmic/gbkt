@@ -39,11 +39,12 @@ class VarDelegateGuardTest {
         val d = u8Var(0)
         assertFailsWith<IllegalStateException> {
             game("Test") {
-                var a by d   // first provideDelegate — OK
-                var b by d   // second provideDelegate on SAME instance — must throw
-                val sScene = scene("s") {}
-                start = sScene
-            }.build()
+                    var a by d // first provideDelegate — OK
+                    var b by d // second provideDelegate on SAME instance — must throw
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
         }
     }
 
@@ -56,11 +57,12 @@ class VarDelegateGuardTest {
         val d = u16Var(0)
         assertFailsWith<IllegalStateException> {
             game("Test") {
-                var a by d
-                var b by d
-                val sScene = scene("s") {}
-                start = sScene
-            }.build()
+                    var a by d
+                    var b by d
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
         }
     }
 
@@ -73,11 +75,12 @@ class VarDelegateGuardTest {
         val d = i8Var(0)
         assertFailsWith<IllegalStateException> {
             game("Test") {
-                var a by d
-                var b by d
-                val sScene = scene("s") {}
-                start = sScene
-            }.build()
+                    var a by d
+                    var b by d
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
         }
     }
 
@@ -90,11 +93,12 @@ class VarDelegateGuardTest {
         val d = i16Var(0)
         assertFailsWith<IllegalStateException> {
             game("Test") {
-                var a by d
-                var b by d
-                val sScene = scene("s") {}
-                start = sScene
-            }.build()
+                    var a by d
+                    var b by d
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
         }
     }
 
@@ -107,11 +111,12 @@ class VarDelegateGuardTest {
         val d = u8Array(4)
         assertFailsWith<IllegalStateException> {
             game("Test") {
-                val a by d   // first provideDelegate — OK
-                val b by d   // second provideDelegate on SAME instance — must throw
-                val sScene = scene("s") {}
-                start = sScene
-            }.build()
+                    val a by d // first provideDelegate — OK
+                    val b by d // second provideDelegate on SAME instance — must throw
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
         }
     }
 }

@@ -35,9 +35,7 @@ import io.github.gbkt.core.ir.SoundPreset
 @Suppress("LongMethod")
 val breakout =
     game("Breakout") {
-        config {
-            cartridge(Cartridge.ROM_ONLY)
-        }
+        config { cartridge(Cartridge.ROM_ONLY) }
 
         // Forward-declare titleRef for circular navigation (title defined after win/gameover)
         val titleRef = sceneRef("title")

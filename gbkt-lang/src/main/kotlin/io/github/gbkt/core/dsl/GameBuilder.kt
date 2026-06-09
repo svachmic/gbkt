@@ -335,7 +335,8 @@ class GameBuilder(val name: String) {
      * Registers a [SaveSystem] built by [SaveDataDelegate].
      *
      * Called by [SaveDataDelegate.provideDelegate] when `val saves by saveData { }` is evaluated
-     * inside a `game { }` block. The system id is inferred from the property name (Project Rule #1).
+     * inside a `game { }` block. The system id is inferred from the property name (Project
+     * Rule #1).
      */
     internal fun registerSaveData(system: io.github.gbkt.core.ir.SaveSystem) {
         refRegistry.register(system.id, RefKind.SYSTEM)

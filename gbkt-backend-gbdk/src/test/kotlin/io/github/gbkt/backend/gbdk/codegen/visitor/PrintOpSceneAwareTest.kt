@@ -61,11 +61,12 @@ class PrintOpSceneAwareTest {
                         cartridge = Cartridge.ROM_ONLY
                         romBanks = 2
                     }
-                    val zoneScene = scene("zone") {
-                        tileset("tilesets/dungeon.png")
-                        enter { print("HUD", position = PositionDef(1, 1)) }
-                        frame { /* no-op */ }
-                    }
+                    val zoneScene =
+                        scene("zone") {
+                            tileset("tilesets/dungeon.png")
+                            enter { print("HUD", position = PositionDef(1, 1)) }
+                            frame { /* no-op */ }
+                        }
                     start = zoneScene
                 }
                 .build()
@@ -157,10 +158,11 @@ class PrintOpSceneAwareTest {
                             waypoint(x = 5, y = 15)
                         }
                     }
-                    val raceScene = scene("race") {
-                        enter { print("LAP:", position = PositionDef(1, 1)) }
-                        frame { /* empty */ }
-                    }
+                    val raceScene =
+                        scene("race") {
+                            enter { print("LAP:", position = PositionDef(1, 1)) }
+                            frame { /* empty */ }
+                        }
                     start = raceScene
                 }
                 .build()
@@ -224,10 +226,11 @@ class PrintOpSceneAwareTest {
                         cartridge = Cartridge.ROM_ONLY
                         romBanks = 2
                     }
-                    val titleScene = scene("title") {
-                        enter { print("HI", position = PositionDef(1, 1)) }
-                        frame { /* no-op */ }
-                    }
+                    val titleScene =
+                        scene("title") {
+                            enter { print("HI", position = PositionDef(1, 1)) }
+                            frame { /* no-op */ }
+                        }
                     start = titleScene
                 }
                 .build()

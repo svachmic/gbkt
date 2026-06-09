@@ -435,8 +435,8 @@ class SportVisitor : GenreSystemVisitor {
      * 1. _camera_target = <playerActorIdx>u; (GAP-D)
      * 2. set_bkg_data(0, 3, _racing_<id>_tileset); (GAP-B — DMA 3 tiles to VRAM) set_bkg_tiles(0,
      *    0, <mapW>u, <mapH>u, _zone_<id>_tiles); (GAP-B — paint tilemap) _current_tileset_id = 1u;
-     *    (GAP-B — sentinel; mirrors GBDKPipeline.addTileset- GuardToEnterFunction's
-     *    tileset-loaded convention)
+     *    (GAP-B — sentinel; mirrors GBDKPipeline.addTileset- GuardToEnterFunction's tileset-loaded
+     *    convention)
      * 3. pool_<aiVehicleId>_spawn(<rivalX>u, <rivalY>u); (GAP-A — one call per AI slot, position
      *    from rival actor's position(...) declaration)
      *

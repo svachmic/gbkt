@@ -13,9 +13,9 @@ package io.github.gbkt.core.ir
 /**
  * Visitor interface for [ScriptOp] dispatch.
  *
- * Provides one `visit*` method per [ScriptOp] subtype. Implementations convert IR nodes
- * to a result of type [T].
- * (Do not maintain a manual count — use `grep -c "^    fun visit" ScriptOpVisitorI.kt` to check.)
+ * Provides one `visit*` method per [ScriptOp] subtype. Implementations convert IR nodes to a result
+ * of type [T]. (Do not maintain a manual count — use `grep -c "^ fun visit" ScriptOpVisitorI.kt` to
+ * check.)
  *
  * The `I` suffix distinguishes this interface from the backend's `ScriptOpVisitor` object (which is
  * an implementation of this interface).

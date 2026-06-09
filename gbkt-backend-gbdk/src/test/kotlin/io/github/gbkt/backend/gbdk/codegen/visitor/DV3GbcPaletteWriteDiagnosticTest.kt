@@ -129,13 +129,14 @@ private fun buildDv3GbcGame() =
                 color3(Color.rgb555(0, 10, 0))
             }
 
-            val playScene = scene("play") {
-                palette(gray)
-                palette(pink)
-                palette(cyan)
-                palette(green)
-                enter {}
-            }
+            val playScene =
+                scene("play") {
+                    palette(gray)
+                    palette(pink)
+                    palette(cyan)
+                    palette(green)
+                    enter {}
+                }
 
             start = playScene
         }

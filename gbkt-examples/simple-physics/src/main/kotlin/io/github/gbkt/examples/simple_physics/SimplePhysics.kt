@@ -41,13 +41,12 @@ internal const val INITIAL_POS_IN_SUBPIXELS = 1024
 @Suppress("LongMethod")
 val simplePhysics =
     game("SimplePhysics") {
-        config {
-            cartridge(Cartridge.ROM_ONLY)
-        }
+        config { cartridge(Cartridge.ROM_ONLY) }
 
         // ---------------------------------------------------------------------
         // Variables — 12.4 fixed-point position (i16FixedVar: construct in pixels)
-        // posX/posY initialized to pixel 64 → stored as 64 shl 4 = 1024 sub-pixels (matches phys.c:59)
+        // posX/posY initialized to pixel 64 → stored as 64 shl 4 = 1024 sub-pixels (matches
+        // phys.c:59)
         // spdX/spdY are raw speed in sub-pixels/frame — stay i16Var (Pitfall 1/2: speed ≠ position)
         // ---------------------------------------------------------------------
 

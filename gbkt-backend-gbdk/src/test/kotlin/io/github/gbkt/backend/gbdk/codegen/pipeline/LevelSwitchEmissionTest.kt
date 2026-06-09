@@ -131,33 +131,20 @@ class LevelSwitchEmissionTest {
         game("LevelSwitchEmissionTest") {
                 platformerPhysics { solidThreshold(17) }
 
-                val titleZone by zone {
-                    tileset(asset("res/graphics/title-screen.png"))
-                }
-                val gameplayZone1 by zone {
-                    tileset(asset("res/graphics/level1.png"))
-                }
-                val gameplayZone2 by zone {
-                    tileset(asset("res/graphics/level2.png"))
-                }
-                val nextLevelZone by zone {
-                    tileset(asset("res/graphics/next-level.png"))
-                }
+                val titleZone by zone { tileset(asset("res/graphics/title-screen.png")) }
+                val gameplayZone1 by zone { tileset(asset("res/graphics/level1.png")) }
+                val gameplayZone2 by zone { tileset(asset("res/graphics/level2.png")) }
+                val nextLevelZone by zone { tileset(asset("res/graphics/next-level.png")) }
 
-                val titleScene = scene("title") {
-                    zone(titleZone)
-                    enter {
-                        cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);")
+                val titleScene =
+                    scene("title") {
+                        zone(titleZone)
+                        enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
+                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                     }
-                    frame {
-                        whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
-                    }
-                }
                 scene("gameplay") {
                     zone(gameplayZone1)
-                    frame {
-                        whenever(buttons.start.pressed) { navigate(SceneRef("nextLevel")) }
-                    }
+                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("nextLevel")) } }
                 }
                 // 2nd gameplay zone surfaces in the setup_current_level switch as case 1.
                 // It is bound to a zone-only scene (no enter / no frame) per the
@@ -167,21 +154,15 @@ class LevelSwitchEmissionTest {
                 // instead so the switch dispatch has 2 cases without inflating the scene count.
                 scene("nextLevel") {
                     zone(nextLevelZone)
-                    enter {
-                        cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);")
-                    }
-                    frame {
-                        whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
-                    }
+                    enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
+                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                 }
                 // Hidden scene binding the 2nd gameplay zone so it shows up in gameIR.zones.
                 // The setup_current_level switch dispatches on (_current_level % zoneCount) so
                 // ≥2 cases proves the dispatch table is non-degenerate.
                 scene("gameplay2") {
                     zone(gameplayZone2)
-                    frame {
-                        whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
-                    }
+                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                 }
                 start = titleScene
             }
@@ -457,7 +438,8 @@ class LevelSwitchEmissionTest {
         // fixture has 2 gameplay zones (gameplayZone1, gameplayZone2 — see
         // buildTilemapCollisionGameDsl), so the literal-bank assignment count MUST be
         // ≥2. A regression that reverts to `BANK(...)` would drop this count to 0.
-        val literalBankAssignments = Regex("_current_area_bank = \\d+u;").findAll(helperBody).count()
+        val literalBankAssignments =
+            Regex("_current_area_bank = \\d+u;").findAll(helperBody).count()
         assertTrue(
             literalBankAssignments >= 2,
             "setup_current_level body must contain ≥2 literal-bank assignments (Plan 12.1-11 " +
@@ -600,15 +582,14 @@ class LevelSwitchEmissionTest {
             game("LevelSwitchNoTilemapTest") {
                     // NO platformerPhysics — gate stays OFF.
                     // No zones — Path B of gameUsesTilemapCollision also returns false.
-                    val titleScene = scene("title") {
-                        frame {
-                            whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                    val titleScene =
+                        scene("title") {
+                            frame {
+                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                            }
                         }
-                    }
                     scene("gameplay") {
-                        frame {
-                            whenever(buttons.start.pressed) { navigate(titleScene) }
-                        }
+                        frame { whenever(buttons.start.pressed) { navigate(titleScene) } }
                     }
                     // Note: nextLevel scene also OMITTED — both halves of the double-gate are
                     // off, locking the strictest gate-off shape.
@@ -828,8 +809,11 @@ class LevelSwitchEmissionTest {
 
         // Count: fixture has 2 gameplay zones → at least 2 occurrences of the new
         // helper call confirm the emission is per-case, not only once at the top.
-        val submapCalls = "_bkg_set_level_submap_banked(0u, 0u, 21u, 18u);"
-            .toRegex(RegexOption.LITERAL).findAll(raw).count()
+        val submapCalls =
+            "_bkg_set_level_submap_banked(0u, 0u, 21u, 18u);"
+                .toRegex(RegexOption.LITERAL)
+                .findAll(raw)
+                .count()
         assertTrue(
             submapCalls >= 2,
             "setup_current_level must emit _bkg_set_level_submap_banked per gameplay-zone " +

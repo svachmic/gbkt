@@ -50,24 +50,24 @@ class MetaspritesStressGeneratedSpriteByteIdentityTest {
          * Loaded via classloader to work from both Gradle test runner and IDE.
          */
         private fun loadBaseline(name: String): ByteArray {
-            val stream = MetaspritesStressGeneratedSpriteByteIdentityTest::class.java
-                .classLoader
-                .getResourceAsStream("baseline/$name")
-                ?: error(
-                    "Baseline file not found in test resources: baseline/$name\n" +
-                        "Ensure src/test/resources/baseline/$name is committed to git."
-                )
+            val stream =
+                MetaspritesStressGeneratedSpriteByteIdentityTest::class
+                    .java
+                    .classLoader
+                    .getResourceAsStream("baseline/$name")
+                    ?: error(
+                        "Baseline file not found in test resources: baseline/$name\n" +
+                            "Ensure src/test/resources/baseline/$name is committed to git."
+                    )
             return stream.use { it.readBytes() }
         }
 
-        /**
-         * Compares actual vs baseline bytes, producing a clear diff message on failure.
-         */
+        /** Compares actual vs baseline bytes, producing a clear diff message on failure. */
         private fun assertByteIdentical(
             actual: ByteArray,
             baseline: ByteArray,
             spriteId: String,
-            baselineSha256Prefix: String
+            baselineSha256Prefix: String,
         ) {
             if (!actual.contentEquals(baseline)) {
                 val diffOffsets = mutableListOf<String>()
@@ -76,18 +76,17 @@ class MetaspritesStressGeneratedSpriteByteIdentityTest {
                 for (i in 0 until limit) {
                     if (actual[i] != baseline[i]) {
                         diffOffsets.add(
-                            "offset $i: actual=0x%02X baseline=0x%02X".format(
-                                actual[i].toInt() and 0xFF,
-                                baseline[i].toInt() and 0xFF
-                            )
+                            "offset $i: actual=0x%02X baseline=0x%02X"
+                                .format(actual[i].toInt() and 0xFF, baseline[i].toInt() and 0xFF)
                         )
                         diffCount++
                         if (diffCount >= 5) break
                     }
                 }
-                val sizeDiff = if (actual.size != baseline.size)
-                    "\nSize mismatch: actual=${actual.size} baseline=${baseline.size}"
-                else ""
+                val sizeDiff =
+                    if (actual.size != baseline.size)
+                        "\nSize mismatch: actual=${actual.size} baseline=${baseline.size}"
+                    else ""
                 error(
                     "$spriteId.c byte sequence differs from pre-12.4 baseline!\n" +
                         "This means png2asset output has changed — a -noflip flag may have been dropped,\n" +
@@ -99,7 +98,7 @@ class MetaspritesStressGeneratedSpriteByteIdentityTest {
                 baseline,
                 actual,
                 "$spriteId.c must be byte-identical to the pre-12.4 baseline " +
-                    "(baseline SHA-256: $baselineSha256Prefix...)"
+                    "(baseline SHA-256: $baselineSha256Prefix...)",
             )
         }
     }
@@ -110,14 +109,14 @@ class MetaspritesStressGeneratedSpriteByteIdentityTest {
         assumeTrue(
             GENERATED_ELEPHANT.exists(),
             "Generated sprite C not found at ${GENERATED_ELEPHANT.absolutePath} — " +
-                "run ./gradlew :gbkt-examples:metasprites-stress:convertSprites first; skipping test"
+                "run ./gradlew :gbkt-examples:metasprites-stress:convertSprites first; skipping test",
         )
 
         assertByteIdentical(
             actual = GENERATED_ELEPHANT.readBytes(),
             baseline = loadBaseline("elephant.c.baseline"),
             spriteId = "elephant",
-            baselineSha256Prefix = "6be5d78f"
+            baselineSha256Prefix = "6be5d78f",
         )
     }
 
@@ -127,14 +126,14 @@ class MetaspritesStressGeneratedSpriteByteIdentityTest {
         assumeTrue(
             GENERATED_TIGER.exists(),
             "Generated sprite C not found at ${GENERATED_TIGER.absolutePath} — " +
-                "run ./gradlew :gbkt-examples:metasprites-stress:convertSprites first; skipping test"
+                "run ./gradlew :gbkt-examples:metasprites-stress:convertSprites first; skipping test",
         )
 
         assertByteIdentical(
             actual = GENERATED_TIGER.readBytes(),
             baseline = loadBaseline("tiger.c.baseline"),
             spriteId = "tiger",
-            baselineSha256Prefix = "b09fe25d"
+            baselineSha256Prefix = "b09fe25d",
         )
     }
 }

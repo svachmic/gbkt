@@ -13,8 +13,8 @@ import io.github.gbkt.core.ir.GBCColor
 import io.github.gbkt.core.ir.GBCPalette
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.GbcTarget
-import io.github.gbkt.core.ir.MetaspriteIR
 import io.github.gbkt.core.ir.MetaspriteFrame
+import io.github.gbkt.core.ir.MetaspriteIR
 import io.github.gbkt.core.ir.MetaspriteTile
 import io.github.gbkt.core.ir.PaletteType
 import io.github.gbkt.core.ir.SceneIR
@@ -58,24 +58,22 @@ class PlatformerObjPaletteUploadTest {
 
     /** Asset-driven MetaspriteIR (Path A): spritePath set, frames empty. */
     private fun assetDrivenMetasprite(id: String, spritePath: String): MetaspriteIR =
-        MetaspriteIR(
-            id = id,
-            frames = emptyList(),
-            spritePath = spritePath,
-        )
+        MetaspriteIR(id = id, frames = emptyList(), spritePath = spritePath)
 
     /** Procedural MetaspriteIR (escape-hatch): spritePath null, frames with tiles. */
     private fun proceduralMetasprite(id: String): MetaspriteIR =
         MetaspriteIR(
             id = id,
-            frames = listOf(
-                MetaspriteFrame(
-                    tiles = listOf(
-                        MetaspriteTile(relX = 0, relY = 0, tileId = 0),
-                        MetaspriteTile(relX = 8, relY = 0, tileId = 1),
+            frames =
+                listOf(
+                    MetaspriteFrame(
+                        tiles =
+                            listOf(
+                                MetaspriteTile(relX = 0, relY = 0, tileId = 0),
+                                MetaspriteTile(relX = 8, relY = 0, tileId = 1),
+                            )
                     )
-                )
-            ),
+                ),
             spritePath = null,
         )
 
@@ -83,45 +81,48 @@ class PlatformerObjPaletteUploadTest {
     private fun spritePaletteEntry(): GBCPalette =
         GBCPalette(
             name = "sprite_pal",
-            colors = listOf(
-                GBCColor.fromRGB888(0, 0, 0),
-                GBCColor.fromRGB888(85, 85, 85),
-                GBCColor.fromRGB888(170, 170, 170),
-                GBCColor.fromRGB888(255, 255, 255),
-            ),
+            colors =
+                listOf(
+                    GBCColor.fromRGB888(0, 0, 0),
+                    GBCColor.fromRGB888(85, 85, 85),
+                    GBCColor.fromRGB888(170, 170, 170),
+                    GBCColor.fromRGB888(255, 255, 255),
+                ),
             type = PaletteType.SPRITE,
         )
 
     /**
-     * Build a GBC-compatible game with no spritePalette{} declaration.
-     * This is the platformer shape: asset-driven player, zero GBCPalette(type=SPRITE).
+     * Build a GBC-compatible game with no spritePalette{} declaration. This is the platformer
+     * shape: asset-driven player, zero GBCPalette(type=SPRITE).
      */
     private fun buildGameNoSpritePalette(metasprites: List<MetaspriteIR>): GameIR =
         GameIR(
             name = "PlatformerObjPaletteTest",
-            config = CartridgeConfig(
-                cartridge = Cartridge.ROM_ONLY,
-                romBanks = 2,
-                gbcTarget = GbcTarget.GBC_COMPATIBLE,
-            ),
+            config =
+                CartridgeConfig(
+                    cartridge = Cartridge.ROM_ONLY,
+                    romBanks = 2,
+                    gbcTarget = GbcTarget.GBC_COMPATIBLE,
+                ),
             scenes = listOf(SceneIR(id = "gameplay")),
             metasprites = metasprites,
             startScene = "gameplay",
         )
 
     /**
-     * Build a GBC-compatible game WITH a spritePalette{} declaration.
-     * This is the metasprites-example shape: asset-driven elephant + gray_pal spritePalette.
-     * Direction B suppression must apply: no auto upload for asset-driven metasprites.
+     * Build a GBC-compatible game WITH a spritePalette{} declaration. This is the
+     * metasprites-example shape: asset-driven elephant + gray_pal spritePalette. Direction B
+     * suppression must apply: no auto upload for asset-driven metasprites.
      */
     private fun buildGameWithSpritePalette(metasprites: List<MetaspriteIR>): GameIR =
         GameIR(
             name = "MetaspriteSpritePaletteGame",
-            config = CartridgeConfig(
-                cartridge = Cartridge.ROM_ONLY,
-                romBanks = 2,
-                gbcTarget = GbcTarget.GBC_COMPATIBLE,
-            ),
+            config =
+                CartridgeConfig(
+                    cartridge = Cartridge.ROM_ONLY,
+                    romBanks = 2,
+                    gbcTarget = GbcTarget.GBC_COMPATIBLE,
+                ),
             scenes = listOf(SceneIR(id = "play")),
             metasprites = metasprites,
             palettes = listOf(spritePaletteEntry()),
@@ -140,12 +141,16 @@ class PlatformerObjPaletteUploadTest {
     // =========================================================================
     @Test
     fun `asset-driven player with no spritePalette emits set_sprite_palette in main_c`() {
-        val game = buildGameNoSpritePalette(
-            listOf(assetDrivenMetasprite("player", "sprites/player-character-gbapduck-sprites.png"))
-        )
+        val game =
+            buildGameNoSpritePalette(
+                listOf(
+                    assetDrivenMetasprite("player", "sprites/player-character-gbapduck-sprites.png")
+                )
+            )
 
         val output = pipeline.generate(game)
-        val mainC = output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
+        val mainC =
+            output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
 
         assertTrue(
             mainC.contains("set_sprite_palette(0u, 1u, player_palettes)"),
@@ -169,12 +174,14 @@ class PlatformerObjPaletteUploadTest {
     // =========================================================================
     @Test
     fun `asset-driven metasprite with spritePalette present does NOT emit auto upload (Direction B)`() {
-        val game = buildGameWithSpritePalette(
-            listOf(assetDrivenMetasprite("elephant", "sprites/elephant.png"))
-        )
+        val game =
+            buildGameWithSpritePalette(
+                listOf(assetDrivenMetasprite("elephant", "sprites/elephant.png"))
+            )
 
         val output = pipeline.generate(game)
-        val mainC = output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
+        val mainC =
+            output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
 
         assertFalse(
             mainC.contains("set_sprite_palette(0u, 1u, elephant_palettes)"),
@@ -194,22 +201,29 @@ class PlatformerObjPaletteUploadTest {
     // =========================================================================
     @Test
     fun `DMG target emits no set_sprite_palette even for asset-driven player`() {
-        val game = GameIR(
-            name = "DmgPlatformerGame",
-            config = CartridgeConfig(
-                cartridge = Cartridge.ROM_ONLY,
-                romBanks = 2,
-                gbcTarget = GbcTarget.DMG,
-            ),
-            scenes = listOf(SceneIR(id = "gameplay")),
-            metasprites = listOf(
-                assetDrivenMetasprite("player", "sprites/player-character-gbapduck-sprites.png")
-            ),
-            startScene = "gameplay",
-        )
+        val game =
+            GameIR(
+                name = "DmgPlatformerGame",
+                config =
+                    CartridgeConfig(
+                        cartridge = Cartridge.ROM_ONLY,
+                        romBanks = 2,
+                        gbcTarget = GbcTarget.DMG,
+                    ),
+                scenes = listOf(SceneIR(id = "gameplay")),
+                metasprites =
+                    listOf(
+                        assetDrivenMetasprite(
+                            "player",
+                            "sprites/player-character-gbapduck-sprites.png",
+                        )
+                    ),
+                startScene = "gameplay",
+            )
 
         val output = pipeline.generate(game)
-        val mainC = output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
+        val mainC =
+            output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
 
         assertFalse(
             mainC.contains("set_sprite_palette"),
@@ -229,15 +243,17 @@ class PlatformerObjPaletteUploadTest {
     // =========================================================================
     @Test
     fun `slot offset procedural takes slot 0 asset-driven takes slot 1 no collision`() {
-        val game = buildGameNoSpritePalette(
-            listOf(
-                proceduralMetasprite("npc"),
-                assetDrivenMetasprite("player", "sprites/player-character-gbapduck-sprites.png"),
+        val game =
+            buildGameNoSpritePalette(
+                listOf(
+                    proceduralMetasprite("npc"),
+                    assetDrivenMetasprite("player", "sprites/player-character-gbapduck-sprites.png"),
+                )
             )
-        )
 
         val output = pipeline.generate(game)
-        val mainC = output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
+        val mainC =
+            output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
 
         // Procedural npc at slot 0
         assertTrue(
@@ -267,12 +283,16 @@ class PlatformerObjPaletteUploadTest {
     // =========================================================================
     @Test
     fun `zero procedural one asset-driven no spritePalette emits slot 0`() {
-        val game = buildGameNoSpritePalette(
-            listOf(assetDrivenMetasprite("player", "sprites/player-character-gbapduck-sprites.png"))
-        )
+        val game =
+            buildGameNoSpritePalette(
+                listOf(
+                    assetDrivenMetasprite("player", "sprites/player-character-gbapduck-sprites.png")
+                )
+            )
 
         val output = pipeline.generate(game)
-        val mainC = output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
+        val mainC =
+            output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
 
         assertTrue(
             mainC.contains("set_sprite_palette(0u, 1u, player_palettes)"),
@@ -302,7 +322,8 @@ class PlatformerObjPaletteUploadTest {
     //   emitted because the gameplay scene has no spritePalette{} of its own.
     //
     // This test is @Disabled until plan 13.8-05 implements scene-scoped suppression
-    // (MetaspriteIR.sceneId field + scene-scoped predicate in buildMetaspriteSpritePaletteStatements).
+    // (MetaspriteIR.sceneId field + scene-scoped predicate in
+    // buildMetaspriteSpritePaletteStatements).
     // =========================================================================
     @Test
     fun `non-owning spritePalette in title scene does NOT suppress asset-driven upload in gameplay scene`() {
@@ -313,29 +334,41 @@ class PlatformerObjPaletteUploadTest {
         //   and has NO spritePalette{} of its own
         // The player metasprite declares sceneId = "gameplay" (added in 13.8-05) so the
         // scene-scoped predicate checks only whether "gameplay" has a SPRITE palette (it does not).
-        val game = GameIR(
-            name = "MultiSceneNonOwningSpritePaletteTest",
-            config = CartridgeConfig(
-                cartridge = Cartridge.ROM_ONLY,
-                romBanks = 2,
-                gbcTarget = GbcTarget.GBC_COMPATIBLE,
-            ),
-            scenes = listOf(
-                SceneIR(id = "title"),     // non-owning scene — has spritePalette but no player metasprite
-                SceneIR(id = "gameplay"),  // owning scene — has asset-driven player, no spritePalette
-            ),
-            metasprites = listOf(
-                // sceneId = "gameplay" links the player to its owning scene
-                assetDrivenMetasprite("player", "sprites/player-character-gbapduck-sprites.png")
-                    .copy(sceneId = "gameplay"),
-            ),
-            // A SPRITE palette declared for the "title" scene — non-owning for the player
-            palettes = listOf(spritePaletteEntry()),
-            startScene = "title",
-        )
+        val game =
+            GameIR(
+                name = "MultiSceneNonOwningSpritePaletteTest",
+                config =
+                    CartridgeConfig(
+                        cartridge = Cartridge.ROM_ONLY,
+                        romBanks = 2,
+                        gbcTarget = GbcTarget.GBC_COMPATIBLE,
+                    ),
+                scenes =
+                    listOf(
+                        SceneIR(
+                            id = "title"
+                        ), // non-owning scene — has spritePalette but no player metasprite
+                        SceneIR(
+                            id = "gameplay"
+                        ), // owning scene — has asset-driven player, no spritePalette
+                    ),
+                metasprites =
+                    listOf(
+                        // sceneId = "gameplay" links the player to its owning scene
+                        assetDrivenMetasprite(
+                                "player",
+                                "sprites/player-character-gbapduck-sprites.png",
+                            )
+                            .copy(sceneId = "gameplay")
+                    ),
+                // A SPRITE palette declared for the "title" scene — non-owning for the player
+                palettes = listOf(spritePaletteEntry()),
+                startScene = "title",
+            )
 
         val output = pipeline.generate(game)
-        val mainC = output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
+        val mainC =
+            output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
 
         // The player upload must be emitted because the gameplay scene has no spritePalette{}.
         // Currently suppressed because hasSpritePalette is game-global (13.8-RESEARCH.md Req 4).

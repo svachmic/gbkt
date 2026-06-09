@@ -53,10 +53,10 @@ data class SceneIR(
      * `scene.copy(allocatedZoneBank = zoneBank)`. Null when the scene has no [zoneRefs] or in
      * pre-bank-allocation contexts (e.g. unit tests that do not run the full pipeline).
      *
-     * Single source of truth: [SceneVisitor] reads this field for the [_bkg_tiles_load_banked]
-     * bank literal, replacing a direct [zoneBankAllocation] map lookup at the visitor level.
-     * This structural guarantee prevents future divergence if [allocateZoneBanks] were called
-     * with inconsistent inputs at different pipeline stages (D-01 field-over-lookup).
+     * Single source of truth: [SceneVisitor] reads this field for the [_bkg_tiles_load_banked] bank
+     * literal, replacing a direct [zoneBankAllocation] map lookup at the visitor level. This
+     * structural guarantee prevents future divergence if [allocateZoneBanks] were called with
+     * inconsistent inputs at different pipeline stages (D-01 field-over-lookup).
      *
      * NOT serialized by [GameIRSerializer]: treated as a pipeline-transient annotation like
      * [bankSlot]/[vramRange]/[oamSlot] — recomputed on every codegen run. Omitting it from

@@ -72,10 +72,10 @@ class LevelEndTriggerGroundedGuardEmissionTest {
          * Evidence is written under the **active checkout root** (worktree-safe).
          *
          * `user.dir` resolves to `<repo>/gbkt-genre-platformer` for the
-         * `:gbkt-genre-platformer:test` task. Ascending one level (`..`) reaches the active
-         * repo (or worktree) root, then we descend into the Phase 12.7 evidence directory.
-         * Hard-coding an absolute path would silently route evidence files outside the
-         * active worktree and miss the commit (#3099 worktree path safety).
+         * `:gbkt-genre-platformer:test` task. Ascending one level (`..`) reaches the active repo
+         * (or worktree) root, then we descend into the Phase 12.7 evidence directory. Hard-coding
+         * an absolute path would silently route evidence files outside the active worktree and miss
+         * the commit (#3099 worktree path safety).
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -92,31 +92,28 @@ class LevelEndTriggerGroundedGuardEmissionTest {
     // -------------------------------------------------------------------------
 
     /**
-     * Extracts a C function body by brace-walking from the first line whose contents start
-     * with [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the
-     * matching closing brace at depth zero.
+     * Extracts a C function body by brace-walking from the first line whose contents start with
+     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching closing
+     * brace at depth zero.
      *
      * The returned blob includes the signature line and the closing brace, so downstream
-     * `.contains()` checks operate ONLY on tokens that live inside the named function —
-     * never on tokens from unrelated functions in the same file (per CLAUDE.md
-     * §"Scope-level grep gates" corollary).
+     * `.contains()` checks operate ONLY on tokens that live inside the named function — never on
+     * tokens from unrelated functions in the same file (per CLAUDE.md §"Scope-level grep gates"
+     * corollary).
      *
      * This is the Kotlin-side mirror of the awk pattern documented in VALIDATION.md row 2:
-     *
      * ```
      * awk '/^void platformer_physics_update/{p=1;d=0} p{d+=gsub(/{/,""); d-=gsub(/}/,""); if(d<0)exit} p'
      * ```
      *
      * Matching is anchored to the START of a line (the prefix must appear at column 0) so
-     * occurrences inside string literals, comments, or argument lists of a different
-     * function cannot false-match. This is the literal counterpart of awk's `/^prefix/`
-     * anchor.
+     * occurrences inside string literals, comments, or argument lists of a different function
+     * cannot false-match. This is the literal counterpart of awk's `/^prefix/` anchor.
      *
      * The helper is BYTE-IDENTICAL (modulo anchor change at call site) to the copy in
-     * `TilemapCollisionEmissionTest.kt` lines 90–110. Convention: the helper is INLINED in
-     * each sibling test class — not factored to a shared utility — per
-     * `12.7-PATTERNS.md` §"Shared Patterns / brace-walk extractFunctionBody — inline per
-     * test class".
+     * `TilemapCollisionEmissionTest.kt` lines 90–110. Convention: the helper is INLINED in each
+     * sibling test class — not factored to a shared utility — per `12.7-PATTERNS.md` §"Shared
+     * Patterns / brace-walk extractFunctionBody — inline per test class".
      */
     private fun extractFunctionBody(cSource: String, functionSignaturePrefix: String): String {
         val lines = cSource.lines()
@@ -143,17 +140,16 @@ class LevelEndTriggerGroundedGuardEmissionTest {
     /**
      * Build a minimal GameIR carrying a single `platformer_physics` GenericSystem.
      *
-     * IMPORTANT: This GameIR DELIBERATELY OMITS a `tilemap_collision` system. That
-     * routes `groundedSym` resolution down the legacy-fallback path in PlatformerVisitor
-     * (kt:557-580):
+     * IMPORTANT: This GameIR DELIBERATELY OMITS a `tilemap_collision` system. That routes
+     * `groundedSym` resolution down the legacy-fallback path in PlatformerVisitor (kt:557-580):
      *
-     *   val groundedSym = "_" + ((tcSystem?.config?.get("groundedVar") as? String) ?: "grounded")
+     * val groundedSym = "_" + ((tcSystem?.config?.get("groundedVar") as? String) ?: "grounded")
      *
-     * — so `groundedSym` resolves to the literal `_grounded`. The trigger-region
-     * assertion below anchors on `_grounded` accordingly.
+     * — so `groundedSym` resolves to the literal `_grounded`. The trigger-region assertion below
+     * anchors on `_grounded` accordingly.
      *
-     * Shape mirrors `PlatformerPhysicsSnapToTileTopEmissionTest.buildPlatformerGameIR`
-     * (the closest sibling per 12.7-PATTERNS.md), modulo: name string.
+     * Shape mirrors `PlatformerPhysicsSnapToTileTopEmissionTest.buildPlatformerGameIR` (the closest
+     * sibling per 12.7-PATTERNS.md), modulo: name string.
      */
     private fun buildPlatformerGameIR(solidThreshold: Int? = 17): GameIR {
         val config =
@@ -217,7 +213,8 @@ class LevelEndTriggerGroundedGuardEmissionTest {
             } else {
                 physicsBody.takeLast(800)
             }
-        File(EVIDENCE_DIR, "platformer_physics_update_level_end_trigger.c").writeText(triggerSnapshot)
+        File(EVIDENCE_DIR, "platformer_physics_update_level_end_trigger.c")
+            .writeText(triggerSnapshot)
 
         // Pre-condition: function body must be extractable
         assertTrue(
@@ -229,10 +226,9 @@ class LevelEndTriggerGroundedGuardEmissionTest {
         // Locate the trigger CIf scope via the unique "Level-end trigger" comment header
         // (emitted by PlatformerVisitor.kt:1204 CComment). The trigger CIf body spans from
         // the comment to the matching closing brace.
-        val commentIdx =
-            snapshotLines.indexOfFirst {
-                it.contains("Level-end trigger") || it.contains("level-end trigger")
-            }
+        val commentIdx = snapshotLines.indexOfFirst {
+            it.contains("Level-end trigger") || it.contains("level-end trigger")
+        }
         assertTrue(
             commentIdx >= 0,
             "platformer_physics_update body must contain the `Level-end trigger` comment header " +
@@ -273,7 +269,8 @@ class LevelEndTriggerGroundedGuardEmissionTest {
         // Subsidiary assertion: the `++_next_level` write must still appear in the trigger
         // region (regression-guard: GREEN fix must not accidentally remove the increment).
         assertTrue(
-            triggerRegionStr.contains("++_next_level") || triggerRegionStr.contains("_next_level++"),
+            triggerRegionStr.contains("++_next_level") ||
+                triggerRegionStr.contains("_next_level++"),
             "Level-end trigger CIf must still increment `_next_level` (regression-guard). " +
                 "Found trigger region:\n$triggerRegionStr",
         )

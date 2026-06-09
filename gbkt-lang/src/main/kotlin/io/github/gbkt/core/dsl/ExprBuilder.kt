@@ -8,7 +8,6 @@
 
 package io.github.gbkt.core.dsl
 
-import io.github.gbkt.core.ir.Assign
 import io.github.gbkt.core.ir.AssignOp
 import io.github.gbkt.core.ir.BinaryExpr
 import io.github.gbkt.core.ir.BinaryOp
@@ -287,15 +286,15 @@ fun AssignableVar.toPixel(fractionalBits: Int = 4): Expr {
  * - `if (v < 0) { v += by }` (decay from negative side)
  * - `if (v > 0) { v -= by }` (decay from positive side)
  *
- * Generated C is byte-identical to the hand-rolled two-`whenever` ladder.
- * [by] defaults to 1, which is the only value used in current example ports.
+ * Generated C is byte-identical to the hand-rolled two-`whenever` ladder. [by] defaults to 1, which
+ * is the only value used in current example ports.
  *
  * Must be called inside a `ScriptBuilder` block (scene frame/enter/exit, whenever, runIf, etc.).
  * D-13: method-only canonical surface; no free-fn `damp()` alias.
  */
 fun AssignableVar.easeToZero(by: Int = 1) {
-    val sb = ScriptBuilderContext.current
-        ?: error("easeToZero() called outside a ScriptBuilder block")
+    val sb =
+        ScriptBuilderContext.current ?: error("easeToZero() called outside a ScriptBuilder block")
     // if (v < 0) { v += by }
     sb.whenever(BinaryExpr(VarRef(name), BinaryOp.LT, Literal(0))) {
         assign(name, Literal(by), AssignOp.ADD)

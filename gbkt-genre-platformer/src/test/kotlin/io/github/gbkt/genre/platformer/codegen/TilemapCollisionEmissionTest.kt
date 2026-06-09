@@ -50,8 +50,8 @@ class TilemapCollisionEmissionTest {
          * Evidence is written under the **active checkout root** (worktree-safe).
          *
          * `user.dir` resolves to the Gradle project's working directory, which for the
-         * `:gbkt-genre-platformer:test` task is `<repo>/gbkt-genre-platformer`. From there we ascend
-         * one level (`..`) to reach the repo (or worktree) root, then descend into the phase
+         * `:gbkt-genre-platformer:test` task is `<repo>/gbkt-genre-platformer`. From there we
+         * ascend one level (`..`) to reach the repo (or worktree) root, then descend into the phase
          * evidence directory. Hard-coding an absolute path would silently route evidence files
          * outside the active worktree and miss the commit (#3099 worktree path safety).
          */
@@ -79,7 +79,6 @@ class TilemapCollisionEmissionTest {
      * tokens from unrelated functions in the same file (per CLAUDE.md §"Scope-level grep gates").
      *
      * This is the Kotlin-side mirror of the awk pattern documented in VALIDATION.md row 2:
-     *
      * ```
      * awk '/^UINT8 is_tile_solid/{p=1;d=0} p{d+=gsub(/{/,""); d-=gsub(/}/,""); if(d<0)exit} p'
      * ```
@@ -114,8 +113,8 @@ class TilemapCollisionEmissionTest {
      * Build a minimal GameIR carrying a single `platformer_physics` GenericSystem.
      *
      * When [solidThreshold] is non-null, this triggers Path A of
-     * `GBDKPipeline.gameUsesTilemapCollision`, which causes the pipeline to emit the
-     * is_tile_solid helper + 5 HOME-bank globals + header prototype.
+     * `GBDKPipeline.gameUsesTilemapCollision`, which causes the pipeline to emit the is_tile_solid
+     * helper + 5 HOME-bank globals + header prototype.
      *
      * When [solidThreshold] is null (default), the gate stays OFF and the helper / globals /
      * prototype are NOT emitted — the negative test exercises this branch.

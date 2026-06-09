@@ -181,12 +181,13 @@ class MetaspriteBuilderVarRefFieldsTest {
                     posX(bx)
                     frame { tile(0, 0, 0) }
                 }
-                val playScene = scene("play") {
-                    frame {
-                        moveMetasprite(a)
-                        moveMetasprite(b)
+                val playScene =
+                    scene("play") {
+                        frame {
+                            moveMetasprite(a)
+                            moveMetasprite(b)
+                        }
                     }
-                }
                 start = playScene
             }
         val ir = g.build()

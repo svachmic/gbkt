@@ -39,11 +39,12 @@ class SaveDataDelegateSingleUseTest {
         val d = saveData { slots(2) }
         assertFailsWith<IllegalStateException> {
             game("Test") {
-                val a by d   // first provideDelegate — OK
-                val b by d   // second provideDelegate on SAME instance — must throw
-                val sScene = scene("s") {}
-                start = sScene
-            }.build()
+                    val a by d // first provideDelegate — OK
+                    val b by d // second provideDelegate on SAME instance — must throw
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
         }
     }
 }

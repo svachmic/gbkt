@@ -135,14 +135,14 @@ enum class GbcTarget {
 /**
  * Game Boy cartridge type — owns the MBC hardware byte and the ROM bank cap per D-03/WR-01.
  *
- * [mbcByte] is the GBDK cartridge-type byte written to gbkt-build.properties
- * and ultimately to the ROM header. Values are the official Game Boy hardware
- * MBC identifier bytes (Nintendo cart type table, DMG/CGB specs).
+ * [mbcByte] is the GBDK cartridge-type byte written to gbkt-build.properties and ultimately to the
+ * ROM header. Values are the official Game Boy hardware MBC identifier bytes (Nintendo cart type
+ * table, DMG/CGB specs).
  *
- * [maxRomBanks] is the maximum number of ROM banks this cartridge type supports.
- * This is the authoritative per-type ROM bank cap used by [AnalysisConfig.fromCartridgeConfig]
- * and the D-05/D-06 bank derivation logic. Derived bank counts must be clamped to this cap
- * before being used as an effective bank count.
+ * [maxRomBanks] is the maximum number of ROM banks this cartridge type supports. This is the
+ * authoritative per-type ROM bank cap used by [AnalysisConfig.fromCartridgeConfig] and the
+ * D-05/D-06 bank derivation logic. Derived bank counts must be clamped to this cap before being
+ * used as an effective bank count.
  */
 enum class Cartridge(val mbcByte: Int, val maxRomBanks: Int) {
     ROM_ONLY(0x00, 2),

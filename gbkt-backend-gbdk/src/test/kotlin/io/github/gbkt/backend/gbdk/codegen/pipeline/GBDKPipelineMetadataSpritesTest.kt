@@ -18,11 +18,10 @@ import io.github.gbkt.core.ir.PositionDef
 import io.github.gbkt.core.ir.SizeDef
 import io.github.gbkt.core.ir.SpriteDef
 import io.github.gbkt.core.ir.SpriteMode
-import org.json.JSONObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.json.JSONObject
 
 // =============================================================================
 // SPRITES[] SIDECAR EMIT TEST — Phase 12.4 D-02
@@ -36,7 +35,8 @@ import kotlin.test.assertTrue
 //  4. Empty metasprites list emits sprites:[] (key present, array empty).
 // =============================================================================
 
-private val minimalFrame = MetaspriteFrame(tiles = listOf(MetaspriteTile(relX = 0, relY = 0, tileId = 0)))
+private val minimalFrame =
+    MetaspriteFrame(tiles = listOf(MetaspriteTile(relX = 0, relY = 0, tileId = 0)))
 
 private fun minimalGameIR(metasprites: List<MetaspriteIR>) =
     GameIR(
@@ -54,16 +54,17 @@ class GBDKPipelineMetadataSpritesTest {
     // =========================================================================
     @Test
     fun `emits_sprites_array_with_explicit_spritePath`() {
-        val fixture = minimalGameIR(
-            listOf(
-                MetaspriteIR(
-                    id = "elephant",
-                    frames = listOf(minimalFrame),
-                    spritePath = "sprites/elephant.png",
-                    mirrorDedup = false,
-                ),
-            ),
-        )
+        val fixture =
+            minimalGameIR(
+                listOf(
+                    MetaspriteIR(
+                        id = "elephant",
+                        frames = listOf(minimalFrame),
+                        spritePath = "sprites/elephant.png",
+                        mirrorDedup = false,
+                    )
+                )
+            )
 
         val json = pipeline.buildMetadataFile(fixture)
         val parsed = JSONObject(json)
@@ -81,15 +82,10 @@ class GBDKPipelineMetadataSpritesTest {
     // =========================================================================
     @Test
     fun `skips_metasprite_with_null_spritePath`() {
-        val fixture = minimalGameIR(
-            listOf(
-                MetaspriteIR(
-                    id = "hero",
-                    frames = listOf(minimalFrame),
-                    spritePath = null,
-                ),
-            ),
-        )
+        val fixture =
+            minimalGameIR(
+                listOf(MetaspriteIR(id = "hero", frames = listOf(minimalFrame), spritePath = null))
+            )
 
         val json = pipeline.buildMetadataFile(fixture)
         val parsed = JSONObject(json)
@@ -103,16 +99,17 @@ class GBDKPipelineMetadataSpritesTest {
     // =========================================================================
     @Test
     fun `emits_mirror_dedup_true_when_set`() {
-        val fixture = minimalGameIR(
-            listOf(
-                MetaspriteIR(
-                    id = "tiger",
-                    frames = listOf(minimalFrame),
-                    spritePath = "sprites/tiger.png",
-                    mirrorDedup = true,
-                ),
-            ),
-        )
+        val fixture =
+            minimalGameIR(
+                listOf(
+                    MetaspriteIR(
+                        id = "tiger",
+                        frames = listOf(minimalFrame),
+                        spritePath = "sprites/tiger.png",
+                        mirrorDedup = true,
+                    )
+                )
+            )
 
         val json = pipeline.buildMetadataFile(fixture)
         val parsed = JSONObject(json)
@@ -134,7 +131,10 @@ class GBDKPipelineMetadataSpritesTest {
         val json = pipeline.buildMetadataFile(fixture)
         val parsed = JSONObject(json)
 
-        assertTrue(parsed.has("sprites"), "Key 'sprites' MUST be present even when metasprites list is empty")
+        assertTrue(
+            parsed.has("sprites"),
+            "Key 'sprites' MUST be present even when metasprites list is empty",
+        )
         val sprites = parsed.getJSONArray("sprites")
         assertEquals(0, sprites.length(), "sprites[] must be an empty array (not missing key)")
     }
@@ -144,21 +144,22 @@ class GBDKPipelineMetadataSpritesTest {
     // =========================================================================
     @Test
     fun `emits_sprite_cutting_flags_in_sprites_array`() {
-        val fixture = minimalGameIR(
-            listOf(
-                MetaspriteIR(
-                    id = "player",
-                    frames = listOf(minimalFrame),
-                    spritePath = "graphics/player-character-gbapduck-sprites.png",
-                    mirrorDedup = false,
-                    spriteMode = SpriteMode.SPR8x16,
-                    pivotX = 12,
-                    pivotY = 6,
-                    frameWidth = 24,
-                    frameHeight = 32,
-                ),
-            ),
-        )
+        val fixture =
+            minimalGameIR(
+                listOf(
+                    MetaspriteIR(
+                        id = "player",
+                        frames = listOf(minimalFrame),
+                        spritePath = "graphics/player-character-gbapduck-sprites.png",
+                        mirrorDedup = false,
+                        spriteMode = SpriteMode.SPR8x16,
+                        pivotX = 12,
+                        pivotY = 6,
+                        frameWidth = 24,
+                        frameHeight = 32,
+                    )
+                )
+            )
 
         val json = pipeline.buildMetadataFile(fixture)
         val parsed = JSONObject(json)
@@ -166,7 +167,11 @@ class GBDKPipelineMetadataSpritesTest {
         val sprites = parsed.getJSONArray("sprites")
         assertEquals(1, sprites.length(), "Expected 1 entry in sprites[]")
         val entry = sprites.getJSONObject(0)
-        assertEquals("SPR8x16", entry.getString("spriteMode"), "spriteMode must be lowerCamelCase key with enum name value")
+        assertEquals(
+            "SPR8x16",
+            entry.getString("spriteMode"),
+            "spriteMode must be lowerCamelCase key with enum name value",
+        )
         assertEquals(12, entry.getInt("pivotX"), "pivotX must be emitted")
         assertEquals(6, entry.getInt("pivotY"), "pivotY must be emitted")
         assertEquals(24, entry.getInt("frameWidth"), "frameWidth must be emitted")
@@ -178,22 +183,23 @@ class GBDKPipelineMetadataSpritesTest {
     // =========================================================================
     @Test
     fun `emits_defensive_defaults_when_cutting_flags_are_null`() {
-        val fixture = minimalGameIR(
-            listOf(
-                MetaspriteIR(
-                    id = "paddle",
-                    frames = listOf(minimalFrame),
-                    spritePath = "sprites/paddle.png",
-                    mirrorDedup = false,
-                    // All 5 new fields left null — should emit safe defaults
-                    spriteMode = null,
-                    pivotX = null,
-                    pivotY = null,
-                    frameWidth = null,
-                    frameHeight = null,
-                ),
-            ),
-        )
+        val fixture =
+            minimalGameIR(
+                listOf(
+                    MetaspriteIR(
+                        id = "paddle",
+                        frames = listOf(minimalFrame),
+                        spritePath = "sprites/paddle.png",
+                        mirrorDedup = false,
+                        // All 5 new fields left null — should emit safe defaults
+                        spriteMode = null,
+                        pivotX = null,
+                        pivotY = null,
+                        frameWidth = null,
+                        frameHeight = null,
+                    )
+                )
+            )
 
         val json = pipeline.buildMetadataFile(fixture)
         val parsed = JSONObject(json)
@@ -201,7 +207,11 @@ class GBDKPipelineMetadataSpritesTest {
         val sprites = parsed.getJSONArray("sprites")
         assertEquals(1, sprites.length())
         val entry = sprites.getJSONObject(0)
-        assertEquals("SPR8x16", entry.getString("spriteMode"), "null spriteMode must default to SPR8x16")
+        assertEquals(
+            "SPR8x16",
+            entry.getString("spriteMode"),
+            "null spriteMode must default to SPR8x16",
+        )
         assertEquals(0, entry.getInt("pivotX"), "null pivotX must default to 0")
         assertEquals(0, entry.getInt("pivotY"), "null pivotY must default to 0")
         assertEquals(8, entry.getInt("frameWidth"), "null frameWidth must default to 8")
@@ -220,20 +230,23 @@ class GBDKPipelineMetadataSpritesTest {
         // Build a minimal GameIR with one actor that has a sprite asset reference.
         // No metasprites — only actor sprites. This exercises the actor-sprite
         // emission path (GBDKPipeline.kt lines 381-392) independently.
-        val fixture = GameIR(
-            name = "ActorSpriteTest",
-            config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
-            actors = listOf(
-                ActorIR(
-                    id = "paddle",
-                    position = PositionDef(x = 80, y = 72),
-                    sprite = SpriteDef(
-                        assetRef = AssetRef(path = "sprites/paddle.png"),
-                        size = SizeDef(width = 8, height = 8),
+        val fixture =
+            GameIR(
+                name = "ActorSpriteTest",
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
+                actors =
+                    listOf(
+                        ActorIR(
+                            id = "paddle",
+                            position = PositionDef(x = 80, y = 72),
+                            sprite =
+                                SpriteDef(
+                                    assetRef = AssetRef(path = "sprites/paddle.png"),
+                                    size = SizeDef(width = 8, height = 8),
+                                ),
+                        )
                     ),
-                ),
-            ),
-        )
+            )
 
         val json = pipeline.buildMetadataFile(fixture)
         val parsed = JSONObject(json)
@@ -242,21 +255,34 @@ class GBDKPipelineMetadataSpritesTest {
         assertTrue(sprites.length() >= 1, "Expected at least 1 actor-sprite entry in sprites[]")
 
         // Locate the actor-sprite entry for sprites/paddle.png
-        val entry = (0 until sprites.length())
-            .map { sprites.getJSONObject(it) }
-            .firstOrNull { it.getString("spritePath") == "sprites/paddle.png" }
-            ?: error("No sprites[] entry found for spritePath='sprites/paddle.png'")
+        val entry =
+            (0 until sprites.length())
+                .map { sprites.getJSONObject(it) }
+                .firstOrNull { it.getString("spritePath") == "sprites/paddle.png" }
+                ?: error("No sprites[] entry found for spritePath='sprites/paddle.png'")
 
         // id is derived via spritePath.substringAfterLast('/').substringBeforeLast('.')
         assertEquals("paddle", entry.getString("id"), "id must be PNG stem (no path, no extension)")
-        assertEquals("sprites/paddle.png", entry.getString("spritePath"), "spritePath must match actor sprite asset ref path")
+        assertEquals(
+            "sprites/paddle.png",
+            entry.getString("spritePath"),
+            "spritePath must match actor sprite asset ref path",
+        )
 
         // includePath is derived as spritePath with .h extension (same subdirectory)
         assertTrue(entry.has("includePath"), "includePath must be present in actor-sprite entry")
-        assertEquals("sprites/paddle.h", entry.getString("includePath"), "includePath must replace .png with .h")
+        assertEquals(
+            "sprites/paddle.h",
+            entry.getString("includePath"),
+            "includePath must replace .png with .h",
+        )
 
         // Actor sprites always have mirrorDedup=false (no opt-in at actor level per D-05)
-        assertEquals(false, entry.getBoolean("mirrorDedup"), "actor-sprite entries must have mirrorDedup=false")
+        assertEquals(
+            false,
+            entry.getBoolean("mirrorDedup"),
+            "actor-sprite entries must have mirrorDedup=false",
+        )
 
         // Plan 12.5-08 Rule 1 fix: actor-sprite entries DO carry cutting flags derived
         // from actor.sprite.size — without them, ConvertSpritesTask defaults to
@@ -264,10 +290,26 @@ class GBDKPipelineMetadataSpritesTest {
         // ball). This evolves the original D-05 invariant: cutting flags are still NOT
         // user-declared at actor level, but they ARE auto-derived from sprite.size at
         // sidecar-emit time. Fixture: paddle.png with size=8x8 → SPR8x8, pivot=0,0, frame=8x8.
-        assertEquals("SPR8x8", entry.getString("spriteMode"), "actor-sprite spriteMode must derive from sprite.size (Plan 12.5-08)")
-        assertEquals(0, entry.getInt("pivotX"), "actor-sprite pivotX must default to 0 (no DSL pivot at actor level)")
+        assertEquals(
+            "SPR8x8",
+            entry.getString("spriteMode"),
+            "actor-sprite spriteMode must derive from sprite.size (Plan 12.5-08)",
+        )
+        assertEquals(
+            0,
+            entry.getInt("pivotX"),
+            "actor-sprite pivotX must default to 0 (no DSL pivot at actor level)",
+        )
         assertEquals(0, entry.getInt("pivotY"), "actor-sprite pivotY must default to 0")
-        assertEquals(8, entry.getInt("frameWidth"), "actor-sprite frameWidth must equal sprite.size.width")
-        assertEquals(8, entry.getInt("frameHeight"), "actor-sprite frameHeight must equal sprite.size.height")
+        assertEquals(
+            8,
+            entry.getInt("frameWidth"),
+            "actor-sprite frameWidth must equal sprite.size.width",
+        )
+        assertEquals(
+            8,
+            entry.getInt("frameHeight"),
+            "actor-sprite frameHeight must equal sprite.size.height",
+        )
     }
 }

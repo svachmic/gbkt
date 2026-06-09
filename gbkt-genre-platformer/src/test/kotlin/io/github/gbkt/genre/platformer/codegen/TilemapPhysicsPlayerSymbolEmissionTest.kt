@@ -74,9 +74,9 @@ class TilemapPhysicsPlayerSymbolEmissionTest {
          *
          * `user.dir` resolves to the Gradle project's working directory, which for the
          * `:gbkt-genre-platformer:test` task is `<repo>/gbkt-genre-platformer`. From there we
-         * ascend one level (`..`) to reach the repo (or worktree) root, then descend into the
-         * phase evidence directory. Hard-coding an absolute path would silently route evidence
-         * files outside the active worktree and miss the commit (#3099 worktree path safety).
+         * ascend one level (`..`) to reach the repo (or worktree) root, then descend into the phase
+         * evidence directory. Hard-coding an absolute path would silently route evidence files
+         * outside the active worktree and miss the commit (#3099 worktree path safety).
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -96,20 +96,18 @@ class TilemapPhysicsPlayerSymbolEmissionTest {
 
     /**
      * Extracts a C function body by brace-walking from the first line whose contents start with
-     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching
-     * closing brace at depth zero.
+     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching closing
+     * brace at depth zero.
      *
-     * Mirror of the same helper in `JumpHoldEmissionTest.kt`,
-     * `TilemapCollisionEmissionTest.kt`, `HorizontalScrollEmissionTest.kt`, and
-     * `Defect4SymbolRewriteEmissionTest.kt`. Per RESEARCH §D-claude-5, the helper is INLINED
-     * per-test rather than factored out — the convention matches awk's `/^prefix/{p=1; d=0}
-     * p{d += gsub(/{/,""); d -= gsub(/}/,""); if(d<0) exit} p` pattern that CLAUDE.md
-     * §"Scope-level grep gates (corollary)" mandates for per-function invariants.
+     * Mirror of the same helper in `JumpHoldEmissionTest.kt`, `TilemapCollisionEmissionTest.kt`,
+     * `HorizontalScrollEmissionTest.kt`, and `Defect4SymbolRewriteEmissionTest.kt`. Per RESEARCH
+     * §D-claude-5, the helper is INLINED per-test rather than factored out — the convention matches
+     * awk's `/^prefix/{p=1; d=0} p{d += gsub(/{/,""); d -= gsub(/}/,""); if(d<0) exit} p` pattern
+     * that CLAUDE.md §"Scope-level grep gates (corollary)" mandates for per-function invariants.
      *
-     * Matching is anchored to the START of a line (the prefix must appear at column 0). This
-     * is the Kotlin counterpart of awk's `/^prefix/` anchor. It prevents false matches against
-     * the same prefix appearing inside a string literal, comment, or argument list of an
-     * unrelated function.
+     * Matching is anchored to the START of a line (the prefix must appear at column 0). This is the
+     * Kotlin counterpart of awk's `/^prefix/` anchor. It prevents false matches against the same
+     * prefix appearing inside a string literal, comment, or argument list of an unrelated function.
      */
     private fun extractFunctionBody(cSource: String, functionSignaturePrefix: String): String {
         val lines = cSource.lines()
@@ -135,13 +133,13 @@ class TilemapPhysicsPlayerSymbolEmissionTest {
 
     /**
      * Build a minimal GameIR carrying a `platformer_physics` GenericSystem (to fire Path A of
-     * `gameUsesTilemapCollision`, causing the pipeline to emit `platformer_physics_update`)
-     * PLUS a `tilemap_collision` GenericSystem (Path C — the Plan 12.1-05 substrate) whose
-     * config map carries user-DSL property names.
+     * `gameUsesTilemapCollision`, causing the pipeline to emit `platformer_physics_update`) PLUS a
+     * `tilemap_collision` GenericSystem (Path C — the Plan 12.1-05 substrate) whose config map
+     * carries user-DSL property names.
      *
-     * Mirrors the `bindings` parameter of `Defect4SymbolRewriteEmissionTest.buildGameIR` and
-     * the `buildPlatformerGameIR` shape in `TilemapCollisionEmissionTest`. See PATTERNS.md
-     * §"Builder helper pattern" for the canonical recipe.
+     * Mirrors the `bindings` parameter of `Defect4SymbolRewriteEmissionTest.buildGameIR` and the
+     * `buildPlatformerGameIR` shape in `TilemapCollisionEmissionTest`. See PATTERNS.md §"Builder
+     * helper pattern" for the canonical recipe.
      */
     private fun buildGameWithTilemapCollision(
         posXVar: String = "playerX",
@@ -195,13 +193,12 @@ class TilemapPhysicsPlayerSymbolEmissionTest {
 
     /**
      * Build a minimal GameIR carrying ONLY the `platformer_physics` system — no
-     * `tilemap_collision`. Path A fires; Path C does not. The visitor's resolution block must
-     * fall back to the legacy `_player_x / _player_y / _player_vx / _player_vy / _grounded`
-     * symbol shape.
+     * `tilemap_collision`. Path A fires; Path C does not. The visitor's resolution block must fall
+     * back to the legacy `_player_x / _player_y / _player_vx / _player_vy / _grounded` symbol
+     * shape.
      *
-     * This exercises the same back-compat path that the 4 existing genre-platformer
-     * EmissionTests (JumpHold, HorizontalScroll, TilemapCollision, PlatformerCodegen) rely
-     * on.
+     * This exercises the same back-compat path that the 4 existing genre-platformer EmissionTests
+     * (JumpHold, HorizontalScroll, TilemapCollision, PlatformerCodegen) rely on.
      */
     private fun buildGameWithoutTilemapCollision(solidThreshold: Int = 17): GameIR {
         val physicsSystem =
@@ -335,8 +332,7 @@ class TilemapPhysicsPlayerSymbolEmissionTest {
 
         assertTrue(
             physicsBody.isNotEmpty(),
-            "platformer_physics_update body must be extractable; main.c head:\n" +
-                mainC.take(2000),
+            "platformer_physics_update body must be extractable; main.c head:\n" + mainC.take(2000),
         )
 
         // Positive: legacy symbols fire when the new system is absent.

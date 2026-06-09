@@ -66,11 +66,10 @@ object MetaspriteVisitor {
      * array named `tileDataArrayName` into sprite tile VRAM. This is called once at scene-enter
      * before any `move_metasprite_*` calls.
      *
-     * `totalTiles = max(tileId across all tiles in all frames) + spriteModeStride`,
-     * where `spriteModeStride = 2` for `SpriteMode.SPR8x16` (each tile ID references the 8×16
-     * pair `(N, N+1)`) and `1` for `SpriteMode.SPR8x8` (or null `spriteMode` for back-compat
-     * with the Seed004 elephant example). See [tileCountForMetasprite] for the canonical
-     * implementation.
+     * `totalTiles = max(tileId across all tiles in all frames) + spriteModeStride`, where
+     * `spriteModeStride = 2` for `SpriteMode.SPR8x16` (each tile ID references the 8×16 pair `(N,
+     * N+1)`) and `1` for `SpriteMode.SPR8x8` (or null `spriteMode` for back-compat with the Seed004
+     * elephant example). See [tileCountForMetasprite] for the canonical implementation.
      *
      * @param metasprite The metasprite whose tile data to load.
      * @param tileDataArrayName C identifier of the tile data array (from the asset pipeline or
@@ -98,21 +97,18 @@ object MetaspriteVisitor {
     /**
      * Compute the VRAM tile count required to load a metasprite's tile data.
      *
-     * In 8×8 sprite mode (SPR8x8 or null spriteMode for back-compat with the
-     * elephant Seed004 example) each tile ID references a single 8×8 tile slot;
-     * the count is `maxTileId + 1`.
+     * In 8×8 sprite mode (SPR8x8 or null spriteMode for back-compat with the elephant Seed004
+     * example) each tile ID references a single 8×8 tile slot; the count is `maxTileId + 1`.
      *
-     * In 8×16 sprite mode (SPR8x16) each tile ID N references the 8×16 pair
-     * (tile N AND tile N+1) — the hardware OAM-entry tile-ID LSB is forced to
-     * 0, so the second tile of every pair lives at the next 8×8 slot. The count
-     * must therefore be `maxTileId + 2` to include the partner of the highest-
-     * indexed pair.
+     * In 8×16 sprite mode (SPR8x16) each tile ID N references the 8×16 pair (tile N AND tile N+1) —
+     * the hardware OAM-entry tile-ID LSB is forced to 0, so the second tile of every pair lives at
+     * the next 8×8 slot. The count must therefore be `maxTileId + 2` to include the partner of the
+     * highest- indexed pair.
      *
-     * Debug E-04 (2026-05-24, debug/platformer-duck-malformed-blob.md):
-     * pre-fix the formula was `maxTileId + 1` for both modes; the platformer
-     * duck (SPR8x16, maxTileId=60) loaded only 61 tiles instead of 62, dropping
-     * the partner tile of the highest pair. Returned as a nullable Int so empty
-     * metasprites short-circuit to no set_sprite_data() emission.
+     * Debug E-04 (2026-05-24, debug/platformer-duck-malformed-blob.md): pre-fix the formula was
+     * `maxTileId + 1` for both modes; the platformer duck (SPR8x16, maxTileId=60) loaded only 61
+     * tiles instead of 62, dropping the partner tile of the highest pair. Returned as a nullable
+     * Int so empty metasprites short-circuit to no set_sprite_data() emission.
      *
      * @return null when the metasprite has no tiles; otherwise the tile count.
      */
@@ -200,14 +196,14 @@ object MetaspriteVisitor {
     /**
      * Generate an asset-driven Path A reference marker for main.c (Plan 13.3-05 D-01).
      *
-     * For asset-driven metasprites ([MetaspriteIR.spritePath] != null), the gbkt-owned
-     * per-frame OAM arrays (`sprite_<id>_frame_N[]`) are NOT emitted — they are replaced
-     * by png2asset's native `<id>_metasprites[]` array in the #included `.c` sidecar
-     * (wired by Plan 13.3-06). This function emits a short reference comment that:
-     *  - Documents that this metasprite uses the png2asset-native pointer array.
-     *  - Contains the literal `<id>_metasprites[idx]` usage pattern so codegen tests can
-     *    assert its presence in main.c (grepping `<id>_metasprites[` confirms Path A landed).
-     *  - Is semantically harmless — C compilers ignore comments entirely.
+     * For asset-driven metasprites ([MetaspriteIR.spritePath] != null), the gbkt-owned per-frame
+     * OAM arrays (`sprite_<id>_frame_N[]`) are NOT emitted — they are replaced by png2asset's
+     * native `<id>_metasprites[]` array in the #included `.c` sidecar (wired by Plan 13.3-06). This
+     * function emits a short reference comment that:
+     * - Documents that this metasprite uses the png2asset-native pointer array.
+     * - Contains the literal `<id>_metasprites[idx]` usage pattern so codegen tests can assert its
+     *   presence in main.c (grepping `<id>_metasprites[` confirms Path A landed).
+     * - Is semantically harmless — C compilers ignore comments entirely.
      *
      * @param metasprite The asset-driven metasprite (spritePath != null).
      * @return A [CRawCode] containing the reference comment.
@@ -291,11 +287,10 @@ object MetaspriteVisitor {
      *   `"_rot"`.
      * @param cameraOffsetX When non-null, emits screen-relative X formula
      *   `DEVICE_SPRITE_PX_OFFSET_X + (UINT8)(((INT16)(<posXVar> >> 4)) - (INT16)<cameraOffsetX>)`.
-     *   When null (default), emits absolute world-coordinate formula
-     *   `DEVICE_SPRITE_PX_OFFSET_X + (<posXVar> >> 4)` — byte-identical to pre-Phase-12.3
-     *   emission for D-08 back-compat. Set to `"_camera_x"` by
-     *   [ScriptOpVisitor.visitMoveMetasprite] when the game uses tilemap-camera mode
-     *   (Phase 12.3 R4 / D-07 Option A).
+     *   When null (default), emits absolute world-coordinate formula `DEVICE_SPRITE_PX_OFFSET_X +
+     *   (<posXVar> >> 4)` — byte-identical to pre-Phase-12.3 emission for D-08 back-compat. Set to
+     *   `"_camera_x"` by [ScriptOpVisitor.visitMoveMetasprite] when the game uses tilemap-camera
+     *   mode (Phase 12.3 R4 / D-07 Option A).
      * @return A [CRawCode] containing the full rendering block.
      */
     fun generateMetaspriteFrameSwitch(
@@ -311,11 +306,12 @@ object MetaspriteVisitor {
         // reference png2asset's native `<id>_metasprites[]` array instead of gbkt's
         // `sprite_<id>_frames[]` table. The escape-hatch D-04 path (spritePath == null)
         // keeps the legacy name unchanged.
-        val frames = if (metasprite.spritePath != null) {
-            "${metasprite.id}_metasprites"
-        } else {
-            "sprite_${metasprite.id}_frames"
-        }
+        val frames =
+            if (metasprite.spritePath != null) {
+                "${metasprite.id}_metasprites"
+            } else {
+                "sprite_${metasprite.id}_frames"
+            }
         // Phase 12.3 R4 / D-07 Option A — screen-relative vs absolute X formula.
         // When cameraOffsetX is null (default), the absolute formula is emitted byte-identically
         // to pre-Phase-12.3 (D-08 back-compat for all Phase 10/10.1 metasprite emission tests).
@@ -349,12 +345,8 @@ object MetaspriteVisitor {
         buf.append(
             "            hiwater += move_metasprite_flipy($frames[$idxVar], 0, subpal, hiwater,\n"
         )
-        buf.append(
-            "                                              $xExpr,\n"
-        )
-        buf.append(
-            "                                              $yExpr);\n"
-        )
+        buf.append("                                              $xExpr,\n")
+        buf.append("                                              $yExpr);\n")
         buf.append("            break;\n")
 
         // case 2: flip XY
@@ -362,12 +354,8 @@ object MetaspriteVisitor {
         buf.append(
             "            hiwater += move_metasprite_flipxy($frames[$idxVar], 0, subpal, hiwater,\n"
         )
-        buf.append(
-            "                                              $xExpr,\n"
-        )
-        buf.append(
-            "                                              $yExpr);\n"
-        )
+        buf.append("                                              $xExpr,\n")
+        buf.append("                                              $yExpr);\n")
         buf.append("            break;\n")
 
         // case 3: flip X only
@@ -375,12 +363,8 @@ object MetaspriteVisitor {
         buf.append(
             "            hiwater += move_metasprite_flipx($frames[$idxVar], 0, subpal, hiwater,\n"
         )
-        buf.append(
-            "                                              $xExpr,\n"
-        )
-        buf.append(
-            "                                              $yExpr);\n"
-        )
+        buf.append("                                              $xExpr,\n")
+        buf.append("                                              $yExpr);\n")
         buf.append("            break;\n")
 
         // default: no flip (move_metasprite_ex)
@@ -388,12 +372,8 @@ object MetaspriteVisitor {
         buf.append(
             "            hiwater += move_metasprite_ex($frames[$idxVar], 0, subpal, hiwater,\n"
         )
-        buf.append(
-            "                                          $xExpr,\n"
-        )
-        buf.append(
-            "                                          $yExpr);\n"
-        )
+        buf.append("                                          $xExpr,\n")
+        buf.append("                                          $yExpr);\n")
         buf.append("            break;\n")
 
         buf.append("    }\n")

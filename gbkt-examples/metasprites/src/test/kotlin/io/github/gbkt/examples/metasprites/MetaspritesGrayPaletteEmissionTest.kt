@@ -50,8 +50,8 @@ class MetaspritesGrayPaletteEmissionTest {
     /** Extracts the `{...}` body of the named `*_pal[4]` array literal from generated C. */
     private fun paletteLiteral(cSource: String, name: String): String {
         val regex = Regex("""${Regex.escape(name)}\[4\]\s*=\s*\{([^}]*)\}""")
-        val match = regex.find(cSource)
-            ?: error("Could not find $name[4] literal in generated main.c")
+        val match =
+            regex.find(cSource) ?: error("Could not find $name[4] literal in generated main.c")
         return match.groupValues[1].split(",").joinToString(", ") { it.trim() }
     }
 

@@ -73,6 +73,7 @@ import io.github.gbkt.core.ir.IfOp
 import io.github.gbkt.core.ir.LeverObjectIR
 import io.github.gbkt.core.ir.NavigateTo
 import io.github.gbkt.core.ir.NpcObjectIR
+import io.github.gbkt.core.ir.PaletteType
 import io.github.gbkt.core.ir.PathfindingSystem
 import io.github.gbkt.core.ir.PoolDestroyActor
 import io.github.gbkt.core.ir.PoolForEachActive
@@ -85,7 +86,6 @@ import io.github.gbkt.core.ir.RawOp
 import io.github.gbkt.core.ir.SceneIR
 import io.github.gbkt.core.ir.SconceObjectIR
 import io.github.gbkt.core.ir.ScriptOp
-import io.github.gbkt.core.ir.PaletteType
 import io.github.gbkt.core.ir.SetPalette
 import io.github.gbkt.core.ir.SpriteMode
 import io.github.gbkt.core.ir.StringLiteral
@@ -343,22 +343,31 @@ class GBDKPipeline {
         }
         json.put("zoneTilesets", zoneTilesets)
 
-        // Phase 12.4 D-02: sprites[] manifest consumed by ConvertSpritesTask (sidecar reader replacing
+        // Phase 12.4 D-02: sprites[] manifest consumed by ConvertSpritesTask (sidecar reader
+        // replacing
         // main.c parseSpriteIncludes/isMetaspriteBound/isMirrorDedupOptIn helpers). Includes:
         //   1. Metasprites with explicit sprite(asset(...)) binding (spritePath != null) per D-01b.
-        //   2. Actor sprites (actor { sprite(asset(...)) }) — these also produce #include "sprites/X.h"
-        //      in main.c and require ConvertSpritesTask to generate the matching .c/.h tile data files.
-        //      Actor sprites always use mirrorDedup=false (no mirror-pair dedup opt-in at actor level).
-        //      Plan 12.4-13 Rule 1 regression fix: Phase 12.4-03 sidecar refactor dropped actor sprites
-        //      from the sprites[] manifest; ConvertSpritesTask then skipped them, leaving the #include
-        //      directives dangling and breaking :buildRom for pong, breakout, banks, simple-physics.
+        //   2. Actor sprites (actor { sprite(asset(...)) }) — these also produce #include
+        // "sprites/X.h"
+        //      in main.c and require ConvertSpritesTask to generate the matching .c/.h tile data
+        // files.
+        //      Actor sprites always use mirrorDedup=false (no mirror-pair dedup opt-in at actor
+        // level).
+        //      Plan 12.4-13 Rule 1 regression fix: Phase 12.4-03 sidecar refactor dropped actor
+        // sprites
+        //      from the sprites[] manifest; ConvertSpritesTask then skipped them, leaving the
+        // #include
+        //      directives dangling and breaking :buildRom for pong, breakout, banks,
+        // simple-physics.
         //
         // Each entry carries:
         //   - "id": sprite identifier (metasprite id, or PNG stem for actor sprites)
         //   - "spritePath": relative path to source PNG from res/ (used to locate the file)
         //   - "includePath": relative path where the .h file must land under cSourceDir
-        //                    (matches the #include directive in generated C — may differ from spritePath
-        //                     when a metasprite's PNG lives under graphics/ but is included as sprites/<id>.h)
+        //                    (matches the #include directive in generated C — may differ from
+        // spritePath
+        //                     when a metasprite's PNG lives under graphics/ but is included as
+        // sprites/<id>.h)
         //   - "mirrorDedup": true → png2asset mirror-pair tile dedup enabled; false → -noflip added
         val sprites = org.json.JSONArray()
         for (ms in gameIR.metasprites) {
@@ -369,19 +378,23 @@ class GBDKPipeline {
             // at the correct location relative to cSourceDir.
             val includePath = "sprites/${ms.id}.h"
             // Phase 12.5 D-05 — png2asset cutting flags in sidecar
-            // Phase 13.3 D-07 — frameCount field for build-time cross-validation in ConvertSpritesTask
-            // Phase 13.3 D-01 — isMetasprite flag so ConvertSpritesTask can emit the native array extern
-            val spriteEntry = org.json.JSONObject()
-                .put("id", ms.id)
-                .put("spritePath", spritePath)
-                .put("includePath", includePath)
-                .put("mirrorDedup", ms.mirrorDedup)
-                .put("spriteMode", ms.spriteMode?.name ?: SpriteMode.SPR8x16.name)
-                .put("pivotX", ms.pivotX ?: 0)
-                .put("pivotY", ms.pivotY ?: 0)
-                .put("frameWidth", ms.frameWidth ?: 8)
-                .put("frameHeight", ms.frameHeight ?: 8)
-                .put("isMetasprite", true)
+            // Phase 13.3 D-07 — frameCount field for build-time cross-validation in
+            // ConvertSpritesTask
+            // Phase 13.3 D-01 — isMetasprite flag so ConvertSpritesTask can emit the native array
+            // extern
+            val spriteEntry =
+                org.json
+                    .JSONObject()
+                    .put("id", ms.id)
+                    .put("spritePath", spritePath)
+                    .put("includePath", includePath)
+                    .put("mirrorDedup", ms.mirrorDedup)
+                    .put("spriteMode", ms.spriteMode?.name ?: SpriteMode.SPR8x16.name)
+                    .put("pivotX", ms.pivotX ?: 0)
+                    .put("pivotY", ms.pivotY ?: 0)
+                    .put("frameWidth", ms.frameWidth ?: 8)
+                    .put("frameHeight", ms.frameHeight ?: 8)
+                    .put("isMetasprite", true)
             if (ms.frameCount != null) {
                 spriteEntry.put("frameCount", ms.frameCount)
             }
@@ -408,10 +421,10 @@ class GBDKPipeline {
             val firstSprite = actors.first().second
             val tileHeight = firstSprite.size.height
             val tileWidth = firstSprite.size.width
-            val actorSpriteMode =
-                if (tileHeight <= 8) SpriteMode.SPR8x8 else SpriteMode.SPR8x16
+            val actorSpriteMode = if (tileHeight <= 8) SpriteMode.SPR8x8 else SpriteMode.SPR8x16
             sprites.put(
-                org.json.JSONObject()
+                org.json
+                    .JSONObject()
                     .put("id", spritePath.substringAfterLast('/').substringBeforeLast('.'))
                     .put("spritePath", spritePath)
                     .put("includePath", includePath)
@@ -639,15 +652,17 @@ class GBDKPipeline {
         // This replaces the direct zoneBankAllocation map lookup at SceneVisitor time with an
         // explicit IR-level field, preventing future divergence if allocateZoneBanks were called
         // with inconsistent inputs at different pipeline stages (D-01 field-over-lookup).
-        val gameIRWithBanks = if (bankAllocation.isNotEmpty() && gameIR.zones.isNotEmpty()) {
-            val scenesWithBanks = gameIR.scenes.map { scene ->
-                val zoneBank = scene.zoneRefs.firstNotNullOfOrNull { bankAllocation[it] }
-                if (zoneBank != null) scene.copy(allocatedZoneBank = zoneBank) else scene
+        val gameIRWithBanks =
+            if (bankAllocation.isNotEmpty() && gameIR.zones.isNotEmpty()) {
+                val scenesWithBanks =
+                    gameIR.scenes.map { scene ->
+                        val zoneBank = scene.zoneRefs.firstNotNullOfOrNull { bankAllocation[it] }
+                        if (zoneBank != null) scene.copy(allocatedZoneBank = zoneBank) else scene
+                    }
+                gameIR.copy(scenes = scenesWithBanks)
+            } else {
+                gameIR
             }
-            gameIR.copy(scenes = scenesWithBanks)
-        } else {
-            gameIR
-        }
 
         val homeFile = buildHomeFile(gameIRWithBanks, bankAllocation)
         // Plan 07.4-22: bankAllocation threads into buildSceneFile so the cross-bank guard for
@@ -672,7 +687,8 @@ class GBDKPipeline {
         // SceneVisitor.kt: `val sceneBanked = sceneBank == null || sceneBank > 0`), so no
         // BANKED-stripping is required when folding into HOME.
         val allScenesInHome =
-            gameIRWithBanks.scenes.isNotEmpty() && gameIRWithBanks.scenes.all { (it.bankSlot?.bank ?: 1) == 0 }
+            gameIRWithBanks.scenes.isNotEmpty() &&
+                gameIRWithBanks.scenes.all { (it.bankSlot?.bank ?: 1) == 0 }
 
         return if (allScenesInHome) {
             // Fold scene functions + defines + includes into homeFile; omit bank1.c from output.
@@ -685,7 +701,8 @@ class GBDKPipeline {
             // Pass empty sentinel sceneFile to buildHeaderFile so scene prototypes appear under
             // homeFunctionPrototypes (non-BANKED) rather than sceneFunctionPrototypes (BANKED).
             val emptySceneFile = sceneFile.copy(functions = emptyList())
-            val headerFile = buildHeaderFile(gameIRWithBanks, mergedHome, emptySceneFile, bankAllocation)
+            val headerFile =
+                buildHeaderFile(gameIRWithBanks, mergedHome, emptySceneFile, bankAllocation)
             val tilemapBankFiles = buildTilemapBankFiles(gameIRWithBanks, bankAllocation)
             listOf(mergedHome, headerFile) + tilemapBankFiles
         } else {
@@ -1253,7 +1270,8 @@ class GBDKPipeline {
         // game does not opt into tilemap collision. Plan 12-09b's anchor 5 emission test locks
         // the function signature + the `_current_level = _next_level` assignment + the
         // `switch (_current_level` substring.
-        val setupCurrentLevelFunctionRaw = buildSetupCurrentLevelFunctionIfNeeded(gameIR, bankAllocation)
+        val setupCurrentLevelFunctionRaw =
+            buildSetupCurrentLevelFunctionIfNeeded(gameIR, bankAllocation)
 
         // Phase 12.6 D-06 — `_level_spawn_x[]` / `_level_spawn_y[]` const arrays
         // (HOME bank). Emitted BEFORE setupCurrentLevelFunctionRaw in the raw-section list so
@@ -1427,7 +1445,8 @@ class GBDKPipeline {
             if (gameIR.metasprites.isNotEmpty()) listOf("<gbdk/metasprites.h>") else emptyList()
 
         // Phase 12.1 Plan 03 (Defect 3): main.c needs the per-zone tileset headers so that
-        // `setup_current_level`'s references to `_zone_<id>_tilemap_WIDTH` / `_HEIGHT` (preprocessor
+        // `setup_current_level`'s references to `_zone_<id>_tilemap_WIDTH` / `_HEIGHT`
+        // (preprocessor
         // macros emitted by ConvertZoneTilesetsTask.synthesizeHeader) resolve at SDCC compile time.
         // Mirrors `buildSceneFile`'s zoneTilesetIncludes pattern (line ~1556) — one #include per
         // unique zone with a tilesetPath. Header guards make duplicates safe; distinct() keeps the
@@ -2147,21 +2166,22 @@ class GBDKPipeline {
      *
      * Returns true when ANY of:
      * - **Path A** — A `GenericSystem` with type `"platformer_physics"` carries a `physicsConfig`
-     *   whose `solidThreshold` property is non-null (the abstract tilemap-collision tile threshold).
+     *   whose `solidThreshold` property is non-null (the abstract tilemap-collision tile
+     *   threshold).
      * - **Path B** — Any `ZoneIR` in `gameIR.zones` carries a `platformerPhysicsOverride` map that
      *   contains a non-null `"solidThreshold"` key (per-level override path).
      * - **Path C (Phase 12.1 Plan 05)** — A `GenericSystem` with type `"tilemap_collision"` is
      *   present. This is the canonical tilemap-physics symbol-binding home introduced by the new
      *   `tilemapCollision { }` builder (D-claude-4 — separation from platformerPhysics).
      *
-     * Backend-gbdk does NOT depend on gbkt-genre-platformer, so the GenericSystem's
-     * `physicsConfig` value is an opaque object — we use Java reflection to read the
-     * `solidThreshold` field without taking a compile-time dependency on the genre module
-     * (mirrors the same pattern used for opaque genre-config inspection elsewhere).
+     * Backend-gbdk does NOT depend on gbkt-genre-platformer, so the GenericSystem's `physicsConfig`
+     * value is an opaque object — we use Java reflection to read the `solidThreshold` field without
+     * taking a compile-time dependency on the genre module (mirrors the same pattern used for
+     * opaque genre-config inspection elsewhere).
      *
-     * When false, no `is_tile_solid()` helper is emitted and no supporting globals are
-     * declared — existing games (Pong, Breakout, Explorer, RPG-Lite, Dungeon, Shmup, Racer)
-     * remain byte-identical at the codegen layer.
+     * When false, no `is_tile_solid()` helper is emitted and no supporting globals are declared —
+     * existing games (Pong, Breakout, Explorer, RPG-Lite, Dungeon, Shmup, Racer) remain
+     * byte-identical at the codegen layer.
      */
     private fun gameUsesTilemapCollision(gameIR: GameIR): Boolean {
         // Path C (Phase 12.1 Plan 05 Task 2) — explicit tilemap_collision GenericSystem.
@@ -2217,8 +2237,8 @@ class GBDKPipeline {
     }
 
     /**
-     * Phase 12 D-12a — emit the HOME-bank globals used by the `is_tile_solid()` helper +
-     * the Plan 12-17 main()-loop level-switch substrate.
+     * Phase 12 D-12a — emit the HOME-bank globals used by the `is_tile_solid()` helper + the Plan
+     * 12-17 main()-loop level-switch substrate.
      *
      * Returns an empty list when `gameUsesTilemapCollision(gameIR) == false`, preserving
      * byte-identical codegen for games that do not opt into tilemap collision.
@@ -2229,8 +2249,8 @@ class GBDKPipeline {
      * - `_current_level_width_in_tiles: UINT16` — width of the active level in tiles
      * - `_current_level_height: UINT16` — height of the active level in PIXELS (matches the
      *   reference convention; `is_tile_solid` shifts right by 3 to get the row max)
-     * - `_current_level_non_solid_tile_count: UINT8` — the `solidThreshold` value (tile indices
-     *   `< this` are non-solid; the helper returns `tile < _current_level_non_solid_tile_count`)
+     * - `_current_level_non_solid_tile_count: UINT8` — the `solidThreshold` value (tile indices `<
+     *   this` are non-solid; the helper returns `tile < _current_level_non_solid_tile_count`)
      *
      * **Plan 12-17 globals (D-02 / D-08 anchor 5 — level-switch substrate):**
      * - `_current_level: UINT8` — the level index currently active (player tile-collides against
@@ -2258,7 +2278,11 @@ class GBDKPipeline {
                 type = CPointer(CConst(CU8)),
                 initializer = CRawExpr("(const UINT8*)0"),
             ),
-            CVarDecl(name = "_current_level_width_in_tiles", type = CU16, initializer = CLiteral(0)),
+            CVarDecl(
+                name = "_current_level_width_in_tiles",
+                type = CU16,
+                initializer = CLiteral(0),
+            ),
             CVarDecl(name = "_current_level_height", type = CU16, initializer = CLiteral(0)),
             CVarDecl(
                 name = "_current_level_non_solid_tile_count",
@@ -2287,16 +2311,16 @@ class GBDKPipeline {
      *
      * Returns a raw C source string when `gameUsesTilemapCollision(gameIR) == true`, else null.
      *
-     * The function lives in HOME bank (`main.c`, 0x0000-0x3FFF, never remapped by MBC) and uses
-     * the same SWITCH_ROM save/restore pattern as `buildBkgTilesLoadBankedHelper` at line 1938:
-     * save CURRENT_BANK → SWITCH_ROM(_current_area_bank) → access tilemap → SWITCH_ROM(previous)
-     * → return result. The NONBANKED keyword is mandatory: SDCC must place this function in
-     * HOME bank (bank 0) so the SWITCH_ROM operates safely without remapping the instruction
-     * stream containing it.
+     * The function lives in HOME bank (`main.c`, 0x0000-0x3FFF, never remapped by MBC) and uses the
+     * same SWITCH_ROM save/restore pattern as `buildBkgTilesLoadBankedHelper` at line 1938: save
+     * CURRENT_BANK → SWITCH_ROM(_current_area_bank) → access tilemap → SWITCH_ROM(previous) →
+     * return result. The NONBANKED keyword is mandatory: SDCC must place this function in HOME bank
+     * (bank 0) so the SWITCH_ROM operates safely without remapping the instruction stream
+     * containing it.
      *
-     * Emission shape mirrors `gbdk/examples/cross-platform/platformer_template/src/level.c`
-     * lines 40-68 (renamed identifiers to gbkt's `_current_level_*` convention to match the 5
-     * globals declared by `buildTilemapCollisionGlobals`).
+     * Emission shape mirrors `gbdk/examples/cross-platform/platformer_template/src/level.c` lines
+     * 40-68 (renamed identifiers to gbkt's `_current_level_*` convention to match the 5 globals
+     * declared by `buildTilemapCollisionGlobals`).
      *
      * **Contract for Plan 12-09's per-function emission invariant test (D-16 invariant 2):**
      * - The function declaration MUST start with `UINT8 is_tile_solid` at column 0 (awk pattern
@@ -2304,30 +2328,30 @@ class GBDKPipeline {
      * - The body MUST contain exactly 2 `SWITCH_ROM` invocations (entry + exit).
      * - The body MUST contain the string `_current_level_non_solid_tile_count`.
      *
-     * Emitted as a raw section because the typed C AST does not model the GBDK `NONBANKED`
-     * keyword (same justification as the existing `CRawCode("SWITCH_ROM(...)")` usage in
+     * Emitted as a raw section because the typed C AST does not model the GBDK `NONBANKED` keyword
+     * (same justification as the existing `CRawCode("SWITCH_ROM(...)")` usage in
      * `buildBkgTilesLoadBankedHelper` — GBDK macros / keywords not in the AST).
      */
     private fun buildIsTileSolidHelperIfNeeded(gameIR: GameIR): String? {
         if (!gameUsesTilemapCollision(gameIR)) return null
         return """
-// Phase 12 D-12a — is_tile_solid() HOME-bank NONBANKED helper
-// SWITCH_ROM wrapper; mirrors buildBkgTilesLoadBankedHelper pattern (line 1938).
-// Called from the tilemap-physics branch in PlatformerVisitor (5-point AABB probe — Plan 12-11).
-UINT8 is_tile_solid(UINT16 world_x, UINT16 world_y) NONBANKED {
-    UINT8 _previous_bank = CURRENT_BANK;
-    SWITCH_ROM(_current_area_bank);
-    UINT16 column = world_x >> 3u;
-    UINT16 row = world_y >> 3u;
-    if (row > (_current_level_height >> 3u) || column >= _current_level_width_in_tiles) {
-        SWITCH_ROM(_previous_bank);
-        return TRUE;
-    }
-    UINT8 tile = _current_level_map[column + row * _current_level_width_in_tiles];
-    SWITCH_ROM(_previous_bank);
-    return tile < _current_level_non_solid_tile_count;
-}
-"""
+        // Phase 12 D-12a — is_tile_solid() HOME-bank NONBANKED helper
+        // SWITCH_ROM wrapper; mirrors buildBkgTilesLoadBankedHelper pattern (line 1938).
+        // Called from the tilemap-physics branch in PlatformerVisitor (5-point AABB probe — Plan 12-11).
+        UINT8 is_tile_solid(UINT16 world_x, UINT16 world_y) NONBANKED {
+            UINT8 _previous_bank = CURRENT_BANK;
+            SWITCH_ROM(_current_area_bank);
+            UINT16 column = world_x >> 3u;
+            UINT16 row = world_y >> 3u;
+            if (row > (_current_level_height >> 3u) || column >= _current_level_width_in_tiles) {
+                SWITCH_ROM(_previous_bank);
+                return TRUE;
+            }
+            UINT8 tile = _current_level_map[column + row * _current_level_width_in_tiles];
+            SWITCH_ROM(_previous_bank);
+            return tile < _current_level_non_solid_tile_count;
+        }
+        """
             .trimIndent()
     }
 
@@ -2336,26 +2360,27 @@ UINT8 is_tile_solid(UINT16 world_x, UINT16 world_y) NONBANKED {
      *
      * HOME-bank wrapper around `set_bkg_submap()` that performs a SWITCH_ROM dance to the active
      * level's data bank before invoking the GBDK API, then restores the caller's bank. Mirrors the
-     * same shape as `buildBkgTilesLoadBankedHelper` (line 1938) and `buildIsTileSolidHelperIfNeeded`
-     * (Plan 12-08): save CURRENT_BANK → SWITCH_ROM(_current_area_bank) → call set_bkg_submap →
-     * SWITCH_ROM(_previous_bank). The NONBANKED keyword forces SDCC to place the function in HOME
-     * bank (0x0000-0x3FFF, never remapped by the MBC) so the SWITCH_ROM cannot corrupt the
-     * instruction stream that contains it.
+     * same shape as `buildBkgTilesLoadBankedHelper` (line 1938) and
+     * `buildIsTileSolidHelperIfNeeded` (Plan 12-08): save CURRENT_BANK →
+     * SWITCH_ROM(_current_area_bank) → call set_bkg_submap → SWITCH_ROM(_previous_bank). The
+     * NONBANKED keyword forces SDCC to place the function in HOME bank (0x0000-0x3FFF, never
+     * remapped by the MBC) so the SWITCH_ROM cannot corrupt the instruction stream that contains
+     * it.
      *
      * Returns a raw C source string when `gameUsesTilemapCollision(gameIR) == true`, else null.
      * Plan 12-11 wires the column-scroll branch of `platformer_camera_update` to call this helper
-     * with the new column's tile coordinates; the helper is the cross-bank set_bkg_submap analog
-     * of Phase 07.4-30's `_bkg_tiles_load_banked()`.
+     * with the new column's tile coordinates; the helper is the cross-bank set_bkg_submap analog of
+     * Phase 07.4-30's `_bkg_tiles_load_banked()`.
      *
-     * Reference shape — `gbdk/examples/cross-platform/platformer_template/src/camera.c` lines
-     * 30-40 (SetCurrentLevelSubmap). The reference uses `current_level_width_in_tiles` directly;
-     * gbkt mirrors that with the `_current_level_width_in_tiles` global declared by
+     * Reference shape — `gbdk/examples/cross-platform/platformer_template/src/camera.c` lines 30-40
+     * (SetCurrentLevelSubmap). The reference uses `current_level_width_in_tiles` directly; gbkt
+     * mirrors that with the `_current_level_width_in_tiles` global declared by
      * `buildTilemapCollisionGlobals` (Plan 12-08). The width parameter passed to set_bkg_submap is
      * cast to `UINT8` because GBDK's set_bkg_submap signature takes `(UINT8 x, UINT8 y, UINT8 w,
      * UINT8 h, const unsigned char* tiles, UINT8 map_w)` — see GBDK gb.h.
      *
-     * Emitted as a raw section because the typed C AST does not model the GBDK `NONBANKED`
-     * keyword (same justification as `buildIsTileSolidHelperIfNeeded` above).
+     * Emitted as a raw section because the typed C AST does not model the GBDK `NONBANKED` keyword
+     * (same justification as `buildIsTileSolidHelperIfNeeded` above).
      *
      * **Contract for Plan 12-12's per-function emission invariant test:**
      * - Function declaration MUST start with `void _bkg_set_level_submap_banked` at column 0.
@@ -2365,17 +2390,17 @@ UINT8 is_tile_solid(UINT16 world_x, UINT16 world_y) NONBANKED {
     private fun buildSetLevelSubmapHelperIfNeeded(gameIR: GameIR): String? {
         if (!gameUsesTilemapCollision(gameIR)) return null
         return """
-// Phase 12 D-13 — _bkg_set_level_submap_banked() HOME-bank NONBANKED helper
-// (called from platformer_camera_update column-scroll branch — Plan 12-11 wires the call site).
-// SWITCH_ROM wrapper around set_bkg_submap(); mirrors buildBkgTilesLoadBankedHelper / is_tile_solid
-// pattern. Lives in HOME bank so MBC remap of 0x4000-0x7FFF cannot affect instruction fetches.
-void _bkg_set_level_submap_banked(UINT8 x, UINT8 y, UINT8 w, UINT8 h) NONBANKED {
-    UINT8 _previous_bank = CURRENT_BANK;
-    SWITCH_ROM(_current_area_bank);
-    set_bkg_submap(x, y, w, h, _current_level_map, (UINT8)_current_level_width_in_tiles);
-    SWITCH_ROM(_previous_bank);
-}
-"""
+        // Phase 12 D-13 — _bkg_set_level_submap_banked() HOME-bank NONBANKED helper
+        // (called from platformer_camera_update column-scroll branch — Plan 12-11 wires the call site).
+        // SWITCH_ROM wrapper around set_bkg_submap(); mirrors buildBkgTilesLoadBankedHelper / is_tile_solid
+        // pattern. Lives in HOME bank so MBC remap of 0x4000-0x7FFF cannot affect instruction fetches.
+        void _bkg_set_level_submap_banked(UINT8 x, UINT8 y, UINT8 w, UINT8 h) NONBANKED {
+            UINT8 _previous_bank = CURRENT_BANK;
+            SWITCH_ROM(_current_area_bank);
+            set_bkg_submap(x, y, w, h, _current_level_map, (UINT8)_current_level_width_in_tiles);
+            SWITCH_ROM(_previous_bank);
+        }
+        """
             .trimIndent()
     }
 
@@ -2386,10 +2411,10 @@ void _bkg_set_level_submap_banked(UINT8 x, UINT8 y, UINT8 w, UINT8 h) NONBANKED 
     /**
      * Phase 12 D-02 / D-08 anchor 5 — `setup_current_level()` HOME-bank NONBANKED function.
      *
-     * Returns the function when `gameUsesTilemapCollision(gameIR) == true`, else null. The
-     * function lives in HOME bank (0x0000-0x3FFF, never remapped by MBC), so it can safely
-     * issue `SWITCH_ROM(...)` per zone to populate the active-level globals from per-zone
-     * banked tilemap data without corrupting its own instruction stream.
+     * Returns the function when `gameUsesTilemapCollision(gameIR) == true`, else null. The function
+     * lives in HOME bank (0x0000-0x3FFF, never remapped by MBC), so it can safely issue
+     * `SWITCH_ROM(...)` per zone to populate the active-level globals from per-zone banked tilemap
+     * data without corrupting its own instruction stream.
      *
      * **Shape** (mirrors `gbdk/examples/cross-platform/platformer_template/src/level.c`
      * `SetupCurrentLevel()`):
@@ -2410,15 +2435,15 @@ void _bkg_set_level_submap_banked(UINT8 x, UINT8 y, UINT8 w, UINT8 h) NONBANKED 
      * }
      * ```
      *
-     * **Plan 12-17 scope** (intentional STUB shape — full per-zone metadata wiring is Plan
-     * 12-18 territory):
+     * **Plan 12-17 scope** (intentional STUB shape — full per-zone metadata wiring is Plan 12-18
+     * territory):
      * - The function structure (switch + per-case stubs) is emitted here.
-     * - Per-case body content is a single `// PLAN-12-18: populate from zone metadata`
-     *   comment + reads/writes the canonical names so the SDCC linker resolves them at
-     *   first buildRom (Plan 12-18).
+     * - Per-case body content is a single `// PLAN-12-18: populate from zone metadata` comment +
+     *   reads/writes the canonical names so the SDCC linker resolves them at first buildRom (Plan
+     *   12-18).
      * - `setup_current_level` is the SHAPE Plan 12-09b will lock for the anchor 5 emission
-     *   invariant; the per-case body content is the SHAPE Plan 12-18 will lock for the
-     *   per-zone tileset/tilemap/palette load.
+     *   invariant; the per-case body content is the SHAPE Plan 12-18 will lock for the per-zone
+     *   tileset/tilemap/palette load.
      *
      * **Zone filtering**: only gameplay zones contribute cases — screen()-synthesized zones
      * (ZoneIR.screenMode == true) are excluded. The filter uses the semantic [ZoneIR.screenMode]
@@ -2427,18 +2452,17 @@ void _bkg_set_level_submap_banked(UINT8 x, UINT8 y, UINT8 w, UINT8 h) NONBANKED 
      * future-proofs any new screenMode use cases regardless of scene name.
      *
      * Emitted as a typed `CFunction` (not a raw section) because the body is structured C
-     * (switch/case/break) that the typed AST models cleanly. The `NONBANKED` keyword is
-     * emitted by overriding `sectionComment` to inject the modifier — wait, the AST has no
-     * NONBANKED modifier surface. Two options:
-     *   (a) Emit as a raw section (matches `buildIsTileSolidHelperIfNeeded` pattern).
-     *   (b) Emit as a typed `CFunction` with bank=0 (HOME) and the NONBANKED keyword is
-     *       implicit because HOME functions are always non-banked by default.
+     * (switch/case/break) that the typed AST models cleanly. The `NONBANKED` keyword is emitted by
+     * overriding `sectionComment` to inject the modifier — wait, the AST has no NONBANKED modifier
+     * surface. Two options: (a) Emit as a raw section (matches `buildIsTileSolidHelperIfNeeded`
+     * pattern). (b) Emit as a typed `CFunction` with bank=0 (HOME) and the NONBANKED keyword is
+     * implicit because HOME functions are always non-banked by default.
      *
      * **Chosen: (a)** — emit as raw section. Matches the existing `is_tile_solid` /
-     * `_bkg_set_level_submap_banked` precedent. The NONBANKED keyword is explicit in the
-     * raw source, which is the only way to guarantee SDCC places the function in HOME bank
-     * (without NONBANKED, SDCC's default for HOME bank is non-banked but the keyword makes
-     * the contract explicit and lints cleanly under SDCC's stricter banked-call analysis).
+     * `_bkg_set_level_submap_banked` precedent. The NONBANKED keyword is explicit in the raw
+     * source, which is the only way to guarantee SDCC places the function in HOME bank (without
+     * NONBANKED, SDCC's default for HOME bank is non-banked but the keyword makes the contract
+     * explicit and lints cleanly under SDCC's stricter banked-call analysis).
      *
      * **Contract for Plan 12-09b's anchor 5 emission test:**
      * - Function declaration MUST start with `void setup_current_level` at column 0.
@@ -2477,29 +2501,38 @@ void _bkg_set_level_submap_banked(UINT8 x, UINT8 y, UINT8 w, UINT8 h) NONBANKED 
         // Default "grounded" → "_grounded" when no explicit binding is present (fallback mirrors
         // the PlatformerVisitor.kt:579 resolution which uses the same key and default).
         val groundedSym = "_" + ((tcSystem?.config?.get("groundedVar") as? String) ?: "grounded")
-        val caseBodies = gameplayZones.mapIndexed { idx, zone ->
-            val zoneSanitized = zone.id.replace('-', '_').replace(' ', '_')
-            // option (c-prime) per 12.1-VERIFICATION §Defect-6-Recommended-path — substitute
-            // literal bank from allocateZoneBanks; fallback to 1u (HOME-adjacent, safe) if
-            // missing. SDCC's `#pragma bank N` directive (emitted by Plan 12.1-01's
-            // ConvertZoneTilesetsTask) places the tilemap data array in bank N, but does NOT
-            // auto-synthesize a `__bank__zone_<id>_tilemap` symbol for data arrays (only for
-            // banked function definitions). Substituting the literal bank at the consumer
-            // site eliminates the link-time dependency on that never-existing symbol while
-            // preserving the bank placement.
-            val bank = bankAllocation[zone.id] ?: 1
-            val bankFallbackComment = if (bankAllocation[zone.id] == null) {
-                " /* fallback: bankAllocation missing zoneId; safe HOME-adjacent */"
-            } else {
-                ""
-            }
-            // Per-zone solidThreshold override falls back to game-level (handled by Plan 12-07).
-            // For the Plan 12-17 STUB shape we emit a placeholder threshold of 17 (matches
-            // PlatformerTemplate.kt's game-level default); Plan 12-18 will source the threshold
-            // from `zone.platformerPhysicsOverride["solidThreshold"]` falling back to game-level.
-            val threshold =
-                (zone.platformerPhysicsOverride?.get("solidThreshold") as? Int) ?: 17
-            """
+        val caseBodies =
+            gameplayZones
+                .mapIndexed { idx, zone ->
+                    val zoneSanitized = zone.id.replace('-', '_').replace(' ', '_')
+                    // option (c-prime) per 12.1-VERIFICATION §Defect-6-Recommended-path —
+                    // substitute
+                    // literal bank from allocateZoneBanks; fallback to 1u (HOME-adjacent, safe) if
+                    // missing. SDCC's `#pragma bank N` directive (emitted by Plan 12.1-01's
+                    // ConvertZoneTilesetsTask) places the tilemap data array in bank N, but does
+                    // NOT
+                    // auto-synthesize a `__bank__zone_<id>_tilemap` symbol for data arrays (only
+                    // for
+                    // banked function definitions). Substituting the literal bank at the consumer
+                    // site eliminates the link-time dependency on that never-existing symbol while
+                    // preserving the bank placement.
+                    val bank = bankAllocation[zone.id] ?: 1
+                    val bankFallbackComment =
+                        if (bankAllocation[zone.id] == null) {
+                            " /* fallback: bankAllocation missing zoneId; safe HOME-adjacent */"
+                        } else {
+                            ""
+                        }
+                    // Per-zone solidThreshold override falls back to game-level (handled by Plan
+                    // 12-07).
+                    // For the Plan 12-17 STUB shape we emit a placeholder threshold of 17 (matches
+                    // PlatformerTemplate.kt's game-level default); Plan 12-18 will source the
+                    // threshold
+                    // from `zone.platformerPhysicsOverride["solidThreshold"]` falling back to
+                    // game-level.
+                    val threshold =
+                        (zone.platformerPhysicsOverride?.get("solidThreshold") as? Int) ?: 17
+                    """
         case $idx:  // zone: ${zone.id}
             // PLAN-12-18: populate _current_area_bank / _current_level_map / width / height
             // from `_zone_${zoneSanitized}_tilemap` symbol + per-zone metadata. The Gradle
@@ -2585,8 +2618,10 @@ void _bkg_set_level_submap_banked(UINT8 x, UINT8 y, UINT8 w, UINT8 h) NONBANKED 
             _camera_x = 0;
             _old_camera_x = 0;
             break;
-            """.trimIndent()
-        }.joinToString("\n")
+            """
+                        .trimIndent()
+                }
+                .joinToString("\n")
         val zoneCount = gameplayZones.size
         return """
 // Phase 12 D-02 / D-08 anchor 5 — setup_current_level() HOME-bank NONBANKED function
@@ -2620,19 +2655,19 @@ ${caseBodies}
      * Emits two `const UINT8` arrays in HOME bank — `_level_spawn_x[]` and `_level_spawn_y[]` —
      * with one element per gameplay zone (the same zone-filter used by
      * `buildSetupCurrentLevelFunctionIfNeeded`, so the array indices match the switch cases
-     * one-to-one). The arrays are consumed by the per-case body inside `setup_current_level()`
-     * via `<posXSym> = ((INT16)_level_spawn_x[idx]) << 4;` (subpixel shift applied at codegen
-     * time per RESEARCH §Pitfall 2).
+     * one-to-one). The arrays are consumed by the per-case body inside `setup_current_level()` via
+     * `<posXSym> = ((INT16)_level_spawn_x[idx]) << 4;` (subpixel shift applied at codegen time per
+     * RESEARCH §Pitfall 2).
      *
-     * Returns a raw C source string when `gameUsesTilemapCollision(gameIR) == true` AND there
-     * is at least one gameplay zone, else null. This gate keeps pong/breakout/etc. byte-identical
-     * to the Phase 12.6-01 baseline (per CONTEXT D-14 7-target sweep).
+     * Returns a raw C source string when `gameUsesTilemapCollision(gameIR) == true` AND there is at
+     * least one gameplay zone, else null. This gate keeps pong/breakout/etc. byte-identical to the
+     * Phase 12.6-01 baseline (per CONTEXT D-14 7-target sweep).
      *
-     * Default-fallback behavior (D-07): when a gameplay zone has not declared `spawn(x, y)`,
-     * we substitute `(16, 120)` (matches CONTEXT D-07's locked default) and emit a build-time
-     * WARNING to stderr so users know to declare explicitly. Plan 12.6-07 will migrate
-     * platformer-template to declare `spawn(40u, 120u)` on all 3 zones, so the warning will
-     * not fire on the production path.
+     * Default-fallback behavior (D-07): when a gameplay zone has not declared `spawn(x, y)`, we
+     * substitute `(16, 120)` (matches CONTEXT D-07's locked default) and emit a build-time WARNING
+     * to stderr so users know to declare explicitly. Plan 12.6-07 will migrate platformer-template
+     * to declare `spawn(40u, 120u)` on all 3 zones, so the warning will not fire on the production
+     * path.
      *
      * Visibility is `internal` to mirror the sibling `buildSetupCurrentLevelFunctionIfNeeded`
      * (already internal for test access per Plan 12-09b) and to allow direct invocation from
@@ -2640,7 +2675,8 @@ ${caseBodies}
      */
     internal fun buildLevelSpawnTablesIfNeeded(gameIR: GameIR): String? {
         if (!gameUsesTilemapCollision(gameIR)) return null
-        // CR-02 fix: use the semantic screenMode field (mirrors buildSetupCurrentLevelFunctionIfNeeded).
+        // CR-02 fix: use the semantic screenMode field (mirrors
+        // buildSetupCurrentLevelFunctionIfNeeded).
         val gameplayZones = gameIR.zones.filter { zone -> !zone.screenMode }
         if (gameplayZones.isEmpty()) return null
 
@@ -2671,13 +2707,14 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
     }
 
     /**
-     * Phase 12 D-02 / D-08 anchor 5 — main()-loop level-switch guard statements (Plan 12-17 Task 2).
+     * Phase 12 D-02 / D-08 anchor 5 — main()-loop level-switch guard statements (Plan 12-17 Task
+     * 2).
      *
-     * Returns the guard statement list when `gameUsesTilemapCollision(gameIR) == true` AND the
-     * game declares a scene with id matching one of `{"nextLevel", "next_level", "nextlevel"}`
-     * (the conventional NextLevel card scene declared by PlatformerTemplate.kt + future
-     * platformer ports). Returns an empty list otherwise — preserving byte-identical codegen
-     * for games that do not opt into tilemap collision OR do not declare a NextLevel scene.
+     * Returns the guard statement list when `gameUsesTilemapCollision(gameIR) == true` AND the game
+     * declares a scene with id matching one of `{"nextLevel", "next_level", "nextlevel"}` (the
+     * conventional NextLevel card scene declared by PlatformerTemplate.kt + future platformer
+     * ports). Returns an empty list otherwise — preserving byte-identical codegen for games that do
+     * not opt into tilemap collision OR do not declare a NextLevel scene.
      *
      * **Shape** (mirrors reference main.c lines 44-82):
      * ```c
@@ -2688,33 +2725,32 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
      * }
      * ```
      *
-     * **Bootstrap rationale (Plan 12-19 revision):**
-     * `_current_level` and `_next_level` are both initialised to 0, so the guard does NOT
-     * fire on startup. The title scene runs with its own tileset+tilemap (loaded by
-     * `title_enter`) until the player presses Start. The title's `navigate(gameplayScene)`
-     * triggers `gameplay_enter`, which calls `setup_current_level()` via a DSL cEmit; that
-     * call populates `_current_level_*` AND writes the level's tileset+tilemap to VRAM
-     * (Plan 12-19 deviation [Rule 1 - Bug] added the VRAM writes inside setup_current_level's
-     * per-case body). This is cleaner than firing the guard on startup because the title
-     * tileset stays in VRAM while the title scene is showing.
+     * **Bootstrap rationale (Plan 12-19 revision):** `_current_level` and `_next_level` are both
+     * initialised to 0, so the guard does NOT fire on startup. The title scene runs with its own
+     * tileset+tilemap (loaded by `title_enter`) until the player presses Start. The title's
+     * `navigate(gameplayScene)` triggers `gameplay_enter`, which calls `setup_current_level()` via
+     * a DSL cEmit; that call populates `_current_level_*` AND writes the level's tileset+tilemap to
+     * VRAM (Plan 12-19 deviation [Rule 1 - Bug] added the VRAM writes inside setup_current_level's
+     * per-case body). This is cleaner than firing the guard on startup because the title tileset
+     * stays in VRAM while the title scene is showing.
      *
-     * Mid-game level transitions still flow through this guard: when PlatformerVisitor's
-     * level-end trigger (kt:802) increments `_next_level`, the next frame's guard sees
-     * `_next_level != _current_level` and runs the NextLevel card + setup_current_level
-     * exactly as the reference does.
+     * Mid-game level transitions still flow through this guard: when PlatformerVisitor's level-end
+     * trigger (kt:802) increments `_next_level`, the next frame's guard sees `_next_level !=
+     * _current_level` and runs the NextLevel card + setup_current_level exactly as the reference
+     * does.
      *
      * **Ordering rationale** (subtly different from reference):
      * - Reference (main.c:44-82): show NextLevel card → wait for Start → setup_current_level →
-     *   continue main loop. The wait is a busy-loop inside main(), so the next iteration of
-     *   the while(1) loop runs WITH _current_level already advanced.
+     *   continue main loop. The wait is a busy-loop inside main(), so the next iteration of the
+     *   while(1) loop runs WITH _current_level already advanced.
      * - gbkt: scene-navigate is non-blocking (the scene runs as part of the main loop's frame
      *   dispatch on subsequent frames). To preserve correctness, the guard:
-     *   1. navigates to the NextLevel card scene (Start-wait runs as the scene's frame loop)
-     *   2. calls setup_current_level() IMMEDIATELY (not on scene-exit) so subsequent frames
-     *      run with `_current_level = _next_level`. The NextLevel card scene's `navigate(gameplayScene)`
-     *      on Start press does not re-fire setup_current_level — the guard only fires when
-     *      `_next_level != _current_level`, which is no longer true after setup_current_level
-     *      synced them.
+     *     1. navigates to the NextLevel card scene (Start-wait runs as the scene's frame loop)
+     *     2. calls setup_current_level() IMMEDIATELY (not on scene-exit) so subsequent frames run
+     *        with `_current_level = _next_level`. The NextLevel card scene's
+     *        `navigate(gameplayScene)` on Start press does not re-fire setup_current_level — the
+     *        guard only fires when `_next_level != _current_level`, which is no longer true after
+     *        setup_current_level synced them.
      *
      * **Contract for Plan 12-09b's anchor 5 emission test:**
      * - main() body MUST contain `if (_next_level != _current_level)` AS A SUBSTRING.
@@ -2729,28 +2765,39 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
     private fun buildMainLoopLevelSwitchGuardIfNeeded(gameIR: GameIR): List<CStatement> {
         if (!gameUsesTilemapCollision(gameIR)) return emptyList()
         val nextLevelSceneId =
-            gameIR.scenes.map { it.id }.firstOrNull { id ->
-                val lower = id.lowercase()
-                lower.contains("nextlevel") || lower.contains("next_level")
-            } ?: return emptyList()
+            gameIR.scenes
+                .map { it.id }
+                .firstOrNull { id ->
+                    val lower = id.lowercase()
+                    lower.contains("nextlevel") || lower.contains("next_level")
+                } ?: return emptyList()
         val sceneEnumConstant = "SCENE_${nextLevelSceneId.uppercase()}"
         return listOf(
-            CComment("Phase 12.6 D-04 — level-switch guard (trimmed; setup_current_level moved to levelCardScene Start-press path)"),
-            CComment("Phase 12.11 Failure A fix — guard also checks current_scene != SCENE_NEXTLEVELSCENE to prevent"),
-            CComment("navigate_to_scene() firing EVERY frame while already on the card scene. Without this,"),
-            CComment("nextLevelScene_enter() runs each frame, consuming the VBlank slot mid-loop and preventing"),
-            CComment("update_joypad() from seeing the START press (frame-boundary collision — DIAGNOSTIC.md Fix Site 2)."),
+            CComment(
+                "Phase 12.6 D-04 — level-switch guard (trimmed; setup_current_level moved to levelCardScene Start-press path)"
+            ),
+            CComment(
+                "Phase 12.11 Failure A fix — guard also checks current_scene != SCENE_NEXTLEVELSCENE to prevent"
+            ),
+            CComment(
+                "navigate_to_scene() firing EVERY frame while already on the card scene. Without this,"
+            ),
+            CComment(
+                "nextLevelScene_enter() runs each frame, consuming the VBlank slot mid-loop and preventing"
+            ),
+            CComment(
+                "update_joypad() from seeing the START press (frame-boundary collision — DIAGNOSTIC.md Fix Site 2)."
+            ),
             CIf(
-                condition = CBinaryExpr(
-                    CBinaryExpr(CVar("_next_level"), "!=", CVar("_current_level")),
-                    "&&",
-                    CBinaryExpr(CVar("current_scene"), "!=", CVar(sceneEnumConstant)),
-                ),
+                condition =
+                    CBinaryExpr(
+                        CBinaryExpr(CVar("_next_level"), "!=", CVar("_current_level")),
+                        "&&",
+                        CBinaryExpr(CVar("current_scene"), "!=", CVar(sceneEnumConstant)),
+                    ),
                 thenBody =
                     listOf(
-                        CExprStatement(
-                            CCall("navigate_to_scene", listOf(CVar(sceneEnumConstant)))
-                        ),
+                        CExprStatement(CCall("navigate_to_scene", listOf(CVar(sceneEnumConstant))))
                     ),
             ),
         )
@@ -3041,11 +3088,14 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         // Per-metasprite forward declarations for game.h (WR-02, D-14).
         //
         // Plan 13.3-05 D-01 Path A branch: emit the correct extern for each metasprite:
-        //   - Asset-driven (spritePath != null): `extern const metasprite_t* const <id>_metasprites[];`
+        //   - Asset-driven (spritePath != null): `extern const metasprite_t* const
+        // <id>_metasprites[];`
         //     — references the png2asset-native array (defined in the #included .c sidecar,
         //       wired in Plan 13.3-06). Banked scene callers resolve the symbol cross-bank.
-        //   - Escape-hatch (spritePath == null): `extern const metasprite_t* const sprite_<id>_frames[];`
-        //     — the legacy gbkt-owned pointer table (defined in main.c by generateMetaspriteDescriptor).
+        //   - Escape-hatch (spritePath == null): `extern const metasprite_t* const
+        // sprite_<id>_frames[];`
+        //     — the legacy gbkt-owned pointer table (defined in main.c by
+        // generateMetaspriteDescriptor).
         //
         // Both paths produce exactly one extern line per metasprite; the names match what
         // generateMetaspriteFrameSwitch() (MetaspriteVisitor.kt) uses as the `frames` binding.
@@ -3095,11 +3145,14 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         // the simple gate here — the prototype is harmless if setup_current_level is omitted
         // (just an unused extern); the matching omission is the gate on the function body itself.
         val setupCurrentLevelPrototypeRaw =
-            if (gameUsesTilemapCollision(gameIR) &&
-                gameIR.zones.any { z ->
-                    val l = z.id.lowercase()
-                    !l.contains("title") && !l.contains("nextlevel") && !l.contains("next_level")
-                }
+            if (
+                gameUsesTilemapCollision(gameIR) &&
+                    gameIR.zones.any { z ->
+                        val l = z.id.lowercase()
+                        !l.contains("title") &&
+                            !l.contains("nextlevel") &&
+                            !l.contains("next_level")
+                    }
             ) {
                 "void setup_current_level(void) NONBANKED;"
             } else {
@@ -3161,7 +3214,10 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
             .flatMap { scene -> buildTrampolinesForScene(scene, isMbcGame) }
     }
 
-    private fun buildTrampolinesForScene(scene: SceneIR, isMbcGame: Boolean = false): List<CFunction> {
+    private fun buildTrampolinesForScene(
+        scene: SceneIR,
+        isMbcGame: Boolean = false,
+    ): List<CFunction> {
         val slot =
             checkNotNull(scene.bankSlot) {
                 "buildTrampolinesForScene called on scene '${scene.id}' without a bankSlot; " +
@@ -4593,7 +4649,8 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
 
         // Build switch for exit, assign current_scene, build switch for enter.
         // Use sceneHasEnterContent (not enterOps.isNotEmpty()) so zone-only scenes still dispatch
-        // their enter function from navigate_to_scene() — same rationale as buildTrampolinesForScene.
+        // their enter function from navigate_to_scene() — same rationale as
+        // buildTrampolinesForScene.
         val enterCases =
             gameIR.scenes
                 .filter { sceneHasEnterContent(it) }
@@ -4643,7 +4700,8 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
 
         // Call start scene enter (via trampoline if banked).
         // Use sceneHasEnterContent so zone-only start scenes (no user enter block but bound zone)
-        // still get their initial enter call from main() — same rationale as buildTrampolinesForScene.
+        // still get their initial enter call from main() — same rationale as
+        // buildTrampolinesForScene.
         val startSceneId = gameIR.startScene
         val startEnterCall =
             if (
@@ -4897,8 +4955,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
             // Finding:
             // .planning/phases/10.1-metasprites-surplus-codegen-defects-inserted/evidence/d-v1-diagnostic/sprite-mode-init-finding.md
             if (gameIR.metasprites.isNotEmpty()) {
-                val anySpr8x16 =
-                    gameIR.metasprites.any { it.spriteMode == SpriteMode.SPR8x16 }
+                val anySpr8x16 = gameIR.metasprites.any { it.spriteMode == SpriteMode.SPR8x16 }
                 if (anySpr8x16) {
                     add(CRawCode("SPRITES_8x16;"))
                 } else {
@@ -4979,9 +5036,12 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         // Two metasprite paths:
         //
         // Path B (escape-hatch D-04): spritePath == null, frames carry DSL tile entries.
-        //   tileCountForMetasprite() returns the integer count → integer start via allocator.reserve().
-        //   Emission: set_sprite_data(startInt, countInt, <id>_tiles) — byte-identical to pre-13.3-14.
-        //   Debug E-04: count = maxTileId + spriteModeStride (stride=2 for SPR8x16, 1 for SPR8x8/null).
+        //   tileCountForMetasprite() returns the integer count → integer start via
+        // allocator.reserve().
+        //   Emission: set_sprite_data(startInt, countInt, <id>_tiles) — byte-identical to
+        // pre-13.3-14.
+        //   Debug E-04: count = maxTileId + spriteModeStride (stride=2 for SPR8x16, 1 for
+        // SPR8x8/null).
         //
         // Path A (asset-driven, 13.3-14 gap closure): spritePath != null, frames empty.
         //   tileCountForMetasprite() returns null → MUST NOT skip via ?: continue.
@@ -4994,7 +5054,8 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         //     base = allocator.tilesUsed (integer index after all actor reserves)
         //     1st asset-driven metasprite: oamStart = "${base}u"
         //     2nd: oamStart = "${base}u + sprites_<first>_tiles_count"
-        //     3rd: oamStart = "${base}u + sprites_<first>_tiles_count + sprites_<second>_tiles_count"
+        //     3rd: oamStart = "${base}u + sprites_<first>_tiles_count +
+        // sprites_<second>_tiles_count"
         //   The allocator is NOT advanced for asset-driven metasprites (count unknown to Kotlin).
         //   Because nothing is loaded after metasprites, the allocator need not advance.
         //
@@ -5008,27 +5069,34 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
 
             if (isAssetDriven) {
                 // Path A (13.3-14 gap closure): emit symbolic set_sprite_data via CRawCode.
-                // Start expression: baseAfterActors + cumulative sum of prior asset-driven count macros.
-                val startExpr = if (assetDrivenEmitted.isEmpty()) {
-                    "${baseAfterActors}u"
-                } else {
-                    val priorCounts = assetDrivenEmitted.joinToString(" + ") { "sprites_${it}_tiles_count" }
-                    "${baseAfterActors}u + $priorCounts"
-                }
-                val tilesArrayMacro = "sprites_${ms.id}_tiles"  // bridges to <id>_tiles via #define
-                val countMacro = "sprites_${ms.id}_tiles_count" // emitted by ConvertSpritesTask Task 2
+                // Start expression: baseAfterActors + cumulative sum of prior asset-driven count
+                // macros.
+                val startExpr =
+                    if (assetDrivenEmitted.isEmpty()) {
+                        "${baseAfterActors}u"
+                    } else {
+                        val priorCounts =
+                            assetDrivenEmitted.joinToString(" + ") { "sprites_${it}_tiles_count" }
+                        "${baseAfterActors}u + $priorCounts"
+                    }
+                val tilesArrayMacro = "sprites_${ms.id}_tiles" // bridges to <id>_tiles via #define
+                val countMacro =
+                    "sprites_${ms.id}_tiles_count" // emitted by ConvertSpritesTask Task 2
                 statements.add(
                     CRawCode("set_sprite_data($startExpr, $countMacro, $tilesArrayMacro);")
                 )
                 assetDrivenEmitted.add(ms.id)
-                // Do NOT advance allocator — count is unknown to Kotlin; nothing loads after metasprites.
+                // Do NOT advance allocator — count is unknown to Kotlin; nothing loads after
+                // metasprites.
             } else {
                 // Path B (escape-hatch D-04): integer count via tileCountForMetasprite.
                 // Byte-identical to pre-13.3-14 emission for all procedural metasprites.
                 val arrayName = "${ms.id}_tiles"
                 val tileCount = MetaspriteVisitor.tileCountForMetasprite(ms) ?: continue
                 val start = allocator.reserve(tileCount)
-                statements.addAll(MetaspriteVisitor.generateMetaspriteTileData(ms, arrayName, start))
+                statements.addAll(
+                    MetaspriteVisitor.generateMetaspriteTileData(ms, arrayName, start)
+                )
             }
         }
 
@@ -5043,24 +5111,24 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
      * `player_palettes` is never uploaded and the character renders under the GBDK default
      * grayscale OBJ palette (OCPS = 0xC8 at boot).
      *
-     * Phase 13.3-17 Direction B fix (PINK defect, evidence/13.3-DIAGNOSTIC.md):
-     * Asset-driven metasprites (spritePath != null, e.g. the metasprites-example elephant) are
-     * EXCLUDED from this upload. Their scene's explicit `spritePalette {}` blocks (Sites A and C
-     * in the diagnostic) are the sole OBJ palette authority. Emitting a separate
-     * `set_sprite_palette(0u, 1u, elephant_palettes)` caused a triple slot-collision:
-     *   1. The upload only covered 1 sub-palette, leaving slot 1 = the scene's pink_pal.
-     *   2. play_enter() re-uploaded gray to slot 0, overwriting the elephant sub-palette.
-     *   3. The png2asset descriptor bakes per-OAM-entry S_PAL(1) indices that then pointed
-     *      at the scene's pink palette → PINK elephant outline.
-     * Suppressing the upload for asset-driven metasprites restores the pre-migration behavior
-     * where the scene's gray slot 0 covered the elephant's S_PAL(0) tiles.
+     * Phase 13.3-17 Direction B fix (PINK defect, evidence/13.3-DIAGNOSTIC.md): Asset-driven
+     * metasprites (spritePath != null, e.g. the metasprites-example elephant) are EXCLUDED from
+     * this upload. Their scene's explicit `spritePalette {}` blocks (Sites A and C in the
+     * diagnostic) are the sole OBJ palette authority. Emitting a separate `set_sprite_palette(0u,
+     * 1u, elephant_palettes)` caused a triple slot-collision:
+     * 1. The upload only covered 1 sub-palette, leaving slot 1 = the scene's pink_pal.
+     * 2. play_enter() re-uploaded gray to slot 0, overwriting the elephant sub-palette.
+     * 3. The png2asset descriptor bakes per-OAM-entry S_PAL(1) indices that then pointed at the
+     *    scene's pink palette → PINK elephant outline. Suppressing the upload for asset-driven
+     *    metasprites restores the pre-migration behavior where the scene's gray slot 0 covered the
+     *    elephant's S_PAL(0) tiles.
      *
      * The palette symbol for the escape-hatch path follows png2asset naming: `${ms.id}_palettes`.
-     * The count is 1 (one 4-color sub-palette per procedural metasprite).
-     * OBJ palette slots are assigned in metasprite order over PROCEDURAL metasprites only.
+     * The count is 1 (one 4-color sub-palette per procedural metasprite). OBJ palette slots are
+     * assigned in metasprite order over PROCEDURAL metasprites only.
      *
-     * GBC-gated: emit only when `gameIR.config.gbcTarget != GbcTarget.DMG`. Returns empty list
-     * for DMG, no metasprites, or when all metasprites are asset-driven.
+     * GBC-gated: emit only when `gameIR.config.gbcTarget != GbcTarget.DMG`. Returns empty list for
+     * DMG, no metasprites, or when all metasprites are asset-driven.
      */
     private fun buildMetaspriteSpritePaletteStatements(gameIR: GameIR): List<CStatement> {
         if (gameIR.config.gbcTarget == GbcTarget.DMG) return emptyList()
@@ -5070,7 +5138,8 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         // spritePalette{} uploads and must NOT have their png2asset palette array uploaded here.
         val proceduralMetasprites = gameIR.metasprites.filter { it.spritePath == null }
         // Req 5 (13.8-05, 12.9 WR-05): slot is derived from each metasprite's declared
-        // initialSubPaletteSlot when non-null, falling back to list position (mapIndexed) when null.
+        // initialSubPaletteSlot when non-null, falling back to list position (mapIndexed) when
+        // null.
         // For shipped single-metasprite games (initialSubPaletteSlot = null), slot = list index = 0
         // → byte-identical output (D-03 zero-delta).
         val proceduralStatements = proceduralMetasprites.mapIndexed { listIdx, ms ->
@@ -5096,28 +5165,37 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         val gameHasSpritePalette = gameIR.palettes.any { it.type == PaletteType.SPRITE }
         val assetDrivenMetasprites = gameIR.metasprites.filter { it.spritePath != null }
         val proceduralCount = proceduralMetasprites.size
-        val assetDrivenStatements = assetDrivenMetasprites.mapIndexed { idx, ms ->
-            // Scene-scoped suppression: when the metasprite declares its owning scene, check only
-            // that scene for SPRITE palette ops. Otherwise use the game-global flag.
-            val suppressed = if (ms.sceneId != null) {
-                val owningScene = gameIR.scenes.firstOrNull { it.id == ms.sceneId }
-                if (owningScene != null) {
-                    val allOps = owningScene.enterOps + owningScene.frameOps + owningScene.exitOps
-                    allOps.any { it is SetPalette && it.type == PaletteType.SPRITE }
-                } else {
-                    // Unknown scene — fall back to game-global to be conservative
-                    gameHasSpritePalette
+        val assetDrivenStatements =
+            assetDrivenMetasprites
+                .mapIndexed { idx, ms ->
+                    // Scene-scoped suppression: when the metasprite declares its owning scene,
+                    // check only
+                    // that scene for SPRITE palette ops. Otherwise use the game-global flag.
+                    val suppressed =
+                        if (ms.sceneId != null) {
+                            val owningScene = gameIR.scenes.firstOrNull { it.id == ms.sceneId }
+                            if (owningScene != null) {
+                                val allOps =
+                                    owningScene.enterOps +
+                                        owningScene.frameOps +
+                                        owningScene.exitOps
+                                allOps.any { it is SetPalette && it.type == PaletteType.SPRITE }
+                            } else {
+                                // Unknown scene — fall back to game-global to be conservative
+                                gameHasSpritePalette
+                            }
+                        } else {
+                            gameHasSpritePalette
+                        }
+                    if (!suppressed) {
+                        val slot = ms.initialSubPaletteSlot ?: (proceduralCount + idx)
+                        CRawCode("set_sprite_palette(${slot}u, 1u, ${ms.id}_palettes);")
+                            as CStatement?
+                    } else {
+                        null
+                    }
                 }
-            } else {
-                gameHasSpritePalette
-            }
-            if (!suppressed) {
-                val slot = ms.initialSubPaletteSlot ?: (proceduralCount + idx)
-                CRawCode("set_sprite_palette(${slot}u, 1u, ${ms.id}_palettes);") as CStatement?
-            } else {
-                null
-            }
-        }.filterNotNull()
+                .filterNotNull()
         return proceduralStatements + assetDrivenStatements
     }
 
@@ -5208,8 +5286,8 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
      * 2. [buildTrampolinesForScene] — emits `${scene.id}_exit_trampoline` in main.c (HOME bank).
      * 3. [buildNavigateToSceneFunction] — includes the scene in the exit switch cases.
      *
-     * Predicate: the scene has no user-declared exit {} block (exitOps.isEmpty) AND the scene is
-     * in a genuine banked slot (bankSlot.bank > 0 and non-null) AND the game uses MBC (cartridge
+     * Predicate: the scene has no user-declared exit {} block (exitOps.isEmpty) AND the scene is in
+     * a genuine banked slot (bankSlot.bank > 0 and non-null) AND the game uses MBC (cartridge
      * maxRomBanks > 2). ROM_ONLY games have maxRomBanks=2; isMbcGame=false → no auto-exit.
      *
      * @param scene The scene IR node.
@@ -5217,9 +5295,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
      *   [io.github.gbkt.core.ir.GameIR.config.cartridge.maxRomBanks]).
      */
     private fun shouldAutoEmitExit(scene: SceneIR, isMbcGame: Boolean): Boolean =
-        scene.exitOps.isEmpty() &&
-            scene.bankSlot?.bank.let { it != null && it > 0 } &&
-            isMbcGame
+        scene.exitOps.isEmpty() && scene.bankSlot?.bank.let { it != null && it > 0 } && isMbcGame
 
     // =========================================================================
     // Type mapping

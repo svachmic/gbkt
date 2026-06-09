@@ -57,18 +57,17 @@ import kotlin.test.assertEquals
 /**
  * RED test — Req #1 D-03: Cartridge enum owns its MBC hardware byte.
  *
- * Tests will not compile until Plan 13.1-03 adds:
- *   enum class Cartridge(val mbcByte: Int) { ROM_ONLY(0x00), MBC1(0x01), ... }
- * in gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/Types.kt
+ * Tests will not compile until Plan 13.1-03 adds: enum class Cartridge(val mbcByte: Int) {
+ * ROM_ONLY(0x00), MBC1(0x01), ... } in gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/Types.kt
  */
 class CartridgeMbcByteEmissionTest {
 
     /**
-     * Converts an MBC byte integer to the hex string format that GenerateCTask
-     * will write to gbkt-build.properties as the "mbcType" key.
+     * Converts an MBC byte integer to the hex string format that GenerateCTask will write to
+     * gbkt-build.properties as the "mbcType" key.
      *
-     * Format: "0x" + uppercase hex digits, zero-padded to 2 digits.
-     * Examples: 0x00 → "0x00", 0x1B → "0x1B", 0x19 → "0x19"
+     * Format: "0x" + uppercase hex digits, zero-padded to 2 digits. Examples: 0x00 → "0x00", 0x1B →
+     * "0x1B", 0x19 → "0x19"
      */
     private fun mbcByteToHex(mbcByte: Int): String = "0x%02X".format(mbcByte)
 
@@ -81,7 +80,7 @@ class CartridgeMbcByteEmissionTest {
         assertEquals(
             0x00,
             Cartridge.ROM_ONLY.mbcByte,
-            "ROM_ONLY must have mbcByte=0x00 (no MBC hardware)"
+            "ROM_ONLY must have mbcByte=0x00 (no MBC hardware)",
         )
     }
 
@@ -90,7 +89,7 @@ class CartridgeMbcByteEmissionTest {
         assertEquals(
             "0x00",
             mbcByteToHex(Cartridge.ROM_ONLY.mbcByte),
-            "ROM_ONLY: mbcType in gbkt-build.properties must be '0x00'"
+            "ROM_ONLY: mbcType in gbkt-build.properties must be '0x00'",
         )
     }
 
@@ -103,7 +102,7 @@ class CartridgeMbcByteEmissionTest {
         assertEquals(
             0x01,
             Cartridge.MBC1.mbcByte,
-            "MBC1 must have mbcByte=0x01 per Game Boy hardware spec"
+            "MBC1 must have mbcByte=0x01 per Game Boy hardware spec",
         )
     }
 
@@ -112,7 +111,7 @@ class CartridgeMbcByteEmissionTest {
         assertEquals(
             "0x01",
             mbcByteToHex(Cartridge.MBC1.mbcByte),
-            "MBC1: mbcType in gbkt-build.properties must be '0x01'"
+            "MBC1: mbcType in gbkt-build.properties must be '0x01'",
         )
     }
 
@@ -143,7 +142,7 @@ class CartridgeMbcByteEmissionTest {
         assertEquals(
             0x10,
             Cartridge.MBC3_TIMER_BATTERY.mbcByte,
-            "MBC3_TIMER_BATTERY must have mbcByte=0x10 (16 decimal)"
+            "MBC3_TIMER_BATTERY must have mbcByte=0x10 (16 decimal)",
         )
     }
 
@@ -152,7 +151,7 @@ class CartridgeMbcByteEmissionTest {
         assertEquals(
             "0x10",
             mbcByteToHex(Cartridge.MBC3_TIMER_BATTERY.mbcByte),
-            "MBC3_TIMER_BATTERY: zero-padding ensures '0x10' not '0x10' (same, but also '0x16' not '16')"
+            "MBC3_TIMER_BATTERY: zero-padding ensures '0x10' not '0x10' (same, but also '0x16' not '16')",
         )
     }
 
@@ -162,11 +161,7 @@ class CartridgeMbcByteEmissionTest {
 
     @Test
     fun `MBC5 has mbcByte 0x19`() {
-        assertEquals(
-            0x19,
-            Cartridge.MBC5.mbcByte,
-            "MBC5 must have mbcByte=0x19 (25 decimal)"
-        )
+        assertEquals(0x19, Cartridge.MBC5.mbcByte, "MBC5 must have mbcByte=0x19 (25 decimal)")
     }
 
     // -------------------------------------------------------------------------
@@ -174,16 +169,16 @@ class CartridgeMbcByteEmissionTest {
     // -------------------------------------------------------------------------
 
     /**
-     * Primary assertion locked by Plan 13.1-02 must_haves.
-     * The banks example uses Cartridge.MBC5_RAM_BATTERY and the plugin must
-     * write "0x1B" to gbkt-build.properties after Plan 13.1-07 lands.
+     * Primary assertion locked by Plan 13.1-02 must_haves. The banks example uses
+     * Cartridge.MBC5_RAM_BATTERY and the plugin must write "0x1B" to gbkt-build.properties after
+     * Plan 13.1-07 lands.
      */
     @Test
     fun `MBC5_RAM_BATTERY has mbcByte 0x1B`() {
         assertEquals(
             0x1B,
             Cartridge.MBC5_RAM_BATTERY.mbcByte,
-            "MBC5_RAM_BATTERY must have mbcByte=0x1B (27 decimal)"
+            "MBC5_RAM_BATTERY must have mbcByte=0x1B (27 decimal)",
         )
     }
 
@@ -193,7 +188,7 @@ class CartridgeMbcByteEmissionTest {
             "0x1B",
             mbcByteToHex(Cartridge.MBC5_RAM_BATTERY.mbcByte),
             "MBC5_RAM_BATTERY: mbcType in gbkt-build.properties must be '0x1B' " +
-                "(uppercase B per 0x%02X format string)"
+                "(uppercase B per 0x%02X format string)",
         )
     }
 
@@ -210,13 +205,14 @@ class CartridgeMbcByteEmissionTest {
             distinctBytes.size,
             "Every Cartridge enum entry must have a unique mbcByte. " +
                 "Duplicates would cause ambiguous gbkt-build.properties emission. " +
-                "Found bytes: ${Cartridge.entries.map { "${it.name}=0x%02X".format(it.mbcByte) }}"
+                "Found bytes: ${Cartridge.entries.map { "${it.name}=0x%02X".format(it.mbcByte) }}",
         )
     }
 
     @Test
     fun `Cartridge enum has exactly 11 entries`() {
-        // 11 entries after WR-01 follow-up: original 7 + MBC2, MBC2_BATTERY, MBC3, MBC3_RAM_BATTERY.
+        // 11 entries after WR-01 follow-up: original 7 + MBC2, MBC2_BATTERY, MBC3,
+        // MBC3_RAM_BATTERY.
         // Adding a new entry requires a matching hardware byte — this test guards against
         // accidental addition of entries with invalid MBC bytes.
         assertEquals(
@@ -224,7 +220,7 @@ class CartridgeMbcByteEmissionTest {
             Cartridge.entries.size,
             "Cartridge enum must have exactly 11 entries: " +
                 "ROM_ONLY, MBC1, MBC1_RAM, MBC1_RAM_BATTERY, MBC2, MBC2_BATTERY, " +
-                "MBC3_TIMER_BATTERY, MBC3, MBC3_RAM_BATTERY, MBC5, MBC5_RAM_BATTERY"
+                "MBC3_TIMER_BATTERY, MBC3, MBC3_RAM_BATTERY, MBC5, MBC5_RAM_BATTERY",
         )
     }
 }

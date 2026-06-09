@@ -90,12 +90,10 @@ class PlatformerWalkCycleEmissionTest {
          *
          * Same shape as `PlatformerInputEmissionTest.EVIDENCE_DIR` — for the
          * `:gbkt-genre-platformer:test` task, `user.dir` resolves to
-         * `<repo>/gbkt-genre-platformer`; we ascend one level (`..`) to reach the
-         * worktree root, then descend into the Phase 12.3 evidence directory
-         * (Pattern 5 / RESEARCH §"EVIDENCE_DIR convention — worktree-safe").
-         * Hard-coding an absolute path would silently route evidence files
-         * outside the active worktree and miss the commit (#3099 worktree path
-         * safety).
+         * `<repo>/gbkt-genre-platformer`; we ascend one level (`..`) to reach the worktree root,
+         * then descend into the Phase 12.3 evidence directory (Pattern 5 / RESEARCH §"EVIDENCE_DIR
+         * convention — worktree-safe"). Hard-coding an absolute path would silently route evidence
+         * files outside the active worktree and miss the commit (#3099 worktree path safety).
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -115,18 +113,17 @@ class PlatformerWalkCycleEmissionTest {
 
     /**
      * Extracts a C function body by brace-walking from the first line whose contents start with
-     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching
-     * closing brace at depth zero.
+     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching closing
+     * brace at depth zero.
      *
      * Mirror of the helper in `TilemapCollisionEmissionTest.kt` (Plan 12-09),
-     * `JumpHoldEmissionTest.kt` (Plan 12-13), `HorizontalScrollEmissionTest.kt` (Plan 12-12),
-     * and `PlatformerInputEmissionTest.kt` (Plan 12.3-03). The returned blob includes the
-     * signature line and the closing brace, so downstream `.contains()` checks operate ONLY
-     * on tokens that live inside the named function — never on tokens from unrelated
-     * functions in the same file (per CLAUDE.md §"Scope-level grep gates"). Crucially, this
-     * scope-confinement means the global WRAM declaration `UINT8 _walkFrameIdx;` at the top
-     * of main.c is excluded — the negative tests can assert ZERO references INSIDE the
-     * function body even when the global is present.
+     * `JumpHoldEmissionTest.kt` (Plan 12-13), `HorizontalScrollEmissionTest.kt` (Plan 12-12), and
+     * `PlatformerInputEmissionTest.kt` (Plan 12.3-03). The returned blob includes the signature
+     * line and the closing brace, so downstream `.contains()` checks operate ONLY on tokens that
+     * live inside the named function — never on tokens from unrelated functions in the same file
+     * (per CLAUDE.md §"Scope-level grep gates"). Crucially, this scope-confinement means the global
+     * WRAM declaration `UINT8 _walkFrameIdx;` at the top of main.c is excluded — the negative tests
+     * can assert ZERO references INSIDE the function body even when the global is present.
      *
      * Matching is anchored to the START of a line (the prefix must appear at column 0) so
      * occurrences inside string literals, comments, or argument lists of a different function
@@ -155,22 +152,22 @@ class PlatformerWalkCycleEmissionTest {
     }
 
     /**
-     * Positive fixture — `platformer_physics` (with `solidThreshold` set so the tilemap-
-     * physics branch runs) PLUS `platformer_input` (with BOTH walk-cycle AssignableVar binders
-     * populated AND the numeric tuning numbers).
+     * Positive fixture — `platformer_physics` (with `solidThreshold` set so the tilemap- physics
+     * branch runs) PLUS `platformer_input` (with BOTH walk-cycle AssignableVar binders populated
+     * AND the numeric tuning numbers).
      *
      * The three gating clauses must all be true:
-     *  - `gameUsesTilemapCollision(gameIR)` returns true (via `solidThreshold` set) → the
-     *    `buildTilemapPhysicsUpdateFunction` branch is taken (Plan 12-11).
-     *  - `gameUsesPlatformerInput(gameIR)` returns true (via the `platformer_input` system
-     *    presence) → the section-0b emission gate's first clause fires.
-     *  - `walkFrameIdxVar != null && threeFrameCounterVar != null` → the gate's two
-     *    binder clauses fire → the walk-cycle block emits.
+     * - `gameUsesTilemapCollision(gameIR)` returns true (via `solidThreshold` set) → the
+     *   `buildTilemapPhysicsUpdateFunction` branch is taken (Plan 12-11).
+     * - `gameUsesPlatformerInput(gameIR)` returns true (via the `platformer_input` system presence)
+     *   → the section-0b emission gate's first clause fires.
+     * - `walkFrameIdxVar != null && threeFrameCounterVar != null` → the gate's two binder clauses
+     *   fire → the walk-cycle block emits.
      *
-     * With `vxVar` unset in this fixture (no `tilemap_collision` system registered), the
-     * visitor's fallback `vxSym = "_" + "player_vx"` (PlatformerVisitor.kt:555) applies. So
-     * the emitted comparison is `_player_vx != 0`. Same symbol the existing
-     * JumpHoldEmissionTest and PlatformerInputEmissionTest evidence exhibit.
+     * With `vxVar` unset in this fixture (no `tilemap_collision` system registered), the visitor's
+     * fallback `vxSym = "_" + "player_vx"` (PlatformerVisitor.kt:555) applies. So the emitted
+     * comparison is `_player_vx != 0`. Same symbol the existing JumpHoldEmissionTest and
+     * PlatformerInputEmissionTest evidence exhibit.
      */
     private fun buildPositiveGameIR(): GameIR {
         val physicsConfig =
@@ -216,11 +213,11 @@ class PlatformerWalkCycleEmissionTest {
     }
 
     /**
-     * Negative fixture #1 — `platformer_input` IS present (so `gameUsesPlatformerInput`
-     * returns true and the section-0 input emission DOES run — see PlatformerInputEmissionTest
-     * positive case for that shape) but the two walk-cycle AssignableVar binders are NOT set.
-     * walkSpeed / friction / airFriction / walkFrameCount / cyclePeriod ARE set (so the input
-     * emission inside section 0 fires, distinguishing this from "no platformer_input at all").
+     * Negative fixture #1 — `platformer_input` IS present (so `gameUsesPlatformerInput` returns
+     * true and the section-0 input emission DOES run — see PlatformerInputEmissionTest positive
+     * case for that shape) but the two walk-cycle AssignableVar binders are NOT set. walkSpeed /
+     * friction / airFriction / walkFrameCount / cyclePeriod ARE set (so the input emission inside
+     * section 0 fires, distinguishing this from "no platformer_input at all").
      *
      * The walk-cycle gate's three-clause AND becomes false on the second/third clause:
      *
@@ -228,11 +225,11 @@ class PlatformerWalkCycleEmissionTest {
      *     walkFrameIdxVar != null               == false   ← gate-off
      *     threeFrameCounterVar != null          == false   ← gate-off
      *
-     * → section 0b is skipped entirely. The function body MUST NOT reference `_walkFrameIdx`
-     * or `_threeFrameCounter` ANYWHERE — D-03 SKIP-WHEN-UNSET contract (L-5.4 /
-     * feedback_no_magic_strings.md). This is the architectural job of this test — guard
-     * against any future refactor that "helpfully" auto-emits `_walkFrameIdx` references
-     * when the user forgot to call the binders.
+     * → section 0b is skipped entirely. The function body MUST NOT reference `_walkFrameIdx` or
+     * `_threeFrameCounter` ANYWHERE — D-03 SKIP-WHEN-UNSET contract (L-5.4 /
+     * feedback_no_magic_strings.md). This is the architectural job of this test — guard against any
+     * future refactor that "helpfully" auto-emits `_walkFrameIdx` references when the user forgot
+     * to call the binders.
      */
     private fun buildBindersUnsetGameIR(): GameIR {
         val physicsConfig =
@@ -278,13 +275,12 @@ class PlatformerWalkCycleEmissionTest {
     /**
      * Negative fixture #2 — NO `platformer_input` system at all. Same shape as
      * PlatformerInputEmissionTest's negative fixture. `gameUsesPlatformerInput(gameIR)` returns
-     * false → BOTH section 0 (input emission) AND section 0b (walk-cycle emission) are gated
-     * off entirely. The function body MUST NOT reference `_walkFrameIdx` or
-     * `_threeFrameCounter` ANYWHERE.
+     * false → BOTH section 0 (input emission) AND section 0b (walk-cycle emission) are gated off
+     * entirely. The function body MUST NOT reference `_walkFrameIdx` or `_threeFrameCounter`
+     * ANYWHERE.
      *
-     * This locks the OUTERMOST gate clause — a regression that broke the
-     * `gameUsesPlatformerInput` predicate (e.g. always-returns-true) would leak walk-cycle
-     * tokens here and fail RED.
+     * This locks the OUTERMOST gate clause — a regression that broke the `gameUsesPlatformerInput`
+     * predicate (e.g. always-returns-true) would leak walk-cycle tokens here and fail RED.
      */
     private fun buildNoSystemGameIR(): GameIR {
         val physicsConfig =
@@ -342,8 +338,7 @@ class PlatformerWalkCycleEmissionTest {
         // Evidence-before-assert: extract and persist the physics body BEFORE any assertion
         // fires so a RED run still produces a reviewable artifact on disk (Pattern 5 / L-10.2).
         val physicsBody = extractFunctionBody(mainC, "void platformer_physics_update")
-        File(EVIDENCE_DIR, "platformer_physics_update_walkcycle_positive.c")
-            .writeText(physicsBody)
+        File(EVIDENCE_DIR, "platformer_physics_update_walkcycle_positive.c").writeText(physicsBody)
 
         assertTrue(
             physicsBody.isNotEmpty(),
@@ -563,8 +558,7 @@ class PlatformerWalkCycleEmissionTest {
 
         // Evidence-before-assert (Pattern 5 / L-10.2).
         val physicsBody = extractFunctionBody(mainC, "void platformer_physics_update")
-        File(EVIDENCE_DIR, "platformer_physics_update_walkcycle_no_system.c")
-            .writeText(physicsBody)
+        File(EVIDENCE_DIR, "platformer_physics_update_walkcycle_no_system.c").writeText(physicsBody)
 
         // Function must still exist (tilemap-physics branch runs).
         assertTrue(

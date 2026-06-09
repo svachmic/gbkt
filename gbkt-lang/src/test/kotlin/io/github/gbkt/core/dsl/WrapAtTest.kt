@@ -63,34 +63,40 @@ class WrapAtTest {
 
     @Test
     fun `wrapAt=16 inc emits bitmask assign AND 15`() {
-        val ir = game("Test") {
-            var idx by u8Var(0, wrapAt = 16)   // compile-fail today — wrapAt param does not exist
-            val sScene = scene("s") {
-                frame {
-                    idx++
+        val ir =
+            game("Test") {
+                    var idx by
+                        u8Var(0, wrapAt = 16) // compile-fail today — wrapAt param does not exist
+                    val sScene = scene("s") { frame { idx++ } }
+                    start = sScene
                 }
-            }
-            start = sScene
-        }.build()
+                .build()
 
         val frameOps = ir.scenes.first().frameOps
         // After idx++ there must be a mask assign: idx = idx & 15
-        val maskAssign = frameOps.filterIsInstance<Assign>().firstOrNull { assign ->
-            assign.target == "idx" &&
-                assign.op == AssignOp.SET &&
-                assign.value is BinaryExpr &&
-                (assign.value as BinaryExpr).op == BinaryOp.AND
-        }
-        val bitmaskExpr = assertIs<BinaryExpr>(
-            maskAssign?.value,
-            "wrapAt=16 must emit Assign with BinaryExpr(AND) as value (bitmask path, D-16)"
+        val maskAssign =
+            frameOps.filterIsInstance<Assign>().firstOrNull { assign ->
+                assign.target == "idx" &&
+                    assign.op == AssignOp.SET &&
+                    assign.value is BinaryExpr &&
+                    (assign.value as BinaryExpr).op == BinaryOp.AND
+            }
+        val bitmaskExpr =
+            assertIs<BinaryExpr>(
+                maskAssign?.value,
+                "wrapAt=16 must emit Assign with BinaryExpr(AND) as value (bitmask path, D-16)",
+            )
+        assertEquals(VarRef("idx"), bitmaskExpr.left, "bitmask expr left must be VarRef(\"idx\")")
+        assertEquals(
+            BinaryOp.AND,
+            bitmaskExpr.op,
+            "wrapAt=16 (power-of-two) must use AND bitmask, not compare-reset (D-15/D-16)",
         )
-        assertEquals(VarRef("idx"), bitmaskExpr.left,
-            "bitmask expr left must be VarRef(\"idx\")")
-        assertEquals(BinaryOp.AND, bitmaskExpr.op,
-            "wrapAt=16 (power-of-two) must use AND bitmask, not compare-reset (D-15/D-16)")
-        assertEquals(Literal(15), bitmaskExpr.right,
-            "wrapAt=16 mask must be Literal(15) = 16 - 1 (D-15)")
+        assertEquals(
+            Literal(15),
+            bitmaskExpr.right,
+            "wrapAt=16 mask must be Literal(15) = 16 - 1 (D-15)",
+        )
     }
 
     // =========================================================================
@@ -100,37 +106,35 @@ class WrapAtTest {
 
     @Test
     fun `wrapAt=5 inc emits compare-reset IfOp GTE 5`() {
-        val ir = game("Test") {
-            var idx by u8Var(0, wrapAt = 5)   // compile-fail today
-            val sScene = scene("s") {
-                frame {
-                    idx++
+        val ir =
+            game("Test") {
+                    var idx by u8Var(0, wrapAt = 5) // compile-fail today
+                    val sScene = scene("s") { frame { idx++ } }
+                    start = sScene
                 }
-            }
-            start = sScene
-        }.build()
+                .build()
 
         val frameOps = ir.scenes.first().frameOps
         // After idx++ there must be: if (idx >= 5) { idx = 0 }
-        val wrapIfOp = frameOps.filterIsInstance<IfOp>().firstOrNull { ifOp ->
-            val cond = ifOp.condition
-            cond is BinaryExpr &&
-                cond.op == BinaryOp.GTE &&
-                cond.left == VarRef("idx") &&
-                cond.right == Literal(5)
-        }
-        assertIs<IfOp>(wrapIfOp,
-            "wrapAt=5 must emit IfOp with condition BinaryExpr(VarRef(\"idx\"), GTE, Literal(5)) (D-15/D-16)")
+        val wrapIfOp =
+            frameOps.filterIsInstance<IfOp>().firstOrNull { ifOp ->
+                val cond = ifOp.condition
+                cond is BinaryExpr &&
+                    cond.op == BinaryOp.GTE &&
+                    cond.left == VarRef("idx") &&
+                    cond.right == Literal(5)
+            }
+        assertIs<IfOp>(
+            wrapIfOp,
+            "wrapAt=5 must emit IfOp with condition BinaryExpr(VarRef(\"idx\"), GTE, Literal(5)) (D-15/D-16)",
+        )
 
-        assertEquals(1, wrapIfOp!!.then.size,
-            "compare-reset IfOp body must have exactly 1 op")
-        val resetAssign = assertIs<Assign>(wrapIfOp.then[0],
-            "compare-reset IfOp body must be Assign")
+        assertEquals(1, wrapIfOp!!.then.size, "compare-reset IfOp body must have exactly 1 op")
+        val resetAssign =
+            assertIs<Assign>(wrapIfOp.then[0], "compare-reset IfOp body must be Assign")
         assertEquals("idx", resetAssign.target)
-        assertEquals(AssignOp.SET, resetAssign.op,
-            "compare-reset assigns SET (reset to 0)")
-        assertEquals(Literal(0), resetAssign.value,
-            "compare-reset must set idx = Literal(0)")
+        assertEquals(AssignOp.SET, resetAssign.op, "compare-reset assigns SET (reset to 0)")
+        assertEquals(Literal(0), resetAssign.value, "compare-reset must set idx = Literal(0)")
     }
 
     // =========================================================================
@@ -140,23 +144,25 @@ class WrapAtTest {
 
     @Test
     fun `wrapAt=16 does NOT emit a compare-reset IfOp`() {
-        val ir = game("Test") {
-            var idx by u8Var(0, wrapAt = 16)   // compile-fail today
-            val sScene = scene("s") {
-                frame {
-                    idx++
+        val ir =
+            game("Test") {
+                    var idx by u8Var(0, wrapAt = 16) // compile-fail today
+                    val sScene = scene("s") { frame { idx++ } }
+                    start = sScene
                 }
-            }
-            start = sScene
-        }.build()
+                .build()
 
         val frameOps = ir.scenes.first().frameOps
-        val gteIfOps = frameOps.filterIsInstance<IfOp>().filter { ifOp ->
-            val cond = ifOp.condition
-            cond is BinaryExpr && cond.op == BinaryOp.GTE
-        }
-        assertEquals(0, gteIfOps.size,
-            "wrapAt=16 (power-of-two) must NOT emit a compare-reset IfOp (D-16)")
+        val gteIfOps =
+            frameOps.filterIsInstance<IfOp>().filter { ifOp ->
+                val cond = ifOp.condition
+                cond is BinaryExpr && cond.op == BinaryOp.GTE
+            }
+        assertEquals(
+            0,
+            gteIfOps.size,
+            "wrapAt=16 (power-of-two) must NOT emit a compare-reset IfOp (D-16)",
+        )
     }
 
     // =========================================================================
@@ -166,22 +172,23 @@ class WrapAtTest {
 
     @Test
     fun `wrapAt=5 does NOT emit a bitmask AND assign`() {
-        val ir = game("Test") {
-            var idx by u8Var(0, wrapAt = 5)   // compile-fail today
-            val sScene = scene("s") {
-                frame {
-                    idx++
+        val ir =
+            game("Test") {
+                    var idx by u8Var(0, wrapAt = 5) // compile-fail today
+                    val sScene = scene("s") { frame { idx++ } }
+                    start = sScene
                 }
-            }
-            start = sScene
-        }.build()
+                .build()
 
         val frameOps = ir.scenes.first().frameOps
-        val andMaskAssigns = frameOps.filterIsInstance<Assign>().filter { assign ->
-            assign.value is BinaryExpr &&
-                (assign.value as BinaryExpr).op == BinaryOp.AND
-        }
-        assertEquals(0, andMaskAssigns.size,
-            "wrapAt=5 (non-power-of-two) must NOT emit a bitmask AND assign (D-16)")
+        val andMaskAssigns =
+            frameOps.filterIsInstance<Assign>().filter { assign ->
+                assign.value is BinaryExpr && (assign.value as BinaryExpr).op == BinaryOp.AND
+            }
+        assertEquals(
+            0,
+            andMaskAssigns.size,
+            "wrapAt=5 (non-power-of-two) must NOT emit a bitmask AND assign (D-16)",
+        )
     }
 }

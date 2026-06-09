@@ -13,10 +13,9 @@ import kotlin.test.assertNotEquals
 /**
  * REQ-14: resolveZoneSize pure function policy tests.
  *
- * D-01: gbkt-lang stays filesystem-free (no ImageIO/File) — enforced by the acceptance criteria grep.
- * D-02: pure resolveZoneSize(explicit?, derivedPngTileDims?) returns:
- *         explicit when given, else derived, else 20×18.
- * D-03: no input combination returns 32×32.
+ * D-01: gbkt-lang stays filesystem-free (no ImageIO/File) — enforced by the acceptance criteria
+ * grep. D-02: pure resolveZoneSize(explicit?, derivedPngTileDims?) returns: explicit when given,
+ * else derived, else 20×18. D-03: no input combination returns 32×32.
  */
 class ZoneSizeResolutionTest {
 
@@ -40,16 +39,15 @@ class ZoneSizeResolutionTest {
 
     @Test
     fun `no input combination returns 32x32`() {
-        val combinations = listOf(
-            resolveZoneSize(null, null),
-            resolveZoneSize(null, 60 to 32),
-            resolveZoneSize(10 to 12, null),
-            resolveZoneSize(10 to 12, 60 to 32),
-            resolveZoneSize(20 to 18, null),
-            resolveZoneSize(null, 20 to 18),
-        )
-        combinations.forEach { result ->
-            assertNotEquals(32 to 32, result)
-        }
+        val combinations =
+            listOf(
+                resolveZoneSize(null, null),
+                resolveZoneSize(null, 60 to 32),
+                resolveZoneSize(10 to 12, null),
+                resolveZoneSize(10 to 12, 60 to 32),
+                resolveZoneSize(20 to 18, null),
+                resolveZoneSize(null, 20 to 18),
+            )
+        combinations.forEach { result -> assertNotEquals(32 to 32, result) }
     }
 }

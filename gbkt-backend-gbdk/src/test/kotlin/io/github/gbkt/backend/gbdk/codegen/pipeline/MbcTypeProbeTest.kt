@@ -11,7 +11,6 @@ import io.github.gbkt.analysis.PassResult
 import io.github.gbkt.analysis.config.AnalysisConfig
 import io.github.gbkt.analysis.passes.BankingAnalysisPass
 import io.github.gbkt.backend.gbdk.profiles.GameBoyProfile
-import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.BankSlot
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.RawOp
@@ -82,8 +81,8 @@ class MbcTypeProbeTest {
      * Per 09.1-04 (gap-closure 2026-05-14, Option B): 30 ops * 6 bytes/op = 180 bytes, well under
      * HOME_BANK_SCENE_BUDGET = 4096. The 09.1-04 fast-path assigns this single scene to bank 0
      * (HOME) instead of bank 1. This prevents the spurious MBC5 upgrade that occurred when
-     * simple-physics's `cartridge = Cartridge.ROM_ONLY` DSL declaration was silently overridden at build
-     * time by the CompileRomTask `readMbcType` path.
+     * simple-physics's `cartridge = Cartridge.ROM_ONLY` DSL declaration was silently overridden at
+     * build time by the CompileRomTask `readMbcType` path.
      */
     private fun simplePhysicsLikeGameIR(): GameIR =
         GameIR(

@@ -35,17 +35,25 @@ class SaveDataDelegateTest {
 
     @Test
     fun `val saves by saveData registers SaveSystem with id saves`() {
-        val ir = game("Test") {
-            @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val ir =
+            game("Test") {
+                    @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
         val saveSystem = ir.systems.filterIsInstance<SaveSystem>().firstOrNull()
-        assertEquals(1, ir.systems.filterIsInstance<SaveSystem>().size,
-            "Exactly one SaveSystem must be registered")
-        assertEquals("saves", saveSystem?.id,
-            "SaveSystem id must be inferred from property name, not a string param (Project Rule #1)")
+        assertEquals(
+            1,
+            ir.systems.filterIsInstance<SaveSystem>().size,
+            "Exactly one SaveSystem must be registered",
+        )
+        assertEquals(
+            "saves",
+            saveSystem?.id,
+            "SaveSystem id must be inferred from property name, not a string param (Project Rule #1)",
+        )
     }
 
     // =========================================================================
@@ -56,16 +64,20 @@ class SaveDataDelegateTest {
     fun `saveData delegate returns a SaveDataRef with systemId saves`() {
         var capturedRef: SaveDataRef? = null
         game("Test") {
-            val saves by saveData { slots(2) }
-            @Suppress("UNUSED_VARIABLE")
-            capturedRef = saves  // capturing the ref — suppressed because ref is only used here
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+                val saves by saveData { slots(2) }
+                @Suppress("UNUSED_VARIABLE")
+                capturedRef = saves // capturing the ref — suppressed because ref is only used here
+                val sScene = scene("s") {}
+                start = sScene
+            }
+            .build()
 
         val ref = capturedRef
-        assertEquals("saves", ref?.systemId,
-            "SaveDataRef.systemId must equal the inferred property name")
+        assertEquals(
+            "saves",
+            ref?.systemId,
+            "SaveDataRef.systemId must equal the inferred property name",
+        )
     }
 
     // =========================================================================
@@ -76,15 +88,18 @@ class SaveDataDelegateTest {
     fun `SaveDataRef implements SystemRef`() {
         var capturedRef: SaveDataRef? = null
         game("Test") {
-            val saves by saveData { slots(2) }
-            @Suppress("UNUSED_VARIABLE")
-            capturedRef = saves
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+                val saves by saveData { slots(2) }
+                @Suppress("UNUSED_VARIABLE")
+                capturedRef = saves
+                val sScene = scene("s") {}
+                start = sScene
+            }
+            .build()
 
-        assertIs<SystemRef>(capturedRef,
-            "SaveDataRef must implement SystemRef for typed triggerSystem overload")
+        assertIs<SystemRef>(
+            capturedRef,
+            "SaveDataRef must implement SystemRef for typed triggerSystem overload",
+        )
     }
 
     // =========================================================================
@@ -93,28 +108,35 @@ class SaveDataDelegateTest {
 
     @Test
     fun `triggerSystem with SaveDataRef emits TriggerSystem with systemId saves`() {
-        val ir = game("Test") {
-            @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
-            val sScene = scene("s") {
-                frame {
-                    whenever(buttons.select.pressed) {
-                        triggerSystem(saves)
-                    }
+        val ir =
+            game("Test") {
+                    @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
+                    val sScene =
+                        scene("s") {
+                            frame { whenever(buttons.select.pressed) { triggerSystem(saves) } }
+                        }
+                    start = sScene
                 }
-            }
-            start = sScene
-        }.build()
+                .build()
 
         val scene = ir.scenes.first()
         val frameOps = scene.frameOps
         // Unwrap the IfOp from whenever() to reach the TriggerSystem inside
-        val triggerOps = frameOps.filterIsInstance<io.github.gbkt.core.ir.IfOp>()
-            .flatMap { it.then }
-            .filterIsInstance<TriggerSystem>()
-        assertEquals(1, triggerOps.size,
-            "Exactly one TriggerSystem must be emitted by triggerSystem(saves)")
-        assertEquals("saves", triggerOps.first().systemId,
-            "TriggerSystem.systemId must equal the SaveDataRef.systemId (D-10 ref→id resolution)")
+        val triggerOps =
+            frameOps
+                .filterIsInstance<io.github.gbkt.core.ir.IfOp>()
+                .flatMap { it.then }
+                .filterIsInstance<TriggerSystem>()
+        assertEquals(
+            1,
+            triggerOps.size,
+            "Exactly one TriggerSystem must be emitted by triggerSystem(saves)",
+        )
+        assertEquals(
+            "saves",
+            triggerOps.first().systemId,
+            "TriggerSystem.systemId must equal the SaveDataRef.systemId (D-10 ref→id resolution)",
+        )
     }
 
     // =========================================================================
@@ -123,17 +145,22 @@ class SaveDataDelegateTest {
 
     @Test
     fun `two saveData delegates infer distinct ids from their property names`() {
-        val ir = game("Test") {
-            @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
-            @Suppress("UNUSED_VARIABLE") val checkpoints by saveData { slots(10) }
-            val sScene = scene("s") {}
-            start = sScene
-        }.build()
+        val ir =
+            game("Test") {
+                    @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
+                    @Suppress("UNUSED_VARIABLE") val checkpoints by saveData { slots(10) }
+                    val sScene = scene("s") {}
+                    start = sScene
+                }
+                .build()
 
         val saveSystems = ir.systems.filterIsInstance<SaveSystem>()
         assertEquals(2, saveSystems.size)
         val ids = saveSystems.map { it.id }.toSet()
-        assertEquals(setOf("saves", "checkpoints"), ids,
-            "Each saveData delegate must infer its id from the property name")
+        assertEquals(
+            setOf("saves", "checkpoints"),
+            ids,
+            "Each saveData delegate must infer its id from the property name",
+        )
     }
 }

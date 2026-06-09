@@ -27,9 +27,9 @@ import io.github.gbkt.analysis.report.BudgetReporter
  *    [PassResult.Failed] with all accumulated diagnostics.
  * 4. Otherwise return [PassResult.Success] with the report-enriched context.
  *
- * The report is printed to the terminal by [GBDKBackend.generate] after pipeline execution, per
- * the locked developer UX decision: "Warnings shown during every build — developer always sees
- * resource pressure."
+ * The report is printed to the terminal by [GBDKBackend.generate] after pipeline execution, per the
+ * locked developer UX decision: "Warnings shown during every build — developer always sees resource
+ * pressure."
  */
 class BudgetAuditPass : AnalysisPass {
 

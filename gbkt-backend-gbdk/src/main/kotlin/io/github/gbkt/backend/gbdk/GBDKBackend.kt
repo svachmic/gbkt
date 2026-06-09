@@ -79,43 +79,51 @@ class GBDKBackend(override val profile: TargetProfile = GameBoyColorProfile) : C
             // D-05/D-06: derive romBanks when omitted, or validate an explicit value.
             // This block runs before AnalysisConfig construction so the effective bank count
             // is known before the real pipeline pass.
-            val effectiveRomBanks: Int = when (val declared = gameIR.config.romBanks) {
-                null -> {
-                    // D-05: romBanks omitted → derive from BankingAnalysisPass probe.
-                    // The probe uses an unconstrained maxBanks (type max) so every scene can be
-                    // assigned; the highest assigned bank determines the minimum needed.
-                    // Pitfall 1: pass outputDirectory=null to suppress BudgetAuditPass file writes.
-                    val probeConfig = AnalysisConfig.fromCartridgeConfig(
-                        gameIR.config.copy(romBanks = null)
-                            .let { cfg ->
-                                // Derive typeMax from the cartridge type (unconstrained ceiling).
-                                // fromCartridgeConfig with romBanks=null gives maxBanks=typeMax.
-                                val typeMaxConfig = AnalysisConfig.fromCartridgeConfig(cfg)
-                                cfg.copy(romBanks = typeMaxConfig.maxBanks)
-                            }
-                    )
-                    val probeContext = PassContext(
-                        game = gameIR,
-                        profile = profile,
-                        config = probeConfig,
-                        assetManifest = assetManifest,
-                        outputDirectory = null,  // Pitfall 1: suppress BudgetAuditPass file writes
-                        assetRoot = assetRoot,
-                    )
-                    val probeResult = DefaultPipeline.create().execute(probeContext)
-                    val maxBank = if (probeResult is PassResult.Success)
-                        probeResult.context.bankAssignments.values.maxOfOrNull { it.bank } ?: 0
-                    else 0
-                    val cartridgeCap = gameIR.config.cartridge.maxRomBanks
-                    minOf(maxOf(2, nextPowerOfTwo(maxBank + 1)), cartridgeCap)
+            val effectiveRomBanks: Int =
+                when (val declared = gameIR.config.romBanks) {
+                    null -> {
+                        // D-05: romBanks omitted → derive from BankingAnalysisPass probe.
+                        // The probe uses an unconstrained maxBanks (type max) so every scene can be
+                        // assigned; the highest assigned bank determines the minimum needed.
+                        // Pitfall 1: pass outputDirectory=null to suppress BudgetAuditPass file
+                        // writes.
+                        val probeConfig =
+                            AnalysisConfig.fromCartridgeConfig(
+                                gameIR.config.copy(romBanks = null).let { cfg ->
+                                    // Derive typeMax from the cartridge type (unconstrained
+                                    // ceiling).
+                                    // fromCartridgeConfig with romBanks=null gives
+                                    // maxBanks=typeMax.
+                                    val typeMaxConfig = AnalysisConfig.fromCartridgeConfig(cfg)
+                                    cfg.copy(romBanks = typeMaxConfig.maxBanks)
+                                }
+                            )
+                        val probeContext =
+                            PassContext(
+                                game = gameIR,
+                                profile = profile,
+                                config = probeConfig,
+                                assetManifest = assetManifest,
+                                outputDirectory =
+                                    null, // Pitfall 1: suppress BudgetAuditPass file writes
+                                assetRoot = assetRoot,
+                            )
+                        val probeResult = DefaultPipeline.create().execute(probeContext)
+                        val maxBank =
+                            if (probeResult is PassResult.Success)
+                                probeResult.context.bankAssignments.values.maxOfOrNull { it.bank }
+                                    ?: 0
+                            else 0
+                        val cartridgeCap = gameIR.config.cartridge.maxRomBanks
+                        minOf(maxOf(2, nextPowerOfTwo(maxBank + 1)), cartridgeCap)
+                    }
+                    else -> declared // Explicit value: use as-is; D-06 validation runs inside
+                // BankingAnalysisPass
                 }
-                else -> declared  // Explicit value: use as-is; D-06 validation runs inside BankingAnalysisPass
-            }
 
             // 1. Run analysis pipeline
-            val analysisConfig = AnalysisConfig.fromCartridgeConfig(
-                gameIR.config.copy(romBanks = effectiveRomBanks)
-            )
+            val analysisConfig =
+                AnalysisConfig.fromCartridgeConfig(gameIR.config.copy(romBanks = effectiveRomBanks))
             val pipeline = DefaultPipeline.create()
             val initialContext =
                 PassContext(

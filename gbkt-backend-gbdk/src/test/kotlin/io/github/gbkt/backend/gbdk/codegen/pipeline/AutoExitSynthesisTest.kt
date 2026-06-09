@@ -61,9 +61,9 @@ class AutoExitSynthesisTest {
         /**
          * Evidence written under the active checkout root (worktree-safe).
          *
-         * `user.dir` resolves to the Gradle project working directory, which in a
-         * Claude Code worktree is the worktree root. Hard-coding the main-repo path
-         * would silently route evidence outside the active checkout (#3099).
+         * `user.dir` resolves to the Gradle project working directory, which in a Claude Code
+         * worktree is the worktree root. Hard-coding the main-repo path would silently route
+         * evidence outside the active checkout (#3099).
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -130,7 +130,8 @@ class AutoExitSynthesisTest {
 
         EVIDENCE_DIR.mkdirs()
         val functionNames = functions.map { it.name }
-        File(EVIDENCE_DIR, "auto-exit-mbc-functions.txt").writeText(functionNames.joinToString("\n"))
+        File(EVIDENCE_DIR, "auto-exit-mbc-functions.txt")
+            .writeText(functionNames.joinToString("\n"))
 
         val autoExitFn = functions.find { it.name == "play_exit" }
 
@@ -146,8 +147,7 @@ class AutoExitSynthesisTest {
         )
         assertTrue(
             autoExitFn.body.isEmpty(),
-            "Auto-synthesized play_exit must have empty body. " +
-                "body: ${autoExitFn.body}",
+            "Auto-synthesized play_exit must have empty body. " + "body: ${autoExitFn.body}",
         )
         assertEquals(
             scene.bankSlot?.bank,
@@ -181,7 +181,8 @@ class AutoExitSynthesisTest {
 
         EVIDENCE_DIR.mkdirs()
         val functionNames = functions.map { it.name }
-        File(EVIDENCE_DIR, "no-exit-rom-only-functions.txt").writeText(functionNames.joinToString("\n"))
+        File(EVIDENCE_DIR, "no-exit-rom-only-functions.txt")
+            .writeText(functionNames.joinToString("\n"))
 
         val unexpectedExitFn = functions.find { it.name == "title_exit" }
 
@@ -244,9 +245,7 @@ class AutoExitSynthesisTest {
         // MBC game: 2 scenes, no exit blocks → auto-exit fires for cross-bank MBC
         val mbcGame =
             game("MbcAutoExitTest") {
-                    config {
-                        cartridge(Cartridge.MBC5_RAM_BATTERY)
-                    }
+                    config { cartridge(Cartridge.MBC5_RAM_BATTERY) }
                     val play =
                         scene("play") {
                             frame {
@@ -255,9 +254,7 @@ class AutoExitSynthesisTest {
                         }
                     val title =
                         scene("title") {
-                            frame {
-                                whenever(buttons.start.pressed) { navigate(play) }
-                            }
+                            frame { whenever(buttons.start.pressed) { navigate(play) } }
                         }
                     start = title
                 }
@@ -266,9 +263,7 @@ class AutoExitSynthesisTest {
         // ROM_ONLY game: same structure, ROM_ONLY cartridge
         val romOnlyGame =
             game("RomOnlyNoExitTest") {
-                    config {
-                        cartridge(Cartridge.ROM_ONLY)
-                    }
+                    config { cartridge(Cartridge.ROM_ONLY) }
                     val play =
                         scene("play") {
                             frame {
@@ -277,9 +272,7 @@ class AutoExitSynthesisTest {
                         }
                     val title =
                         scene("title") {
-                            frame {
-                                whenever(buttons.start.pressed) { navigate(play) }
-                            }
+                            frame { whenever(buttons.start.pressed) { navigate(play) } }
                         }
                     start = title
                 }
@@ -293,8 +286,11 @@ class AutoExitSynthesisTest {
         val mbcResult = backend.generate(mbcGame)
         val romOnlyResult = backend.generate(romOnlyGame)
 
-        val mbcMainC = mbcResult.files["main.c"]?.content ?: error("main.c not generated for MBC game")
-        val romOnlyMainC = romOnlyResult.files["main.c"]?.content ?: error("main.c not generated for ROM_ONLY game")
+        val mbcMainC =
+            mbcResult.files["main.c"]?.content ?: error("main.c not generated for MBC game")
+        val romOnlyMainC =
+            romOnlyResult.files["main.c"]?.content
+                ?: error("main.c not generated for ROM_ONLY game")
 
         EVIDENCE_DIR.mkdirs()
         File(EVIDENCE_DIR, "auto-exit-mbc-main.txt").writeText(mbcMainC.take(8000))

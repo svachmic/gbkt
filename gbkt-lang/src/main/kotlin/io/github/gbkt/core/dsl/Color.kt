@@ -18,10 +18,11 @@ import io.github.gbkt.core.ir.GBCColor
  * Unified color entry point for gbkt DSL — the single discoverable namespace for all color
  * operations on Game Boy Color (GBC) hardware.
  *
- * All conversion math is delegated to [GBCColor] in `gbkt-ir`; no hand-rolled bit arithmetic
- * lives here (see Don't-Hand-Roll table, Phase 13.3 RESEARCH).
+ * All conversion math is delegated to [GBCColor] in `gbkt-ir`; no hand-rolled bit arithmetic lives
+ * here (see Don't-Hand-Roll table, Phase 13.3 RESEARCH).
  *
  * **Quick example:**
+ *
  * ```kotlin
  * // Preferred — one namespace, three input formats:
  * val sky   = Color.rgb888(0, 136, 255)   // from 8-bit-per-channel web color
@@ -39,7 +40,8 @@ import io.github.gbkt.core.ir.GBCColor
  *
  * **Precision loss (D-15 / T-13.3-01):** [rgb888] emits a `WARNING` to stderr when any channel's
  * low 3 bits are non-zero (i.e. the color cannot be represented exactly in RGB555). Exact multiples
- * of 8 convert without a warning. Example: `Color.rgb888(255, 0, 0)` warns; `Color.rgb888(248, 0, 0)` does not.
+ * of 8 convert without a warning. Example: `Color.rgb888(255, 0, 0)` warns; `Color.rgb888(248, 0,
+ * 0)` does not.
  *
  * **Migration:** This object supersedes [GbcColor] (deleted in Plan 13.3-07) and the top-level
  * [gbc] / [gbcHex] functions (deprecated in Plan 13.3-04). No `@Deprecated` annotations are added
@@ -55,8 +57,8 @@ object Color {
      * Create a [GBCColor] from 8-bit-per-channel RGB888 components (standard web/Photoshop range).
      *
      * Converts from RGB888 → RGB555 by shifting each channel right 3 bits (delegated to
-     * [GBCColor.fromRGB888] — no hand-rolled bit math). Emits a WARNING to stderr when precision
-     * is lost (D-15): when any channel's low 3 bits are non-zero the resulting RGB555 color cannot
+     * [GBCColor.fromRGB888] — no hand-rolled bit math). Emits a WARNING to stderr when precision is
+     * lost (D-15): when any channel's low 3 bits are non-zero the resulting RGB555 color cannot
      * represent the original exactly.
      *
      * @param r Red component 0-255.
@@ -78,8 +80,8 @@ object Color {
     /**
      * Create a [GBCColor] from 5-bit hardware components (raw RGB555, no conversion needed).
      *
-     * Each component is in the 0-31 range matching native GBC hardware registers. Use this when
-     * you already know the 5-bit values (e.g. from a hardware reference or palette editor).
+     * Each component is in the 0-31 range matching native GBC hardware registers. Use this when you
+     * already know the 5-bit values (e.g. from a hardware reference or palette editor).
      *
      * RGB555 bit layout: bits 0-4=red, 5-9=green, 10-14=blue.
      *
@@ -105,11 +107,14 @@ object Color {
      * This preserves the hex-string ergonomics previously offered by [gbcHex].
      *
      * @param hex Color string in `"#RRGGBB"` or `"RRGGBB"` format.
-     * @throws IllegalArgumentException if the string is not 6 hex digits (with optional `#` prefix).
+     * @throws IllegalArgumentException if the string is not 6 hex digits (with optional `#`
+     *   prefix).
      */
     fun hex(hex: String): GBCColor {
         val cleaned = hex.removePrefix("#")
-        require(cleaned.length == 6) { "Color.hex requires 6 hex digits (with optional '#'), got '$hex'" }
+        require(cleaned.length == 6) {
+            "Color.hex requires 6 hex digits (with optional '#'), got '$hex'"
+        }
         val value = cleaned.toInt(16)
         return GBCColor.fromHex(value)
     }

@@ -5,6 +5,7 @@
  * Copyright (c) 2026 Michal Svacha
  */
 @file:Suppress("UNUSED_VARIABLE") // delegate-bound properties are intentionally never read
+
 package io.github.gbkt.examples.platformer_template
 
 import io.github.gbkt.core.dsl.*
@@ -38,16 +39,16 @@ import io.github.gbkt.genre.platformer.dsl.tilemapCollision
  *
  * Wave-8 (Plan 12-16) authors zones + game-level physics + 6-frame metasprite + scene placeholders.
  * Wave-8 follow-up plans add:
- *   - Plan 12-17: banked title + NextLevel card scenes; level-switch wiring.
- *   - Plan 12-18: first `:buildRom` attempt (human checkpoint).
+ * - Plan 12-17: banked title + NextLevel card scenes; level-switch wiring.
+ * - Plan 12-18: first `:buildRom` attempt (human checkpoint).
  *
  * Substrate (D-02, D-claude-1):
- *   - 3 zones: `world1Area1Zone`, `world1Area2Zone`, `world2Area1Zone` (names derived from the
- *     Kotlin property delegate per `feedback_no_magic_strings.md`).
- *   - World 1 zones share `world1-tileset.png` (shared-tileset duplication GAP is
- *     intentional for Phase 12 — see SEED-PHASE-12-SHARED-TILESET for the Phase 13 dedup follow-up).
- *   - World 2 has its own tileset and a per-level `platformerPhysics` override (D-12).
- *   - 2 scenes today (title + gameplay) — `nextLevelScene` added in Plan 12-17.
+ * - 3 zones: `world1Area1Zone`, `world1Area2Zone`, `world2Area1Zone` (names derived from the Kotlin
+ *   property delegate per `feedback_no_magic_strings.md`).
+ * - World 1 zones share `world1-tileset.png` (shared-tileset duplication GAP is intentional for
+ *   Phase 12 — see SEED-PHASE-12-SHARED-TILESET for the Phase 13 dedup follow-up).
+ * - World 2 has its own tileset and a per-level `platformerPhysics` override (D-12).
+ * - 2 scenes today (title + gameplay) — `nextLevelScene` added in Plan 12-17.
  */
 val platformerTemplate =
     game("PlatformerTemplate") {
@@ -267,17 +268,17 @@ val platformerTemplate =
         // << 14336 bank threshold per RESEARCH §D-05 Bank Overflow Verification).
         val world1Area1Zone by zone {
             tileset(asset("graphics/world1-tileset.png"))
-            tilemap(asset("graphics/world1-area1.png"))   // Phase 12.2 D-01 two-invocation path
+            tilemap(asset("graphics/world1-area1.png")) // Phase 12.2 D-01 two-invocation path
             spawn(40u, 120u)
         }
         val world1Area2Zone by zone {
             tileset(asset("graphics/world1-tileset.png"))
-            tilemap(asset("graphics/world1-area2.png"))   // Phase 12.2 D-01 two-invocation path
+            tilemap(asset("graphics/world1-area2.png")) // Phase 12.2 D-01 two-invocation path
             spawn(40u, 120u)
         }
         val world2Area1Zone by zone {
             tileset(asset("graphics/world2-tileset.png"))
-            tilemap(asset("graphics/world2-area1.png"))   // Phase 12.2 D-01 two-invocation path
+            tilemap(asset("graphics/world2-area1.png")) // Phase 12.2 D-01 two-invocation path
             spawn(40u, 120u)
             // Per-level platformerPhysics override (D-12). Shadows the game-level config above.
             // Fields NOT set fall through to the game-level defaults — `jumpForce`, `jumpHold`,
@@ -297,8 +298,10 @@ val platformerTemplate =
         // MetaspriteVisitor's rot >> 2 → flipX path (Phase 10.1-05). idxVar binding flows
         // walkFrameIdx → frame index.
         //
-        // Phase 12.4 D-03/D-14: multi-tile composition (3 cols × 2 8x16-pair-rows per frame); sprite()
-        // binder + baseIds from png2asset first-run capture (.planning/phases/12.4-.../evidence/png2asset-first-run/player-tiles-ordering.md).
+        // Phase 12.4 D-03/D-14: multi-tile composition (3 cols × 2 8x16-pair-rows per frame);
+        // sprite()
+        // binder + baseIds from png2asset first-run capture
+        // (.planning/phases/12.4-.../evidence/png2asset-first-run/player-tiles-ordering.md).
         //
         // Debug E-03 (2026-05-24): tile() argument convention is `tile(dx, dy, tileId)` — x
         // (horizontal) FIRST, y (vertical) SECOND. This is the OPPOSITE order from the reference's

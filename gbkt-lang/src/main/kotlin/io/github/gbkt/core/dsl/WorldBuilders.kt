@@ -122,8 +122,10 @@ class ZoneBuilder(private val id: String) {
         tilemapPath = ref.path
     }
 
-    /** Sets the map dimensions in tiles. When omitted, dimensions are derived from the tilemap PNG
-     * (if present) or fall back to 20×18 — see [resolveZoneSize]. */
+    /**
+     * Sets the map dimensions in tiles. When omitted, dimensions are derived from the tilemap PNG
+     * (if present) or fall back to 20×18 — see [resolveZoneSize].
+     */
     fun size(w: Int, h: Int) {
         mapWidth = w
         mapHeight = h
@@ -238,9 +240,9 @@ class ZoneBuilder(private val id: String) {
 
     /**
      * Sets the per-zone player spawn position written by `setup_current_level()` when this zone
-     * becomes active. Coordinates are in PIXELS (codegen applies `<<4` shift to convert to
-     * subpixel form). If omitted, the framework emits a build-time WARNING and defaults to
-     * (16, 120). Phase 12.6 D-07 — closes DEFECT-2.
+     * becomes active. Coordinates are in PIXELS (codegen applies `<<4` shift to convert to subpixel
+     * form). If omitted, the framework emits a build-time WARNING and defaults to (16, 120). Phase
+     * 12.6 D-07 — closes DEFECT-2.
      */
     fun spawn(x: UByte, y: UByte) {
         spawnX = x
@@ -958,15 +960,14 @@ internal fun recordStatements(block: ScriptBuilder.() -> Unit): List<ScriptOp> {
  * **Invariant:** No input combination returns `(32, 32)`. The old magic `= 32` default is gone.
  *
  * @param explicit Author-supplied tile dims from `size(w, h)`, or null if `size()` was omitted.
- * @param derivedPngTileDims Tile dims derived from the tilemap PNG (`pixelW/8 to pixelH/8`),
- *   or null when no tilemap PNG is present (tileset-only zones).
+ * @param derivedPngTileDims Tile dims derived from the tilemap PNG (`pixelW/8 to pixelH/8`), or
+ *   null when no tilemap PNG is present (tileset-only zones).
  * @return The resolved (width, height) tile dims for this zone.
  */
 fun resolveZoneSize(
     explicit: Pair<Int, Int>?,
     derivedPngTileDims: Pair<Int, Int>?,
-): Pair<Int, Int> =
-    explicit ?: derivedPngTileDims ?: (20 to 18)
+): Pair<Int, Int> = explicit ?: derivedPngTileDims ?: (20 to 18)
 
 // =============================================================================
 // ZONE DELEGATE
@@ -983,23 +984,23 @@ fun resolveZoneSize(
  * The zone ID is set to the property name (`"playZone"` above), eliminating the need for a
  * duplicated magic-string argument. This mirrors [MetaspriteDelegate] exactly.
  *
- * Single-use: each `val x by zone { }` binding must use its own delegate instance.
- * Reusing one instance across two `by` bindings throws [IllegalStateException] at build time.
+ * Single-use: each `val x by zone { }` binding must use its own delegate instance. Reusing one
+ * instance across two `by` bindings throws [IllegalStateException] at build time.
  */
 class ZoneDelegate(private val block: ZoneBuilder.() -> Unit) : ReadOnlyProperty<Any?, ZoneRef> {
     private var ref: ZoneRef? = null
 
     /**
-     * Single-use guard. Prevents silent double-registration when the same delegate instance
-     * is accidentally bound to two `val` properties.
+     * Single-use guard. Prevents silent double-registration when the same delegate instance is
+     * accidentally bound to two `val` properties.
      */
     private var delegateUsed: Boolean = false
 
     /**
      * Called by Kotlin when `val x by zone { ... }` is evaluated.
      *
-     * Captures the property name, builds the [ZoneIR], registers it with the current
-     * [GameBuilder], and stores the resulting [ZoneRef] for retrieval by [getValue].
+     * Captures the property name, builds the [ZoneIR], registers it with the current [GameBuilder],
+     * and stores the resulting [ZoneRef] for retrieval by [getValue].
      *
      * @throws IllegalStateException if called outside a `game { }` block or if the delegate
      *   instance is reused across two `val` bindings.
@@ -1015,8 +1016,7 @@ class ZoneDelegate(private val block: ZoneBuilder.() -> Unit) : ReadOnlyProperty
         delegateUsed = true
         val name = property.name
         val gameBuilder =
-            GameBuilderContext.current
-                ?: error("zone {} must be called inside a game {} block")
+            GameBuilderContext.current ?: error("zone {} must be called inside a game {} block")
         val ir = ZoneBuilder(name).apply(block).build()
         gameBuilder.registerZone(ir)
         ref = ZoneRef(name)

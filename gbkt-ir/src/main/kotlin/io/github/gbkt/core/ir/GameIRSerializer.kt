@@ -195,13 +195,12 @@ object GameIRSerializer {
     /**
      * Serialize a [ZoneIR] to a JSON object.
      *
-     * Only the minimal fields required for external-tool consumption are emitted.
-     * The [ZoneIR.screenMode] flag is serialized here so tools can distinguish
-     * synthetic `screen()` zones from user-authored `zone { }` zones.
-     * Deserialization of ZoneIR is not supported (emptyList() in [deserializeGameIR]);
-     * the `optBoolean("screenMode", false)` read style is documented here for
-     * future full-deserialization support — default false preserves backward-compat
-     * for serialized IR produced before this field existed (Assumption A3).
+     * Only the minimal fields required for external-tool consumption are emitted. The
+     * [ZoneIR.screenMode] flag is serialized here so tools can distinguish synthetic `screen()`
+     * zones from user-authored `zone { }` zones. Deserialization of ZoneIR is not supported
+     * (emptyList() in [deserializeGameIR]); the `optBoolean("screenMode", false)` read style is
+     * documented here for future full-deserialization support — default false preserves
+     * backward-compat for serialized IR produced before this field existed (Assumption A3).
      */
     private fun serializeZoneIR(zone: ZoneIR): JSONObject {
         val json = JSONObject()
@@ -334,13 +333,16 @@ object GameIRSerializer {
     // =========================================================================
 
     private fun serializeMetaspriteIR(ms: MetaspriteIR): JSONObject {
-        val obj = JSONObject()
-            .put("id", ms.id)
-            .put("frames", serializeList(ms.frames, ::serializeMetaspriteFrame))
-            .put("sourceLocation", serializeSourceLocation(ms.sourceLocation))
-        // Req 5 (12.9 WR-05): compile-time OBJ palette slot — additive, omit when null for backward compat
+        val obj =
+            JSONObject()
+                .put("id", ms.id)
+                .put("frames", serializeList(ms.frames, ::serializeMetaspriteFrame))
+                .put("sourceLocation", serializeSourceLocation(ms.sourceLocation))
+        // Req 5 (12.9 WR-05): compile-time OBJ palette slot — additive, omit when null for backward
+        // compat
         ms.initialSubPaletteSlot?.let { obj.put("initialSubPaletteSlot", it) }
-        // Req 4 (13.7 WR-05): owning scene ID for scene-scoped suppression — additive, omit when null
+        // Req 4 (13.7 WR-05): owning scene ID for scene-scoped suppression — additive, omit when
+        // null
         ms.sceneId?.let { obj.put("sceneId", it) }
         return obj
     }
@@ -353,7 +355,9 @@ object GameIRSerializer {
             sourceLocation =
                 json.optJSONObject("sourceLocation")?.let { deserializeSourceLocation(it) },
             // Req 5: optional compile-time OBJ slot — default null on older serialized JSON
-            initialSubPaletteSlot = if (json.has("initialSubPaletteSlot")) json.getInt("initialSubPaletteSlot") else null,
+            initialSubPaletteSlot =
+                if (json.has("initialSubPaletteSlot")) json.getInt("initialSubPaletteSlot")
+                else null,
             // Req 4: optional owning scene ID — default null on older serialized JSON
             sceneId = json.optString("sceneId", null),
         )
@@ -598,14 +602,19 @@ object GameIRSerializer {
 
     private fun deserializeCartridgeConfig(json: JSONObject): CartridgeConfig {
         val cartridgeName = json.optString("cartridge", "ROM_ONLY")
-        val cartridge = Cartridge.entries.firstOrNull { it.name == cartridgeName }
-            ?: run {
-                System.err.println("WARNING: Unknown cartridge '$cartridgeName'; defaulting to ROM_ONLY")
-                Cartridge.ROM_ONLY
-            }
+        val cartridge =
+            Cartridge.entries.firstOrNull { it.name == cartridgeName }
+                ?: run {
+                    System.err.println(
+                        "WARNING: Unknown cartridge '$cartridgeName'; defaulting to ROM_ONLY"
+                    )
+                    Cartridge.ROM_ONLY
+                }
         return CartridgeConfig(
             cartridge = cartridge,
-            romBanks = if (json.has("romBanks") && !json.isNull("romBanks")) json.getInt("romBanks") else null,
+            romBanks =
+                if (json.has("romBanks") && !json.isNull("romBanks")) json.getInt("romBanks")
+                else null,
             ramBanks = json.optInt("ramBanks", 0),
             gbcTarget =
                 json.optString("gbcTarget", GbcTarget.DMG.name).let { GbcTarget.valueOf(it) },
@@ -2012,7 +2021,7 @@ object GameIRSerializer {
             "BindCurrentLevel" ->
                 BindCurrentLevel(
                     sourceLocation =
-                        json.optJSONObject("sourceLocation")?.let { deserializeSourceLocation(it) },
+                        json.optJSONObject("sourceLocation")?.let { deserializeSourceLocation(it) }
                 )
             else -> {
                 System.err.println(

@@ -48,9 +48,9 @@ class Spr8x16TileCountTest {
 
     /**
      * Build a minimal GameIR with one SPR8x16 metasprite where maxTileId = 60. Mirrors the
-     * platformer-template player duck shape (6 frames × 6 tiles, tile IDs 0, 2, 4, 6, …, 60).
-     * The test verifies that set_sprite_data() loads 62 tiles (0..61), not 61, because in
-     * 8x16 mode tile ID 60 references the pair (60, 61).
+     * platformer-template player duck shape (6 frames × 6 tiles, tile IDs 0, 2, 4, 6, …, 60). The
+     * test verifies that set_sprite_data() loads 62 tiles (0..61), not 61, because in 8x16 mode
+     * tile ID 60 references the pair (60, 61).
      */
     private fun buildSpr8x16GameIrWithMaxTileId60(): GameIR =
         GameIR(
@@ -121,10 +121,7 @@ class Spr8x16TileCountTest {
                         frames =
                             listOf(
                                 MetaspriteFrame(
-                                    tiles =
-                                        listOf(
-                                            MetaspriteTile(relX = 0, relY = 0, tileId = 60),
-                                        )
+                                    tiles = listOf(MetaspriteTile(relX = 0, relY = 0, tileId = 60))
                                 )
                             ),
                         spriteMode = SpriteMode.SPR8x8,
@@ -152,12 +149,11 @@ class Spr8x16TileCountTest {
                         "`maxTileId + 1 = 61`, dropping tile 61 (the second half of the 8x16 pair " +
                         "referenced by tile ID 60). Post-fix: 8x16 mode requires `maxTileId + 2 = 62`."
                 )
-                appendLine(
-                    "main.c excerpt (set_sprite_data lines):"
-                )
-                mainSource.lines().filter { it.contains("set_sprite_data") }.forEach {
-                    appendLine("  $it")
-                }
+                appendLine("main.c excerpt (set_sprite_data lines):")
+                mainSource
+                    .lines()
+                    .filter { it.contains("set_sprite_data") }
+                    .forEach { appendLine("  $it") }
             },
         )
     }
@@ -179,12 +175,11 @@ class Spr8x16TileCountTest {
                         "metasprite with maxTileId=60. The SPR8x8 path must remain " +
                         "`maxTileId + 1` — only the SPR8x16 path is affected by E-04."
                 )
-                appendLine(
-                    "main.c excerpt (set_sprite_data lines):"
-                )
-                mainSource.lines().filter { it.contains("set_sprite_data") }.forEach {
-                    appendLine("  $it")
-                }
+                appendLine("main.c excerpt (set_sprite_data lines):")
+                mainSource
+                    .lines()
+                    .filter { it.contains("set_sprite_data") }
+                    .forEach { appendLine("  $it") }
             },
         )
     }

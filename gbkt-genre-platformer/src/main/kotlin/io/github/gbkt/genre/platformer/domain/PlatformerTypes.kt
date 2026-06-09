@@ -40,9 +40,9 @@ data class WallJumpConfig(
  * @property solidThreshold Max tile index that counts as PASSABLE. Tiles `< solidThreshold` are
  *   solid (per reference convention). `null` = no tilemap collision (use the abstract physics
  *   path). Wired by Plan 12-08 / 12-11.
- * @property jumpHoldMaxFrames Max frames the jump button can be held to extend jump height.
- *   `0` = disabled (the existing [variableHeightJump] flag governs the abstract path). Wired by
- *   Plan 12-13.
+ * @property jumpHoldMaxFrames Max frames the jump button can be held to extend jump height. `0` =
+ *   disabled (the existing [variableHeightJump] flag governs the abstract path). Wired by Plan
+ *   12-13.
  */
 data class PlatformerPhysicsConfig(
     val gravity: Int = 2,
@@ -76,10 +76,10 @@ data class PlatformerPhysicsConfig(
  * @property airFriction Per-frame velocity decay applied when no horizontal input AND `_grounded`
  *   is false (D-04 air-vs-ground split). Default 0 — matches reference `player.c` ground-only
  *   friction behaviour.
- * @property walkFrameCount Number of frames in the walk-cycle animation (default 3 — frames
- *   0/1/2). PlatformerVisitor's walk-cycle emission rolls `_walkFrameIdx` modulo this count.
- * @property cyclePeriod Number of game frames per walk-cycle advance (default 6). The visitor
- *   emits `if (_threeFrameCounter >= cyclePeriod) { reset; _walkFrameIdx++ }`.
+ * @property walkFrameCount Number of frames in the walk-cycle animation (default 3 — frames 0/1/2).
+ *   PlatformerVisitor's walk-cycle emission rolls `_walkFrameIdx` modulo this count.
+ * @property cyclePeriod Number of game frames per walk-cycle advance (default 6). The visitor emits
+ *   `if (_threeFrameCounter >= cyclePeriod) { reset; _walkFrameIdx++ }`.
  */
 data class PlatformerInputConfig(
     val walkSpeed: Int = 128,

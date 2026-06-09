@@ -72,33 +72,33 @@ private fun buildGroundedResetGameIR() =
     GameIR(
         name = "SetupCurrentLevelGroundedResetTest",
         config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY, romBanks = 4),
-        scenes = listOf(
-            SceneIR(id = "title"),
-            SceneIR(id = "gameplay"),
-        ),
-        zones = listOf(
-            ZoneIR(
-                id = "world1Area1Zone",
-                name = "World 1 Area 1",
-                tilesetPath = "tiles/world1.png",
-                mapWidth = 60,
-                mapHeight = 18,
-            )
-        ),
-        systems = listOf(
-            GenericSystem(
-                id = "tilemapCollision",
-                config = mapOf(
-                    "type" to "tilemap_collision",
-                    // Bind symbol names — mirrors PlatformerTemplate.kt:172-178
-                    "posXVar" to "playerX",
-                    "posYVar" to "playerY",
-                    "vxVar" to "playerVx",
-                    "vyVar" to "playerVy",
-                    "groundedVar" to "grounded",
-                ),
+        scenes = listOf(SceneIR(id = "title"), SceneIR(id = "gameplay")),
+        zones =
+            listOf(
+                ZoneIR(
+                    id = "world1Area1Zone",
+                    name = "World 1 Area 1",
+                    tilesetPath = "tiles/world1.png",
+                    mapWidth = 60,
+                    mapHeight = 18,
+                )
             ),
-        ),
+        systems =
+            listOf(
+                GenericSystem(
+                    id = "tilemapCollision",
+                    config =
+                        mapOf(
+                            "type" to "tilemap_collision",
+                            // Bind symbol names — mirrors PlatformerTemplate.kt:172-178
+                            "posXVar" to "playerX",
+                            "posYVar" to "playerY",
+                            "vxVar" to "playerVx",
+                            "vyVar" to "playerVy",
+                            "groundedVar" to "grounded",
+                        ),
+                )
+            ),
         startScene = "title",
     )
 
@@ -119,8 +119,9 @@ class SetupCurrentLevelGroundedResetEmissionTest {
         val allFiles = pipeline.generate(gameIR).files
         val mainC = allFiles["main.c"] ?: error("main.c not generated. Files: ${allFiles.keys}")
 
-        val body = extractSetupCurrentLevelBodyD4(mainC)
-            ?: error("Could not extract setup_current_level() body from main.c")
+        val body =
+            extractSetupCurrentLevelBodyD4(mainC)
+                ?: error("Could not extract setup_current_level() body from main.c")
 
         // D4 positive: grounded symbol reset to 0 in each case body.
         // The symbol name is resolved from config "groundedVar" → "grounded" → "_grounded".
@@ -129,7 +130,7 @@ class SetupCurrentLevelGroundedResetEmissionTest {
             body.contains("_grounded = 0"),
             "setup_current_level body must contain grounded reset `_grounded = 0` in each case " +
                 "(D4 fix — without it grounded carries 1 from prior level, suppressing gravity " +
-                "and preventing ground snap on level-2+ entry). body:\n$body"
+                "and preventing ground snap on level-2+ entry). body:\n$body",
         )
 
         // D4 ordering: grounded reset must appear AFTER the vy reset (both are velocity resets;
@@ -139,7 +140,7 @@ class SetupCurrentLevelGroundedResetEmissionTest {
         assertTrue(
             vyIdx >= 0 && groundedIdx > vyIdx,
             "grounded reset must appear AFTER vy reset in the case body (D4 ordering contract). " +
-                "vyIdx=$vyIdx groundedIdx=$groundedIdx. body:\n$body"
+                "vyIdx=$vyIdx groundedIdx=$groundedIdx. body:\n$body",
         )
     }
 }

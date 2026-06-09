@@ -5,6 +5,7 @@
  * Copyright (c) 2026 Michal Svacha
  */
 @file:Suppress("UNUSED_VARIABLE") // delegate-bound properties are intentionally never read
+
 package io.github.gbkt.examples.banks
 
 import io.github.gbkt.core.dsl.*
@@ -46,7 +47,8 @@ val banks =
         // Until then, generateC succeeds but the linker reports `undefined identifier
         // 'trigger_saves'` — that's the named bug per RESEARCH §Pitfall 4.
         //
-        // Phase 13.2 Req #12 (D-03): per-site @Suppress removed; file-level @file:Suppress covers all delegate-bound properties.
+        // Phase 13.2 Req #12 (D-03): per-site @Suppress removed; file-level @file:Suppress covers
+        // all delegate-bound properties.
         val saves by saveData { slots(2) }
 
         // Zone declared at game scope (matches Dungeon.kt:87 pattern). allocateZoneBanks
@@ -56,9 +58,7 @@ val banks =
         //
         // 13.4 D-06: drop explicit `size(20, 18)` — tileset-only zone (no tilemap()) falls
         // through to the 20×18 fallback in resolveZoneSize, emitting a byte-identical tilemap.
-        val playZone by zone {
-            tileset(asset("tiles/checker.png"))
-        }
+        val playZone by zone { tileset(asset("tiles/checker.png")) }
 
         // Play scene forward ref — captured as a SceneRef so pauseScene can navigate(playScene)
         // without a string literal. The play scene is declared below (after pauseScene, to keep

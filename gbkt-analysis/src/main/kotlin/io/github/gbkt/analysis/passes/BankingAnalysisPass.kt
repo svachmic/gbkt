@@ -348,9 +348,9 @@ class BankingAnalysisPass : AnalysisPass {
      *
      * When [context.game.config.romBanks] is non-null (explicitly declared by the author) and
      * equals the effective [maxBanks] cap, this is a D-06 undersized-romBanks error. In that case
-     * the diagnostic uses the D-06 actionable message shape ("romBanks=$declared too small; …
-     * Set romBanks >= $derived or remove romBanks to auto-derive.") so the author knows how to fix
-     * it. Otherwise the generic bank-overflow message is emitted.
+     * the diagnostic uses the D-06 actionable message shape ("romBanks=$declared too small; … Set
+     * romBanks >= $derived or remove romBanks to auto-derive.") so the author knows how to fix it.
+     * Otherwise the generic bank-overflow message is emitted.
      */
     private fun bankOverflowError(
         unit: CodeUnit,
@@ -363,20 +363,26 @@ class BankingAnalysisPass : AnalysisPass {
             // by probing with unconstrained maxBanks (type max from config).
             val typeMax = context.config.maxBanks.coerceAtLeast(256)
             val probeConfig = context.config.copy(maxBanks = typeMax)
-            val probeCtx = context.copy(
-                game = context.game.copy(
-                    config = context.game.config.copy(romBanks = null), // probe must not re-enter D-06
-                ),
-                config = probeConfig,
-                outputDirectory = null,  // Pitfall 1: suppress BudgetAuditPass file writes
-                bankAssignments = emptyMap(),
-                diagnostics = emptyList(),
-            )
+            val probeCtx =
+                context.copy(
+                    game =
+                        context.game.copy(
+                            config =
+                                context.game.config.copy(
+                                    romBanks = null
+                                ) // probe must not re-enter D-06
+                        ),
+                    config = probeConfig,
+                    outputDirectory = null, // Pitfall 1: suppress BudgetAuditPass file writes
+                    bankAssignments = emptyMap(),
+                    diagnostics = emptyList(),
+                )
             val probePass = BankingAnalysisPass()
             val probeResult = probePass.run(probeCtx)
-            val maxAssigned = if (probeResult is PassResult.Success)
-                probeResult.context.bankAssignments.values.maxOfOrNull { it.bank } ?: 0
-            else 0
+            val maxAssigned =
+                if (probeResult is PassResult.Success)
+                    probeResult.context.bankAssignments.values.maxOfOrNull { it.bank } ?: 0
+                else 0
             val cartridgeCap = context.game.config.cartridge.maxRomBanks
             val derived = minOf(maxOf(2, nextPowerOfTwo(maxAssigned + 1)), cartridgeCap)
             return PassResult.Failed(

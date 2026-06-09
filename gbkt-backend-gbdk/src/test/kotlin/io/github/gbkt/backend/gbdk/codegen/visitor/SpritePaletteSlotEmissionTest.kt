@@ -55,29 +55,32 @@ class SpritePaletteSlotEmissionTest {
     private fun proceduralMetasprite(id: String): MetaspriteIR =
         MetaspriteIR(
             id = id,
-            frames = listOf(
-                MetaspriteFrame(
-                    tiles = listOf(
-                        MetaspriteTile(relX = 0, relY = 0, tileId = 0),
-                        MetaspriteTile(relX = 8, relY = 0, tileId = 1),
+            frames =
+                listOf(
+                    MetaspriteFrame(
+                        tiles =
+                            listOf(
+                                MetaspriteTile(relX = 0, relY = 0, tileId = 0),
+                                MetaspriteTile(relX = 8, relY = 0, tileId = 1),
+                            )
                     )
-                )
-            ),
+                ),
             spritePath = null,
         )
 
     /**
-     * Build a minimal GBC game with two procedural metasprites in list order [first, second].
-     * No spritePalette{} — all procedural metasprites get auto uploads.
+     * Build a minimal GBC game with two procedural metasprites in list order [first, second]. No
+     * spritePalette{} — all procedural metasprites get auto uploads.
      */
     private fun buildTwoMetaspriteGame(first: MetaspriteIR, second: MetaspriteIR): GameIR =
         GameIR(
             name = "SpritePaletteSlotTest",
-            config = CartridgeConfig(
-                cartridge = Cartridge.ROM_ONLY,
-                romBanks = 2,
-                gbcTarget = GbcTarget.GBC_COMPATIBLE,
-            ),
+            config =
+                CartridgeConfig(
+                    cartridge = Cartridge.ROM_ONLY,
+                    romBanks = 2,
+                    gbcTarget = GbcTarget.GBC_COMPATIBLE,
+                ),
             scenes = listOf(SceneIR(id = "gameplay")),
             metasprites = listOf(first, second),
             startScene = "gameplay",
@@ -98,7 +101,8 @@ class SpritePaletteSlotEmissionTest {
         val game = buildTwoMetaspriteGame(hero, enemy)
 
         val output = pipeline.generate(game)
-        val mainC = output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
+        val mainC =
+            output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
 
         // hero (list index 0) → slot 0
         assertTrue(
@@ -139,7 +143,8 @@ class SpritePaletteSlotEmissionTest {
         val game = buildTwoMetaspriteGame(hero, enemy)
 
         val output = pipeline.generate(game)
-        val mainC = output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
+        val mainC =
+            output.files["main.c"] ?: error("main.c not generated. Files: ${output.files.keys}")
 
         // hero declares slot 2 — must emit set_sprite_palette(2u, 1u, hero_palettes)
         assertTrue(

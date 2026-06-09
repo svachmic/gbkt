@@ -147,13 +147,14 @@ private fun buildDv3V3GbcGame() =
             // the ordering invariant being tested here. [Rule 1 fix — Plan 10.2-08]
             val dummySprite by metasprite { frame { tile(0, 0, 0) } }
 
-            val playScene = scene("play") {
-                palette(gray)
-                palette(pink)
-                palette(cyan)
-                palette(green)
-                enter { bgFillCheckerboard() }
-            }
+            val playScene =
+                scene("play") {
+                    palette(gray)
+                    palette(pink)
+                    palette(cyan)
+                    palette(green)
+                    enter { bgFillCheckerboard() }
+                }
 
             start = playScene
         }
@@ -305,7 +306,8 @@ class DV3VisualV3DiagnosticTest {
                 "main() body:\n$mainBody",
         )
 
-        // ADDITIONAL GUARD: set_bkg_data must still be before DISPLAY_ON (preserves DV3-iter2 contract)
+        // ADDITIONAL GUARD: set_bkg_data must still be before DISPLAY_ON (preserves DV3-iter2
+        // contract)
         assertTrue(
             displayOnIdx > setBkgDataIdx,
             "DEFECT: set_bkg_data emitted AFTER DISPLAY_ON in main(). BG tile data must " +

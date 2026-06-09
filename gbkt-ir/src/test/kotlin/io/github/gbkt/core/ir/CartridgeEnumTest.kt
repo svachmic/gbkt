@@ -150,7 +150,11 @@ class CartridgeEnumTest {
     fun `Cartridge name-based round-trip holds for all entries`() {
         for (entry in Cartridge.values()) {
             val roundTripped = Cartridge.valueOf(entry.name)
-            assertEquals(entry, roundTripped, "valueOf(${entry.name}) must return the same enum entry")
+            assertEquals(
+                entry,
+                roundTripped,
+                "valueOf(${entry.name}) must return the same enum entry",
+            )
         }
     }
 }

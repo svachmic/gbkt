@@ -174,16 +174,20 @@ class TitleSceneEmissionTest {
                     // the two test files.
                     val nextLevelZone by zone { tileset(asset("res/graphics/next-level.png")) }
 
-                    val titleScene = scene("title") {
-                        zone(titleZone)
-                        enter {
-                            // cEmit is the Plan 12-17 bridge until `bgFill()` lands in Phase 13.
-                            // The exact literal text matters — TitleSceneEmissionTest Test 2
-                            // (below) locks it as the visual prerequisite for the title screen.
-                            cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);")
+                    val titleScene =
+                        scene("title") {
+                            zone(titleZone)
+                            enter {
+                                // cEmit is the Plan 12-17 bridge until `bgFill()` lands in Phase
+                                // 13.
+                                // The exact literal text matters — TitleSceneEmissionTest Test 2
+                                // (below) locks it as the visual prerequisite for the title screen.
+                                cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);")
+                            }
+                            frame {
+                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                            }
                         }
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
-                    }
                     scene("gameplay") {
                         // gameplay scene binds a zone so it shows up in the buildSceneFile
                         // zoneBankAllocation table. A frame body is required so SceneVisitor
@@ -298,11 +302,14 @@ class TitleSceneEmissionTest {
                     val titleZone by zone { tileset(asset("res/graphics/title-screen.png")) }
                     val gameplayZone by zone { tileset(asset("res/graphics/gameplay.png")) }
 
-                    val titleScene = scene("title") {
-                        zone(titleZone)
-                        enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
-                    }
+                    val titleScene =
+                        scene("title") {
+                            zone(titleZone)
+                            enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
+                            frame {
+                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                            }
+                        }
                     scene("gameplay") {
                         zone(gameplayZone)
                         frame { whenever(buttons.start.pressed) { navigate(titleScene) } }
@@ -439,9 +446,12 @@ class TitleSceneEmissionTest {
                     // NO `platformerPhysics { solidThreshold(...) }` block — the gate stays OFF.
                     // No zones declared — Path B of gameUsesTilemapCollision (per-zone
                     // platformerPhysicsOverride) also returns false.
-                    val titleScene = scene("title") {
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
-                    }
+                    val titleScene =
+                        scene("title") {
+                            frame {
+                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                            }
+                        }
                     scene("gameplay") {
                         frame { whenever(buttons.start.pressed) { navigate(titleScene) } }
                     }

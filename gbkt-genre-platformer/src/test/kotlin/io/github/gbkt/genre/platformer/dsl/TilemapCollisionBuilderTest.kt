@@ -51,10 +51,14 @@ class TilemapCollisionBuilderTest {
         }
 
         val systems: List<SystemIR> = gb.currentSystems()
-        val tc = systems.filterIsInstance<GenericSystem>().firstOrNull { sys ->
-            sys.config["type"] == "tilemap_collision"
-        }
-        assertNotNull(tc, "tilemapCollision { } must register a GenericSystem with type tilemap_collision")
+        val tc =
+            systems.filterIsInstance<GenericSystem>().firstOrNull { sys ->
+                sys.config["type"] == "tilemap_collision"
+            }
+        assertNotNull(
+            tc,
+            "tilemapCollision { } must register a GenericSystem with type tilemap_collision",
+        )
         assertEquals("playerX", tc.config["posXVar"] as? String)
     }
 
@@ -104,9 +108,10 @@ class TilemapCollisionBuilderTest {
             solidThreshold(17)
         }
         val systems: List<SystemIR> = gb.currentSystems()
-        val tc = systems.filterIsInstance<GenericSystem>().firstOrNull { sys ->
-            sys.config["type"] == "tilemap_collision"
-        }
+        val tc =
+            systems.filterIsInstance<GenericSystem>().firstOrNull { sys ->
+                sys.config["type"] == "tilemap_collision"
+            }
         assertNotNull(tc)
         assertEquals("tilemap_collision", tc.id)
     }

@@ -480,41 +480,47 @@ class MetadataFileTest {
     // =========================================================================
     @Test
     fun `WR-02 regression - 8x16 actor has oamCount of 1 not 2`() {
-        val game = GameIR(
-            name = "Wr02Test",
-            config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
-            actors = listOf(
-                ActorIR(
-                    id = "duck",
-                    position = PositionDef(80, 72),
-                    sprite = SpriteDef(
-                        assetRef = AssetRef("sprites/duck.png", AssetType.SPRITE),
-                        size = SizeDef(8, 16),
+        val game =
+            GameIR(
+                name = "Wr02Test",
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
+                actors =
+                    listOf(
+                        ActorIR(
+                            id = "duck",
+                            position = PositionDef(80, 72),
+                            sprite =
+                                SpriteDef(
+                                    assetRef = AssetRef("sprites/duck.png", AssetType.SPRITE),
+                                    size = SizeDef(8, 16),
+                                ),
+                            oamSlot = OAMSlot(0),
+                        ),
+                        ActorIR(
+                            id = "ball",
+                            position = PositionDef(80, 80),
+                            sprite =
+                                SpriteDef(
+                                    assetRef = AssetRef("sprites/ball.png", AssetType.SPRITE),
+                                    size = SizeDef(8, 8),
+                                ),
+                            oamSlot = OAMSlot(1),
+                        ),
                     ),
-                    oamSlot = OAMSlot(0),
-                ),
-                ActorIR(
-                    id = "ball",
-                    position = PositionDef(80, 80),
-                    sprite = SpriteDef(
-                        assetRef = AssetRef("sprites/ball.png", AssetType.SPRITE),
-                        size = SizeDef(8, 8),
-                    ),
-                    oamSlot = OAMSlot(1),
-                ),
-            ),
-        )
+            )
         val metadata = GameMetadata.fromJsonString(pipeline.buildMetadataFile(game))
 
         val duck = metadata.actor("duck")
         assertNotNull(duck, "duck actor should exist")
-        assertEquals(1, duck.oamCount,
+        assertEquals(
+            1,
+            duck.oamCount,
             "WR-02: 8x16 actor must have oamCount=1 (one SPRITES_8x16 OAM slot), not 2 (raw tiles).\n" +
-                "Pre-fix: tilesWide*tilesHigh=1*2=2. Post-fix: tilesWide*((height+15)/16)=1*1=1.")
+                "Pre-fix: tilesWide*tilesHigh=1*2=2. Post-fix: tilesWide*((height+15)/16)=1*1=1.",
+        )
 
         val ball = metadata.actor("ball")
         assertNotNull(ball, "ball actor should exist")
-        assertEquals(1, ball.oamCount,
-            "WR-02: 8x8 actor must have oamCount=1 (unchanged by fix)")
+        assertEquals(1, ball.oamCount, "WR-02: 8x8 actor must have oamCount=1 (unchanged by fix)")
     }
 }

@@ -195,9 +195,10 @@ class StepAgent(
      * Immediately after a scene transition the PPU/VRAM has not latched the new scene, so reading
      * the frame buffer (via [captureFrameBuffer] or [captureScreenshot]) yields a stale or blank
      * frame. [settle] eliminates that by stepping frames until two consecutive
-     * [AgentDebugSession.getFrameBuffer] snapshots are pixel-identical (proof the PPU did not update
-     * the frame buffer between them — [io.github.gbkt.emulator.CoffeeGbEmulator.getFrameBuffer]
-     * returns a fresh copy on each call, so content equality is a true stability signal).
+     * [AgentDebugSession.getFrameBuffer] snapshots are pixel-identical (proof the PPU did not
+     * update the frame buffer between them —
+     * [io.github.gbkt.emulator.CoffeeGbEmulator.getFrameBuffer] returns a fresh copy on each call,
+     * so content equality is a true stability signal).
      *
      * Contract:
      * - **Stability rule:** capture once **2 consecutive** frame buffers are pixel-identical.

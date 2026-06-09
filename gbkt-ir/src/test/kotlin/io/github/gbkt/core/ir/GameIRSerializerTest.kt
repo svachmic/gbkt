@@ -726,13 +726,7 @@ class GameIRSerializerTest {
             GameIR(
                 name = "BindCurrentLevelGame",
                 startScene = "gameplay",
-                scenes =
-                    listOf(
-                        SceneIR(
-                            id = "gameplay",
-                            enterOps = listOf(BindCurrentLevel()),
-                        )
-                    ),
+                scenes = listOf(SceneIR(id = "gameplay", enterOps = listOf(BindCurrentLevel()))),
             )
 
         val json = GameIRSerializer.toJson(game)

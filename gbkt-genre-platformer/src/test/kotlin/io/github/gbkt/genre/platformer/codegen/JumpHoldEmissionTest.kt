@@ -79,9 +79,8 @@ class JumpHoldEmissionTest {
          * Evidence is written under the **active checkout root** (worktree-safe). Same shape as
          * `TilemapCollisionEmissionTest.EVIDENCE_DIR` / `HorizontalScrollEmissionTest.EVIDENCE_DIR`
          * — see those comments for the worktree path-safety rationale (#3099). For
-         * `:gbkt-genre-platformer:test`, `user.dir` resolves to `<repo>/gbkt-genre-platformer`;
-         * we ascend one level to the worktree root, then descend into the phase evidence
-         * directory.
+         * `:gbkt-genre-platformer:test`, `user.dir` resolves to `<repo>/gbkt-genre-platformer`; we
+         * ascend one level to the worktree root, then descend into the phase evidence directory.
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -99,14 +98,14 @@ class JumpHoldEmissionTest {
 
     /**
      * Extracts a C function body by brace-walking from the first line whose contents start with
-     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching
-     * closing brace at depth zero.
+     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching closing
+     * brace at depth zero.
      *
      * Mirror of the helper in `TilemapCollisionEmissionTest.kt` (Plan 12-09) and
-     * `HorizontalScrollEmissionTest.kt` (Plan 12-12). The returned blob includes the signature
-     * line and the closing brace, so downstream `.contains()` checks operate ONLY on tokens
-     * that live inside the named function — never on tokens from unrelated functions in the
-     * same file (per CLAUDE.md §"Scope-level grep gates").
+     * `HorizontalScrollEmissionTest.kt` (Plan 12-12). The returned blob includes the signature line
+     * and the closing brace, so downstream `.contains()` checks operate ONLY on tokens that live
+     * inside the named function — never on tokens from unrelated functions in the same file (per
+     * CLAUDE.md §"Scope-level grep gates").
      *
      * Matching is anchored to the START of a line (the prefix must appear at column 0) so
      * occurrences inside string literals, comments, or argument lists of a different function
@@ -140,13 +139,12 @@ class JumpHoldEmissionTest {
      * ([jumpHoldMaxFrames] > 0) set.
      *
      * Both gates must fire for section 5b to emit:
-     *  - `gameUsesTilemapCollision()` returns true (via `solidThreshold` set) → the
-     *    `buildTilemapPhysicsUpdateFunction` branch is taken (Plan 12-11).
-     *  - `cfg.jumpHoldMaxFrames > 0` → the section-5b block inside that branch emits
-     *    (Plan 12-13).
+     * - `gameUsesTilemapCollision()` returns true (via `solidThreshold` set) → the
+     *   `buildTilemapPhysicsUpdateFunction` branch is taken (Plan 12-11).
+     * - `cfg.jumpHoldMaxFrames > 0` → the section-5b block inside that branch emits (Plan 12-13).
      *
-     * The positive test sets both; the negative test sets `solidThreshold` (so the tilemap-
-     * physics branch still runs and `platformer_physics_update` is still emitted) but leaves
+     * The positive test sets both; the negative test sets `solidThreshold` (so the tilemap- physics
+     * branch still runs and `platformer_physics_update` is still emitted) but leaves
      * `jumpHoldMaxFrames` at its default of 0, so section 5b is omitted.
      */
     private fun buildPlatformerGameIR(

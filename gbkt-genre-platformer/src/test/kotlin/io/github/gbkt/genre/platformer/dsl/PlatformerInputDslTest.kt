@@ -7,8 +7,8 @@
 package io.github.gbkt.genre.platformer.dsl
 
 import io.github.gbkt.core.dsl.game
-import io.github.gbkt.core.dsl.zone
 import io.github.gbkt.core.dsl.u8Var
+import io.github.gbkt.core.dsl.zone
 import io.github.gbkt.core.ir.GenericSystem
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -42,13 +42,12 @@ import kotlin.test.assertEquals
 class PlatformerInputDslTest {
 
     /**
-     * Test 1 — game-level builder produces a GenericSystem(type="platformer_input")
-     * with explicit + default numeric fields AND the captured AssignableVar binder
-     * names.
+     * Test 1 — game-level builder produces a GenericSystem(type="platformer_input") with explicit +
+     * default numeric fields AND the captured AssignableVar binder names.
      *
-     * Locks the PlatformerVisitor (Wave 2) contract: keys must be
-     * `walkSpeed` / `friction` / `airFriction` / `walkFrameCount` / `cyclePeriod`
-     * for numerics, and `walkFrameIdxVar` / `threeFrameCounterVar` for binders.
+     * Locks the PlatformerVisitor (Wave 2) contract: keys must be `walkSpeed` / `friction` /
+     * `airFriction` / `walkFrameCount` / `cyclePeriod` for numerics, and `walkFrameIdxVar` /
+     * `threeFrameCounterVar` for binders.
      */
     @Test
     fun `platformerInput stores numeric defaults and AssignableVar binders into GenericSystem config`() {
@@ -67,10 +66,22 @@ class PlatformerInputDslTest {
             gb.currentSystems().filterIsInstance<GenericSystem>().single {
                 (it.config["type"] as? String) == "platformer_input"
             }
-        assertEquals(64, system.config["walkSpeed"], "walkSpeed must reflect the explicit setter value.")
+        assertEquals(
+            64,
+            system.config["walkSpeed"],
+            "walkSpeed must reflect the explicit setter value.",
+        )
         assertEquals(8, system.config["friction"], "friction default (D-01a) must be 8.")
-        assertEquals(0, system.config["airFriction"], "airFriction default (D-01a / D-04) must be 0.")
-        assertEquals(3, system.config["walkFrameCount"], "walkFrameCount default (D-01a) must be 3.")
+        assertEquals(
+            0,
+            system.config["airFriction"],
+            "airFriction default (D-01a / D-04) must be 0.",
+        )
+        assertEquals(
+            3,
+            system.config["walkFrameCount"],
+            "walkFrameCount default (D-01a) must be 3.",
+        )
         assertEquals(6, system.config["cyclePeriod"], "cyclePeriod default (D-01a) must be 6.")
         assertEquals(
             "walkFrameIdx",
@@ -85,8 +96,8 @@ class PlatformerInputDslTest {
     }
 
     /**
-     * Test 2 — zone-level builder records ONLY explicitly-set numeric fields into
-     * the override map (RESEARCH §Pattern 2 absent-vs-default contract — L-9.2).
+     * Test 2 — zone-level builder records ONLY explicitly-set numeric fields into the override map
+     * (RESEARCH §Pattern 2 absent-vs-default contract — L-9.2).
      */
     @Test
     fun `zone-level platformerInput stores override map only for explicitly set numeric fields`() {
@@ -111,9 +122,9 @@ class PlatformerInputDslTest {
     }
 
     /**
-     * Test 3 — zone-level builder MUST NOT include AssignableVar binders in the
-     * override map (D-03 / L-2.2 / L-9.2 — binders are game-level only;
-     * OverrideTrackingInputBuilder does not override the binder methods).
+     * Test 3 — zone-level builder MUST NOT include AssignableVar binders in the override map (D-03
+     * / L-2.2 / L-9.2 — binders are game-level only; OverrideTrackingInputBuilder does not override
+     * the binder methods).
      */
     @Test
     fun `zone-level platformerInput does NOT include AssignableVar binders in override map`() {

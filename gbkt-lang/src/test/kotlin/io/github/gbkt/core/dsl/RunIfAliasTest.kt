@@ -50,12 +50,15 @@ class RunIfAliasTest {
 
     @Test
     fun `runIf produces same IfOp shape as ifOp`() {
-        val cond = Literal(1)   // dummy condition
-        val ifOpOps  = buildScript { ifOp(cond) { } }
-        val runIfOps = buildScript { runIf(cond) { } }   // compile-fail today — runIf does not exist
+        val cond = Literal(1) // dummy condition
+        val ifOpOps = buildScript { ifOp(cond) {} }
+        val runIfOps = buildScript { runIf(cond) {} } // compile-fail today — runIf does not exist
 
-        assertEquals(ifOpOps, runIfOps,
-            "runIf must produce IR identical to ifOp (D-06 same IfOp lowering)")
+        assertEquals(
+            ifOpOps,
+            runIfOps,
+            "runIf must produce IR identical to ifOp (D-06 same IfOp lowering)",
+        )
     }
 
     // =========================================================================
@@ -65,16 +68,17 @@ class RunIfAliasTest {
     @Test
     fun `unless produces IfOp with LOGICAL_NOT of condition`() {
         val cond = Literal(1)
-        val ops = buildScript { unless(cond) { } }   // compile-fail today — unless does not exist
+        val ops = buildScript { unless(cond) {} } // compile-fail today — unless does not exist
 
         assertEquals(1, ops.size, "unless must emit exactly one IfOp")
         val ifOp = assertIs<IfOp>(ops[0], "unless must emit an IfOp")
-        val negated = assertIs<UnaryExpr>(ifOp.condition,
-            "unless condition must be a UnaryExpr wrapping the original condition")
-        assertEquals(UnaryOp.LOGICAL_NOT, negated.op,
-            "unless must negate via UnaryOp.LOGICAL_NOT")
-        assertEquals(cond, negated.operand,
-            "unless must wrap the original condition unchanged")
+        val negated =
+            assertIs<UnaryExpr>(
+                ifOp.condition,
+                "unless condition must be a UnaryExpr wrapping the original condition",
+            )
+        assertEquals(UnaryOp.LOGICAL_NOT, negated.op, "unless must negate via UnaryOp.LOGICAL_NOT")
+        assertEquals(cond, negated.operand, "unless must wrap the original condition unchanged")
     }
 
     // =========================================================================
@@ -85,15 +89,18 @@ class RunIfAliasTest {
     fun `runIf with orElse produces same IfOp as ifOp with elseOp`() {
         val cond = Literal(1)
         val ifElseOps = buildScript {
-            ifOp(cond) { }
-            elseOp { }
+            ifOp(cond) {}
+            elseOp {}
         }
         val runIfOrElseOps = buildScript {
-            runIf(cond) { }   // compile-fail today
-            orElse { }        // compile-fail today — orElse does not exist
+            runIf(cond) {} // compile-fail today
+            orElse {} // compile-fail today — orElse does not exist
         }
 
-        assertEquals(ifElseOps, runIfOrElseOps,
-            "runIf + orElse must produce IR identical to ifOp + elseOp (D-06)")
+        assertEquals(
+            ifElseOps,
+            runIfOrElseOps,
+            "runIf + orElse must produce IR identical to ifOp + elseOp (D-06)",
+        )
     }
 }

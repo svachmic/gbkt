@@ -142,7 +142,9 @@ class CombatInventoryBuilderTest {
         val ir =
             game("test") {
                     combatEngine("combat") {
-                        onDefeatWhen { whenever(livesVar isEqualTo 0) { navigate(SceneRef("gameover")) } }
+                        onDefeatWhen {
+                            whenever(livesVar isEqualTo 0) { navigate(SceneRef("gameover")) }
+                        }
                     }
                     val mainScene = scene("main") { enter {} }
                     start = mainScene

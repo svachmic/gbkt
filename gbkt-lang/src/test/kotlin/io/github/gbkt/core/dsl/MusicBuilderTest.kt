@@ -117,10 +117,11 @@ class MusicBuilderTest {
         val ir =
             game("TestGame") {
                     val theme by music(asset("music/theme.uge"))
-                    val dungeonScene = scene("dungeon") {
-                        music(theme)
-                        // No explicit enter block — music() should still produce enter ops
-                    }
+                    val dungeonScene =
+                        scene("dungeon") {
+                            music(theme)
+                            // No explicit enter block — music() should still produce enter ops
+                        }
                     start = dungeonScene
                 }
                 .build()
@@ -153,13 +154,14 @@ class MusicBuilderTest {
         val ir =
             game("TestGame") {
                     val theme by music(asset("music/theme.uge"))
-                    val dungeonScene = scene("dungeon") {
-                        music(theme)
-                        enter {
-                            // Some enter logic
-                            playSound(SoundRef("door_open"))
+                    val dungeonScene =
+                        scene("dungeon") {
+                            music(theme)
+                            enter {
+                                // Some enter logic
+                                playSound(SoundRef("door_open"))
+                            }
                         }
-                    }
                     start = dungeonScene
                 }
                 .build()
@@ -178,10 +180,11 @@ class MusicBuilderTest {
         val ir =
             game("TestGame") {
                     val theme by music(asset("music/theme.uge"))
-                    val dungeonScene = scene("dungeon") {
-                        music(theme)
-                        exit { playSound(SoundRef("door_close")) }
-                    }
+                    val dungeonScene =
+                        scene("dungeon") {
+                            music(theme)
+                            exit { playSound(SoundRef("door_close")) }
+                        }
                     start = dungeonScene
                 }
                 .build()

@@ -66,11 +66,11 @@ data class MetaspriteFrame(val tiles: List<MetaspriteTile>)
  *   null (default — migration window per D-01b), the metasprite is skipped by the sidecar emitter
  *   and GenerateCTask's validation gate (Plan 12.4-05) throws GradleException at codegen time.
  * @param frameCount Optional author-declared animation frame count (from the `frames(N)` DSL call;
- *   Phase 13.3 D-07). When non-null, [ConvertSpritesTask] parses the actual count from
- *   png2asset's output `.c` file and fails the build if the two disagree — catching DSL/asset
- *   desync at build time. When null (default — no `frames(N)` declaration), the validation is
- *   skipped. Semantically distinct from [frames].size (escape-hatch DSL frames) and from
- *   [idxVar]'s `wrapAt` (per RESEARCH recommendation, these are independent concepts).
+ *   Phase 13.3 D-07). When non-null, [ConvertSpritesTask] parses the actual count from png2asset's
+ *   output `.c` file and fails the build if the two disagree — catching DSL/asset desync at build
+ *   time. When null (default — no `frames(N)` declaration), the validation is skipped. Semantically
+ *   distinct from [frames].size (escape-hatch DSL frames) and from [idxVar]'s `wrapAt` (per
+ *   RESEARCH recommendation, these are independent concepts).
  * @param sourceLocation Optional DSL source location for error reporting.
  */
 data class MetaspriteIR(
@@ -96,31 +96,33 @@ data class MetaspriteIR(
     /**
      * Compile-time OBJ palette slot for the `set_sprite_palette` upload (Req 5, 12.9 WR-05).
      *
-     * When non-null, `GBDKPipeline.buildMetaspriteSpritePaletteStatements` uses this value as
-     * the hardware OBJ sub-palette slot index (0–7 on GBC) instead of the metasprite's list
-     * position. This ensures the upload slot matches the draw-path's sub-palette selection even
-     * when the metasprite list order does not match the intended OBJ slot layout.
+     * When non-null, `GBDKPipeline.buildMetaspriteSpritePaletteStatements` uses this value as the
+     * hardware OBJ sub-palette slot index (0–7 on GBC) instead of the metasprite's list position.
+     * This ensures the upload slot matches the draw-path's sub-palette selection even when the
+     * metasprite list order does not match the intended OBJ slot layout.
      *
      * When null (default), the pipeline falls back to the metasprite's list index — preserving
      * byte-identity for all existing shipped games that have not declared an explicit slot.
      *
      * IMPORTANT: This is the COMPILE-TIME upload target, distinct from the RUNTIME variable
-     * `_<id>_subPalette` (UINT8, initialized to 0, changed at runtime via `ms.subPalette set expr`).
-     * Setting [initialSubPaletteSlot] does NOT change the initial value of `_<id>_subPalette`.
+     * `_<id>_subPalette` (UINT8, initialized to 0, changed at runtime via `ms.subPalette set
+     * expr`). Setting [initialSubPaletteSlot] does NOT change the initial value of
+     * `_<id>_subPalette`.
      */
     val initialSubPaletteSlot: Int? = null,
     /**
-     * Scene that owns this metasprite — used for scene-scoped OBJ palette suppression (Req 4, 13.7 WR-05).
+     * Scene that owns this metasprite — used for scene-scoped OBJ palette suppression (Req 4, 13.7
+     * WR-05).
      *
      * When non-null, the scene-scoped predicate in
-     * `GBDKPipeline.buildMetaspriteSpritePaletteStatements` checks whether THIS metasprite's
-     * owning scene declares a `spritePalette{}` (`GBCPalette(type=SPRITE)`). Only if that specific
-     * scene has a SPRITE palette is the asset-driven auto-upload suppressed — a `spritePalette{}`
-     * in any other scene has no effect on this metasprite's upload.
+     * `GBDKPipeline.buildMetaspriteSpritePaletteStatements` checks whether THIS metasprite's owning
+     * scene declares a `spritePalette{}` (`GBCPalette(type=SPRITE)`). Only if that specific scene
+     * has a SPRITE palette is the asset-driven auto-upload suppressed — a `spritePalette{}` in any
+     * other scene has no effect on this metasprite's upload.
      *
      * When null (default), the pipeline falls back to the game-global predicate
-     * (`gameIR.palettes.any { it.type == PaletteType.SPRITE }`) — preserving byte-identity for
-     * all existing shipped games where metasprites carry no scene linkage.
+     * (`gameIR.palettes.any { it.type == PaletteType.SPRITE }`) — preserving byte-identity for all
+     * existing shipped games where metasprites carry no scene linkage.
      */
     val sceneId: String? = null,
 )

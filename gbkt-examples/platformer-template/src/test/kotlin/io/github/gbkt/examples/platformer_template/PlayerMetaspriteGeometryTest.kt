@@ -85,17 +85,16 @@ class PlayerMetaspriteGeometryTest {
     // -------------------------------------------------------------------------
 
     /**
-     * Extracts a C array body by brace-walking from the first line containing
-     * `arrayName[` until the matching closing brace + semicolon at depth zero.
+     * Extracts a C array body by brace-walking from the first line containing `arrayName[` until
+     * the matching closing brace + semicolon at depth zero.
      *
-     * Works for both `const type array[] = { ... };` declarations and
-     * `void functionName(...) { ... }` functions (per CLAUDE.md §"Scope-level
-     * grep gates" approved brace-walk pattern from MetaspriteEmissionTest.kt).
+     * Works for both `const type array[] = { ... };` declarations and `void functionName(...) { ...
+     * }` functions (per CLAUDE.md §"Scope-level grep gates" approved brace-walk pattern from
+     * MetaspriteEmissionTest.kt).
      *
-     * The returned blob includes the declaration/signature line and the closing
-     * brace, so downstream `.contains()` checks operate ONLY on tokens that live
-     * inside the named array — never on tokens from unrelated declarations in the
-     * same C file.
+     * The returned blob includes the declaration/signature line and the closing brace, so
+     * downstream `.contains()` checks operate ONLY on tokens that live inside the named array —
+     * never on tokens from unrelated declarations in the same C file.
      */
     private fun extractArrayBody(cSource: String, arrayName: String): String {
         val lines = cSource.lines()
@@ -132,7 +131,8 @@ class PlayerMetaspriteGeometryTest {
      *
      * If the file is genuinely absent (no GBDK/png2asset on host), the test SKIPS via
      * `Assumptions.assumeTrue` — a genuine missing-prerequisite skip is not a failure. The skip is
-     * NOT used to mask a present-but-wrong asset: when present, the geometry assertions run for real.
+     * NOT used to mask a present-but-wrong asset: when present, the geometry assertions run for
+     * real.
      */
     private fun playerSpriteC(): String {
         val file =
@@ -148,20 +148,23 @@ class PlayerMetaspriteGeometryTest {
     }
 
     /**
-     * Parses all `METASPR_ITEM(dy, dx, tileId, ...)` macro entries from a png2asset metasprite frame
-     * array body and returns them as a list of (dy, dx, tileId) triples. The trailing macro props
-     * (e.g. `S_PAL(0)`) are ignored; the array terminator `METASPR_TERM` does not match and is
-     * naturally excluded.
+     * Parses all `METASPR_ITEM(dy, dx, tileId, ...)` macro entries from a png2asset metasprite
+     * frame array body and returns them as a list of (dy, dx, tileId) triples. The trailing macro
+     * props (e.g. `S_PAL(0)`) are ignored; the array terminator `METASPR_TERM` does not match and
+     * is naturally excluded.
      */
     private fun parseFrameEntries(arrayBody: String): List<Triple<Int, Int, Int>> {
         val entryRegex = Regex("""METASPR_ITEM\(\s*(-?\d+),\s*(-?\d+),\s*(\d+)\s*,""")
-        return entryRegex.findAll(arrayBody).map { match ->
-            Triple(
-                match.groupValues[1].toInt(),
-                match.groupValues[2].toInt(),
-                match.groupValues[3].toInt(),
-            )
-        }.toList()
+        return entryRegex
+            .findAll(arrayBody)
+            .map { match ->
+                Triple(
+                    match.groupValues[1].toInt(),
+                    match.groupValues[2].toInt(),
+                    match.groupValues[3].toInt(),
+                )
+            }
+            .toList()
     }
 
     /** Clusters a sorted list of integers within ±[tolerance], returning cluster centers. */
@@ -170,7 +173,10 @@ class PlayerMetaspriteGeometryTest {
         val clusters = mutableListOf<Int>()
         var currentClusterCenter: Int? = null
         for (x in sorted) {
-            if (currentClusterCenter == null || kotlin.math.abs(x - currentClusterCenter) > tolerance) {
+            if (
+                currentClusterCenter == null ||
+                    kotlin.math.abs(x - currentClusterCenter) > tolerance
+            ) {
                 clusters.add(x)
                 currentClusterCenter = x
             }
@@ -191,18 +197,20 @@ class PlayerMetaspriteGeometryTest {
         EVIDENCE_DIR.mkdirs()
         val cSource = playerSpriteC()
         val arrayBody = extractArrayBody(cSource, "player_metasprite0")
-        File(EVIDENCE_DIR, "player_frame_0_layout.txt").writeText(
-            "=== player_metasprite0[] extracted body (sprites/player.c) ===\n" + arrayBody +
-                "\n=== sprites/player.c (first 200 lines) ===\n" +
-                cSource.lines().take(200).joinToString("\n")
-        )
+        File(EVIDENCE_DIR, "player_frame_0_layout.txt")
+            .writeText(
+                "=== player_metasprite0[] extracted body (sprites/player.c) ===\n" +
+                    arrayBody +
+                    "\n=== sprites/player.c (first 200 lines) ===\n" +
+                    cSource.lines().take(200).joinToString("\n")
+            )
 
         assertTrue(
             arrayBody.isNotEmpty(),
             "player_metasprite_array_exists: player_metasprite0[] not found in sprites/player.c. " +
                 "This indicates the png2asset-native player metasprite was not emitted into the " +
                 "generated sprite C output. sprites/player.c first 200 lines:\n" +
-                cSource.lines().take(200).joinToString("\n")
+                cSource.lines().take(200).joinToString("\n"),
         )
     }
 
@@ -233,7 +241,7 @@ class PlayerMetaspriteGeometryTest {
 
         assertTrue(
             arrayBody.isNotEmpty(),
-            "player_metasprite0[] not found in sprites/player.c — cannot assert geometry"
+            "player_metasprite0[] not found in sprites/player.c — cannot assert geometry",
         )
 
         // Parse {dy, dx, tileId} struct entries from the array body.
@@ -243,11 +251,12 @@ class PlayerMetaspriteGeometryTest {
         assertTrue(
             entries.isNotEmpty(),
             "No {dy, dx, tileId} entries found in sprite_player_frame_0[] body. " +
-                "Array body:\n$arrayBody"
+                "Array body:\n$arrayBody",
         )
 
         // Accumulate dx AND dy values to compute absolute (x, y) positions from anchor (0,0).
-        // The first entry is relative to the anchor; subsequent entries accumulate from the previous.
+        // The first entry is relative to the anchor; subsequent entries accumulate from the
+        // previous.
         var cumulativeX = 0
         var cumulativeY = 0
         val absoluteXPositions = mutableListOf<Int>()
@@ -259,16 +268,19 @@ class PlayerMetaspriteGeometryTest {
             absoluteYPositions.add(cumulativeY)
         }
 
-        File(EVIDENCE_DIR, "player_frame_0_x_positions.txt").writeText(
-            "Parsed {dy, dx, tileId} entries:\n" +
-                entries.mapIndexed { i, (dy, dx, t) ->
-                    "  Entry $i: dy=$dy, dx=$dx, tileId=$t"
-                }.joinToString("\n") +
-                "\n\nAbsolute x positions (cumulative dx from anchor 0):\n" +
-                absoluteXPositions.mapIndexed { i, x -> "  Entry $i: x=$x" }.joinToString("\n") +
-                "\n\nAbsolute y positions (cumulative dy from anchor 0):\n" +
-                absoluteYPositions.mapIndexed { i, y -> "  Entry $i: y=$y" }.joinToString("\n")
-        )
+        File(EVIDENCE_DIR, "player_frame_0_x_positions.txt")
+            .writeText(
+                "Parsed {dy, dx, tileId} entries:\n" +
+                    entries
+                        .mapIndexed { i, (dy, dx, t) -> "  Entry $i: dy=$dy, dx=$dx, tileId=$t" }
+                        .joinToString("\n") +
+                    "\n\nAbsolute x positions (cumulative dx from anchor 0):\n" +
+                    absoluteXPositions
+                        .mapIndexed { i, x -> "  Entry $i: x=$x" }
+                        .joinToString("\n") +
+                    "\n\nAbsolute y positions (cumulative dy from anchor 0):\n" +
+                    absoluteYPositions.mapIndexed { i, y -> "  Entry $i: y=$y" }.joinToString("\n")
+            )
 
         val xClusters = clusterPositions(absoluteXPositions)
         val yClusters = clusterPositions(absoluteYPositions)
@@ -279,7 +291,7 @@ class PlayerMetaspriteGeometryTest {
             entries.size,
             "player_frame_0 geometry: expected exactly 6 tile entries (3col × 2row = 6 tiles). " +
                 "Actual entry count: ${entries.size}. " +
-                "Array body:\n$arrayBody"
+                "Array body:\n$arrayBody",
         )
 
         // Assert 3 distinct x-column clusters (E-03 fix: post-swap horizontal grid).
@@ -291,7 +303,7 @@ class PlayerMetaspriteGeometryTest {
                 "Pre-fix bug produced 2 x-clusters (vertical column layout — the duck blob). " +
                 "Actual absolute x positions: $absoluteXPositions, " +
                 "detected x-clusters: $xClusters. " +
-                "Array body:\n$arrayBody"
+                "Array body:\n$arrayBody",
         )
 
         // Assert 2 distinct y-row clusters (8x16 pair rows = 16px apart).
@@ -302,36 +314,36 @@ class PlayerMetaspriteGeometryTest {
                 "(SPR8x16 pair rows 16px apart). " +
                 "Actual absolute y positions: $absoluteYPositions, " +
                 "detected y-clusters: $yClusters. " +
-                "Array body:\n$arrayBody"
+                "Array body:\n$arrayBody",
         )
 
         // Assert the three expected x-column centers (±4px tolerance).
         assertTrue(
             kotlin.math.abs(xClusters[0] - (-12)) <= 4,
             "player_frame_0 geometry: leftmost x-column expected near -12, got ${xClusters[0]} " +
-                "(x positions: $absoluteXPositions)"
+                "(x positions: $absoluteXPositions)",
         )
         assertTrue(
             kotlin.math.abs(xClusters[1] - (-4)) <= 4,
             "player_frame_0 geometry: middle x-column expected near -4, got ${xClusters[1]} " +
-                "(x positions: $absoluteXPositions)"
+                "(x positions: $absoluteXPositions)",
         )
         assertTrue(
             kotlin.math.abs(xClusters[2] - 4) <= 4,
             "player_frame_0 geometry: rightmost x-column expected near 4, got ${xClusters[2]} " +
-                "(x positions: $absoluteXPositions)"
+                "(x positions: $absoluteXPositions)",
         )
 
         // Assert the two expected y-row centers (±4px tolerance).
         assertTrue(
             kotlin.math.abs(yClusters[0] - (-6)) <= 4,
             "player_frame_0 geometry: top y-row expected near -6, got ${yClusters[0]} " +
-                "(y positions: $absoluteYPositions)"
+                "(y positions: $absoluteYPositions)",
         )
         assertTrue(
             kotlin.math.abs(yClusters[1] - 10) <= 4,
             "player_frame_0 geometry: bottom y-row expected near 10, got ${yClusters[1]} " +
-                "(y positions: $absoluteYPositions)"
+                "(y positions: $absoluteYPositions)",
         )
     }
 }

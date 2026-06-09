@@ -154,14 +154,15 @@ class UIBuilderTest {
                     val elder = dialog("elder") {}
                     val questActiveScene = scene("quest_active") { enter {} }
                     val villageScene = scene("village") { enter {} }
-                    val questScene = scene("quest") {
-                        enter {
-                            elder.choice {
-                                option("Accept") { navigate(questActiveScene) }
-                                option("Decline") { navigate(villageScene) }
+                    val questScene =
+                        scene("quest") {
+                            enter {
+                                elder.choice {
+                                    option("Accept") { navigate(questActiveScene) }
+                                    option("Decline") { navigate(villageScene) }
+                                }
                             }
                         }
-                    }
                     start = questScene
                 }
                 .build()
@@ -259,9 +260,10 @@ class UIBuilderTest {
         val ir =
             game("test") {
                     val pauseMenu = menu("pause") {}
-                    val gameplayScene = scene("gameplay") {
-                        frame { whenever(buttons.start.pressed) { pauseMenu.show() } }
-                    }
+                    val gameplayScene =
+                        scene("gameplay") {
+                            frame { whenever(buttons.start.pressed) { pauseMenu.show() } }
+                        }
                     start = gameplayScene
                 }
                 .build()

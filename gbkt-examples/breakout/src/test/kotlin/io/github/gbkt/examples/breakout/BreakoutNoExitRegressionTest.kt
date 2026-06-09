@@ -113,18 +113,16 @@ class BreakoutNoExitRegressionTest {
         val gameoverExitBody = extractFunctionBody(bank1C, "gameover_exit")
         val winExitBody = extractFunctionBody(bank1C, "win_exit")
 
-        File(EVIDENCE_DIR, "breakout-no-exit-title.txt").writeText(
-            "title_exit body (must be empty — ROM_ONLY no-growth gate):\n$titleExitBody"
-        )
-        File(EVIDENCE_DIR, "breakout-no-exit-game.txt").writeText(
-            "game_exit body (must be empty — ROM_ONLY no-growth gate):\n$gameExitBody"
-        )
-        File(EVIDENCE_DIR, "breakout-no-exit-gameover.txt").writeText(
-            "gameover_exit body (must be empty — ROM_ONLY no-growth gate):\n$gameoverExitBody"
-        )
-        File(EVIDENCE_DIR, "breakout-no-exit-win.txt").writeText(
-            "win_exit body (must be empty — ROM_ONLY no-growth gate):\n$winExitBody"
-        )
+        File(EVIDENCE_DIR, "breakout-no-exit-title.txt")
+            .writeText("title_exit body (must be empty — ROM_ONLY no-growth gate):\n$titleExitBody")
+        File(EVIDENCE_DIR, "breakout-no-exit-game.txt")
+            .writeText("game_exit body (must be empty — ROM_ONLY no-growth gate):\n$gameExitBody")
+        File(EVIDENCE_DIR, "breakout-no-exit-gameover.txt")
+            .writeText(
+                "gameover_exit body (must be empty — ROM_ONLY no-growth gate):\n$gameoverExitBody"
+            )
+        File(EVIDENCE_DIR, "breakout-no-exit-win.txt")
+            .writeText("win_exit body (must be empty — ROM_ONLY no-growth gate):\n$winExitBody")
 
         // Assert: each body must be empty (no *_exit function exists in bank1.c)
         // assertFalse(body.isNotEmpty()) ≡ assertTrue(body.isEmpty()) — no *_exit emitted.

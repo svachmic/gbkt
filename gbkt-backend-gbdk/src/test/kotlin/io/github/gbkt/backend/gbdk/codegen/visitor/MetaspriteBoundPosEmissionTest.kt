@@ -25,10 +25,9 @@ import kotlin.test.assertTrue
  *
  * **Test 1 (BOUND):** Asserts that when `MetaspriteIR.posXVarName = "playerX"` (BARE Kotlin
  * property name, no leading underscore) and the test caller mirrors the production
- * `ScriptOpVisitor.visitMoveMetasprite:1917-1923` prefix transformation
- * (`posXVar = ir.posXVarName?.let { "_$it" } ?: "_posX"`), the visitor emits
- * `(_playerX >> 4)` / `(_playerY >> 4)` in the `move_metasprite_ex` arguments — NOT the
- * magic `_posX` / `_posY` fallback.
+ * `ScriptOpVisitor.visitMoveMetasprite:1917-1923` prefix transformation (`posXVar =
+ * ir.posXVarName?.let { "_$it" } ?: "_posX"`), the visitor emits `(_playerX >> 4)` / `(_playerY >>
+ * 4)` in the `move_metasprite_ex` arguments — NOT the magic `_posX` / `_posY` fallback.
  *
  * **Test 2 (UNBOUND):** Asserts that when `MetaspriteIR.posXVarName = null`, the same mirrored
  * Elvis fallback resolves to `"_posX"` / `"_posY"` and the visitor emits `(_posX >> 4)` /
@@ -40,16 +39,16 @@ import kotlin.test.assertTrue
  * **Why mirror the prefix transformation in test setup rather than passing `"_playerX"` directly:**
  * `MetaspriteIR.posXVarName` stores the BARE property name (no underscore). The `_` prefix is
  * applied at the call boundary by `ScriptOpVisitor.visitMoveMetasprite` (lines 1917-1923) before
- * delegating to `MetaspriteVisitor.generateMetaspriteFrameSwitch`. Hardcoding `posXVar = "_playerX"`
- * in the test would not structurally guard a regression in the IR-field underscore-handling
- * convention. The test setup MUST do
- * `val posXVar = boundMetasprite.posXVarName?.let { "_$it" } ?: "_posX"` (line-for-line mirror of
- * the production code) so that the prefix-transformation contract itself is locked. This closes
- * checker B1 (round 1).
+ * delegating to `MetaspriteVisitor.generateMetaspriteFrameSwitch`. Hardcoding `posXVar =
+ * "_playerX"` in the test would not structurally guard a regression in the IR-field
+ * underscore-handling convention. The test setup MUST do `val posXVar =
+ * boundMetasprite.posXVarName?.let { "_$it" } ?: "_posX"` (line-for-line mirror of the production
+ * code) so that the prefix-transformation contract itself is locked. This closes checker B1 (round
+ * 1).
  *
- * **Why a direct visitor call rather than a full pipeline test:** Plan 12.1-05 already covers
- * the integration-side closure via a generated-C grep. This test scopes to the visitor unit-level
- * for fast feedback; the structural analog is `MetaspriteVisitorFrameSwitchTest`.
+ * **Why a direct visitor call rather than a full pipeline test:** Plan 12.1-05 already covers the
+ * integration-side closure via a generated-C grep. This test scopes to the visitor unit-level for
+ * fast feedback; the structural analog is `MetaspriteVisitorFrameSwitchTest`.
  */
 class MetaspriteBoundPosEmissionTest {
 

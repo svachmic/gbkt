@@ -64,9 +64,12 @@ class TilemapCollisionPathCEmissionTest {
                     }
                     val z1 by zone { tileset(asset("res/graphics/level1.png")) }
                     // No platformerPhysicsOverride — Path B absent.
-                    val gameplayScene = scene("gameplay") {
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
-                    }
+                    val gameplayScene =
+                        scene("gameplay") {
+                            frame {
+                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                            }
+                        }
                     start = gameplayScene
                 }
                 .build()
@@ -96,9 +99,12 @@ class TilemapCollisionPathCEmissionTest {
             game("path_a_only") {
                     platformerPhysics { solidThreshold(17) }
                     val z1 by zone { tileset(asset("res/graphics/level1.png")) }
-                    val gameplayScene = scene("gameplay") {
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
-                    }
+                    val gameplayScene =
+                        scene("gameplay") {
+                            frame {
+                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                            }
+                        }
                     start = gameplayScene
                 }
                 .build()
@@ -129,9 +135,12 @@ class TilemapCollisionPathCEmissionTest {
                         solidThreshold(17)
                     }
                     val z1 by zone { tileset(asset("res/graphics/level1.png")) }
-                    val gameplayScene = scene("gameplay") {
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
-                    }
+                    val gameplayScene =
+                        scene("gameplay") {
+                            frame {
+                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                            }
+                        }
                     start = gameplayScene
                 }
                 .build()
@@ -154,9 +163,12 @@ class TilemapCollisionPathCEmissionTest {
         val gameIR =
             game("no_tilemap_collision") {
                     // Intentionally NO platformerPhysics, NO tilemapCollision, NO zones.
-                    val gameplayScene = scene("gameplay") {
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
-                    }
+                    val gameplayScene =
+                        scene("gameplay") {
+                            frame {
+                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                            }
+                        }
                     start = gameplayScene
                 }
                 .build()

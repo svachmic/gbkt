@@ -70,9 +70,8 @@ class PlatformerCameraCallSiteEmissionTest {
          * Evidence is written under the **active checkout root** (worktree-safe). Same shape as
          * `JumpHoldEmissionTest.EVIDENCE_DIR` / `HorizontalScrollEmissionTest.EVIDENCE_DIR` — see
          * those comments for the worktree path-safety rationale (#3099). For
-         * `:gbkt-genre-platformer:test`, `user.dir` resolves to `<repo>/gbkt-genre-platformer`;
-         * we ascend one level to the worktree root, then descend into the phase evidence
-         * directory.
+         * `:gbkt-genre-platformer:test`, `user.dir` resolves to `<repo>/gbkt-genre-platformer`; we
+         * ascend one level to the worktree root, then descend into the phase evidence directory.
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -94,10 +93,10 @@ class PlatformerCameraCallSiteEmissionTest {
      * depth zero.
      *
      * Verbatim copy of the helper in `JumpHoldEmissionTest.kt` (Plan 12-14) and
-     * `HorizontalScrollEmissionTest.kt` (Plan 12-12). The returned blob includes the signature
-     * line and the closing brace, so downstream `.contains()` checks operate ONLY on tokens that
-     * live inside the named function — never on tokens from unrelated functions in the same file
-     * (per CLAUDE.md §"Scope-level grep gates").
+     * `HorizontalScrollEmissionTest.kt` (Plan 12-12). The returned blob includes the signature line
+     * and the closing brace, so downstream `.contains()` checks operate ONLY on tokens that live
+     * inside the named function — never on tokens from unrelated functions in the same file (per
+     * CLAUDE.md §"Scope-level grep gates").
      *
      * Matching is anchored to the START of a line (the prefix must appear at column 0) so
      * occurrences inside string literals, comments, or argument lists of a different function
@@ -127,32 +126,31 @@ class PlatformerCameraCallSiteEmissionTest {
 
     /**
      * Build a minimal GameIR carrying:
-     *  - a `platformer_physics` GenericSystem (its `physicsConfig.solidThreshold` is non-null →
-     *    `gameUsesTilemapCollision()` returns true → visitCamera gate condition 1 fires AND
-     *    visitPhysics splice fires)
-     *  - a `platformer_camera` GenericSystem (HORIZONTAL + SMOOTH_FOLLOW → visitCamera gate
-     *    conditions 2 and 3 fire)
-     *  - a scene with `id = "gameplay"` carrying a non-empty `frameOps` (one sentinel `RawOp`)
-     *    so `SceneVisitor.visit` emits `void gameplay_frame(void) BANKED { ... }` into
-     *    `bank1.c`. Without a non-empty frameOps the function would NOT be generated at all
-     *    (`SceneVisitor.visit` gates emission on `scene.frameOps.isNotEmpty()`) — and the
-     *    `addGenreFrameOps` splice has nothing to attach to.
-     *  - `startScene = "gameplay"` so the gameplay-scene-id discovery fallback chain
-     *    (physicsActorIds → findFirstNavigateTarget → startScene → first scene) lands on
-     *    "gameplay" via the third-tier fallback. `actorIds` on the scene is intentionally
-     *    empty to mirror the typical IR shape (DSL does not populate `actorIds` directly).
+     * - a `platformer_physics` GenericSystem (its `physicsConfig.solidThreshold` is non-null →
+     *   `gameUsesTilemapCollision()` returns true → visitCamera gate condition 1 fires AND
+     *   visitPhysics splice fires)
+     * - a `platformer_camera` GenericSystem (HORIZONTAL + SMOOTH_FOLLOW → visitCamera gate
+     *   conditions 2 and 3 fire)
+     * - a scene with `id = "gameplay"` carrying a non-empty `frameOps` (one sentinel `RawOp`) so
+     *   `SceneVisitor.visit` emits `void gameplay_frame(void) BANKED { ... }` into `bank1.c`.
+     *   Without a non-empty frameOps the function would NOT be generated at all
+     *   (`SceneVisitor.visit` gates emission on `scene.frameOps.isNotEmpty()`) — and the
+     *   `addGenreFrameOps` splice has nothing to attach to.
+     * - `startScene = "gameplay"` so the gameplay-scene-id discovery fallback chain
+     *   (physicsActorIds → findFirstNavigateTarget → startScene → first scene) lands on "gameplay"
+     *   via the third-tier fallback. `actorIds` on the scene is intentionally empty to mirror the
+     *   typical IR shape (DSL does not populate `actorIds` directly).
      *
-     * `physicsSystem` is declared BEFORE `cameraSystem` in `gameIR.systems` so the prepend
-     * order in `addGenreFrameOps` produces:
+     * `physicsSystem` is declared BEFORE `cameraSystem` in `gameIR.systems` so the prepend order in
+     * `addGenreFrameOps` produces:
      *
      *     [physics_update(); camera_update();] + originalBody
      *
      * — guaranteeing `cameraIdx > physicsIdx` (D-05 emission order: physics before camera).
      *
-     * When [solidThreshold] is null, `gameUsesTilemapCollision()` returns false → the
-     * visitCamera gate's FIRST condition fails → `frameOps = emptyMap()` → no
-     * `platformer_camera_update();` line is spliced into `gameplay_frame`. This is the
-     * negative-case fixture.
+     * When [solidThreshold] is null, `gameUsesTilemapCollision()` returns false → the visitCamera
+     * gate's FIRST condition fails → `frameOps = emptyMap()` → no `platformer_camera_update();`
+     * line is spliced into `gameplay_frame`. This is the negative-case fixture.
      */
     private fun buildPlatformerGameIR(solidThreshold: Int?): GameIR {
         val physicsConfig =
@@ -183,10 +181,7 @@ class PlatformerCameraCallSiteEmissionTest {
         // (`platformer_camera_update();` or `platformer_physics_update();`), so brace-walk
         // assertions are not perturbed by the sentinel.
         val gameplay =
-            SceneIR(
-                id = "gameplay",
-                frameOps = listOf(RawOp("// gameplay-frame-anchor")),
-            )
+            SceneIR(id = "gameplay", frameOps = listOf(RawOp("// gameplay-frame-anchor")))
         return GameIR(
             name = "TestCameraCallSite",
             config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY, romBanks = 2),

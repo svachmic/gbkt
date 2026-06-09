@@ -36,7 +36,8 @@ import kotlin.test.assertTrue
 //       if (_camera_x < _old_camera_x) {
 //           _bkg_set_level_submap_banked(_map_pos_x + 1u, 0u, 1u, DEVICE_SCREEN_HEIGHT);
 //       } else if ((_current_level_width_in_tiles - DEVICE_SCREEN_WIDTH) > _map_pos_x) {
-//           _bkg_set_level_submap_banked(_map_pos_x + DEVICE_SCREEN_WIDTH, 0u, 1u, DEVICE_SCREEN_HEIGHT);
+//           _bkg_set_level_submap_banked(_map_pos_x + DEVICE_SCREEN_WIDTH, 0u, 1u,
+// DEVICE_SCREEN_HEIGHT);
 //       }
 //       _old_map_pos_x = _map_pos_x;
 //   }
@@ -75,9 +76,9 @@ class HorizontalScrollEmissionTest {
         /**
          * Evidence is written under the **active checkout root** (worktree-safe). Same shape as
          * `TilemapCollisionEmissionTest.EVIDENCE_DIR` — see the comment there for the worktree
-         * path-safety rationale (#3099). For `:gbkt-genre-platformer:test`, `user.dir` resolves
-         * to `<repo>/gbkt-genre-platformer`; we ascend one level to the worktree root, then
-         * descend into the phase evidence directory.
+         * path-safety rationale (#3099). For `:gbkt-genre-platformer:test`, `user.dir` resolves to
+         * `<repo>/gbkt-genre-platformer`; we ascend one level to the worktree root, then descend
+         * into the phase evidence directory.
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -99,16 +100,15 @@ class HorizontalScrollEmissionTest {
      * brace at depth zero.
      *
      * Mirror of the helper in `TilemapCollisionEmissionTest.kt` (Plan 12-09). The returned blob
-     * includes the signature line and the closing brace, so downstream `.contains()` checks
-     * operate ONLY on tokens that live inside the named function — never on tokens from
-     * unrelated functions in the same file (per CLAUDE.md §"Scope-level grep gates").
+     * includes the signature line and the closing brace, so downstream `.contains()` checks operate
+     * ONLY on tokens that live inside the named function — never on tokens from unrelated functions
+     * in the same file (per CLAUDE.md §"Scope-level grep gates").
      *
      * Matching is anchored to the START of a line (the prefix must appear at column 0) so
      * occurrences inside string literals, comments, or argument lists of a different function
      * cannot false-match. This is the literal counterpart of awk's `/^prefix/` anchor.
      *
      * Kotlin-side mirror of VALIDATION.md row 3:
-     *
      * ```
      * awk '/^void platformer_camera_update/{p=1;d=0} p{d+=gsub(/{/,"");
      *      d-=gsub(/}/,""); if(d<0)exit} p'
@@ -142,13 +142,13 @@ class HorizontalScrollEmissionTest {
      * `platformer_camera` GenericSystem (whose `cameraConfig` controls the column-scroll
      * triple-condition gate via `scrollDirections` + `mode`).
      *
-     * When [solidThreshold] is non-null, `gameUsesTilemapCollision()` returns true → the
-     * camera fork's first gate condition fires. Combined with [scrollDirections] == HORIZONTAL
-     * and [mode] == SMOOTH_FOLLOW (the default cameraConfig used here), all three gate
-     * conditions match and the column-scroll branch emits inside `platformer_camera_update`.
+     * When [solidThreshold] is non-null, `gameUsesTilemapCollision()` returns true → the camera
+     * fork's first gate condition fires. Combined with [scrollDirections] == HORIZONTAL and [mode]
+     * == SMOOTH_FOLLOW (the default cameraConfig used here), all three gate conditions match and
+     * the column-scroll branch emits inside `platformer_camera_update`.
      *
-     * When [solidThreshold] is null, the gate stays OFF and the abstract smooth-follow camera
-     * body is emitted instead (the negative case).
+     * When [solidThreshold] is null, the gate stays OFF and the abstract smooth-follow camera body
+     * is emitted instead (the negative case).
      */
     private fun buildTilemapCameraGameIR(
         solidThreshold: Int?,
@@ -163,11 +163,7 @@ class HorizontalScrollEmissionTest {
                 terminalVelocity = 12,
                 solidThreshold = solidThreshold,
             )
-        val cameraConfig =
-            PlatformerCameraConfig(
-                mode = mode,
-                scrollDirections = scrollDirections,
-            )
+        val cameraConfig = PlatformerCameraConfig(mode = mode, scrollDirections = scrollDirections)
         val physicsSystem =
             GenericSystem(
                 id = "$id-physics",

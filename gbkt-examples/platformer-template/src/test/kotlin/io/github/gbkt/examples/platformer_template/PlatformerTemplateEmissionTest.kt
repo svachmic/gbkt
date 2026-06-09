@@ -6,7 +6,6 @@
  */
 package io.github.gbkt.examples.platformer_template
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import java.io.File
 import kotlin.test.*
 

@@ -56,24 +56,22 @@ class MetaspritePathAEmissionTest {
 
     /** Asset-driven MetaspriteIR (Path A): spritePath set, frames empty. */
     private fun assetDrivenMetasprite(id: String, spritePath: String): MetaspriteIR =
-        MetaspriteIR(
-            id = id,
-            frames = emptyList(),
-            spritePath = spritePath,
-        )
+        MetaspriteIR(id = id, frames = emptyList(), spritePath = spritePath)
 
     /** Procedural MetaspriteIR (escape-hatch D-04): spritePath null, frames present. */
     private fun proceduralMetasprite(id: String): MetaspriteIR =
         MetaspriteIR(
             id = id,
-            frames = listOf(
-                MetaspriteFrame(
-                    tiles = listOf(
-                        MetaspriteTile(relX = 0, relY = 0, tileId = 0),
-                        MetaspriteTile(relX = 8, relY = 0, tileId = 1),
+            frames =
+                listOf(
+                    MetaspriteFrame(
+                        tiles =
+                            listOf(
+                                MetaspriteTile(relX = 0, relY = 0, tileId = 0),
+                                MetaspriteTile(relX = 8, relY = 0, tileId = 1),
+                            )
                     )
-                )
-            ),
+                ),
             spritePath = null,
         )
 
@@ -140,8 +138,11 @@ class MetaspritePathAEmissionTest {
                 "in main.c — these gbkt-owned descriptors are replaced by png2asset-native arrays. " +
                 "Current emission still includes them (Path A branch not yet implemented). " +
                 "Matching lines:\n" +
-                mainC.lines().filter { Regex("sprite_elephant_frame_\\d").containsMatchIn(it) }
-                    .take(5).joinToString("\n"),
+                mainC
+                    .lines()
+                    .filter { Regex("sprite_elephant_frame_\\d").containsMatchIn(it) }
+                    .take(5)
+                    .joinToString("\n"),
         )
     }
 

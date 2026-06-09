@@ -20,7 +20,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import org.junit.jupiter.api.Assumptions
-import org.junit.jupiter.api.Disabled
 
 /**
  * UAT runtime tests for the PlatformerTemplate port (Phase 12 Wave 0 scaffold).
@@ -101,8 +100,8 @@ class PlatformerTemplateUatTest {
      * the PNG + JSON sidecar to the anchor target path. Settling preserves the currently-held
      * button (Pitfall 1) so a mid-hold walk pose latches the real frame, not an idle one.
      *
-     * anchor4 is the single UAT consumer of the settle primitive this phase; the other anchors
-     * stay on the immediate [captureAndRename] path (D-06 blast-radius containment).
+     * anchor4 is the single UAT consumer of the settle primitive this phase; the other anchors stay
+     * on the immediate [captureAndRename] path (D-06 blast-radius containment).
      */
     private fun captureSettledAndRename(
         agent: StepAgent,
@@ -142,8 +141,8 @@ class PlatformerTemplateUatTest {
      * Per RESEARCH §"Alternative (avoids new StepAgent method)" + Pitfall 4: `OamSpriteReader`
      * needs the full `MemoryAccess` interface, but `StepAgent.readMemory` returns only an `Int`.
      * This inline adapter forwards reads/writes to the agent's live session memory — never a
-     * `mockMemory()` (which would report all-zero OAM). It keeps `StepAgent`'s public API
-     * unchanged (no speculative `getMemory()` wrapper).
+     * `mockMemory()` (which would report all-zero OAM). It keeps `StepAgent`'s public API unchanged
+     * (no speculative `getMemory()` wrapper).
      */
     private fun liveMemory(agent: StepAgent): MemoryAccess =
         object : MemoryAccess {
@@ -160,10 +159,10 @@ class PlatformerTemplateUatTest {
      * hardcoded rect — feedback_no_magic_strings).
      *
      * Each hardware sprite is 8 px wide; height is `OamSpriteReader.spriteHeight` (8 or 16 from
-     * LCDC bit 2 — platformer-template runs SPRITES_8×16 → 16). The box spans
-     * `(minScreenX, minScreenY)` to `(maxScreenX + 8, maxScreenY + spriteHeight)` across all
-     * visible entries, then is clamped to the 160×144 frame (Pitfall 5) so a partially off-screen
-     * sprite never produces negative or out-of-bounds crop coordinates.
+     * LCDC bit 2 — platformer-template runs SPRITES_8×16 → 16). The box spans `(minScreenX,
+     * minScreenY)` to `(maxScreenX + 8, maxScreenY + spriteHeight)` across all visible entries,
+     * then is clamped to the 160×144 frame (Pitfall 5) so a partially off-screen sprite never
+     * produces negative or out-of-bounds crop coordinates.
      *
      * Fails with a clear message if no sprites are visible — the duck MUST be on screen at the
      * capture point for the region diff to mean anything.
@@ -762,11 +761,13 @@ class PlatformerTemplateUatTest {
             // full-frame ratio the old gate measured. We lock:
             //   HIGH_MIN_PERCENT = 18.0  (≈10pp below the measured 28.26% for repeatability margin
             //                             against minor render/anti-alias jitter across runs)
-            //   LOW_MAX_PERCENT  =  5.0  (a few pp above the guaranteed 0.00% floor — walk0-vs-walk0
+            //   LOW_MAX_PERCENT  =  5.0  (a few pp above the guaranteed 0.00% floor —
+            // walk0-vs-walk0
             //                             is the SAME file so it is mathematically 0%, but a small
             //                             ceiling keeps the contrast assertion honest)
             // The 18%/5% gap is the integrity contrast (D-09): the gate FAILS if the in-region
-            // facing-flip diff ever collapses toward the LOW floor (i.e. if the hflip were removed),
+            // facing-flip diff ever collapses toward the LOW floor (i.e. if the hflip were
+            // removed),
             // and a no-op region diff could not satisfy HIGH ≥ 18% AND LOW ≤ 5% simultaneously.
             val highMinPercent = 18.0
             val lowMaxPercent = 5.0
@@ -932,10 +933,7 @@ class PlatformerTemplateUatTest {
                             anchor5Dir,
                             "00-last-gameplay.png",
                         )
-                    assertScreenshotIsNonUniform(
-                        lastGameplayScreenshot,
-                        "anchor5-last-gameplay",
-                    )
+                    assertScreenshotIsNonUniform(lastGameplayScreenshot, "anchor5-last-gameplay")
                     break
                 }
                 if (obs.scene != null) lastSceneBeforeFlip = obs.scene!!

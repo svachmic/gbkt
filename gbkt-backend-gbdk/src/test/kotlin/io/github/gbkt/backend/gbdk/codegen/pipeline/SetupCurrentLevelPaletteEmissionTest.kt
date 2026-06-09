@@ -86,22 +86,25 @@ private fun buildTilemapCollisionGame(target: GbcTarget = GbcTarget.GBC_COMPATIB
     GameIR(
         name = "SetupCurrentLevelPaletteTest",
         config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY, romBanks = 4, gbcTarget = target),
-        scenes = listOf(
-            SceneIR(id = "title"),
-            SceneIR(id = "gameplay"),
-        ),
-        zones = listOf(
-            ZoneIR(
-                id = "world1Area1Zone",
-                name = "World 1 Area 1",
-                tilesetPath = "tiles/world1.png", // NON-NULL → mirrors real gameplay zone (Pitfall 10)
-                mapWidth = 60,
-                mapHeight = 18,
-            )
-        ),
-        systems = listOf(
-            GenericSystem(id = "tilemapCollision", config = mapOf("type" to "tilemap_collision")),
-        ),
+        scenes = listOf(SceneIR(id = "title"), SceneIR(id = "gameplay")),
+        zones =
+            listOf(
+                ZoneIR(
+                    id = "world1Area1Zone",
+                    name = "World 1 Area 1",
+                    tilesetPath =
+                        "tiles/world1.png", // NON-NULL → mirrors real gameplay zone (Pitfall 10)
+                    mapWidth = 60,
+                    mapHeight = 18,
+                )
+            ),
+        systems =
+            listOf(
+                GenericSystem(
+                    id = "tilemapCollision",
+                    config = mapOf("type" to "tilemap_collision"),
+                )
+            ),
         startScene = "title",
     )
 
@@ -126,8 +129,9 @@ class SetupCurrentLevelPaletteEmissionTest {
         val allFiles = pipeline.generate(gameIR).files
         val mainC = allFiles["main.c"] ?: error("main.c not generated. Files: ${allFiles.keys}")
 
-        val body = extractSetupCurrentLevelBody(mainC, "void setup_current_level(void)")
-            ?: error("Could not extract setup_current_level() body from main.c")
+        val body =
+            extractSetupCurrentLevelBody(mainC, "void setup_current_level(void)")
+                ?: error("Could not extract setup_current_level() body from main.c")
 
         // Positive: per-zone set_bkg_palette with the W4 PALETTE_COUNT macro + palettes extern.
         assertTrue(
@@ -136,7 +140,7 @@ class SetupCurrentLevelPaletteEmissionTest {
                     "_zone_world1Area1Zone_tileset_palettes)"
             ),
             "setup_current_level body must contain per-zone set_bkg_palette with the " +
-                "_zone_<id>_tileset_PALETTE_COUNT macro (RC-1 fix). body:\n$body"
+                "_zone_<id>_tileset_PALETTE_COUNT macro (RC-1 fix). body:\n$body",
         )
 
         // Ordering: set_bkg_palette must appear AFTER this zone's set_bkg_data (mirrors the
@@ -146,7 +150,7 @@ class SetupCurrentLevelPaletteEmissionTest {
         assertTrue(
             dataIdx >= 0 && palIdx > dataIdx,
             "set_bkg_palette must appear AFTER set_bkg_data in the zone case body (RC-1). " +
-                "dataIdx=$dataIdx palIdx=$palIdx. body:\n$body"
+                "dataIdx=$dataIdx palIdx=$palIdx. body:\n$body",
         )
     }
 }

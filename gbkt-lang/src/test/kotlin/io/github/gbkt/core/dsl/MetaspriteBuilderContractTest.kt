@@ -52,7 +52,7 @@ class MetaspriteBuilderContractTest {
         builder.sprite(asset("sprites/elephant.png"))
         // No frame{} block — asset-driven path; png2asset provides the frames
 
-        val ir = builder.build()  // Must not throw after Plan 13.3-06
+        val ir = builder.build() // Must not throw after Plan 13.3-06
 
         assertEquals(
             "sprites/elephant.png",
@@ -86,9 +86,12 @@ class MetaspriteBuilderContractTest {
         builder.sprite(asset("sprites/elephant.png"))
         builder.frame { tile(0, 0, 0) }
 
-        val ex = assertFails("D-08: build() must throw when both sprite(asset) and frame{} are present") {
-            builder.build()
-        }
+        val ex =
+            assertFails(
+                "D-08: build() must throw when both sprite(asset) and frame{} are present"
+            ) {
+                builder.build()
+            }
 
         assertTrue(
             ex.message?.contains("elephant") == true,
@@ -117,9 +120,12 @@ class MetaspriteBuilderContractTest {
     fun `metasprite with neither sprite nor frame throws D-08 contract violation`() {
         val builder = MetaspriteBuilder("hero")
 
-        val ex = assertFails("D-08: build() must throw when neither sprite(asset) nor frame{} is present") {
-            builder.build()
-        }
+        val ex =
+            assertFails(
+                "D-08: build() must throw when neither sprite(asset) nor frame{} is present"
+            ) {
+                builder.build()
+            }
 
         assertTrue(
             ex.message?.contains("hero") == true,
@@ -140,10 +146,13 @@ class MetaspriteBuilderContractTest {
     @Test
     fun `procedural metasprite with frame only and no sprite builds successfully`() {
         val builder = MetaspriteBuilder("bat")
-        builder.frame { tile(0, 0, 0); tile(8, 0, 1) }
+        builder.frame {
+            tile(0, 0, 0)
+            tile(8, 0, 1)
+        }
         // No sprite() call — escape-hatch path
 
-        val ir = builder.build()  // Must not throw
+        val ir = builder.build() // Must not throw
 
         assertNull(
             ir.spritePath,

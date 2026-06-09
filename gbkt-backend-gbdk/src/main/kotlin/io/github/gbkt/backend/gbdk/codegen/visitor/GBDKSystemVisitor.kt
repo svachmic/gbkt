@@ -1963,11 +1963,13 @@ class GBDKSystemVisitor(
                 if (zones.isNotEmpty()) {
                     val tileLoadCases = zones.mapIndexed { idx, zone ->
                         val zs = zone.id.replace('-', '_').replace(' ', '_')
-                        // REQ-14: mapWidth is nullable (auto sentinel); fall back to 20 (the standard
+                        // REQ-14: mapWidth is nullable (auto sentinel); fall back to 20 (the
+                        // standard
                         // 20×18 GB screen width) for tileData-size calculation on legacy zones.
                         val effectiveMapWidth = zone.mapWidth ?: 20
                         val tileRows =
-                            if (zone.tileData.isEmpty()) 128 else zone.tileData.size / effectiveMapWidth
+                            if (zone.tileData.isEmpty()) 128
+                            else zone.tileData.size / effectiveMapWidth
                         val bankNum = zoneBankAllocation[zone.id] ?: 0
                         val caseBody =
                             buildList<CStatement> {
@@ -4189,8 +4191,8 @@ class GBDKSystemVisitor(
         /**
          * Build global variable declarations for the pathfinding data structures.
          *
-         * Called by [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline] to add
-         * pathfinding globals to the main.c variable declarations section.
+         * Called by [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline] to add pathfinding
+         * globals to the main.c variable declarations section.
          *
          * Generated globals:
          * - `_pf_open[maxOpenNodes*4]` — UINT8 open list (x, y, g_cost, f_cost per node)

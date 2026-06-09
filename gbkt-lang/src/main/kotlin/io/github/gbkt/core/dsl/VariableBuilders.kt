@@ -87,7 +87,11 @@ object GameBuilderContext {
  * Note: Cannot implement [Expr] directly because [Expr] is a sealed interface defined in the `ir`
  * package (Kotlin seals prevent cross-package subclasses).
  */
-data class AssignableVar(val name: String, val wrapAt: Int? = null, val fractionalBits: Int? = null) {
+data class AssignableVar(
+    val name: String,
+    val wrapAt: Int? = null,
+    val fractionalBits: Int? = null,
+) {
     /** Returns this variable as a [VarRef] expression for use in script ops. */
     fun toExpr(): Expr = VarRef(name)
 
@@ -129,8 +133,8 @@ infix fun AssignableVar.set(value: Boolean) = set(Literal(if (value) 1 else 0))
 // =============================================================================
 
 /**
- * Returns true iff [n] is a positive power of two (e.g. 2, 4, 8, 16, 32, …).
- * Runs at DSL/JVM time during script recording — never emitted to GB C output.
+ * Returns true iff [n] is a positive power of two (e.g. 2, 4, 8, 16, 32, …). Runs at DSL/JVM time
+ * during script recording — never emitted to GB C output.
  */
 private fun isPowerOfTwo(n: Int): Boolean = n > 0 && (n and (n - 1)) == 0
 
@@ -224,11 +228,7 @@ operator fun AssignableVar.remAssign(other: AssignableVar) = remAssign(other.toE
  */
 operator fun AssignableVar.inc(): AssignableVar {
     val sb = ScriptBuilderContext.current ?: error("++ called outside a ScriptBuilder block")
-    sb.assign(
-        name,
-        BinaryExpr(VarRef(name), BinaryOp.ADD, Literal(1)),
-        AssignOp.SET,
-    )
+    sb.assign(name, BinaryExpr(VarRef(name), BinaryOp.ADD, Literal(1)), AssignOp.SET)
     wrapAt?.let { n -> emitWrapGuard(sb, name, n) }
     return this
 }
@@ -240,11 +240,7 @@ operator fun AssignableVar.inc(): AssignableVar {
  */
 operator fun AssignableVar.dec(): AssignableVar {
     val sb = ScriptBuilderContext.current ?: error("-- called outside a ScriptBuilder block")
-    sb.assign(
-        name,
-        BinaryExpr(VarRef(name), BinaryOp.SUB, Literal(1)),
-        AssignOp.SET,
-    )
+    sb.assign(name, BinaryExpr(VarRef(name), BinaryOp.SUB, Literal(1)), AssignOp.SET)
     wrapAt?.let { n -> emitWrapGuard(sb, name, n) }
     return this
 }
@@ -440,8 +436,8 @@ abstract class VarDelegate(
  * Delegate for `var x by u8Var(0)` — UINT8 variable (0–255).
  *
  * Optional [wrapAt] parameter: when set, every mutation (++, --, +=, -=) emits a wrap guard
- * immediately after the mutation op (D-14 / D-15 / D-16). Power-of-two [wrapAt] emits a
- * bitmask (`& (N-1)`); non-power-of-two emits a compare-reset (`if v >= N { v = 0 }`).
+ * immediately after the mutation op (D-14 / D-15 / D-16). Power-of-two [wrapAt] emits a bitmask (`&
+ * (N-1)`); non-power-of-two emits a compare-reset (`if v >= N { v = 0 }`).
  */
 class U8VarDelegate(initialValue: Int, val wrapAt: Int? = null, transient: Boolean = false) :
     VarDelegate(VarType.U8, initialValue, transient) {
@@ -465,10 +461,10 @@ class I16VarDelegate(initialValue: Int, transient: Boolean = false) :
 /**
  * Delegate for `var posX by i16FixedVar(64)` — 12.4 fixed-point INT16 position variable.
  *
- * Stores the initial value as [initialPixels] × (2^[fractionalBits]).  Default fractional
- * bits = 4 (12.4 fixed-point: high 12 bits = pixel coordinate, low 4 bits = sub-pixel).
- * Use `.toPixel()` on the returned [AssignableVar] to extract the pixel coordinate for
- * rendering.  For velocity / speed variables use [i16Var] directly.
+ * Stores the initial value as [initialPixels] × (2^[fractionalBits]). Default fractional bits = 4
+ * (12.4 fixed-point: high 12 bits = pixel coordinate, low 4 bits = sub-pixel). Use `.toPixel()` on
+ * the returned [AssignableVar] to extract the pixel coordinate for rendering. For velocity / speed
+ * variables use [i16Var] directly.
  *
  * Single-use: each `by i16FixedVar(...)` binding must have its own delegate instance.
  */
@@ -525,26 +521,23 @@ fun i16Var(initial: Int = 0, transient: Boolean = false) = I16VarDelegate(initia
 /**
  * Creates a 12.4 fixed-point INT16 position-variable delegate.
  *
- * Use for pixel-coordinate position variables (posX, posY, playerX, playerY).
- * For velocity / speed variables that store raw sub-pixel counts, use [i16Var].
+ * Use for pixel-coordinate position variables (posX, posY, playerX, playerY). For velocity / speed
+ * variables that store raw sub-pixel counts, use [i16Var].
  *
  * @param initialPixels Initial position in whole pixels (stored as pixels × 2^[fractionalBits]).
  * @param fractionalBits Number of fractional bits; default 4 → 12.4 fixed-point (1 pixel = 16).
  *   D-10: fractionalBits is configurable with default 4 (the 12.4 path all examples migrate to).
  * @param transient When true, excluded from save/load SRAM layout.
  */
-fun i16FixedVar(
-    initialPixels: Int,
-    fractionalBits: Int = 4,
-    transient: Boolean = false,
-) = I16FixedVarDelegate(initialPixels, fractionalBits, transient)
+fun i16FixedVar(initialPixels: Int, fractionalBits: Int = 4, transient: Boolean = false) =
+    I16FixedVarDelegate(initialPixels, fractionalBits, transient)
 
 /**
  * Documentation-scope block for grouping fixed-point variable declarations.
  *
- * This is NOT a type-enforcement boundary — it does not change the IR or generated C.
- * It exists purely as a readable grouping construct so related fixed-point variables
- * are visually clustered at the declaration site.
+ * This is NOT a type-enforcement boundary — it does not change the IR or generated C. It exists
+ * purely as a readable grouping construct so related fixed-point variables are visually clustered
+ * at the declaration site.
  *
  * D-09 / Pitfall 6: [subpixel] is a no-op scope; it does not change lowering behavior.
  */
@@ -810,8 +803,8 @@ class ArrayDelegate(
     private var resolvedName: String? = null
 
     /**
-     * Single-use guard. Each `by u8Array(...)` binding must use its own delegate instance.
-     * Reusing one instance across two `by` bindings throws [IllegalStateException] at build time.
+     * Single-use guard. Each `by u8Array(...)` binding must use its own delegate instance. Reusing
+     * one instance across two `by` bindings throws [IllegalStateException] at build time.
      */
     private var delegateUsed: Boolean = false
 

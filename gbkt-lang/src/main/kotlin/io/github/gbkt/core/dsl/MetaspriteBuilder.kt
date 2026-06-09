@@ -319,13 +319,13 @@ class MetaspriteBuilder(val id: String) {
     }
 
     /**
-     * Declares the expected number of animation frames produced by png2asset from this
-     * metasprite's source PNG (Phase 13.3 D-07).
+     * Declares the expected number of animation frames produced by png2asset from this metasprite's
+     * source PNG (Phase 13.3 D-07).
      *
-     * When declared, [ConvertSpritesTask] parses the actual frame count from the `<id>_metasprites[N]`
-     * pointer-array declaration in the png2asset-generated `.c` file and fails the build with a
-     * descriptive message if the two counts disagree. This catches DSL/asset desync at build time
-     * rather than at runtime.
+     * When declared, [ConvertSpritesTask] parses the actual frame count from the
+     * `<id>_metasprites[N]` pointer-array declaration in the png2asset-generated `.c` file and
+     * fails the build with a descriptive message if the two counts disagree. This catches DSL/asset
+     * desync at build time rather than at runtime.
      *
      * **Semantics:** This is an asset-driven count declaration — the number of animation frames
      * png2asset will cut from the sprite sheet. It is NOT the same as the number of procedural
@@ -455,16 +455,16 @@ data class MetaspriteRef(val id: String) {
  * ```
  */
 /**
- * Single-use: each `val x by metasprite { }` binding must use its own delegate instance.
- * Reusing one instance across two `by` bindings throws [IllegalStateException] at build time.
+ * Single-use: each `val x by metasprite { }` binding must use its own delegate instance. Reusing
+ * one instance across two `by` bindings throws [IllegalStateException] at build time.
  */
 class MetaspriteDelegate(private val block: MetaspriteBuilder.() -> Unit) :
     ReadOnlyProperty<Any?, MetaspriteRef> {
     private var ref: MetaspriteRef? = null
 
     /**
-     * Single-use guard. Prevents silent double-registration when the same delegate instance
-     * is accidentally bound to two `val` properties.
+     * Single-use guard. Prevents silent double-registration when the same delegate instance is
+     * accidentally bound to two `val` properties.
      */
     private var delegateUsed: Boolean = false
 

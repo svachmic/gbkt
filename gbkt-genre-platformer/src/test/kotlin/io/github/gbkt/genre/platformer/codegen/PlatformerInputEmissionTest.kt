@@ -76,8 +76,8 @@ class PlatformerInputEmissionTest {
          * `:gbkt-genre-platformer:test` task this is `<repo>/gbkt-genre-platformer`. We ascend one
          * level (`..`) to reach the worktree root, then descend into the Phase 12.3 evidence
          * directory (Pattern 5 / RESEARCH §"EVIDENCE_DIR convention — worktree-safe"). Hard-coding
-         * an absolute path would silently route evidence files outside the active worktree and
-         * miss the commit (#3099 worktree path safety).
+         * an absolute path would silently route evidence files outside the active worktree and miss
+         * the commit (#3099 worktree path safety).
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -97,8 +97,8 @@ class PlatformerInputEmissionTest {
 
     /**
      * Extracts a C function body by brace-walking from the first line whose contents start with
-     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching
-     * closing brace at depth zero.
+     * [functionSignaturePrefix] (e.g. `void platformer_physics_update`) until the matching closing
+     * brace at depth zero.
      *
      * Mirror of the helper in `TilemapCollisionEmissionTest.kt` (Plan 12-09),
      * `JumpHoldEmissionTest.kt` (Plan 12-13), and `HorizontalScrollEmissionTest.kt` (Plan 12-12).
@@ -134,21 +134,21 @@ class PlatformerInputEmissionTest {
 
     /**
      * Build a minimal GameIR carrying a `platformer_physics` GenericSystem (with the
-     * tilemap-collision gate `solidThreshold` set) PLUS a `platformer_input` GenericSystem
-     * (with the Plan 12.3-02 numeric tuning keys: walkSpeed=128, friction=8, airFriction=0).
+     * tilemap-collision gate `solidThreshold` set) PLUS a `platformer_input` GenericSystem (with
+     * the Plan 12.3-02 numeric tuning keys: walkSpeed=128, friction=8, airFriction=0).
      *
      * Both gates must fire for section 0 (input emission) to land inside
      * `platformer_physics_update`:
-     *  - `gameUsesTilemapCollision(gameIR)` returns true (via `solidThreshold` set) → the
-     *    `buildTilemapPhysicsUpdateFunction` branch is taken (Plan 12-11).
-     *  - `gameUsesPlatformerInput(gameIR)` returns true (via the `platformer_input` system) →
-     *    the section-0 input emission fires INSIDE that branch (Plan 12.3-02).
+     * - `gameUsesTilemapCollision(gameIR)` returns true (via `solidThreshold` set) → the
+     *   `buildTilemapPhysicsUpdateFunction` branch is taken (Plan 12-11).
+     * - `gameUsesPlatformerInput(gameIR)` returns true (via the `platformer_input` system) → the
+     *   section-0 input emission fires INSIDE that branch (Plan 12.3-02).
      *
      * The default `vxSym` resolution in `buildTilemapPhysicsUpdateFunction` (PlatformerVisitor.kt
      * line 555) is `"_" + ((tcSystem?.config?.get("vxVar") as? String) ?: "player_vx")`. This
      * fixture does NOT register a `tilemap_collision` system (only `platformer_physics`), so the
-     * fallback `"player_vx"` applies → emitted symbol is `_player_vx`. Identical to the symbol
-     * the existing JumpHoldEmissionTest evidence exhibits.
+     * fallback `"player_vx"` applies → emitted symbol is `_player_vx`. Identical to the symbol the
+     * existing JumpHoldEmissionTest evidence exhibits.
      */
     private fun buildPositiveGameIR(): GameIR {
         val physicsConfig =
@@ -190,9 +190,9 @@ class PlatformerInputEmissionTest {
      * Negative back-compat fixture — same `platformer_physics` system, NO `platformer_input`
      * system. `gameUsesPlatformerInput(gameIR)` returns false; the section-0 emission block is
      * skipped entirely. This locks the back-compat invariant: existing platformer fixtures that
-     * never registered `platformer_input` (the JumpHold / TilemapCollision / HorizontalScroll
-     * test fixtures + every pre-Plan 12.3-02 game) keep their physics function byte-identical
-     * relative to the Plan 12.1-06 baseline.
+     * never registered `platformer_input` (the JumpHold / TilemapCollision / HorizontalScroll test
+     * fixtures + every pre-Plan 12.3-02 game) keep their physics function byte-identical relative
+     * to the Plan 12.1-06 baseline.
      */
     private fun buildNegativeGameIR(): GameIR {
         val physicsConfig =

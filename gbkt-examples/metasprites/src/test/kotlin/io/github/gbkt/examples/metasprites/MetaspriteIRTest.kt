@@ -12,20 +12,20 @@ import io.github.gbkt.core.ir.SpriteMode
 import io.github.gbkt.core.ir.VarType
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
  * IR validation tests for the Metasprites DSL definition — re-pinned for the asset-driven elephant
  * (Plan 13.3-09, D-03 Pitfall 4).
  *
- * The elephant is now declared with `sprite(asset("sprites/elephant.png")) { mode/pivot/frameSize }`
+ * The elephant is now declared with `sprite(asset("sprites/elephant.png")) { mode/pivot/frameSize
+ * }`
  * + `frames(5)`. The asset-driven path produces:
  * - `frames.isEmpty()` — no procedural tile transcription (D-08 mutual exclusion)
  * - `spritePath == "sprites/elephant.png"` — asset path captured
  * - `frameCount == 5` — author-declared count for build-time cross-validation
- * - cutting flags: `spriteMode == SPR8x8`, `frameWidth == 64`, `frameHeight == 48`, `pivot == (32,24)`
+ * - cutting flags: `spriteMode == SPR8x8`, `frameWidth == 64`, `frameHeight == 48`, `pivot ==
+ *   (32,24)`
  *
  * All non-frame assertions from the previous test (palettes, variables, scene, GBC target) are
  * preserved — they remain valid after the migration.
@@ -46,7 +46,10 @@ class MetaspriteIRTest {
 
     @Test
     fun `elephant sprite path is elephant png`() {
-        assertEquals("sprites/elephant.png", ir.metasprites.first { it.id == "elephant" }.spritePath)
+        assertEquals(
+            "sprites/elephant.png",
+            ir.metasprites.first { it.id == "elephant" }.spritePath,
+        )
     }
 
     @Test

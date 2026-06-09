@@ -85,9 +85,9 @@ class LevelCardSceneEmissionTest {
          *
          * Same pattern as LevelSwitchEmissionTest (sibling pipeline test). `user.dir` resolves to
          * the `:gbkt-backend-gbdk:test` task's working directory; we ascend one level to the repo
-         * (or worktree) root, then descend into the phase-local evidence directory. Hard-coding
-         * an absolute path would silently route evidence files outside the active worktree and
-         * miss the commit (#3099 worktree path safety).
+         * (or worktree) root, then descend into the phase-local evidence directory. Hard-coding an
+         * absolute path would silently route evidence files outside the active worktree and miss
+         * the commit (#3099 worktree path safety).
          */
         val EVIDENCE_DIR =
             File(System.getProperty("user.dir"))
@@ -142,16 +142,16 @@ class LevelCardSceneEmissionTest {
      *   `_playerVx`/`_playerVy` (matching the platformer-template production path). WITHOUT this
      *   block, the codegen falls back to `_player_x` etc. — Test 3's exact substring assertions
      *   would fail.
-     * - Two gameplay zones (`gameplayZone1`, `gameplayZone2`) BOTH declare `spawn(40u, 120u)` —
-     *   the X=40 value appearing twice produces the joined substring `40u, 40u` in
-     *   `_level_spawn_x[]` (Test 2's contract). Two zones also ensures the `switch (_current_level
-     *   % N)` body has ≥2 case branches.
+     * - Two gameplay zones (`gameplayZone1`, `gameplayZone2`) BOTH declare `spawn(40u, 120u)` — the
+     *   X=40 value appearing twice produces the joined substring `40u, 40u` in `_level_spawn_x[]`
+     *   (Test 2's contract). Two zones also ensures the `switch (_current_level % N)` body has ≥2
+     *   case branches.
      * - `gameplayScene = scene("gameplay") { ... }` is declared BEFORE the `levelCardScene { }`
      *   block per RESEARCH §Pitfall 5 (the Kotlin reference must resolve at DSL-recording time).
-     * - `val nextLevelScene by levelCardScene { onStartPress(gameplayScene) }` is the helper
-     *   from Plan 12.6-04 — the property name `nextLevelScene` becomes the scene id, and the
-     *   lowered scene-frame function in `bank1.c` is named `nextLevelScene_frame` (per
-     *   SceneVisitor's `${scene.id}_frame` naming convention at SceneVisitor.kt:291).
+     * - `val nextLevelScene by levelCardScene { onStartPress(gameplayScene) }` is the helper from
+     *   Plan 12.6-04 — the property name `nextLevelScene` becomes the scene id, and the lowered
+     *   scene-frame function in `bank1.c` is named `nextLevelScene_frame` (per SceneVisitor's
+     *   `${scene.id}_frame` naming convention at SceneVisitor.kt:291).
      */
     private fun buildLevelCardSceneGameDsl() =
         game("LevelCardSceneEmissionTest") {
@@ -189,24 +189,22 @@ class LevelCardSceneEmissionTest {
 
                 // Title scene — required for `start =` assignment and to serve as a
                 // pre-gameplay entry point. Does NOT carry the tilemap-collision payload.
-                val titleScene = scene("title") {
-                    enter {
-                        cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);")
+                val titleScene =
+                    scene("title") {
+                        enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
+                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                     }
-                    frame {
-                        whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
-                    }
-                }
 
                 // Gameplay scene — MUST be declared BEFORE `levelCardScene { }` per
                 // RESEARCH §Pitfall 5 (the Kotlin reference passed to onStartPress
                 // resolves at DSL-recording time).
-                val gameplayScene = scene("gameplay") {
-                    zone(gameplayZone1)
-                    frame {
-                        whenever(buttons.start.pressed) { navigate(SceneRef("nextLevelScene")) }
+                val gameplayScene =
+                    scene("gameplay") {
+                        zone(gameplayZone1)
+                        frame {
+                            whenever(buttons.start.pressed) { navigate(SceneRef("nextLevelScene")) }
+                        }
                     }
-                }
 
                 // Hidden scene binding the 2nd gameplay zone so it surfaces in gameIR.zones
                 // (the setup_current_level switch enumerates gameIR.zones with the title/
@@ -214,9 +212,7 @@ class LevelCardSceneEmissionTest {
                 // to hit ≥2). Modeled after LevelSwitchEmissionTest's `gameplay2` scene.
                 scene("gameplay2") {
                     zone(gameplayZone2)
-                    frame {
-                        whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
-                    }
+                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                 }
 
                 // The Plan 12.6-04 DSL surface under test — delegate-pattern helper
@@ -598,18 +594,23 @@ class LevelCardSceneEmissionTest {
                     spawn(40u, 120u)
                 }
 
-                val titleScene = scene("title") {
-                    enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
-                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
-                }
+                val titleScene =
+                    scene("title") {
+                        enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
+                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                    }
 
-                val gameplayScene = scene("gameplay") {
-                    zone(gameplayZone1)
-                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("nextLevelScene")) } }
-                }
+                val gameplayScene =
+                    scene("gameplay") {
+                        zone(gameplayZone1)
+                        frame {
+                            whenever(buttons.start.pressed) { navigate(SceneRef("nextLevelScene")) }
+                        }
+                    }
 
                 // Phase 13.5 Req #18: screen() primitive replaces the old zone()-based approach.
-                // screen(asset(...)) synthesises a _screen_nextLevelScene ZoneIR with screenMode=true;
+                // screen(asset(...)) synthesises a _screen_nextLevelScene ZoneIR with
+                // screenMode=true;
                 // SceneVisitor's screenMode superset branch emits the full centered-draw ceremony.
                 @Suppress("UNUSED_VARIABLE")
                 val nextLevelScene by levelCardScene {
@@ -744,7 +745,8 @@ class LevelCardSceneEmissionTest {
     // immediately overwritten — a brief top-left flash before centering.
     //
     // Fix (polish): detect the card overdraw via an exact-match signal —
-    //   `scene.enterOps.any { it is RawOp && it.code.contains("fill_bkg_rect(0u, 0u, 32u, 32u, 0u)") }`
+    //   `scene.enterOps.any { it is RawOp && it.code.contains("fill_bkg_rect(0u, 0u, 32u, 32u,
+    // 0u)") }`
     // When true, SKIP the `_bkg_tiles_load_banked(bank, 0, 0, ...)` CExprStatement from
     // the zone-load prelude (keep pixelLoad=set_bkg_data and keep set_bkg_palette).
     //
@@ -787,8 +789,7 @@ class LevelCardSceneEmissionTest {
         // signal is detected (fill_bkg_rect(0u, 0u, 32u, 32u, 0u) present in enterOps).
         // RED: current codegen always emits the (0,0) place → assertion fails.
         assertFalse(
-            enterBody.contains("_bkg_tiles_load_banked(") &&
-                enterBody.contains(", 0u, 0u,"),
+            enterBody.contains("_bkg_tiles_load_banked(") && enterBody.contains(", 0u, 0u,"),
             "Phase 12.9 Polish+WR-01: nextLevelScene_enter must NOT emit the (0,0) " +
                 "`_bkg_tiles_load_banked(<bank>, 0u, 0u, ...)` tilemap-place when the card " +
                 "overdraw signal is present (fill_bkg_rect(0u,0u,32u,32u,0u) wipes it " +

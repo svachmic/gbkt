@@ -67,16 +67,16 @@ data class AnalysisConfig(
 ) {
     companion object {
         /**
-         * Derives an [AnalysisConfig] from a [CartridgeConfig], using [Cartridge.maxRomBanks]
-         * as the authoritative per-type ROM bank cap per the Game Boy hardware specification:
+         * Derives an [AnalysisConfig] from a [CartridgeConfig], using [Cartridge.maxRomBanks] as
+         * the authoritative per-type ROM bank cap per the Game Boy hardware specification:
          *
-         * | Cartridge             | Max Banks |
-         * |-----------------------|-----------|
-         * | ROM_ONLY              | 2         |
-         * | MBC1 / MBC1_RAM / …  | 32        |
-         * | MBC2 / MBC2_BATTERY   | 16        |
-         * | MBC3_* / MBC3 / …    | 128       |
-         * | MBC5 / MBC5_*         | 256       |
+         * | Cartridge           | Max Banks |
+         * |---------------------|-----------|
+         * | ROM_ONLY            | 2         |
+         * | MBC1 / MBC1_RAM / … | 32        |
+         * | MBC2 / MBC2_BATTERY | 16        |
+         * | MBC3_* / MBC3 / …   | 128       |
+         * | MBC5 / MBC5_*       | 256       |
          *
          * The actual bank count used is the lesser of [Cartridge.maxRomBanks] and the
          * [CartridgeConfig.romBanks] value declared by the game author.

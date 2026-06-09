@@ -60,11 +60,12 @@ class ScreenClearSceneAwareTest {
                         cartridge = Cartridge.ROM_ONLY
                         romBanks = 2
                     }
-                    val zoneScene = scene("zone") {
-                        tileset("tilesets/dungeon.png")
-                        enter { clear() }
-                        frame { /* no-op */ }
-                    }
+                    val zoneScene =
+                        scene("zone") {
+                            tileset("tilesets/dungeon.png")
+                            enter { clear() }
+                            frame { /* no-op */ }
+                        }
                     start = zoneScene
                 }
                 .build()
@@ -103,9 +104,7 @@ class ScreenClearSceneAwareTest {
     fun `dsl clear in race scene with genre splice does not emit bare cls`() {
         val gameIR =
             game("RacerLikeFixture") {
-                    config {
-                        cartridge(Cartridge.ROM_ONLY)
-                    }
+                    config { cartridge(Cartridge.ROM_ONLY) }
                     val car by actor {
                         position(80, 80)
                         sprite(asset("sprites/car.png")) {
@@ -148,13 +147,14 @@ class ScreenClearSceneAwareTest {
                             waypoint(x = 5, y = 15)
                         }
                     }
-                    val raceScene = scene("race") {
-                        enter {
-                            clear()
-                            print("LAP:", position = PositionDef(1, 1))
+                    val raceScene =
+                        scene("race") {
+                            enter {
+                                clear()
+                                print("LAP:", position = PositionDef(1, 1))
+                            }
+                            frame { /* empty */ }
                         }
-                        frame { /* empty */ }
-                    }
                     start = raceScene
                 }
                 .build()
@@ -190,13 +190,12 @@ class ScreenClearSceneAwareTest {
     fun `dsl clear in scene without BG tilemap emits cls for back-compat`() {
         val gameIR =
             game("ScreenClearTitleFixture") {
-                    config {
-                        cartridge(Cartridge.ROM_ONLY)
-                    }
-                    val titleScene = scene("title") {
-                        enter { clear() }
-                        frame { /* no-op */ }
-                    }
+                    config { cartridge(Cartridge.ROM_ONLY) }
+                    val titleScene =
+                        scene("title") {
+                            enter { clear() }
+                            frame { /* no-op */ }
+                        }
                     start = titleScene
                 }
                 .build()

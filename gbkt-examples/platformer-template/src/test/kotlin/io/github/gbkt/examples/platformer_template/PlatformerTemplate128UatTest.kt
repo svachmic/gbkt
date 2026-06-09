@@ -23,14 +23,13 @@ import org.junit.jupiter.api.Assumptions
  *
  * EVIDENCE_DIR is retargeted at the Phase 12.8 evidence root so the W6 anchor-5 re-shoot
  * (post-`-keep_palette_order`-pin) writes to
- * `.planning/phases/12.8-grass-tileset-white-pixels-diagnostic/evidence/uat-screenshots/`.
- * Cloned (vs parameterized EVIDENCE_DIR) per RESEARCH §"Wave 0 Gaps" option b — simpler
- * surgical-edit (rename + path swap) than refactoring the upstream class.
+ * `.planning/phases/12.8-grass-tileset-white-pixels-diagnostic/evidence/uat-screenshots/`. Cloned
+ * (vs parameterized EVIDENCE_DIR) per RESEARCH §"Wave 0 Gaps" option b — simpler surgical-edit
+ * (rename + path swap) than refactoring the upstream class.
  *
- * Behaviorally identical to [PlatformerTemplateUatTest] except for the target evidence dir.
- * Phase 12.8 Plan 12.8-06 invokes only the [anchor5LevelSwitch] method via test filter; the
- * remaining methods are kept intact (planner discretion — pruning is more invasive than
- * clone-and-filter).
+ * Behaviorally identical to [PlatformerTemplateUatTest] except for the target evidence dir. Phase
+ * 12.8 Plan 12.8-06 invokes only the [anchor5LevelSwitch] method via test filter; the remaining
+ * methods are kept intact (planner discretion — pruning is more invasive than clone-and-filter).
  */
 class PlatformerTemplate128UatTest {
 
@@ -573,16 +572,23 @@ class PlatformerTemplate128UatTest {
             // Phase 15 F7 (REQ-6) — visible-hflip closure, RE-ARCHITECTED MEASURE.
             //
             // The former gate required a >10% diff over the WHOLE 160x144 frame between a
-            // facing-right frame (captured after an ≥80-frame right-scroll) and a facing-left frame.
+            // facing-right frame (captured after an ≥80-frame right-scroll) and a facing-left
+            // frame.
             // That measure is PROVABLY MIS-CALIBRATED (research Pitfall 4, confirmed by live D-03
-            // evidence in evidence/platformer-facing-{right,left}.png + evidence/diagnosis/platformer.md):
-            // the 24x32 player metasprite is ~3.3% of the frame, and at a SETTLED camera a real hflip
+            // evidence in evidence/platformer-facing-{right,left}.png +
+            // evidence/diagnosis/platformer.md):
+            // the 24x32 player metasprite is ~3.3% of the frame, and at a SETTLED camera a real
+            // hflip
             // changes only ~2.2% of the full frame — so a >10% GLOBAL threshold is arithmetically
             // unreachable no matter how correctly the sprite mirrors. The old gate conflated the
-            // sprite flip with camera-scroll background diff, which is fragile and was measuring the
-            // wrong thing. Lowering 10%->6% would be forbidden threshold-weakening; instead the MEASURE
-            // is replaced with a SPRITE-REGION diff at a SETTLED camera (the correct premise), backed
-            // by the direct OAM xFlip hardware bit. Triple-locked: facingRot state (asserted above) +
+            // sprite flip with camera-scroll background diff, which is fragile and was measuring
+            // the
+            // wrong thing. Lowering 10%->6% would be forbidden threshold-weakening; instead the
+            // MEASURE
+            // is replaced with a SPRITE-REGION diff at a SETTLED camera (the correct premise),
+            // backed
+            // by the direct OAM xFlip hardware bit. Triple-locked: facingRot state (asserted above)
+            // +
             // OAM xFlip bit + sprite-region pixel mirror.
 
             // Settle the camera facing RIGHT (flip back from the LEFT hold above), then capture.
@@ -661,7 +667,8 @@ class PlatformerTemplate128UatTest {
                 )
 
             // Require >= 20% of the player's sprite region to differ between the two facings. The
-            // live D-03 capture measured ~45% (a clean hflip mirror), so 20% is well above noise and
+            // live D-03 capture measured ~45% (a clean hflip mirror), so 20% is well above noise
+            // and
             // far below the measured signal — proving the flip is VISIBLY real. This is a
             // region-scoped measure, NOT a lowered global-frame threshold (no threshold weakened).
             assertTrue(
@@ -810,10 +817,7 @@ class PlatformerTemplate128UatTest {
                             anchor5Dir,
                             "00-last-gameplay.png",
                         )
-                    assertScreenshotIsNonUniform(
-                        lastGameplayScreenshot,
-                        "anchor5-last-gameplay",
-                    )
+                    assertScreenshotIsNonUniform(lastGameplayScreenshot, "anchor5-last-gameplay")
                     break
                 }
                 if (obs.scene != null) lastSceneBeforeFlip = obs.scene!!
@@ -1058,17 +1062,19 @@ class PlatformerTemplate128UatTest {
      * codegen regression — the tileset partitions cleanly at `solidThreshold(17)` (solid indices
      * 0x00–0x10 contiguous; walkable 0x11–0x1A), the row-stride is 60==60, and HALF_WIDTH=5 is the
      * 12.9-approved geometry. The "wall" is a designed 4-tile-tall tree obstacle (cols 39–40, rows
-     * 12–15) at the base of a step-up. The real cause of the 13.4-10 BLOCK was a VERIFICATION-METHOD
-     * gap: holding RIGHT only never jumps. 13.4-02 (`resolveZoneSize` null-sentinel) + 13.4-08
-     * (`by zone`) made the real 60×32 PNG load (pre-13.4 it was a truncated synthetic flat ramp),
-     * and the real level requires jumps — exactly as [anchor5LevelSwitch] already traverses it
-     * (RIGHT + periodic A). See evidence/13.4-11-DIAGNOSTIC.md.
+     * 12–15) at the base of a step-up. The real cause of the 13.4-10 BLOCK was a
+     * VERIFICATION-METHOD gap: holding RIGHT only never jumps. 13.4-02 (`resolveZoneSize`
+     * null-sentinel) + 13.4-08 (`by zone`) made the real 60×32 PNG load (pre-13.4 it was a
+     * truncated synthetic flat ramp), and the real level requires jumps — exactly as
+     * [anchor5LevelSwitch] already traverses it (RIGHT + periodic A). See
+     * evidence/13.4-11-DIAGNOSTIC.md.
      *
      * This guard locks BOTH halves of that lesson so the held-RIGHT-only mistake cannot recur:
-     *  - Phase A: holding RIGHT ALONE advances the player off-spawn but then STALLS before the
-     *    level-end trigger (`_next_level` stays 0) — the real 60×32 level is NOT held-RIGHT-traversable.
-     *  - Phase B: RIGHT + periodic A DOES reach `nextLevelScene` (`_next_level` flips to 1) — jumps
-     *    are required AND sufficient. (The world zones stay 60×32; no revert to the magic 32×32.)
+     * - Phase A: holding RIGHT ALONE advances the player off-spawn but then STALLS before the
+     *   level-end trigger (`_next_level` stays 0) — the real 60×32 level is NOT
+     *   held-RIGHT-traversable.
+     * - Phase B: RIGHT + periodic A DOES reach `nextLevelScene` (`_next_level` flips to 1) — jumps
+     *   are required AND sufficient. (The world zones stay 60×32; no revert to the magic 32×32.)
      */
     @Test
     fun worldOneArea1RequiresJumpsToReachNextLevel_13_4_11() {
@@ -1076,7 +1082,8 @@ class PlatformerTemplate128UatTest {
             ROM_FILE.exists(),
             "platformer-template.gb not found — run :gbkt-examples:platformer-template:buildRom first",
         )
-        val NEXT_LEVEL_ADDR = 0xC0F0 // UINT8 (pipeline-emitted HOME-bank global; see platformer-template.noi)
+        val NEXT_LEVEL_ADDR =
+            0xC0F0 // UINT8 (pipeline-emitted HOME-bank global; see platformer-template.noi)
 
         // ── Phase A — held-RIGHT-only STALLS before the trigger (the 13.4-10 trap) ──
         newAgent().use { agent ->
