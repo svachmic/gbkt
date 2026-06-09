@@ -9,7 +9,6 @@ plugins {
 }
 
 group = "io.github.gbkt.examples"
-version = "1.0.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -33,7 +32,7 @@ tasks.test {
 }
 
 gbkt {
-    game("io.github.gbkt.examples.pong.PongV2Kt::pongV2")
+    game("io.github.gbkt.examples.pong.PongKt::pong")
     assets("res")
     outputName.set("pong")
 }

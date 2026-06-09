@@ -128,9 +128,27 @@ object FunctionDeduplicationPass {
         for ((dupName, canonicalName) in callSiteRedirects) {
             // Use word boundary to avoid matching partial names (e.g., my_func vs my_func2)
             val callPattern = Regex("""\b${Regex.escape(dupName)}\s*\(""")
+            // Process line-by-line and skip comment lines.
+            //
+            // The regex `\b{name}\s*\(` matches comment text like
+            // "// Trampoline: title_enter (bank 1)" because `\s*\(` matches " (" before "bank".
+            // The rewriter has no semantic awareness of comments — skipping lines whose
+            // trimmed start begins with a comment marker is the smallest correct fix per
+            // SEED-015 root cause analysis in
+            // .planning/phases/11.1-banks-port-surplus-codegen-defects-inserted-terminal/11.1-RESEARCH.md
+            // §Pattern 4.
             result =
-                callPattern.replace(result) { matchResult ->
-                    matchResult.value.replace(dupName, canonicalName)
+                result.lines().joinToString("\n") { line ->
+                    val trimmed = line.trimStart()
+                    if (
+                        trimmed.startsWith("//") ||
+                            trimmed.startsWith("/*") ||
+                            trimmed.startsWith("*")
+                    ) {
+                        line
+                    } else {
+                        callPattern.replace(line) { m -> m.value.replace(dupName, canonicalName) }
+                    }
                 }
         }
 

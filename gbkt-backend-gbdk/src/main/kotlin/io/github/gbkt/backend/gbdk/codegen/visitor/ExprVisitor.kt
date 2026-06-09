@@ -13,6 +13,7 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CCast
 import io.github.gbkt.backend.gbdk.codegen.ast.CExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CI16
 import io.github.gbkt.backend.gbdk.codegen.ast.CI8
+import io.github.gbkt.backend.gbdk.codegen.ast.CIntLiteral
 import io.github.gbkt.backend.gbdk.codegen.ast.CLiteral
 import io.github.gbkt.backend.gbdk.codegen.ast.CStringLiteral
 import io.github.gbkt.backend.gbdk.codegen.ast.CTernary
@@ -37,6 +38,7 @@ import io.github.gbkt.core.ir.UnaryExpr
 import io.github.gbkt.core.ir.UnaryOp
 import io.github.gbkt.core.ir.VarRef
 import io.github.gbkt.core.ir.VarType
+import io.github.gbkt.core.ir.VariableDef
 
 // =============================================================================
 // EXPR VISITOR
@@ -60,8 +62,20 @@ import io.github.gbkt.core.ir.VarType
  * @param actors List of [ActorIR] instances available in the current game. Used to resolve
  *   actor-specific operations such as inline AABB collision detection for `collides()` calls.
  *   Defaults to empty list for backward-compatible usage in tests and non-actor contexts.
+ * @param variables List of [VariableDef] instances declared on the game. Used to look up the
+ *   signedness of a [VarRef] LHS so that the DSL-authored signed-comparison RHS literal can be
+ *   routed through [CIntLiteral] (Phase 9 Plan 04 — Bug A fix; bucket-b extension of the Phase 07.9
+ *   Literal Emission Convention to cover the DSL-authored path, not just hardcoded visitor sites).
+ *   Defaults to empty list — when no variable type info is available, the visitor falls back to the
+ *   pre-fix [CLiteral] emission (unchanged behavior).
  */
-class ExprVisitor(private val actors: List<ActorIR> = emptyList()) : ExprVisitorI<CExpr> {
+class ExprVisitor(
+    private val actors: List<ActorIR> = emptyList(),
+    variables: List<VariableDef> = emptyList(),
+) : ExprVisitorI<CExpr> {
+
+    /** Name → [VarType] lookup table built from [variables] for O(1) signedness checks. */
+    private val variableTypes: Map<String, VarType> = variables.associate { it.name to it.type }
 
     /**
      * Convert an IR [Expr] to a typed [CExpr] node via visitor dispatch.
@@ -80,8 +94,48 @@ class ExprVisitor(private val actors: List<ActorIR> = emptyList()) : ExprVisitor
 
     override fun visitVarRef(expr: VarRef): CExpr = CVar(sanitizeVarName(expr.name))
 
-    override fun visitBinaryExpr(expr: BinaryExpr): CExpr =
-        CBinaryExpr(visit(expr.left), binaryOpToC(expr.op), visit(expr.right))
+    /**
+     * Lowers a [BinaryExpr] to a [CBinaryExpr].
+     *
+     * Phase 9 Plan 04 (Bug A) extension: when the operator is a comparison (`<`, `>`, `<=`, `>=`,
+     * `==`, `!=`), the LHS is a [VarRef] to a known signed-typed variable (`VarType.I8` or
+     * `VarType.I16`), and the RHS is a positive [Literal], the RHS lowers to [CIntLiteral]
+     * (signed-safe, bare integer) instead of the default [CLiteral] (emits `Nu` suffix). This
+     * extends the Phase 07.9 Literal Emission Convention from hardcoded visitor sites (bucket-a) to
+     * the DSL-authored path (bucket-b) — `whenever(spdY isAbove 64)` now emits `_spdY > 64` instead
+     * of `_spdY > 64u`, eliminating SDCC warning 94 (comparison always false). The existing
+     * [CLiteral] emission is preserved for unsigned-context literals (assignment RHS, arithmetic),
+     * per the additive split established by Phase 07.9 Option C.
+     */
+    override fun visitBinaryExpr(expr: BinaryExpr): CExpr {
+        val rhs =
+            if (isSignedComparisonRhs(expr)) CIntLiteral((expr.right as Literal).value)
+            else visit(expr.right)
+        return CBinaryExpr(visit(expr.left), binaryOpToC(expr.op), rhs)
+    }
+
+    /**
+     * Predicate: does the RHS [Literal] of [expr] sit in a signed-comparison context whose LHS is a
+     * known signed variable? Used by [visitBinaryExpr] to decide between [CIntLiteral] (signed RHS)
+     * and the default [CLiteral] (unsigned RHS). All three conjuncts must hold; otherwise the
+     * visitor falls back to pre-fix [CLiteral] emission.
+     */
+    private fun isSignedComparisonRhs(expr: BinaryExpr): Boolean {
+        if (!isComparisonOp(expr.op)) return false
+        if (expr.right !is Literal) return false
+        val lhs = expr.left as? VarRef ?: return false
+        val lhsType = variableTypes[lhs.name] ?: return false
+        return lhsType == VarType.I8 || lhsType == VarType.I16
+    }
+
+    /** True iff [op] is one of the six C comparison operators. */
+    private fun isComparisonOp(op: BinaryOp): Boolean =
+        op == BinaryOp.LT ||
+            op == BinaryOp.GT ||
+            op == BinaryOp.LTE ||
+            op == BinaryOp.GTE ||
+            op == BinaryOp.EQ ||
+            op == BinaryOp.NEQ
 
     override fun visitUnaryExpr(expr: UnaryExpr): CExpr =
         CUnaryExpr(unaryOpToC(expr.op), visit(expr.operand))
@@ -141,14 +195,25 @@ class ExprVisitor(private val actors: List<ActorIR> = emptyList()) : ExprVisitor
      * set), the same format applies — custom props are registered as prefixed global variables
      * named `_${actorId}_${propName}` by the ActorPropDelegate.
      *
+     * When a [PoolCodegenContext] is active (set by [ScriptOpVisitor.activePoolContext]) and the
+     * [PropertyAccessExpr.objectId] matches the pool's [PoolCodegenContext.templateActorId], the
+     * access is redirected to the per-instance array: `_pool_<poolId>_<property>[<slotVarName>]`.
+     *
      * The distinction is:
      * - Built-in: `ball.x` → `_ball_x` (hardware position variable)
      * - Custom: `ball.dx` → `_ball_dx` (user-registered global variable via i8Prop/u8Prop)
+     * - Pool template (context active): `bullet.x` → `_pool_bulletPool_x[_bi]`
      *
-     * Both map to the same naming format, so this visitor handles both transparently.
+     * All non-pool cases map to the same naming format and are handled transparently.
      */
-    override fun visitPropertyAccessExpr(expr: PropertyAccessExpr): CExpr =
-        CVar(sanitizeVarName("${expr.objectId}.${expr.property}"))
+    override fun visitPropertyAccessExpr(expr: PropertyAccessExpr): CExpr {
+        val ctx = ScriptOpVisitor.activePoolContext.get()
+        if (ctx != null && expr.objectId == ctx.templateActorId) {
+            val arrayName = "_pool_${ctx.poolId}_${expr.property}"
+            return CArrayAccess(CVar(arrayName), CVar(ctx.slotVarName))
+        }
+        return CVar(sanitizeVarName("${expr.objectId}.${expr.property}"))
+    }
 
     /**
      * Handles explicit type cast expressions.

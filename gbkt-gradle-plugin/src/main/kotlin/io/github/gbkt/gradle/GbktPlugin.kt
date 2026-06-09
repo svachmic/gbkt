@@ -11,6 +11,7 @@ import io.github.gbkt.gradle.tasks.BudgetReportTask
 import io.github.gbkt.gradle.tasks.CaptureScreenshotTask
 import io.github.gbkt.gradle.tasks.CompileRomTask
 import io.github.gbkt.gradle.tasks.ConvertSpritesTask
+import io.github.gbkt.gradle.tasks.ConvertZoneTilesetsTask
 import io.github.gbkt.gradle.tasks.CopyGeneratedCTask
 import io.github.gbkt.gradle.tasks.DebugEmulatorTask
 import io.github.gbkt.gradle.tasks.DiffScreenshotsTask
@@ -101,6 +102,9 @@ class GbktPlugin : Plugin<Project> {
         // Asset generation defaults
         extension.generateAssets.enabled.convention(false)
         extension.generateAssets.objectName.convention("Assets")
+
+        // Sprites pipeline defaults (Phase 13.6 REQ-4 / D-01 / D-02)
+        extension.sprites.strictTransparency.convention(false)
 
         // Locale defaults (compile-time i18n)
         extension.locale.convention("en")
@@ -348,9 +352,54 @@ class GbktPlugin : Plugin<Project> {
                     )
                 )
                 assetDirectory.set(extension.assetDirectory)
-                mainCFile.set(generateC.flatMap { it.outputDir }.map { it.file("main.c") })
+                metadataFile.set(
+                    generateC.flatMap { it.outputDir }.map { it.file("game_metadata.json") }
+                )
+                cSourceDir.set(generateC.flatMap { it.outputDir })
+                // Phase 13.6 REQ-4 / D-01 / D-02: thread strictTransparency from SpritesExtension
+                // into the task so it is an @Input (Gradle up-to-date / caching key).
+                strictTransparency.set(extension.sprites.strictTransparency)
+            }
+
+        // generateGameConstants reads game_metadata.json from build/gbkt/generated/ — the same
+        // directory that convertSprites declares as @OutputDirectory. Gradle 9 validation rejects
+        // an @InputFile inside another task's @OutputDirectory without an explicit ordering edge.
+        // dependsOn (not mustRunAfter) is required because mustRunAfter is an ordering hint only
+        // and does not satisfy the file-input/output overlap validation. convertSprites skips
+        // gracefully when GBDK is not installed, so this does not break test-only workflows.
+        generateGameConstants.configure { dependsOn(convertSprites) }
+
+        // Phase 11.2 (D-A2): convertZoneTilesets — png2asset for zone tileset PNGs (sibling to
+        // convertSprites)
+        val convertZoneTilesets =
+            project.tasks.register<ConvertZoneTilesetsTask>("convertZoneTilesets") {
+                dependsOn(generateC)
+                // convertSprites and convertZoneTilesets share cSourceDir = build/gbkt/generated as
+                // an @OutputDirectory. Gradle 9 fails fast when one task's input directory overlaps
+                // another's output without an explicit ordering edge. mustRunAfter (not dependsOn)
+                // is correct here — the two tasks are independent in purpose; they only share the
+                // output dir for lcc include resolution.
+                mustRunAfter(convertSprites)
+                gbdkHome.set(
+                    extension.gbdkHome.orElse(
+                        project.provider { GbdkToolchain.find(null).absolutePath }
+                    )
+                )
+                assetDirectory.set(extension.assetDirectory)
+                metadataFile.set(
+                    generateC.flatMap { it.outputDir }.map { it.file("game_metadata.json") }
+                )
                 cSourceDir.set(generateC.flatMap { it.outputDir })
             }
+
+        // convertZoneTilesets also declares build/gbkt/generated/ as @OutputDirectory — same
+        // Gradle 9 file-input/output overlap pattern as convertSprites above. mustRunAfter
+        // satisfies the Gradle 9 configuration validation (unlike convertSprites which requires
+        // dependsOn because it must complete first to avoid flaking INV-8). convertZoneTilesets
+        // writes zone-specific tilemap .c files to the same directory; generateGameConstants only
+        // reads game_metadata.json (written by generateC, not by this task). mustRunAfter
+        // provides the ordering guarantee Gradle 9 requires without adding an execution dependency.
+        generateGameConstants.configure { mustRunAfter(convertZoneTilesets) }
 
         // Register copyResources task - copies binary assets needed by INCBIN directives
         val copyResources =
@@ -382,6 +431,7 @@ class GbktPlugin : Plugin<Project> {
             project.tasks.register<CompileRomTask>("compileRom") {
                 dependsOn(generateC)
                 dependsOn(convertSprites)
+                dependsOn(convertZoneTilesets)
                 dependsOn(copyResources)
 
                 // Lazily determine GBDK home - only when task executes

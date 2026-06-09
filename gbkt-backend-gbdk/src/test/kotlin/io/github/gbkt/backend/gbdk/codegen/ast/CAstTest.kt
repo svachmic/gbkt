@@ -51,6 +51,7 @@ class CAstTest {
         val result =
             when (expr) {
                 is CLiteral -> "literal"
+                is CIntLiteral -> "intLiteral"
                 is CStringLiteral -> "stringLiteral"
                 is CVar -> "var"
                 is CBinaryExpr -> "binary"

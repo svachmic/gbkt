@@ -10,6 +10,7 @@ import io.github.gbkt.core.ir.Assign
 import io.github.gbkt.core.ir.AssignOp
 import io.github.gbkt.core.ir.BinaryExpr
 import io.github.gbkt.core.ir.BinaryOp
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.IfOp
@@ -24,7 +25,7 @@ import kotlin.test.assertTrue
 
 // =============================================================================
 // SOUND CODEGEN TESTS
-// Verifies that GBDKPipelineV2 generates the correct sound driver infrastructure:
+// Verifies that GBDKPipeline generates the correct sound driver infrastructure:
 // - Sound driver global variables (_sound_channels, _sound_priority, _sound_duration)
 // - sound_driver_update() called in main loop
 // - play_sound() core driver function generated
@@ -40,7 +41,7 @@ private fun buildGameWithSounds(vararg soundIds: String): GameIR {
     val frameOps = soundIds.map { PlaySound(it) }
     return GameIR(
         name = "TestGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = listOf(SceneIR(id = "main", frameOps = frameOps)),
         startScene = "main",
     )
@@ -48,7 +49,7 @@ private fun buildGameWithSounds(vararg soundIds: String): GameIR {
 
 class SoundCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: Sound driver globals generated for games with PlaySound
@@ -157,7 +158,7 @@ class SoundCodegenTest {
         val gameIR =
             GameIR(
                 name = "TestGame",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(id = "scene1", frameOps = listOf(PlaySound("hit"))),
@@ -220,7 +221,7 @@ class SoundCodegenTest {
         val gameIR =
             GameIR(
                 name = "TestGame",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes = listOf(SceneIR(id = "main", frameOps = listOf(IfOp(condition, innerOps)))),
                 startScene = "main",
             )
@@ -241,7 +242,7 @@ class SoundCodegenTest {
         val gameIR =
             GameIR(
                 name = "Silent",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(

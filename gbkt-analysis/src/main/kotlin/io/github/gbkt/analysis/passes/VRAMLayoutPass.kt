@@ -81,10 +81,9 @@ class VRAMLayoutPass : AnalysisPass {
         // 2. For each scene, compute tile budget and check for overflow/warnings
         for (scene in game.scenes) {
             val sceneActors = game.actors.filter { it.id in scene.actorIds }
-            val spriteTiles =
-                sceneActors.sumOf { actor ->
-                    inventory.spriteTileCounts[actor.id] ?: computeSpriteTileCount(actor)
-                }
+            val spriteTiles = sceneActors.sumOf { actor ->
+                inventory.spriteTileCounts[actor.id] ?: computeSpriteTileCount(actor)
+            }
 
             // Background tiles used by this scene (manifest-aware; falls back to heuristic)
             val bgTilesUsed = estimateBgTiles(scene, game, context.assetManifest)

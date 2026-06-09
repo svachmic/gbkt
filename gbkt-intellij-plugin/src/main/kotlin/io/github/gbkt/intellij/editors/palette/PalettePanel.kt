@@ -96,11 +96,10 @@ class PalettePanel : JPanel() {
 
     /** Generates gbkt code for this palette. */
     fun toGbktCode(): String {
-        val lines =
-            colors.mapIndexed { i, color ->
-                val gbc = GbColors.rgbToGbc(color)
-                "    color$i = ${GbColors.formatRgb8(color)} // GBC: ${GbColors.formatGbcHex(gbc)}"
-            }
+        val lines = colors.mapIndexed { i, color ->
+            val gbc = GbColors.rgbToGbc(color)
+            "    color$i = ${GbColors.formatRgb8(color)} // GBC: ${GbColors.formatGbcHex(gbc)}"
+        }
         return "palette {\n${lines.joinToString("\n")}\n}"
     }
 

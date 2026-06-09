@@ -6,10 +6,11 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import io.github.gbkt.core.ir.AtbConfig
 import io.github.gbkt.core.ir.AtbGaugeModel
 import io.github.gbkt.core.ir.AtbWaitMode
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.CombatType
@@ -36,7 +37,7 @@ import kotlin.test.assertTrue
 private fun buildAtbGameIR(system: CombatEngineSystem, startScene: String = "gameplay"): GameIR =
     GameIR(
         name = "TestAtbGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = listOf(SceneIR(id = startScene)),
         systems = listOf(system),
         startScene = startScene,
@@ -62,7 +63,7 @@ private fun defaultAtbSystem(): CombatEngineSystem =
 
 class AtbCombatCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: ATB combat generates gauge fill loop in state machine

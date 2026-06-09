@@ -33,12 +33,16 @@ import io.github.gbkt.core.ir.PositionDef
 import io.github.gbkt.core.ir.PrintOp
 import io.github.gbkt.core.ir.RawOp
 import io.github.gbkt.core.ir.ReturnOp
+import io.github.gbkt.core.ir.BindCurrentLevel
+import io.github.gbkt.core.ir.ScreenClear
 import io.github.gbkt.core.ir.ScriptOp
 import io.github.gbkt.core.ir.SetAnimationState
 import io.github.gbkt.core.ir.SetPosition
 import io.github.gbkt.core.ir.SetVisible
 import io.github.gbkt.core.ir.SpawnActor
 import io.github.gbkt.core.ir.TriggerSystem
+import io.github.gbkt.core.ir.UnaryExpr
+import io.github.gbkt.core.ir.UnaryOp
 import io.github.gbkt.core.ir.VarRef
 import io.github.gbkt.core.ir.WaitFrames
 import io.github.gbkt.core.ir.WaypointStep
@@ -69,7 +73,7 @@ class ScriptBuilder {
      *
      * ```kotlin
      * val scriptBuilder = ScriptBuilder()
-     * scriptBuilder.runWith { gold += 5; navigate("dungeon") }
+     * scriptBuilder.runWith { gold += 5; navigate(dungeonScene) }
      * val ops = scriptBuilder.build()
      * ```
      */
@@ -189,9 +193,18 @@ class ScriptBuilder {
     // -------------------------------------------------------------------------
 
     /**
-     * Sugar for a one-armed conditional: produces [IfOp] with empty otherwise list.
+     * Sugar for a one-armed conditional that lowers to [IfOp] with empty otherwise list.
      *
-     * Equivalent to `ifOp(condition) { ... }` with no elseOp.
+     * Use [whenever] for top-level reactive triggers (e.g. button-held, collision, game-state
+     * checks) that are evaluated every frame as independent guards.
+     *
+     * For **single-frame imperative conditionals** (clamps after mutation, wrap-after-increment),
+     * prefer [runIf] / [unless] / [orElse] — they read as control flow, not reactive triggers.
+     *
+     * Equivalent to `runIf(condition) { ... }` in the generated C.
+     *
+     * Tier-3 roadmap: a future phase will unify `whenever` → `runIf` for reactive sites;
+     * tracked as a pending todo. Not deprecated this phase.
      */
     fun whenever(condition: Expr, block: ScriptBuilder.() -> Unit) {
         val loc = captureV2Location()
@@ -199,6 +212,35 @@ class ScriptBuilder {
         ScriptBuilderContext.with(bodyBuilder) { bodyBuilder.block() }
         ops += IfOp(condition, bodyBuilder.build(), emptyList(), sourceLocation = loc)
     }
+
+    // -------------------------------------------------------------------------
+    // Single-frame imperative conditionals
+    // -------------------------------------------------------------------------
+
+    /**
+     * Single-frame imperative conditional. Lowers to [IfOp] — identical to [ifOp].
+     *
+     * Use for clamps, guards, and post-mutation checks that execute once per frame in
+     * sequence.  For top-level reactive triggers evaluated as independent guards every
+     * frame, use [whenever].
+     */
+    fun runIf(condition: Expr, block: ScriptBuilder.() -> Unit) = ifOp(condition, block)
+
+    /**
+     * Negated single-frame conditional: executes [block] when [condition] is false.
+     *
+     * Lowers to [IfOp] with [UnaryExpr(LOGICAL_NOT, condition)] — identical to
+     * `runIf(condition.not()) { ... }`.
+     */
+    fun unless(condition: Expr, block: ScriptBuilder.() -> Unit) =
+        ifOp(UnaryExpr(UnaryOp.LOGICAL_NOT, condition), block)
+
+    /**
+     * Else branch chained to the most recent [runIf]. Delegates to [elseOp].
+     *
+     * Must immediately follow [runIf] or [ifOp].
+     */
+    fun orElse(block: ScriptBuilder.() -> Unit) = elseOp(block)
 
     // -------------------------------------------------------------------------
     // Movement
@@ -238,11 +280,6 @@ class ScriptBuilder {
     // Navigation
     // -------------------------------------------------------------------------
 
-    /** Transitions to a scene by ID string. */
-    fun navigate(sceneId: String) {
-        ops += NavigateTo(sceneId, sourceLocation = captureV2Location())
-    }
-
     /** Transitions to a scene via [SceneRef]. */
     fun navigate(sceneRef: SceneRef) {
         ops += NavigateTo(sceneRef.id, sourceLocation = captureV2Location())
@@ -252,9 +289,22 @@ class ScriptBuilder {
     // Systems
     // -------------------------------------------------------------------------
 
-    /** Fires a system event by system ID with optional arguments. */
-    fun triggerSystem(systemId: String, args: Map<String, Expr> = emptyMap()) {
-        ops += TriggerSystem(systemId, args, sourceLocation = captureV2Location())
+    /**
+     * Fires a system event by typed [SystemRef] with optional arguments.
+     *
+     * Mirrors [playSound] — resolves the system id from [ref] at DSL recording time.
+     * The [TriggerSystem] IR node keeps `systemId: String`; the ref→id resolution
+     * happens here (D-10/D-11 typed-ref pattern).
+     *
+     * Usage:
+     * ```kotlin
+     * @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
+     * // Inside a scene frame block:
+     * whenever(buttons.select.pressed) { triggerSystem(saves) }
+     * ```
+     */
+    fun triggerSystem(ref: SystemRef, args: Map<String, Expr> = emptyMap()) {
+        ops += TriggerSystem(ref.systemId, args, sourceLocation = captureV2Location())
     }
 
     // -------------------------------------------------------------------------
@@ -426,11 +476,25 @@ class ScriptBuilder {
     }
 
     /**
-     * Clears the screen text layer. Emits [RawOp] with "cls();" — the GBDK-2020 console function
-     * from <gbdk/console.h>. The old CLS macro does not exist in GBDK-2020.
+     * Clears the screen text layer. Emits [ScreenClear] IR which is lowered scene-aware by
+     * `gbkt-backend-gbdk` (Plan 07.4-20): a BG-tilemap scene gets a non-destructive clear
+     * (HIDE_SPRITES + _win_clear_region) preserving the BG; a non-BG scene gets `cls()`
+     * (back-compat for title/results/gameover). DSL authors do not need to choose.
      */
     fun clear() {
-        ops += RawOp("cls();", sourceLocation = captureV2Location())
+        ops += ScreenClear(sourceLocation = captureV2Location())
+    }
+
+    /**
+     * Binds the current level's tileset+tilemap into VRAM. Lowers to the typed
+     * [BindCurrentLevel] IR node which the GBDK backend emits as `setup_current_level();`.
+     *
+     * The target function is generated by [GBDKPipeline.buildSetupCurrentLevelFunctionIfNeeded]
+     * and is gated on `gameUsesTilemapCollision` — only valid when a platformerPhysics +
+     * tilemapCollision system is registered. Emits no build WARNING (unlike the `cEmit` escape hatch).
+     */
+    fun bindCurrentLevel() {
+        ops += BindCurrentLevel(sourceLocation = captureV2Location())
     }
 
     // -------------------------------------------------------------------------

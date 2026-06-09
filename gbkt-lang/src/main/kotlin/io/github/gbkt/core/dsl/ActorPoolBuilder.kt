@@ -8,7 +8,9 @@ package io.github.gbkt.core.dsl
 
 import io.github.gbkt.core.ir.ActorPoolConfig
 import io.github.gbkt.core.ir.ActorPoolIR
+import io.github.gbkt.core.ir.CallExpr
 import io.github.gbkt.core.ir.Expr
+import io.github.gbkt.core.ir.IfOp
 import io.github.gbkt.core.ir.Literal
 import io.github.gbkt.core.ir.PoolDestroyActor
 import io.github.gbkt.core.ir.PoolDestroyAll
@@ -53,8 +55,42 @@ data class PoolIterator(val varName: String) {
  *
  * @param poolId Unique ID for the pool (inferred from the property name).
  * @param maxSize Maximum number of simultaneously active entities — embedded for DSL op recording.
+ * @param actorTemplateId ID of the template actor used for all pool instances. Required for
+ *   pool-pool collision codegen, which emits the underlying [CallExpr] using template actor IDs.
  */
-class ActorPoolRef(val poolId: String, val maxSize: Int = 0)
+class ActorPoolRef(val poolId: String, val maxSize: Int = 0, val actorTemplateId: String = "")
+
+// =============================================================================
+// POOL-POOL COLLISION (typed wrapper)
+// =============================================================================
+
+/**
+ * Typed wrapper produced by [ActorPoolRef.collides]. Carries both pool refs so the [whenever]
+ * overload can derive iterator slot variable names matching the codegen's auto-named loop variables
+ * (e.g. `_pool_bi`, `_pool_ei`).
+ *
+ * DSL-only — the IR-level form emitted by [whenever] is the existing `CallExpr("collides",
+ * [VarRef(templateA), VarRef(templateB)])` shape that `tryBuildPoolCollisionStatement` already
+ * detects in the GBDK backend.
+ */
+data class PoolPoolCollisionExpr(val poolA: ActorPoolRef, val poolB: ActorPoolRef)
+
+/**
+ * Returns a typed pool-pool collision expression for use in [whenever] with a 2-arg lambda.
+ *
+ * ```kotlin
+ * whenever(bulletPool.collides(enemyPool)) { bi, ei ->
+ *     score += 10
+ *     destroy(bulletPool, bi)
+ *     destroy(enemyPool, ei)
+ * }
+ * ```
+ *
+ * The lambda receives typed [PoolIterator] handles for each pool's outer-loop iteration index. The
+ * names `bi` / `ei` are user-chosen Kotlin lambda parameter names — no magic strings.
+ */
+fun ActorPoolRef.collides(other: ActorPoolRef): PoolPoolCollisionExpr =
+    PoolPoolCollisionExpr(this, other)
 
 // =============================================================================
 // ACTOR POOL BUILDER
@@ -135,8 +171,8 @@ class ActorPoolDelegate(
         val gameBuilder =
             GameBuilderContext.current ?: error("pool() called outside a game {} block")
         gameBuilder.registerActorPool(poolIR)
-        ref = ActorPoolRef(poolId, maxSize)
-        return ReadOnlyProperty { _, _ -> ActorPoolRef(poolId, maxSize) }
+        ref = ActorPoolRef(poolId, maxSize, actorRef.id)
+        return ReadOnlyProperty { _, _ -> ActorPoolRef(poolId, maxSize, actorRef.id) }
     }
 }
 
@@ -307,7 +343,7 @@ fun ScriptBuilder.forEachActive(
  * variable assignments.
  *
  * ```kotlin
- * whenever(bulletPool.activeCount isEqualTo 0) { navigate("win") }
+ * whenever(bulletPool.activeCount isEqualTo 0) { navigate(winScene) }
  * ```
  */
 val ActorPoolRef.activeCount: Expr
@@ -327,4 +363,56 @@ val ActorPoolRef.activeCount: Expr
  */
 fun ScriptBuilder.destroyAll(pool: ActorPoolRef) {
     emit(PoolDestroyAll(pool.poolId, pool.maxSize, sourceLocation = captureV2Location()))
+}
+
+// =============================================================================
+// POOL-POOL COLLISION — typed `whenever` overload with iterator handles
+// =============================================================================
+
+/**
+ * Conditional block fired when any entity in [poolA] collides with any entity in [poolB].
+ *
+ * The lambda receives typed [PoolIterator] handles for the outer and inner pool slot indices,
+ * letting the body call `destroy(pool, idx)` against the colliding instances. Lambda parameter
+ * names are the user's choice — no magic strings.
+ *
+ * ```kotlin
+ * whenever(bulletPool.collides(enemyPool)) { bi, ei ->
+ *     score += 10
+ *     destroy(bulletPool, bi)
+ *     destroy(enemyPool, ei)
+ *     playSound(explodeSfx)
+ * }
+ * ```
+ *
+ * Emits an [IfOp] with condition `CallExpr("collides", [VarRef(templateA), VarRef(templateB)])`,
+ * matching the existing IR shape that the GBDK backend's `tryBuildPoolCollisionStatement` already
+ * detects and lowers into nested `for` loops.
+ *
+ * The iterator slot names are auto-derived to match the codegen's loop variable naming
+ * (`_pool_<short>i`), so `destroy(pool, iter)` resolves to `pool_<id>_destroy(_pool_<short>i)` in
+ * the generated C.
+ */
+fun ScriptBuilder.whenever(
+    collision: PoolPoolCollisionExpr,
+    block: ScriptBuilder.(PoolIterator, PoolIterator) -> Unit,
+) {
+    val loc = captureV2Location()
+    // Slot var names match the auto-derived names in
+    // ScriptOpVisitor.buildBothPoolCollisionStatement: "_pool_${poolId.take(1)}i".
+    // sanitizeVarName prepends "_" so we store the post-prefix form here.
+    val iterA = PoolIterator("pool_${collision.poolA.poolId.take(1)}i")
+    val iterB = PoolIterator("pool_${collision.poolB.poolId.take(1)}i")
+    val bodyBuilder = ScriptBuilder()
+    ScriptBuilderContext.with(bodyBuilder) { bodyBuilder.block(iterA, iterB) }
+    val condition =
+        CallExpr(
+            function = "collides",
+            args =
+                listOf(
+                    VarRef(collision.poolA.actorTemplateId),
+                    VarRef(collision.poolB.actorTemplateId),
+                ),
+        )
+    emit(IfOp(condition, bodyBuilder.build(), emptyList(), sourceLocation = loc))
 }

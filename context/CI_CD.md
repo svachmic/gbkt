@@ -33,7 +33,7 @@ Concurrency: one run per branch, cancels in-progress.
 
 ### Release (`release.yml`)
 
-**Triggers:** Push of tags matching `v*` (e.g., `v1.0.0`)
+**Triggers:** Push of tags matching `v*` (e.g., `v0.1.0`)
 
 Five sequential jobs:
 

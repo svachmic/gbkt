@@ -18,6 +18,22 @@ Single-session stdio server:
 - Blocking StepAgent calls wrapped in `withContext(Dispatchers.IO)`
 - Error convention: `CallToolResult(isError = true)` for all errors
 
+### Hang recovery
+
+Two layers guard against a hung ROM (CPU runs but no VBlank ever):
+
+1. **`CoffeeGbEmulator.stepFrame` watchdog** (in `gbkt-emulator`) — throws
+   `EmulatorFrameHangException` after `maxTicksPerFrame` t-cycles (default 1 000 000 ≈ 14 normal
+   frames). The mutex releases on throw, so the next MCP call can run instead of waiting forever.
+2. **Preemptive `stop()`** — `McpEmulatorSession.stop` calls `agent.requestCancellation()` BEFORE
+   taking `mutex`. The `@Volatile` cancellation flag is read on every tick, so `emulator_stop`
+   typically preempts a runaway frame within microseconds.
+
+Both layers are exercised by unit tests (`CoffeeGbEmulatorTest`, `SessionLifecycleTest`). Without
+them, a single rogue ROM could lock the MCP server indefinitely — historically observed when the
+racer ROM was rebuilt with `SHOW_BKG;` added but no valid BG init: the JVM consumed 100% CPU and
+needed `kill -9` to recover.
+
 ## Key Files
 
 | File | Role |

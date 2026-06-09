@@ -143,8 +143,8 @@ class DialogBuilder(private val id: String) {
  *         whenever(buttons.a.pressed) {
  *             elder.say("Welcome, traveler.")
  *             elder.choice {
- *                 option("Accept quest") { navigate("quest") }
- *                 option("Decline") { navigate("village") }
+ *                 option("Accept quest") { navigate(questScene) }
+ *                 option("Decline") { navigate(villageScene) }
  *             }
  *         }
  *     }
@@ -186,17 +186,16 @@ class DialogHandle(val id: String) {
         val builder =
             ScriptBuilderContext.current
                 ?: error("DialogHandle.say() must be called inside a scene lifecycle block")
-        val irSegments =
-            segments.map { seg ->
-                when (seg) {
-                    is String -> DialogTextSegment(seg)
-                    is Expr -> DialogExprSegment(seg)
-                    else ->
-                        error(
-                            "DialogHandle.say() only accepts String or Expr segments, got: ${seg::class.simpleName}"
-                        )
-                }
+        val irSegments = segments.map { seg ->
+            when (seg) {
+                is String -> DialogTextSegment(seg)
+                is Expr -> DialogExprSegment(seg)
+                else ->
+                    error(
+                        "DialogHandle.say() only accepts String or Expr segments, got: ${seg::class.simpleName}"
+                    )
             }
+        }
         builder.emit(DialogSay(dialogId = id, segments = irSegments, sourceLocation = loc))
     }
 

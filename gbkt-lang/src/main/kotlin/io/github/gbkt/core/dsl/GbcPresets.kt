@@ -26,7 +26,7 @@ import io.github.gbkt.core.ir.GBCPalette
  * // Override a single shade after copying:
  * val customDungeon by palette {
  *     copy(GbcPresets.DUNGEON)
- *     color0(GbcColor.WHITE)  // brighten the highlight
+ *     color0(Color.WHITE)  // brighten the highlight
  * }
  * ```
  *
@@ -52,10 +52,10 @@ object GbcPresets {
         GBCPalette(
             "classic_green",
             listOf(
-                gbc(31, 31, 24), // near-white with warm tint
-                gbc(16, 24, 8), // bright lime green
-                gbc(8, 16, 4), // mid forest green
-                gbc(0, 4, 0), // deep dark green
+                Color.rgb555(31, 31, 24), // near-white with warm tint
+                Color.rgb555(16, 24, 8), // bright lime green
+                Color.rgb555(8, 16, 4), // mid forest green
+                Color.rgb555(0, 4, 0), // deep dark green
             ),
         )
 
@@ -68,10 +68,10 @@ object GbcPresets {
         GBCPalette(
             "nature",
             listOf(
-                gbc(28, 31, 20), // light spring green
-                gbc(12, 24, 8), // medium leafy green
-                gbc(6, 16, 4), // deep foliage
-                gbc(2, 6, 2), // dark undergrowth
+                Color.rgb555(28, 31, 20), // light spring green
+                Color.rgb555(12, 24, 8), // medium leafy green
+                Color.rgb555(6, 16, 4), // deep foliage
+                Color.rgb555(2, 6, 2), // dark undergrowth
             ),
         )
 
@@ -84,10 +84,10 @@ object GbcPresets {
         GBCPalette(
             "fire",
             listOf(
-                gbc(31, 31, 16), // bright yellow-white
-                gbc(31, 20, 4), // orange-yellow flame
-                gbc(24, 8, 0), // deep orange-red
-                gbc(8, 0, 0), // near-black dark red
+                Color.rgb555(31, 31, 16), // bright yellow-white
+                Color.rgb555(31, 20, 4), // orange-yellow flame
+                Color.rgb555(24, 8, 0), // deep orange-red
+                Color.rgb555(8, 0, 0), // near-black dark red
             ),
         )
 
@@ -100,10 +100,10 @@ object GbcPresets {
         GBCPalette(
             "ice",
             listOf(
-                gbc(31, 31, 31), // pure white ice
-                gbc(20, 26, 31), // pale ice blue
-                gbc(10, 16, 28), // mid cool blue
-                gbc(2, 4, 16), // deep glacial blue
+                Color.rgb555(31, 31, 31), // pure white ice
+                Color.rgb555(20, 26, 31), // pale ice blue
+                Color.rgb555(10, 16, 28), // mid cool blue
+                Color.rgb555(2, 4, 16), // deep glacial blue
             ),
         )
 
@@ -116,10 +116,10 @@ object GbcPresets {
         GBCPalette(
             "ocean",
             listOf(
-                gbc(24, 31, 31), // bright aquamarine
-                gbc(12, 20, 28), // sea blue
-                gbc(4, 10, 20), // deep ocean
-                gbc(0, 2, 8), // abyssal dark
+                Color.rgb555(24, 31, 31), // bright aquamarine
+                Color.rgb555(12, 20, 28), // sea blue
+                Color.rgb555(4, 10, 20), // deep ocean
+                Color.rgb555(0, 2, 8), // abyssal dark
             ),
         )
 
@@ -136,10 +136,10 @@ object GbcPresets {
         GBCPalette(
             "dungeon",
             listOf(
-                gbc(24, 22, 20), // light warm stone
-                gbc(16, 14, 12), // mid stone gray
-                gbc(10, 8, 8), // dark stone
-                gbc(4, 2, 2), // near-black shadow
+                Color.rgb555(24, 22, 20), // light warm stone
+                Color.rgb555(16, 14, 12), // mid stone gray
+                Color.rgb555(10, 8, 8), // dark stone
+                Color.rgb555(4, 2, 2), // near-black shadow
             ),
         )
 
@@ -152,10 +152,10 @@ object GbcPresets {
         GBCPalette(
             "cavern",
             listOf(
-                gbc(22, 20, 24), // pale lavender gray
-                gbc(14, 12, 18), // mid purple-gray
-                gbc(8, 6, 12), // dark cave purple
-                gbc(2, 2, 4), // near-black abyss
+                Color.rgb555(22, 20, 24), // pale lavender gray
+                Color.rgb555(14, 12, 18), // mid purple-gray
+                Color.rgb555(8, 6, 12), // dark cave purple
+                Color.rgb555(2, 2, 4), // near-black abyss
             ),
         )
 
@@ -168,10 +168,10 @@ object GbcPresets {
         GBCPalette(
             "sunset",
             listOf(
-                gbc(31, 28, 16), // bright golden sky
-                gbc(31, 16, 8), // warm orange horizon
-                gbc(20, 8, 12), // rose-red transition
-                gbc(8, 2, 8), // deep violet dusk
+                Color.rgb555(31, 28, 16), // bright golden sky
+                Color.rgb555(31, 16, 8), // warm orange horizon
+                Color.rgb555(20, 8, 12), // rose-red transition
+                Color.rgb555(8, 2, 8), // deep violet dusk
             ),
         )
 
@@ -184,10 +184,10 @@ object GbcPresets {
         GBCPalette(
             "night",
             listOf(
-                gbc(12, 14, 20), // moonlit light blue
-                gbc(6, 8, 16), // deep twilight
-                gbc(3, 4, 10), // dark night blue
-                gbc(0, 0, 4), // near-black midnight
+                Color.rgb555(12, 14, 20), // moonlit light blue
+                Color.rgb555(6, 8, 16), // deep twilight
+                Color.rgb555(3, 4, 10), // dark night blue
+                Color.rgb555(0, 0, 4), // near-black midnight
             ),
         )
 
@@ -204,10 +204,10 @@ object GbcPresets {
         GBCPalette(
             "pastel",
             listOf(
-                gbc(31, 28, 28), // light rose white
-                gbc(28, 24, 31), // soft lavender
-                gbc(24, 31, 28), // mint green
-                gbc(31, 31, 24), // pale lemon
+                Color.rgb555(31, 28, 28), // light rose white
+                Color.rgb555(28, 24, 31), // soft lavender
+                Color.rgb555(24, 31, 28), // mint green
+                Color.rgb555(31, 31, 24), // pale lemon
             ),
         )
 
@@ -220,10 +220,10 @@ object GbcPresets {
         GBCPalette(
             "sepia",
             listOf(
-                gbc(31, 28, 22), // pale parchment
-                gbc(24, 20, 14), // warm tan
-                gbc(16, 12, 8), // medium brown
-                gbc(8, 4, 2), // dark sepia shadow
+                Color.rgb555(31, 28, 22), // pale parchment
+                Color.rgb555(24, 20, 14), // warm tan
+                Color.rgb555(16, 12, 8), // medium brown
+                Color.rgb555(8, 4, 2), // dark sepia shadow
             ),
         )
 
@@ -236,10 +236,10 @@ object GbcPresets {
         GBCPalette(
             "neon",
             listOf(
-                gbc(0, 31, 16), // neon green
-                gbc(31, 0, 16), // hot pink/magenta
-                gbc(16, 0, 31), // electric purple
-                gbc(0, 0, 0), // black background
+                Color.rgb555(0, 31, 16), // neon green
+                Color.rgb555(31, 0, 16), // hot pink/magenta
+                Color.rgb555(16, 0, 31), // electric purple
+                Color.rgb555(0, 0, 0), // black background
             ),
         )
 
@@ -252,10 +252,10 @@ object GbcPresets {
         GBCPalette(
             "monochrome_blue",
             listOf(
-                gbc(24, 28, 31), // light sky blue
-                gbc(12, 18, 24), // medium steel blue
-                gbc(4, 8, 16), // deep slate blue
-                gbc(0, 2, 8), // near-black navy
+                Color.rgb555(24, 28, 31), // light sky blue
+                Color.rgb555(12, 18, 24), // medium steel blue
+                Color.rgb555(4, 8, 16), // deep slate blue
+                Color.rgb555(0, 2, 8), // near-black navy
             ),
         )
 
@@ -268,10 +268,10 @@ object GbcPresets {
         GBCPalette(
             "warm_gray",
             listOf(
-                gbc(28, 26, 24), // near-white warm gray
-                gbc(20, 18, 16), // light warm gray
-                gbc(12, 10, 10), // medium warm gray
-                gbc(4, 4, 4), // near-black warm gray
+                Color.rgb555(28, 26, 24), // near-white warm gray
+                Color.rgb555(20, 18, 16), // light warm gray
+                Color.rgb555(12, 10, 10), // medium warm gray
+                Color.rgb555(4, 4, 4), // near-black warm gray
             ),
         )
 
@@ -288,10 +288,10 @@ object GbcPresets {
         GBCPalette(
             "ui_light",
             listOf(
-                gbc(31, 31, 31), // pure white panel background
-                gbc(20, 20, 22), // light cool gray for accents
-                gbc(10, 10, 14), // mid dark for borders
-                gbc(0, 0, 0), // pure black for text
+                Color.rgb555(31, 31, 31), // pure white panel background
+                Color.rgb555(20, 20, 22), // light cool gray for accents
+                Color.rgb555(10, 10, 14), // mid dark for borders
+                Color.rgb555(0, 0, 0), // pure black for text
             ),
         )
 
@@ -304,10 +304,10 @@ object GbcPresets {
         GBCPalette(
             "ui_dark",
             listOf(
-                gbc(24, 24, 26), // light panel background
-                gbc(16, 16, 18), // mid gray accent
-                gbc(8, 8, 10), // dark border
-                gbc(0, 0, 2), // near-black deep shadow
+                Color.rgb555(24, 24, 26), // light panel background
+                Color.rgb555(16, 16, 18), // mid gray accent
+                Color.rgb555(8, 8, 10), // dark border
+                Color.rgb555(0, 0, 2), // near-black deep shadow
             ),
         )
 }

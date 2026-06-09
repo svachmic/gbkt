@@ -33,8 +33,8 @@ import io.github.gbkt.rpg.domain.CharacterDef
 //       fillRate(4)
 //       maxGauge(200)
 //       turnOrder(TurnOrderStrategy.SPEED_BASED)
-//       onVictory { navigate("win") }
-//       onDefeat { navigate("gameover") }
+//       onVictory { navigate(winScene) }
+//       onDefeat { navigate(gameoverScene) }
 //   }
 // =============================================================================
 
@@ -169,7 +169,7 @@ class AtbCombatBuilder(val id: String) {
      * Records the script operations to execute when the player wins the battle.
      *
      * ```kotlin
-     * onVictory { navigate("gameplay") }
+     * onVictory { navigate(gameplayScene) }
      * ```
      */
     fun onVictory(block: ScriptBuilder.() -> Unit) {
@@ -180,7 +180,7 @@ class AtbCombatBuilder(val id: String) {
      * Records the script operations to execute when the player loses the battle.
      *
      * ```kotlin
-     * onDefeat { navigate("gameover") }
+     * onDefeat { navigate(gameoverScene) }
      * ```
      */
     fun onDefeat(block: ScriptBuilder.() -> Unit) {

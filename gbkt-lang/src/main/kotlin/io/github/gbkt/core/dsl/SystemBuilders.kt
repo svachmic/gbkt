@@ -9,6 +9,7 @@ package io.github.gbkt.core.dsl
 import io.github.gbkt.core.ir.CameraSystem
 import io.github.gbkt.core.ir.EnvelopeConfig
 import io.github.gbkt.core.ir.ExplorationSystem
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.GbcTarget
 import io.github.gbkt.core.ir.PathfindingSystem
 import io.github.gbkt.core.ir.SaveSystem
@@ -528,11 +529,11 @@ class SoundRegistersBuilder {
  */
 @GbktDsl
 class ConfigBuilder {
-    /** Cartridge type string (e.g. "ROM_ONLY", "MBC1", "MBC5"). */
-    var cartridge: String = "ROM_ONLY"
+    /** Cartridge hardware type. Defaults to [Cartridge.ROM_ONLY]. */
+    var cartridge: Cartridge = Cartridge.ROM_ONLY
 
-    /** Number of ROM banks. */
-    var romBanks: Int = 2
+    /** Number of ROM banks. Null means derive automatically from BankingAnalysisPass (D-05). */
+    var romBanks: Int? = null
 
     /** Number of RAM banks. */
     var ramBanks: Int = 0
@@ -560,6 +561,20 @@ class ConfigBuilder {
         gbcTarget = mode
     }
 
+    /**
+     * Sets the cartridge hardware type.
+     *
+     * Usage:
+     * ```kotlin
+     * config {
+     *     cartridge(Cartridge.MBC5_RAM_BATTERY)
+     * }
+     * ```
+     */
+    fun cartridge(type: Cartridge) {
+        this.cartridge = type
+    }
+
     internal fun build() =
         io.github.gbkt.core.ir.CartridgeConfig(
             cartridge = cartridge,
@@ -568,3 +583,111 @@ class ConfigBuilder {
             gbcTarget = gbcTarget,
         )
 }
+
+// =============================================================================
+// SYSTEM REF (marker interface + typed references)
+// =============================================================================
+
+/**
+ * Marker interface for typed system references.
+ *
+ * Implementations: [SaveDataRef] (and future system kinds).
+ * Consumed by [ScriptBuilder.triggerSystem] to resolve the system id at DSL recording time.
+ */
+interface SystemRef {
+    val systemId: String
+}
+
+/**
+ * Typed reference to a save/load system registered via [saveData].
+ *
+ * Returned by [SaveDataDelegate] when `val saves by saveData { }` is evaluated inside a
+ * `game { }` block. The [id] is inferred from the Kotlin property name (Project Rule #1).
+ */
+data class SaveDataRef(val id: String) : SystemRef {
+    override val systemId: String get() = id
+}
+
+// =============================================================================
+// SAVE DATA DELEGATE
+// =============================================================================
+
+/**
+ * Kotlin property delegate that infers the [SaveSystem] id from the property name.
+ *
+ * Used via:
+ * ```kotlin
+ * val saves by saveData { slots(2) }
+ * ```
+ *
+ * The delegate captures the property name in [provideDelegate], builds a [SaveDataBuilder],
+ * and registers the resulting [SaveSystem] with the enclosing [GameBuilder]. The [getValue]
+ * method returns a [SaveDataRef] for use in [ScriptBuilder.triggerSystem].
+ *
+ * @see saveData
+ * @see SaveDataRef
+ */
+/**
+ * Single-use: each `val x by saveData { }` binding must use its own delegate instance.
+ * Reusing one instance across two `by` bindings throws [IllegalStateException] at build time.
+ */
+class SaveDataDelegate(private val block: SaveDataBuilder.() -> Unit) :
+    ReadOnlyProperty<Any?, SaveDataRef> {
+    private var ref: SaveDataRef? = null
+
+    /**
+     * Single-use guard. Prevents silent double-registration when the same delegate instance
+     * is accidentally bound to two `val` properties.
+     */
+    private var delegateUsed: Boolean = false
+
+    /**
+     * Called by Kotlin when `val x by saveData { ... }` is evaluated.
+     *
+     * Captures the property name, builds the [SaveSystem], registers it with the current
+     * [GameBuilder], and stores the resulting [SaveDataRef] for retrieval by [getValue].
+     *
+     * @throws IllegalStateException if called outside a `game { }` block or if the delegate
+     *   instance is reused across two `val` bindings.
+     */
+    operator fun provideDelegate(
+        thisRef: Any?,
+        property: KProperty<*>,
+    ): ReadOnlyProperty<Any?, SaveDataRef> {
+        check(!delegateUsed) {
+            "SaveDataDelegate instance reused: was already bound to '${ref?.systemId ?: "<unknown>"}'. " +
+                "Each 'val x by saveData { }' must use its own delegate instance."
+        }
+        delegateUsed = true
+        val name = property.name
+        val gameBuilder = GameBuilderContext.current
+            ?: error("saveData {} must be called inside a game {} block")
+        val builder = SaveDataBuilder(name)
+        builder.block()
+        val system = builder.build()
+        gameBuilder.registerSaveData(system)
+        ref = SaveDataRef(name)
+        return this
+    }
+
+    override fun getValue(thisRef: Any?, property: KProperty<*>): SaveDataRef =
+        ref ?: error("SaveDataDelegate not initialized — was provideDelegate called?")
+}
+
+/**
+ * Creates a [SaveDataDelegate] for use with the `by` keyword inside a `game { }` block.
+ *
+ * The save system id is inferred from the Kotlin property name (Project Rule #1 — no magic
+ * string parameter). If the compiler warns about the unused binding, add
+ * `@file:Suppress("UNUSED_VARIABLE")` at the top of your game file.
+ *
+ * Usage:
+ * ```kotlin
+ * val saves by saveData { slots(2) }
+ * ```
+ *
+ * Single-use: each `by saveData { }` binding must use its own delegate instance.
+ *
+ * @see SaveDataDelegate
+ */
+fun saveData(block: SaveDataBuilder.() -> Unit): SaveDataDelegate = SaveDataDelegate(block)

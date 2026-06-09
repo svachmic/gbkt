@@ -1,6 +1,6 @@
 # gbkt Examples
 
-Nine example games demonstrating the gbkt DSL at various complexity levels.
+Eight example games demonstrating the gbkt DSL at various complexity levels.
 All examples compile to `.gb` / `.gbc` ROMs via GBDK-2020.
 
 ## Examples Overview
@@ -9,13 +9,12 @@ All examples compile to `.gb` / `.gbc` ROMs via GBDK-2020.
 |------|-----------|--------|-------------|
 | [pong](pong/) | Beginner | DMG | Classic two-player pong with AI opponent |
 | [breakout](breakout/) | Beginner | DMG | Brick-breaking with lives, score, and HUD icons |
-| [platformer](platformer/) | Intermediate | DMG | Side-scrolling platformer with physics and jump mechanics |
-| [platformer-gbc](platformer-gbc/) | Intermediate | GBC | Same as platformer with GBC_COMPATIBLE color mode |
-| [rpg-lite](rpg-lite/) | Intermediate | DMG | Mini-RPG: dungeon exploration, combat, town healing |
-| [dungeon](dungeon/) | Advanced | DMG | Tile-based dungeon crawler with torch gauge and encounters |
-| [explorer](explorer/) | Advanced | DMG/GBC | Full RPG: world map, multiple floors, party, equipment |
-| [shmup](shmup/) | Intermediate | DMG | Shoot-em-up with entity pools and scrolling background |
+| [simple-physics](simple-physics/) | Beginner | DMG | Shortest path from `game { }` to ROM — sub-pixel physics, single sprite |
+| [metasprites](metasprites/) | Intermediate | DMG/GBC | Variable-length OAM metasprites, GBC sub-palettes, hardware flip |
+| [metasprites-stress](metasprites-stress/) | Internal | DMG/GBC | Throwaway codegen-verification ROM (not a user-facing example) |
+| [banks](banks/) | Advanced | DMG | Multi-bank ROM with cross-bank scene navigation and SRAM persistence |
 | [racer](racer/) | Intermediate | GBC | Top-down racing game with GBC color support |
+| [platformer-template](platformer-template/) | Advanced | DMG/GBC (MBC1) | GBDK `platformer_template` reference port — tilemap-collision, horizontal scroll, variable-height jump, banked title + NextLevel cards, 3-level substrate |
 
 ## Build Commands
 
@@ -35,7 +34,7 @@ Each example follows the same Gradle pattern:
 ./gradlew :gbkt-examples:<name>:test
 ```
 
-Replace `<name>` with the example folder name (e.g., `pong`, `breakout`, `platformer-gbc`).
+Replace `<name>` with the example folder name (e.g., `pong`, `breakout`, `racer`).
 
 ## Prerequisites
 
@@ -47,9 +46,6 @@ Replace `<name>` with the example folder name (e.g., `pong`, `breakout`, `platfo
 
 1. **pong** — start here; covers actors, variables, sound, and scene navigation
 2. **breakout** — adds arrays, tile-based collision, lives system, and HUD icons
-3. **platformer** — introduces the `gbkt-genre-platformer` package (physics, camera, platforms)
-4. **platformer-gbc** — same game, adds `GbcTarget.GBC_COMPATIBLE` config
-5. **rpg-lite** — introduces `gbkt-genre-rpg` (characters, monsters, `simpleBattle`)
-6. **dungeon / explorer / shmup / racer** — advanced systems
+3. **racer** — top-down racing via `gbkt-genre-sport` (track tilemap, AI rival, lap counting)
 
 See each example's `README.md` for game-specific controls and feature details.

@@ -8,14 +8,18 @@
 
 package io.github.gbkt.core.dsl
 
+import io.github.gbkt.core.ir.Assign
+import io.github.gbkt.core.ir.AssignOp
 import io.github.gbkt.core.ir.BinaryExpr
 import io.github.gbkt.core.ir.BinaryOp
 import io.github.gbkt.core.ir.CastExpr
 import io.github.gbkt.core.ir.Expr
+import io.github.gbkt.core.ir.IfOp
 import io.github.gbkt.core.ir.Literal
 import io.github.gbkt.core.ir.StringLiteral
 import io.github.gbkt.core.ir.UnaryExpr
 import io.github.gbkt.core.ir.UnaryOp
+import io.github.gbkt.core.ir.VarRef
 import io.github.gbkt.core.ir.VarType
 
 // =============================================================================
@@ -258,3 +262,46 @@ fun ActorPropertyRef.toI8(): Expr = toExpr().toI8()
 
 /** Cast [this] actor property to INT16. Generates `(INT16)(_actorId_prop)` in C. */
 fun ActorPropertyRef.toI16(): Expr = toExpr().toI16()
+
+// =============================================================================
+// FIXED-POINT HELPERS
+// =============================================================================
+
+/**
+ * Extracts the pixel coordinate from a 12.4 fixed-point variable.
+ *
+ * Equivalent to `posX shr 4` — lowers to [BinaryExpr]([VarRef], SHR, [Literal]([fractionalBits])).
+ * Use with variables declared as `i16FixedVar` to hide the shift literal from call sites.
+ *
+ * @param fractionalBits Number of fractional bits; must match the declaration. Default 4.
+ */
+fun AssignableVar.toPixel(fractionalBits: Int = 4): Expr {
+    val bits = this.fractionalBits ?: fractionalBits
+    return BinaryExpr(VarRef(name), BinaryOp.SHR, Literal(bits))
+}
+
+/**
+ * Decays this variable toward zero by [by] per frame.
+ *
+ * Emits two [IfOp] nodes:
+ * - `if (v < 0) { v += by }` (decay from negative side)
+ * - `if (v > 0) { v -= by }` (decay from positive side)
+ *
+ * Generated C is byte-identical to the hand-rolled two-`whenever` ladder.
+ * [by] defaults to 1, which is the only value used in current example ports.
+ *
+ * Must be called inside a `ScriptBuilder` block (scene frame/enter/exit, whenever, runIf, etc.).
+ * D-13: method-only canonical surface; no free-fn `damp()` alias.
+ */
+fun AssignableVar.easeToZero(by: Int = 1) {
+    val sb = ScriptBuilderContext.current
+        ?: error("easeToZero() called outside a ScriptBuilder block")
+    // if (v < 0) { v += by }
+    sb.whenever(BinaryExpr(VarRef(name), BinaryOp.LT, Literal(0))) {
+        assign(name, Literal(by), AssignOp.ADD)
+    }
+    // if (v > 0) { v -= by }
+    sb.whenever(BinaryExpr(VarRef(name), BinaryOp.GT, Literal(0))) {
+        assign(name, Literal(by), AssignOp.SUB)
+    }
+}

@@ -1,0 +1,144 @@
+# Post-Plan-20 main.c grep — bootstrap-relevant calls in generated metasprites C
+
+Date: 2026-05-19
+Source: gbkt-examples/metasprites/build/gbkt/generated/main.c
+After: `./gradlew :gbkt-examples:metasprites:generateC` (clean regenerate)
+
+# Search command
+grep -nE "set_sprite_palette|set_bkg_palette|cgb_compatibility|set_default_palette|\
+BCPD_REG|BCPS_REG|OCPD_REG|OCPS_REG|DISPLAY_ON|DISPLAY_OFF|SHOW_BKG|SHOW_SPRITES|\
+SPRITES_8x8|set_sprite_data|set_bkg_data|fill_bkg_rect|move_metasprite" \
+gbkt-examples/metasprites/build/gbkt/generated/main.c
+
+# Output
+209:    DISPLAY_OFF;
+210:    cgb_compatibility();
+211:    set_sprite_palette(0u, 1u, gray_pal);
+212:    set_sprite_palette(1u, 1u, pink_pal);
+213:    set_sprite_palette(2u, 1u, cyan_pal);
+214:    set_sprite_palette(3u, 1u, green_pal);
+218:    set_sprite_data(0u, 48u, elephant_tiles);
+219:    SHOW_BKG;
+220:    SHOW_SPRITES;
+221:    SPRITES_8x8;
+222:    DISPLAY_ON;
+239:    set_sprite_palette(0u, 1u, gray_pal);
+240:    set_sprite_palette(1u, 1u, pink_pal);
+241:    set_sprite_palette(2u, 1u, cyan_pal);
+242:    set_sprite_palette(3u, 1u, green_pal);
+243:    SHOW_SPRITES;
+247:fill_bkg_rect(0, 0, DEVICE_SCREEN_WIDTH, DEVICE_SCREEN_HEIGHT, 0);
+248:set_bkg_data(0, 1, _checkerboard_bg_pattern);
+302:            hiwater += move_metasprite_flipy(sprite_elephant_frames[_idx], 0, subpal, hiwater,
+307:            hiwater += move_metasprite_flipxy(sprite_elephant_frames[_idx], 0, subpal, hiwater,
+312:            hiwater += move_metasprite_flipx(sprite_elephant_frames[_idx], 0, subpal, hiwater,
+317:            hiwater += move_metasprite_ex(sprite_elephant_frames[_idx], 0, subpal, hiwater,
+
+# 5-line context for `main()` bootstrap (lines 207-225)
+
+  207  // Entry point
+  208  void main(void) {
+  209      DISPLAY_OFF;
+  210      cgb_compatibility();
+  211      set_sprite_palette(0u, 1u, gray_pal);
+  212      set_sprite_palette(1u, 1u, pink_pal);
+  213      set_sprite_palette(2u, 1u, cyan_pal);
+  214      set_sprite_palette(3u, 1u, green_pal);
+  215      NR52_REG = 128u;
+  216      NR50_REG = 119u;
+  217      NR51_REG = 255u;
+  218      set_sprite_data(0u, 48u, elephant_tiles);
+  219      SHOW_BKG;
+  220      SHOW_SPRITES;
+  221      SPRITES_8x8;
+  222      DISPLAY_ON;
+  223      play_enter();
+  224      while (1) {
+  225          update_joypad();
+
+# 5-line context for `play_enter()` (lines 237-255)
+
+  237  // Scene: play
+  238  void play_enter(void) {
+  239      set_sprite_palette(0u, 1u, gray_pal);
+  240      set_sprite_palette(1u, 1u, pink_pal);
+  241      set_sprite_palette(2u, 1u, cyan_pal);
+  242      set_sprite_palette(3u, 1u, green_pal);
+  243      SHOW_SPRITES;
+  244      static const UINT8 _checkerboard_bg_pattern[] = {
+  245      0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,
+  246      0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F};
+  247  fill_bkg_rect(0, 0, DEVICE_SCREEN_WIDTH, DEVICE_SCREEN_HEIGHT, 0);
+  248  set_bkg_data(0, 1, _checkerboard_bg_pattern);
+  249      _posX = 1280u;
+  250      _posY = 1152u;
+  251      _spdX = 0u;
+  252      _spdY = 0u;
+  253      _idx = 0u;
+  254      _rot = 0u;
+  255      _rot = 0u;
+
+# 5-line context for `move_metasprite_ex` call (lines 295-322)
+
+  295      {
+  296      uint8_t subpal = _rot >> 2;
+  297      _elephant_subPalette = subpal;
+  298      _elephant_flipX = (_rot & 0x3u) >> 0u;
+  299      _elephant_flipY = (_rot & 0x3u) >> 1u;
+  300      switch (_rot & 0x3u) {
+  301          case 1:
+  302              hiwater += move_metasprite_flipy(sprite_elephant_frames[_idx], 0, subpal, hiwater,
+  303                                                DEVICE_SPRITE_PX_OFFSET_X + (_posX >> 4),
+  304                                                DEVICE_SPRITE_PX_OFFSET_Y + (_posY >> 4));
+  305              break;
+  306          case 2:
+  307              hiwater += move_metasprite_flipxy(sprite_elephant_frames[_idx], 0, subpal, hiwater,
+  308                                                DEVICE_SPRITE_PX_OFFSET_X + (_posX >> 4),
+  309                                                DEVICE_SPRITE_PX_OFFSET_Y + (_posY >> 4));
+  310              break;
+  311          case 3:
+  312              hiwater += move_metasprite_flipx(sprite_elephant_frames[_idx], 0, subpal, hiwater,
+  313                                                DEVICE_SPRITE_PX_OFFSET_X + (_posX >> 4),
+  310                                                DEVICE_SPRITE_PX_OFFSET_Y + (_posY >> 4));
+  311              break;
+  312          default:
+  313              hiwater += move_metasprite_ex(sprite_elephant_frames[_idx], 0, subpal, hiwater,
+  314                                            DEVICE_SPRITE_PX_OFFSET_X + (_posX >> 4),
+  315                                            DEVICE_SPRITE_PX_OFFSET_Y + (_posY >> 4));
+  316              break;
+  317      }
+  318  }
+
+# Findings
+
+1. **Bootstrap order (lines 208-222) is REFERENCE-ALIGNED** per Plan 20 fix:
+   - DISPLAY_OFF (line 209) is first
+   - cgb_compatibility() (line 210) is second
+   - 4× set_sprite_palette (lines 211-214) BEFORE DISPLAY_ON ✓
+   - SHOW_BKG / SHOW_SPRITES / SPRITES_8x8 / DISPLAY_ON (lines 219-222) in correct order
+   - Sprite tile data (line 218) loaded BEFORE DISPLAY_ON
+
+2. **MISSING: `set_bkg_palette()` is NEVER called** for any of the 8 GBC BG palette slots.
+   The only BG-palette state the GBC PPU sees is whatever `cgb_compatibility()` writes —
+   which per `<gb/cgb.h>` docs (set_default_palette obsolete-redirect) only sets
+   BG palette slot 0 to DMG-default (white/lt-gray/dk-gray/black).
+
+3. **MISSING: GBC BG attribute byte for tiles is never initialized.** On GBC, each BG tile
+   in the tilemap also has a per-tile attribute byte in VRAM bank 1 (bits 0-2 select BG
+   palette 0-7). After cgb_compatibility() these bytes default to 0 (palette slot 0).
+   fill_bkg_rect (line 247) writes ONLY to VRAM bank 0 (tile index). Bank-1 attribute
+   bytes are left at whatever the GBC firmware/cgb_compatibility() initialized them to.
+
+4. **The 4 set_sprite_palette() calls are DUPLICATED in play_enter()** (lines 239-242)
+   per Plan 20's "duplication-not-relocation" decision. This is intentional and idempotent.
+
+5. **`move_metasprite_*` calls pass `subpal` (rot>>2) as `base_prop` (3rd positional
+   arg)** at lines 302, 307, 312, 317. Per gb/metasprites.h docs, this overwrites each
+   OAM entry's attribute byte. So OAM bits[2:0] = subpal at runtime — selecting sprite
+   palette slot 0..3 dynamically. Hypothesis 2 (OAM attribute hardcoded to S_PAL(0))
+   is **FALSIFIED**.
+
+6. **Descriptor table `metasprite_t` entries use 3-field initializers** `{dy, dx, dtile}`
+   (omitting 4th `props` field — C zero-fills). This is irrelevant because runtime
+   `move_metasprite_*` OVERWRITES OAM properties with `base_prop` per the header docs.
+   Hypothesis 3 (descriptor needs per-frame regen) is **FALSIFIED**.

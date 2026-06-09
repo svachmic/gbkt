@@ -1,0 +1,11 @@
+# Pre-migration ROM byte-size oracle (D-09/D-10) — captured at HEAD 61cf0af1
+# Same-or-smaller gate: post-migration ROMs must be <= these byte sizes.
+# Logical carrier name -> actual output filename mapping noted per line.
+
+## PlatformerTemplate.gb (actual output: platformer-template.gb) [Req #17 + #18 carrier]
+-rw-r--r--  1 michalsvacha  staff  65536 Jun  4 23:12 gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb
+bytes: 65536
+
+## Banks.gb (actual output: banks.gb) [Req #15 carrier]
+-rw-r--r--  1 michalsvacha  staff  65536 Jun  4 23:12 gbkt-examples/banks/build/gbkt/output/banks.gb
+bytes: 65536

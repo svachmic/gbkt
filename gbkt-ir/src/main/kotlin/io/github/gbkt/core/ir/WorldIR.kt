@@ -19,8 +19,16 @@ package io.github.gbkt.core.ir
  * @property id Unique identifier for this zone (used in DSL navigation and codegen).
  * @property name Human-readable zone name (used in debug output and save data labels).
  * @property tilesetPath Path to the tileset image (relative to assets root).
- * @property mapWidth Map width in tiles.
- * @property mapHeight Map height in tiles.
+ * @property tilemapPath Path to a separate tilemap PNG (relative to assets root). When set,
+ *   ConvertZoneTilesetsTask runs a second png2asset invocation with `-maps_only` to extract real
+ *   tilemap bytes (Phase 12.2 D-01 two-invocation path). When null, the tileset PNG doubles as the
+ *   tilemap source (Phase 12.2 D-01 one-invocation path). Phase 12.2 D-03: AssetRef-only DSL
+ *   signature; field stores the underlying string path for codegen consumption.
+ * @property mapWidth Map width in tiles. `null` means "derive automatically" — either from the
+ *   tilemap PNG pixel dimensions (in ConvertZoneTilesetsTask) or fall back to 20×18. Mirrors the
+ *   bankOverride nullable-sentinel pattern.
+ * @property mapHeight Map height in tiles. `null` means "derive automatically" — same policy as
+ *   [mapWidth].
  * @property tileData Raw tile index array (one byte per tile, row-major). Empty means no tilemap.
  * @property collisionData Raw collision array (0=walkable, 1=blocked), same dimensions as tileData.
  * @property encounterTable Random encounter configuration for this zone; null means no encounters.
@@ -34,8 +42,9 @@ data class ZoneIR(
     val id: String,
     val name: String,
     val tilesetPath: String? = null,
-    val mapWidth: Int = 32,
-    val mapHeight: Int = 32,
+    val tilemapPath: String? = null,
+    val mapWidth: Int? = null,
+    val mapHeight: Int? = null,
     val tileData: List<Int> = emptyList(),
     val collisionData: List<Int> = emptyList(),
     val encounterTable: EncounterTableIR? = null,
@@ -52,8 +61,42 @@ data class ZoneIR(
      * bypass capacity checks. A warning is logged at build time when this is set.
      */
     val bankOverride: Int? = null,
+    /**
+     * Per-level platformer-physics overrides (D-12). Stored as opaque `Map<String, Any>?` to keep
+     * gbkt-ir module independent of gbkt-genre-platformer. Keys: 'gravity', 'jumpForce',
+     * 'terminalVelocity', 'solidThreshold', 'jumpHoldMaxFrames'. PlatformerVisitor casts values
+     * back to Int at codegen time.
+     */
+    val platformerPhysicsOverride: Map<String, Any>? = null,
+    /**
+     * Per-level platformer-input numeric overrides (Phase 12.3 R1). Stored as opaque `Map<String,
+     * Any>?` to keep gbkt-ir module independent of gbkt-genre-platformer. Keys: `walkSpeed`,
+     * `friction`, `airFriction`, `walkFrameCount`, `cyclePeriod`. PlatformerVisitor casts values
+     * back to Int at codegen time. AssignableVar binders are NEVER per-zone (only at game level per
+     * D-03 / L-2.2 — `OverrideTrackingInputBuilder` does not override binders).
+     */
+    val platformerInputOverride: Map<String, Any>? = null,
+    /**
+     * Per-zone player spawn position (Phase 12.6 D-06 / D-07). Coordinates are in PIXELS (codegen
+     * applies <<4 shift to convert to subpixel form). When null, the framework emits a build-time
+     * WARNING and defaults to (16, 120). Consumed by
+     * GBDKPipeline.buildSetupCurrentLevelFunctionIfNeeded (per-case body extension) +
+     * buildLevelSpawnTablesIfNeeded (HOME-bank const-array emission).
+     */
+    val spawnX: UByte? = null,
+    val spawnY: UByte? = null,
     /** Interactive objects within this zone (chests, signs, sconces, NPCs, levers, doors). */
     val objects: List<ZoneObjectIR> = emptyList(),
+    /**
+     * When `true`, this zone was synthesized by [SceneBuilder.screen][io.github.gbkt.core.dsl.SceneBuilder]
+     * and gates the SceneVisitor screenMode superset:
+     * hide_sprites_range + move_bkg(0,0) + fill_bkg_rect(full BG plane clear) + centered
+     * _bkg_tiles_load_banked placement.
+     *
+     * Set only by `SceneBuilder.screen(assetRef)` — never by the user-facing `zone { }` DSL.
+     * Default `false` preserves backward-compat for all existing [ZoneIR] construction sites.
+     */
+    val screenMode: Boolean = false,
 )
 
 /** Visual transition effect when moving between zones. */

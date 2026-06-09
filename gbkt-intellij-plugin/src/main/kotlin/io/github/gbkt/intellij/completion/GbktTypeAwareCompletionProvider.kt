@@ -105,13 +105,12 @@ class GbktTypeAwareCompletionProvider : CompletionProvider<CompletionParameters>
 
             // Check if import already exists
             val importDirectives = file.importDirectives
-            val alreadyImported =
-                importDirectives.any { directive ->
-                    val importPath = directive.importPath?.pathStr
-                    importPath == fqn ||
-                        importPath == "$fqn.*" ||
-                        importPath?.startsWith("${fqn.substringBeforeLast('.')}.*") == true
-                }
+            val alreadyImported = importDirectives.any { directive ->
+                val importPath = directive.importPath?.pathStr
+                importPath == fqn ||
+                    importPath == "$fqn.*" ||
+                    importPath?.startsWith("${fqn.substringBeforeLast('.')}.*") == true
+            }
 
             if (!alreadyImported) {
                 // Add the import statement

@@ -9,7 +9,7 @@ package io.github.gbkt.backend.gbdk.codegen.visitor
 import io.github.gbkt.backend.gbdk.codegen.ast.CBlock
 import io.github.gbkt.backend.gbdk.codegen.ast.CFunction
 import io.github.gbkt.backend.gbdk.codegen.emit.CEmitter
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import io.github.gbkt.core.ir.ActorPoolConfig
 import io.github.gbkt.core.ir.ActorPoolIR
 import io.github.gbkt.core.ir.CameraSystem
@@ -327,7 +327,7 @@ class GBDKSystemVisitorTest {
                         CombatEngineSystem(id = "battle", combatType = CombatType.TURN_BASED),
                     ),
             )
-        val output = GBDKPipelineV2().generate(gameWithAllSystems)
+        val output = GBDKPipeline().generate(gameWithAllSystems)
         val mainC = output.files["main.c"] ?: error("main.c not generated")
 
         // CameraSystem generates update_camera
@@ -359,7 +359,7 @@ class GBDKSystemVisitorTest {
                 config = CartridgeConfig(),
                 systems = listOf(CameraSystem(id = "cam")),
             )
-        val output = GBDKPipelineV2().generate(gameWithCamera)
+        val output = GBDKPipeline().generate(gameWithCamera)
         val mainC = output.files["main.c"] ?: error("main.c not generated")
 
         assertFalse(
@@ -490,7 +490,7 @@ class GBDKSystemVisitorTest {
     }
 
     @Test
-    fun `buildActorPoolStateVars generates active array and oam_base for one pool`() {
+    fun `buildActorPoolStateVars generates active and per-instance arrays for one pool`() {
         val gameIR =
             GameIR(
                 name = "Test",
@@ -507,12 +507,15 @@ class GBDKSystemVisitorTest {
 
         val vars = GBDKSystemVisitor.buildActorPoolStateVars(gameIR)
 
-        assertEquals(2, vars.size, "Should produce active bitmap and oam_base for one pool")
+        assertEquals(4, vars.size, "Should produce active + x + y + oam arrays (4 total)")
         val names = vars.map { it.name }
         assertTrue(names.contains("_pool_bullets_active"), "Should declare _pool_bullets_active")
-        assertTrue(
+        assertTrue(names.contains("_pool_bullets_x"), "Should declare _pool_bullets_x")
+        assertTrue(names.contains("_pool_bullets_y"), "Should declare _pool_bullets_y")
+        assertTrue(names.contains("_pool_bullets_oam"), "Should declare _pool_bullets_oam")
+        assertFalse(
             names.contains("_pool_bullets_oam_base"),
-            "Should declare _pool_bullets_oam_base",
+            "Should NOT declare _pool_bullets_oam_base (replaced by per-instance array)",
         )
     }
 
@@ -581,7 +584,9 @@ class GBDKSystemVisitorTest {
     }
 
     @Test
-    fun `buildActorPoolFunctions destroy guards against 0xFF invalid slot`() {
+    fun `buildActorPoolFunctions destroy guards against out-of-bounds slot index`() {
+        // Static OAM assignment: the old 0xFF sentinel guard is removed (no dynamic free list).
+        // Destroy now only guards against i >= maxSize (not i == 0xFF).
         val gameIR =
             GameIR(
                 name = "Test",
@@ -600,9 +605,13 @@ class GBDKSystemVisitorTest {
         val destroyFn = functions.first { it.name == "pool_bullets_destroy" }
         val emitted = destroyFn.body.map { CEmitter.emitStatement(it) }.joinToString("\n")
 
-        assertTrue(
+        assertFalse(
             emitted.contains("0xFF"),
-            "Destroy should guard against 0xFF invalid slot sentinel",
+            "Destroy should NOT contain 0xFF sentinel guard (static OAM, no free list), got:\n$emitted",
+        )
+        assertTrue(
+            emitted.contains(">= 8"),
+            "Destroy should guard against i >= maxSize (8) for bounds safety, got:\n$emitted",
         )
     }
 
@@ -675,8 +684,9 @@ class GBDKSystemVisitorTest {
         val system = ExplorationSystem(id = "dungeon")
 
         val functions = visitor.visitExplorationSystem(system)
-        val encounterCheck =
-            functions.firstOrNull { it.name == "exploration_encounter_check_dungeon" }
+        val encounterCheck = functions.firstOrNull {
+            it.name == "exploration_encounter_check_dungeon"
+        }
 
         requireNotNull(encounterCheck) { "exploration_encounter_check_dungeon function not found" }
         val emitted = collectRawCode(encounterCheck).joinToString(" ")
@@ -709,8 +719,9 @@ class GBDKSystemVisitorTest {
         val system = ExplorationSystem(id = "dungeon")
 
         val functions = visitor.visitExplorationSystem(system)
-        val encounterCheck =
-            functions.firstOrNull { it.name == "exploration_encounter_check_dungeon" }
+        val encounterCheck = functions.firstOrNull {
+            it.name == "exploration_encounter_check_dungeon"
+        }
 
         requireNotNull(encounterCheck) { "exploration_encounter_check_dungeon function not found" }
         val emitted = collectRawCode(encounterCheck).joinToString(" ")
@@ -744,8 +755,9 @@ class GBDKSystemVisitorTest {
         val system = ExplorationSystem(id = "dungeon")
 
         val functions = visitor.visitExplorationSystem(system)
-        val encounterCheck =
-            functions.firstOrNull { it.name == "exploration_encounter_check_dungeon" }
+        val encounterCheck = functions.firstOrNull {
+            it.name == "exploration_encounter_check_dungeon"
+        }
 
         requireNotNull(encounterCheck) { "exploration_encounter_check_dungeon function not found" }
         val emitted = collectRawCode(encounterCheck).joinToString(" ")
@@ -1056,7 +1068,7 @@ class GBDKSystemVisitorTest {
                         )
                     ),
             )
-        val output = GBDKPipelineV2().generate(gameWithEffect)
+        val output = GBDKPipeline().generate(gameWithEffect)
         val mainC = output.files["main.c"] ?: error("main.c not generated")
 
         assertTrue(
@@ -1093,7 +1105,7 @@ class GBDKSystemVisitorTest {
                         )
                     ),
             )
-        val output = GBDKPipelineV2().generate(gameWithFlags)
+        val output = GBDKPipeline().generate(gameWithFlags)
         val mainC = output.files["main.c"] ?: error("main.c not generated")
 
         assertTrue(
@@ -1115,7 +1127,7 @@ class GBDKSystemVisitorTest {
                 systems =
                     listOf(CombatEngineSystem(id = "combat", combatType = CombatType.TURN_BASED)),
             )
-        val output = GBDKPipelineV2().generate(gameWithCombat)
+        val output = GBDKPipeline().generate(gameWithCombat)
         val mainC = output.files["main.c"] ?: error("main.c not generated")
 
         assertTrue(
@@ -1162,7 +1174,7 @@ class GBDKSystemVisitorTest {
                         )
                     ),
             )
-        val output = GBDKPipelineV2().generate(gameWithMonster)
+        val output = GBDKPipeline().generate(gameWithMonster)
         val mainC = output.files["main.c"] ?: error("main.c not generated")
 
         assertTrue(

@@ -15,6 +15,8 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.int
@@ -234,6 +236,80 @@ internal object ToolHandlerLogic {
         val value = args["value"]?.jsonPrimitive?.int ?: return errorResult("value is required")
         val success = session.writeVariable(name, value)
         val json = buildJsonObject { put("success", success) }
+        return jsonResult(json.toString())
+    }
+
+    suspend fun handleReadMemory(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
+        args ?: return errorResult("Missing arguments")
+        val addressHex =
+            args["address"]?.jsonPrimitive?.contentOrNull
+                ?: return errorResult("address is required")
+        val address =
+            try {
+                if (addressHex.startsWith("0x") || addressHex.startsWith("0X")) {
+                    addressHex.substring(2).toInt(16)
+                } else {
+                    addressHex.toInt()
+                }
+            } catch (e: NumberFormatException) {
+                return errorResult(
+                    "Invalid address format: '$addressHex' (expected 0xNNNN or decimal)"
+                )
+            }
+        if (address !in 0..0xFFFF) {
+            return errorResult("address out of range (0x0000..0xFFFF)")
+        }
+        val count = (args["count"]?.jsonPrimitive?.intOrNull ?: 1).coerceIn(1, 256)
+        val endAddress = address + count - 1
+        if (endAddress > 0xFFFF) {
+            return errorResult(
+                "address + count - 1 (0x${"%04X".format(endAddress)}) exceeds 0xFFFF. " +
+                    "Reduce count or use a lower start address."
+            )
+        }
+        val bytes = session.readMemory(address, count)
+        val json = buildJsonObject {
+            put("address", "0x%04X".format(address))
+            put("count", count)
+            put("bytes", buildJsonArray { bytes.forEach { add("0x%02X".format(it and 0xFF)) } })
+        }
+        return jsonResult(json.toString())
+    }
+
+    suspend fun handleWriteMemory(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
+        args ?: return errorResult("Missing arguments")
+        val addressHex =
+            args["address"]?.jsonPrimitive?.contentOrNull
+                ?: return errorResult("address is required")
+        val address =
+            try {
+                if (addressHex.startsWith("0x") || addressHex.startsWith("0X")) {
+                    addressHex.substring(2).toInt(16)
+                } else {
+                    addressHex.toInt()
+                }
+            } catch (e: NumberFormatException) {
+                return errorResult(
+                    "Invalid address format: '$addressHex' (expected 0xNNNN or decimal)"
+                )
+            }
+        if (address !in 0..0xFFFF) {
+            return errorResult("address out of range (0x0000..0xFFFF)")
+        }
+        val value =
+            args["value"]?.jsonPrimitive?.intOrNull ?: return errorResult("value is required")
+        if (value !in 0..255) {
+            return errorResult(
+                "value $value is out of range (0..255). " +
+                    "emulator_write_memory writes exactly one byte."
+            )
+        }
+        session.writeMemory(address, value)
+        val json = buildJsonObject {
+            put("success", true)
+            put("address", "0x%04X".format(address))
+            put("value", "0x%02X".format(value))
+        }
         return jsonResult(json.toString())
     }
 
@@ -662,7 +738,8 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
     addTool(
         name = "emulator_describe_game",
         description =
-            "Get full game metadata: scenes, actors, variables (with semantic categories), texts, terminal scenes, per-scene controls, and scene transition graph.",
+            "Get full game metadata: scenes, actors, variables (with semantic categories), " +
+                "texts, terminal scenes, per-scene controls, and scene transition graph.",
         inputSchema = ToolSchema(properties = buildJsonObject {}, required = emptyList()),
     ) { _ ->
         withContext(Dispatchers.IO) {
@@ -783,6 +860,79 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 ToolHandlerLogic.handleGetPlaybook(session)
             } catch (e: Exception) {
                 System.err.println("MCP [emulator_get_playbook] error: $e")
+                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
+            }
+        }
+    }
+
+    addTool(
+        name = "emulator_read_memory",
+        description =
+            "Read N bytes from a raw Game Boy memory address. Useful for inspecting hardware " +
+                "registers (LCDC 0xFF40, BCPD 0xFF69, OCPD 0xFF6B, etc.) or palette RAM via the " +
+                "BCPS/BCPD index-data port pair. Maximum count is 256.",
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("address") {
+                            put("type", "string")
+                            put(
+                                "description",
+                                "Raw memory address as hex (e.g. '0xFF40') or decimal",
+                            )
+                        }
+                        putJsonObject("count") {
+                            put("type", "integer")
+                            put("description", "Number of bytes to read (1..256, default 1)")
+                        }
+                    },
+                required = listOf("address"),
+            ),
+    ) { request ->
+        withContext(Dispatchers.IO) {
+            try {
+                ToolHandlerLogic.handleReadMemory(session, request.arguments)
+            } catch (e: Exception) {
+                System.err.println("MCP [emulator_read_memory] error: $e")
+                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
+            }
+        }
+    }
+
+    addTool(
+        name = "emulator_write_memory",
+        description =
+            "Write a single byte to a raw Game Boy memory address. Required for driving the " +
+                "BCPS/OCPS index registers (0xFF68/0xFF6A) before reading BCPD/OCPD palette RAM " +
+                "via emulator_read_memory. Value is masked to a byte (0..255).",
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        putJsonObject("address") {
+                            put("type", "string")
+                            put(
+                                "description",
+                                "Raw memory address as hex (e.g. '0xFF68') or decimal",
+                            )
+                        }
+                        putJsonObject("value") {
+                            put("type", "integer")
+                            put(
+                                "description",
+                                "Byte value to write (0..255); higher bits masked off",
+                            )
+                        }
+                    },
+                required = listOf("address", "value"),
+            ),
+    ) { request ->
+        withContext(Dispatchers.IO) {
+            try {
+                ToolHandlerLogic.handleWriteMemory(session, request.arguments)
+            } catch (e: Exception) {
+                System.err.println("MCP [emulator_write_memory] error: $e")
                 errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
             }
         }

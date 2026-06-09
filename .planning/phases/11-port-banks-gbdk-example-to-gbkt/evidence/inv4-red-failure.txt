@@ -1,0 +1,24 @@
+# Plan 11-10 Task 1 RED — INV-4 trigger_saves assertion FAILS as expected
+#
+# Captured: 2026-05-20T05:56:19Z
+# Test: io.github.gbkt.examples.banks.BanksEmissionTest.`INV-4 save_game_saves in main_c emits ENABLE_RAM and DISABLE_RAM`
+# Command: ./gradlew :gbkt-examples:banks:test --tests "io.github.gbkt.examples.banks.BanksEmissionTest.INV-4*" --quiet
+
+org.opentest4j.AssertionFailedError: trigger_saves stub must be emitted in main.c by visitSaveSystem (fix in Plan 11-10)
+	at app//org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)
+	at app//org.junit.jupiter.api.Assertions.fail(Assertions.java:138)
+	at app//kotlin.test.junit5.JUnit5Asserter.fail(JUnitSupport.kt:56)
+	at app//kotlin.test.Asserter.assertTrue(Assertions.kt:765)
+	at app//kotlin.test.junit5.JUnit5Asserter.assertTrue(JUnitSupport.kt:30)
+	at app//kotlin.test.Asserter.assertTrue(Assertions.kt:775)
+	at app//kotlin.test.junit5.JUnit5Asserter.assertTrue(JUnitSupport.kt:30)
+	at app//kotlin.test.AssertionsKt__AssertionsKt.assertTrue(Assertions.kt:44)
+	at app//kotlin.test.AssertionsKt.assertTrue(Unknown Source)
+	at app//io.github.gbkt.examples.banks.BanksEmissionTest.INV-4 save_game_saves in main_c emits ENABLE_RAM and DISABLE_RAM(BanksEmissionTest.kt:341)
+
+Result: 1 test completed, 1 failed
+Outcome: RED phase locked — INV-4 fails on the trigger_saves assertion ONLY (the
+prior ENABLE_RAM/sram[/DISABLE_RAM/ordering assertions all still pass; the failure
+is at line 341 which is the new `mainC.contains("trigger_saves")` assertion).
+Confirms the named bug from `evidence/named-bug.md` is reproducible at HEAD before
+the Task 2 GREEN fix.

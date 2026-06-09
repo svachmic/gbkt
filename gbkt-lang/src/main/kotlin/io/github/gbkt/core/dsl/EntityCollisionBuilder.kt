@@ -43,7 +43,7 @@ import io.github.gbkt.core.ir.TransitionEdge
  *     position(40, 40)
  *     entityCollision {
  *         mode(EntityCollisionMode.BLOCK_AND_TRIGGER)
- *         onBlocked { navigate("dialog_scene") }
+ *         onBlocked { navigate(dialogScene) }
  *     }
  * }
  * val boulder by actor {

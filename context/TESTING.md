@@ -20,7 +20,7 @@ gbkt has three testing tiers. Use the lightest tier that covers your correctness
 // Example: SimulationContext test
 class PongSimTest {
     @Test fun `score increments on right wall hit`() {
-        val ctx = SimulationContextV2()
+        val ctx = SimulationContext()
         ctx.run(pongGame)
         ctx.simulate("gameplay", frames = 120)
         assertTrue(ctx.readVariable("score") > 0)
@@ -87,7 +87,7 @@ class GbktTestExtension(
 **`bootScript`** — Lambda that runs after `agent.start()` in `beforeEach`. Useful to skip to a specific scene before each test:
 
 ```kotlin
-val game = GbktTestExtension("rpg-lite") { agent ->
+val game = GbktTestExtension("platformer-template") { agent ->
     agent.step(setOf(Button.START))  // skip title
     agent.waitForScene("gameplay", 300)
 }
@@ -96,7 +96,7 @@ val game = GbktTestExtension("rpg-lite") { agent ->
 **`gbcMode`** — Required for ROMs compiled with `-Wm-yc` (GBC_COMPATIBLE) or `-Wm-yC` (GBC_ONLY):
 
 ```kotlin
-val game = GbktTestExtension("platformer-gbc", gbcMode = true)
+val game = GbktTestExtension("platformer-template", gbcMode = true)
 ```
 
 ### Lifecycle
@@ -619,7 +619,7 @@ assertScene(obs, "gameplay")
 
 Or provide a `bootScript` to the extension to automate scene navigation:
 ```kotlin
-val game = GbktTestExtension("rpg-lite") { agent ->
+val game = GbktTestExtension("platformer-template") { agent ->
     agent.waitForScene("title", 120)
     agent.step(setOf(Button.START))
     agent.waitForScene("gameplay", 300)

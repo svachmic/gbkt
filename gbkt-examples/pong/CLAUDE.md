@@ -16,7 +16,7 @@
 2. Forward reference: `val titleRef = sceneRef("title")`
 3. Variables: `p1Score`, `p2Score` (u8), `ballDx`, `ballDy` (i8)
 4. Sound effects: `bounceSfx`, `scoreSfx`, `winSfx`
-5. Actors: `paddle1` (16, 64), `paddle2` (152, 64), `ball` (80, 72)
+5. Actors: `paddle1` (0, 64), `paddle2` (152, 64), `ball` (80, 72)
 6. Scenes (reverse order): `gameoverScene` → `gameScene` → `titleScene`
 
 ## Key DSL Patterns

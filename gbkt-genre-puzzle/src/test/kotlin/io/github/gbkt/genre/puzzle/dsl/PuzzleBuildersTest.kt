@@ -38,8 +38,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") {}
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -60,8 +60,8 @@ class PuzzleBuildersTest {
                     puzzleGrid("match_grid") { matchMode { minMatchLength(3) } }
                     // Block-push mode
                     puzzleGrid("push_grid") { blockPushMode { goal(3, 3) } }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -87,8 +87,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { size(8, 10) }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -102,8 +102,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") {}
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -121,8 +121,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { matchMode { minMatchLength(4) } }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -137,8 +137,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { matchMode { gravity(GravityDirection.UP) } }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -152,8 +152,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { matchMode { gravity(GravityDirection.NONE) } }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -167,8 +167,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { matchMode {} }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -191,8 +191,8 @@ class PuzzleBuildersTest {
                             goal(4, 4)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -210,8 +210,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { blockPushMode {} }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -227,8 +227,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { blockPushMode { undoDepth(20) } }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -243,8 +243,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { blockPushMode { disableUndo() } }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -268,8 +268,8 @@ class PuzzleBuildersTest {
                             behavior(CellBehavior.BOMB)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -294,8 +294,8 @@ class PuzzleBuildersTest {
                             behavior(CellBehavior.WILDCARD)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -317,8 +317,8 @@ class PuzzleBuildersTest {
                             behavior(CellBehavior.ICE)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -339,8 +339,8 @@ class PuzzleBuildersTest {
                         cellType("wild") { behavior(CellBehavior.WILDCARD) }
                         cellType("ice") { behavior(CellBehavior.ICE) }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -361,8 +361,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { timer { countdown(durationFrames = 1800) } }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -377,8 +377,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { timer { elapsed() } }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -392,8 +392,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") {}
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -414,8 +414,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") {}
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -428,8 +428,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { moveCounter(enabled = true) }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -446,8 +446,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") { blockPushMode {} }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -460,8 +460,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid("grid") {}
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -485,8 +485,8 @@ class PuzzleBuildersTest {
                             timeBonus(1000)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -508,8 +508,8 @@ class PuzzleBuildersTest {
         val ir =
             game("MinimalPuzzle") {
                     puzzleGrid("grid") {}
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -523,8 +523,8 @@ class PuzzleBuildersTest {
         val ir =
             game("PuzzleTest") {
                     puzzleGrid { matchMode { minMatchLength(3) } }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 

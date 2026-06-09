@@ -9,7 +9,6 @@ plugins {
 }
 
 group = "io.github.gbkt.examples"
-version = "1.0.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -33,7 +32,7 @@ tasks.test {
 }
 
 gbkt {
-    game("io.github.gbkt.examples.breakout.BreakoutV2Kt::breakoutV2")
+    game("io.github.gbkt.examples.breakout.BreakoutKt::breakout")
     assets("res")
     outputName.set("breakout")
 }

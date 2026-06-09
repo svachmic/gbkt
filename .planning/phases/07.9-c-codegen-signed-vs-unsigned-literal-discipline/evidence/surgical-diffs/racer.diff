@@ -1,0 +1,21 @@
+Only in /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/racer/build/gbkt/generated/: bank1.c.gbkt.map
+Only in /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/racer/build/gbkt/generated/: game_metadata.json
+Only in /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/racer/build/gbkt/generated/: gbkt-build.properties
+diff -ru /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a15bb919c04f2b8bd/.planning/phases/07.9-c-codegen-signed-vs-unsigned-literal-discipline/evidence/surgical-diffs/baselines/racer/main.c /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/racer/build/gbkt/generated/main.c
+--- /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a15bb919c04f2b8bd/.planning/phases/07.9-c-codegen-signed-vs-unsigned-literal-discipline/evidence/surgical-diffs/baselines/racer/main.c	2026-05-13 08:34:38.122614582 +0200
++++ /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/racer/build/gbkt/generated/main.c	2026-05-13 08:36:37.217543201 +0200
+@@ -252,8 +252,8 @@
+ void update_camera_camera(void) {
+     INT16 rawX = (INT16)_car_x - 80u;
+     INT16 rawY = (INT16)_car_y - 72u;
+-    _camera_x = (UINT8)((rawX < 0u) ? 0u : (rawX > 0u) ? 0u : rawX);
+-    _camera_y = (UINT8)((rawY < 0u) ? 0u : (rawY > 8u) ? 8u : rawY);
++    _camera_x = (UINT8)((rawX < 0) ? 0u : (rawX > 0) ? 0u : rawX);
++    _camera_y = (UINT8)((rawY < 0) ? 0u : (rawY > 8) ? 8u : rawY);
+     if (_camera_shake_timer > 0u) {
+         UINT8 offset = (_camera_shake_timer & 1u != 0u) ? _camera_shake_intensity : 0u;
+         SCX_REG = _camera_x + offset;
+Only in /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/racer/build/gbkt/generated/: main.c.gbkt.map
+Only in /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/racer/build/gbkt/generated/: optimization-report.json
+Only in /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/racer/build/gbkt/generated/: sprites
+Only in /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/racer/build/gbkt/generated/: zone_bank2.c.gbkt.map

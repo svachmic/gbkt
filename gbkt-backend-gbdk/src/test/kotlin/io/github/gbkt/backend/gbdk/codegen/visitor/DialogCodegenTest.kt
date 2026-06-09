@@ -6,7 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import io.github.gbkt.core.ir.AssetRef
 import io.github.gbkt.core.ir.AssetType
 import io.github.gbkt.core.ir.BorderStyle
@@ -45,9 +45,9 @@ class DialogCodegenTest {
     private val baseGameIR =
         GameIR(name = "TestGame", config = CartridgeConfig(), scenes = listOf(SceneIR(id = "main")))
 
-    /** Generate C output files from a [GameIR] using [GBDKPipelineV2]. */
+    /** Generate C output files from a [GameIR] using [GBDKPipeline]. */
     private fun generateOutput(gameIR: GameIR): Map<String, String> {
-        val pipeline = GBDKPipelineV2()
+        val pipeline = GBDKPipeline()
         return pipeline.generate(gameIR).files
     }
 

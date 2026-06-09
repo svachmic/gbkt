@@ -13,6 +13,7 @@ package io.github.gbkt.rpg.dsl
 import io.github.gbkt.core.dsl.CombatEngineBuilder
 import io.github.gbkt.core.dsl.GameBuilder
 import io.github.gbkt.core.dsl.ScriptBuilder
+import io.github.gbkt.core.dsl.SystemRef
 import io.github.gbkt.core.ir.CallExpr
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.CombatStateId
@@ -47,8 +48,7 @@ import io.github.gbkt.rpg.domain.StatusEffectDef
  * Thread-local registry for RPG character and monster definitions.
  *
  * Initialized when the first RPG extension function is called within a `game {}` block. The
- * registry lives for the duration of the game-building lambda and is cleared when
- * [GameBuilder.build] completes (or when [game] top-level function exits its lambda).
+ * registry lives for the duration of the game-building lambda.
  *
  * Pattern: mirrors [io.github.gbkt.core.dsl.GameBuilderContext] thread-local.
  */
@@ -73,11 +73,6 @@ internal object RpgRegistry {
     /** Registers a monster definition by ID. */
     fun registerMonster(def: MonsterDef) {
         current()["monster:${def.id}"] = def
-    }
-
-    /** Clears the registry — call after the game-building lambda completes. */
-    fun clear() {
-        holder.remove()
     }
 }
 
@@ -165,8 +160,8 @@ fun GameBuilder.monster(id: String, block: MonsterBuilder.() -> Unit): MonsterDe
  * simpleBattle("combat") {
  *     party(hero)
  *     encounter { +goblin }
- *     onVictory { navigate("gameplay") }
- *     onDefeat { navigate("gameover") }
+ *     onVictory { navigate(gameplayScene) }
+ *     onDefeat { navigate(gameoverScene) }
  * }
  * ```
  */
@@ -326,7 +321,9 @@ fun GameBuilder.characterClass(block: ClassBuilder.() -> Unit): ClassDelegate =
  * Returned by [GameBuilder.simpleBattle] for use in [ScriptBuilder.battleUpdate] without raw string
  * IDs.
  */
-data class BattleRef(val id: String)
+data class BattleRef(val id: String) : SystemRef {
+    override val systemId: String get() = id
+}
 
 // =============================================================================
 // RPG DSL EXTENSIONS ON ScriptBuilder
@@ -348,7 +345,7 @@ data class BattleRef(val id: String)
  * The emitted op is `TriggerSystem("combat")` — a core IR type, not RPG-specific.
  */
 fun ScriptBuilder.battleUpdate(battleId: String) {
-    triggerSystem(battleId)
+    triggerSystem(BattleRef(battleId))
 }
 
 /**
@@ -364,7 +361,7 @@ fun ScriptBuilder.battleUpdate(battleId: String) {
  * ```
  */
 fun ScriptBuilder.battleUpdate(battle: BattleRef) {
-    triggerSystem(battle.id)
+    triggerSystem(battle)
 }
 
 // =============================================================================
@@ -437,8 +434,8 @@ fun combatIsInState(stateId: String, battleId: String): Expr =
  *     waitMode(AtbWaitMode.WAIT)
  *     fillRate(4)
  *     turnOrder(TurnOrderStrategy.SPEED_BASED)
- *     onVictory { navigate("win") }
- *     onDefeat { navigate("gameover") }
+ *     onVictory { navigate(winScene) }
+ *     onDefeat { navigate(gameoverScene) }
  * }
  * ```
  *
@@ -546,7 +543,7 @@ fun GameBuilder.tacticalCombat(id: String, block: TacticalGridBuilder.() -> Unit
  *     type(CombatType.TURN_BASED)
  *     hooks {
  *         beforeAction { /* record stats before each action */ }
- *         afterDamage { navigate("damage_flash") }
+ *         afterDamage { navigate(damageFlashScene) }
  *         onVictory { /* extra effects before victory ops */ }
  *     }
  * }

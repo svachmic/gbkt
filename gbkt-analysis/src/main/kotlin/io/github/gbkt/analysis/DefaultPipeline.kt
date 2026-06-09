@@ -15,6 +15,7 @@ import io.github.gbkt.analysis.passes.ConstraintCheckPass
 import io.github.gbkt.analysis.passes.DeadCodeEliminationPass
 import io.github.gbkt.analysis.passes.OAMAllocationPass
 import io.github.gbkt.analysis.passes.RAMPlanningPass
+import io.github.gbkt.analysis.passes.RacingValidationPass
 import io.github.gbkt.analysis.passes.ResourceInventoryPass
 import io.github.gbkt.analysis.passes.SemanticValidationPass
 import io.github.gbkt.analysis.passes.VRAMLayoutPass
@@ -24,16 +25,17 @@ import io.github.gbkt.analysis.passes.VRAMLayoutPass
  *
  * Pass order:
  * 1. [SemanticValidationPass] — ref resolution, duplicates
- * 2. [ResourceInventoryPass] — count all resources
- * 3. [ConstraintCheckPass] — hardware limit validation
- * 4. [DeadCodeEliminationPass] — unreachable scene detection (if enabled in config)
- * 5. [ConstantFoldingPass] — compile-time expression evaluation (if enabled in config)
- * 6. [BitwiseOptimizationPass] — power-of-2 arithmetic → bitwise rewrites (if enabled in config)
- * 7. [BankingAnalysisPass] — FFD ROM bank allocation
- * 8. [VRAMLayoutPass] — per-scene tile allocation
- * 9. [OAMAllocationPass] — sprite slot assignment
- * 10. [RAMPlanningPass] — WRAM/HRAM/SRAM layout
- * 11. [BudgetAuditPass] — report generation + hard fail on errors
+ * 2. [RacingValidationPass] — sport-genre racing binding invariants (D-05/D-06/D-08/D-10)
+ * 3. [ResourceInventoryPass] — count all resources
+ * 4. [ConstraintCheckPass] — hardware limit validation
+ * 5. [DeadCodeEliminationPass] — unreachable scene detection (if enabled in config)
+ * 6. [ConstantFoldingPass] — compile-time expression evaluation (if enabled in config)
+ * 7. [BitwiseOptimizationPass] — power-of-2 arithmetic → bitwise rewrites (if enabled in config)
+ * 8. [BankingAnalysisPass] — FFD ROM bank allocation
+ * 9. [VRAMLayoutPass] — per-scene tile allocation
+ * 10. [OAMAllocationPass] — sprite slot assignment
+ * 11. [RAMPlanningPass] — WRAM/HRAM/SRAM layout
+ * 12. [BudgetAuditPass] — report generation + hard fail on errors
  *
  * DeadCode and ConstantFolding run before allocation passes so dead code doesn't waste bank space
  * and folded constants give more accurate size estimates. BudgetAuditPass is last — it reads all
@@ -74,6 +76,7 @@ object DefaultPipeline {
             builtInPasses =
                 buildList {
                     add(SemanticValidationPass())
+                    add(RacingValidationPass())
                     add(ResourceInventoryPass())
                     add(ConstraintCheckPass())
                     addAll(optPasses)

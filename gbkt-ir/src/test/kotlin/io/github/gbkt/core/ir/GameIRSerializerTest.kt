@@ -73,7 +73,7 @@ class GameIRSerializerTest {
                 startScene = "gameplay",
                 config =
                     CartridgeConfig(
-                        cartridge = "MBC5",
+                        cartridge = Cartridge.MBC5,
                         romBanks = 8,
                         ramBanks = 1,
                         gbcTarget = GbcTarget.GBC_COMPATIBLE,
@@ -150,7 +150,7 @@ class GameIRSerializerTest {
         // Top-level fields
         assertEquals("ComplexGame", back.name)
         assertEquals("gameplay", back.startScene)
-        assertEquals("MBC5", back.config.cartridge)
+        assertEquals(Cartridge.MBC5, back.config.cartridge)
         assertEquals(GbcTarget.GBC_COMPATIBLE, back.config.gbcTarget)
 
         // Scenes
@@ -707,5 +707,54 @@ class GameIRSerializerTest {
             assertIs<Assign>(back)
             assertEquals(assignOp, back.op, "AssignOp ${assignOp.name} not preserved")
         }
+    }
+
+    // =========================================================================
+    // CR-01: BindCurrentLevel serializer round-trip
+    //
+    // Verifies that BindCurrentLevel survives a full GameIRSerializer toJson/fromJson
+    // cycle as a typed BindCurrentLevel node — NOT as a RawOp placeholder.
+    //
+    // RED-capability: remove the `is BindCurrentLevel` branch from serializeOp() or
+    // deserializeOp() and this test fails — the round-trip produces a RawOp whose
+    // class is assertIs<RawOp> rather than assertIs<BindCurrentLevel>.
+    // =========================================================================
+
+    @Test
+    fun `BindCurrentLevel round-trips through GameIRSerializer as typed BindCurrentLevel not RawOp`() {
+        val game =
+            GameIR(
+                name = "BindCurrentLevelGame",
+                startScene = "gameplay",
+                scenes =
+                    listOf(
+                        SceneIR(
+                            id = "gameplay",
+                            enterOps = listOf(BindCurrentLevel()),
+                        )
+                    ),
+            )
+
+        val json = GameIRSerializer.toJson(game)
+
+        // Structural assertion: the serialized JSON must contain the "BindCurrentLevel" type
+        // discriminator, confirming serializeOp() has a dedicated branch (not the "Unknown" else).
+        assertTrue(
+            json.contains("\"BindCurrentLevel\""),
+            "Serialized JSON must contain type discriminator \"BindCurrentLevel\". " +
+                "Got (first 2000 chars):\n${json.take(2000)}",
+        )
+
+        val back = GameIRSerializer.fromJson(json)
+
+        // Deserialized scene must have exactly one op and it must be BindCurrentLevel.
+        assertEquals(1, back.scenes.size)
+        assertEquals(1, back.scenes[0].enterOps.size)
+        val op = back.scenes[0].enterOps[0]
+        assertIs<BindCurrentLevel>(
+            op,
+            "Round-tripped op must be BindCurrentLevel, not ${op::class.simpleName}. " +
+                "If this is RawOp, the deserializeOp 'BindCurrentLevel' branch is missing.",
+        )
     }
 }

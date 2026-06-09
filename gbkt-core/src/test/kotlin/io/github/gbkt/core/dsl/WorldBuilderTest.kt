@@ -36,12 +36,13 @@ class WorldBuilderTest {
     fun `zone creates ZoneIR with correct id and dimensions`() {
         val ir =
             game("test") {
-                    zone("floor1") {
+                    val floor1 by zone {
                         name("Dungeon Level 1")
                         size(16, 16)
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    @Suppress("UNUSED_VARIABLE") val _unused = floor1
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -57,14 +58,15 @@ class WorldBuilderTest {
     fun `zone with encounters has correct encounter table`() {
         val ir =
             game("test") {
-                    zone("dungeon") {
+                    val dungeon by zone {
                         encounters {
                             safeSteps(10)
                             entry("goblin", weight = 30)
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    @Suppress("UNUSED_VARIABLE") val _unused = dungeon
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -80,7 +82,7 @@ class WorldBuilderTest {
     fun `zone with transition has correct transition target and edge`() {
         val ir =
             game("test") {
-                    zone("floor1") {
+                    val floor1 by zone {
                         transition {
                             to("floor2")
                             edge(TransitionEdge.EAST)
@@ -88,8 +90,9 @@ class WorldBuilderTest {
                             entryY(5)
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    @Suppress("UNUSED_VARIABLE") val _unused = floor1
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -106,9 +109,10 @@ class WorldBuilderTest {
     fun `zone with safeZone flag sets isSafeZone true`() {
         val ir =
             game("test") {
-                    zone("town") { safeZone() }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val town by zone { safeZone() }
+                    @Suppress("UNUSED_VARIABLE") val _unused = town
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -120,14 +124,15 @@ class WorldBuilderTest {
     fun `zone with lifecycle callbacks has non-empty onEnter and onExit`() {
         val ir =
             game("test") {
-                    zone("floor1") {
-                        onEnter { navigate("cutscene") }
-                        onExit { navigate("village") }
+                    val floor1 by zone {
+                        onEnter { navigate(SceneRef("cutscene")) }
+                        onExit { navigate(SceneRef("village")) }
                     }
+                    @Suppress("UNUSED_VARIABLE") val _unused = floor1
                     scene("cutscene") { enter {} }
                     scene("village") { enter {} }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -152,8 +157,8 @@ class WorldBuilderTest {
                             flag("hasKey")
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -180,12 +185,12 @@ class WorldBuilderTest {
                             max(255)
                             initial(255)
                             decrementPerStep(1)
-                            onLow(50) { navigate("low_torch") }
+                            onLow(50) { navigate(SceneRef("low_torch")) }
                         }
                     }
                     scene("low_torch") { enter {} }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -205,8 +210,8 @@ class WorldBuilderTest {
         val ir =
             game("test") {
                     exploration { keys("magic_key") { max(99) } }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -226,8 +231,8 @@ class WorldBuilderTest {
                         movementStyle = "SMOOTH"
                         movementSpeed = 4
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -248,12 +253,12 @@ class WorldBuilderTest {
                     actor("npc") {
                         entityCollision {
                             mode(EntityCollisionMode.BLOCK_AND_TRIGGER)
-                            onBlocked { navigate("dialog") }
+                            onBlocked { navigate(SceneRef("dialog")) }
                         }
                     }
                     scene("dialog") { enter {} }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -268,8 +273,8 @@ class WorldBuilderTest {
         val ir =
             game("test") {
                     actor("boulder") { entityCollision { tiles(2, 2) } }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -289,8 +294,8 @@ class WorldBuilderTest {
                             pushDirection(PushDirection.HORIZONTAL_ONLY)
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -309,8 +314,8 @@ class WorldBuilderTest {
         val ir =
             game("test") {
                     exploration { preset(ExplorationPreset.DUNGEON_CRAWLER) }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -333,8 +338,8 @@ class WorldBuilderTest {
                         preset(ExplorationPreset.DUNGEON_CRAWLER)
                         tileSize = 16
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -349,8 +354,8 @@ class WorldBuilderTest {
         val ir =
             game("test") {
                     exploration { gauge("stamina") { max(100) } }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -368,10 +373,12 @@ class WorldBuilderTest {
     fun `multiple zones produce multiple ZoneIR in GameIR`() {
         val ir =
             game("test") {
-                    zone("floor1") { name("Level 1") }
-                    zone("floor2") { name("Level 2") }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val floor1 by zone { name("Level 1") }
+                    val floor2 by zone { name("Level 2") }
+                    @Suppress("UNUSED_VARIABLE") val _unused1 = floor1
+                    @Suppress("UNUSED_VARIABLE") val _unused2 = floor2
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -395,8 +402,8 @@ class WorldBuilderTest {
                             flag("visitedFloor2")
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -412,9 +419,10 @@ class WorldBuilderTest {
     fun `zone without encounters has null encounterTable`() {
         val ir =
             game("test") {
-                    zone("town") { safeZone() }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val town by zone { safeZone() }
+                    @Suppress("UNUSED_VARIABLE") val _unused = town
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 
@@ -427,8 +435,8 @@ class WorldBuilderTest {
         val ir =
             game("test") {
                     actor("player") {}
-                    scene("main") { enter {} }
-                    start = "main"
+                    val main = scene("main") { enter {} }
+                    start = main
                 }
                 .build()
 

@@ -1,0 +1,253 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Copyright (c) 2026 Michal Svacha
+ */
+package io.github.gbkt.examples.simple_physics
+
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
+import java.io.File
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+// =============================================================================
+// SIMPLE-PHYSICS C EMISSION INVARIANTS — Phase 09 Plan 03 (locks the codegen
+// surface that Plan 04 will fix)
+//
+// The DSL-authored path emits `Literal(N)` for positive-literal RHSs in signed
+// comparisons. ExprVisitor.visitLiteral lowers ALL Literals to `CLiteral(N)`,
+// which the emitter writes as `${N}u` for `N >= 0`. SDCC's C integer-promotion
+// rules then make `signedVar > 64u` always false for signed values that should
+// satisfy the test. The Phase 07.9 fix migrated direct-codegen sites to
+// `CIntLiteral` but did not cover the DSL-authored path — this test pins that
+// gap so Plan 04 has a meaningful RED → GREEN transition.
+//
+// Scope-level grep gate: per CLAUDE.md §"Scope-level grep gates" each assertion
+// runs against the play_frame BODY (brace-walk extracted), not the file. This
+// guards against unrelated functions in bank1.c masking regressions in
+// play_frame.
+//
+// Evidence-before-assert: per 09-PATTERNS.md §"Evidence-before-assert pattern"
+// every @Test writes its frame body to evidence/tier1-shape/ BEFORE assertions
+// fire, so the C output shape is reviewable from disk even when the test is
+// RED.
+//
+// Expected at HEAD:
+// - D-11.1 RED: `_spdX > 64u` and `_spdY > 64u` both present (Bug A — Plan 04
+//   target).
+// - D-11.2 GREEN: jump impulse emits _spdY = -$JUMP_ACCELERATION_IN_SUBPIXELS (post-09.3 D-01
+// oracle fix)
+//   — negative literal already carries no `u` suffix post-07.9 Literal emitter;
+// `button_pressed(J_A)` confirms edge-detect.
+// - D-11.3 RED: `_spdX < 0u`, `_spdX > 0u`, `_spdY < 0u`, `_spdY > 0u` all
+//   present in decel ladder (Bug A — Plan 04 target).
+//
+// All three tests are designed so Plan 04 (fix: signed-comparison RHS literals
+// route through CIntLiteral) flips D-11.1 and D-11.3 to GREEN without touching
+// D-11.2.
+// =============================================================================
+
+class SimplePhysicsEmissionTest {
+
+    companion object {
+        /**
+         * Evidence is written under the **active checkout root** (worktree-safe).
+         *
+         * `user.dir` resolves to the Gradle project's working directory, which inside a Claude Code
+         * worktree is the worktree root — not the main repository. Hard-coding the main-repo
+         * absolute path would silently route evidence files outside the active checkout and miss
+         * the commit (#3099 worktree path safety).
+         */
+        val EVIDENCE_DIR =
+            File(System.getProperty("user.dir"))
+                .resolve(
+                    "../../.planning/phases/09-port-simple-physics-gbdk-example-to-gbkt/evidence/tier1-shape"
+                )
+                .normalize()
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Extracts a C function body by brace-walking from the first line containing `void
+     * ${functionName}(` until the matching closing brace at depth zero.
+     *
+     * The returned blob includes the signature line and the closing brace, so downstream
+     * `.contains()` checks operate ONLY on tokens that live inside the named function — never on
+     * tokens from unrelated functions in the same bank file (per CLAUDE.md §"Scope-level grep
+     * gates").
+     */
+    private fun extractFunctionBody(cSource: String, functionName: String): String {
+        val lines = cSource.lines()
+        val startIdx = lines.indexOfFirst { it.contains("void $functionName(") }
+        if (startIdx == -1) return ""
+        val body = StringBuilder()
+        var depth = 0
+        var started = false
+        for (i in startIdx until lines.size) {
+            val line = lines[i]
+            body.appendLine(line)
+            for (ch in line) {
+                if (ch == '{') {
+                    depth++
+                    started = true
+                }
+                if (ch == '}') depth--
+            }
+            if (started && depth == 0) break
+        }
+        return body.toString()
+    }
+
+    private fun playFrameBody(): String {
+        val pipeline = GBDKPipeline()
+        val pipelineOutput = pipeline.generate(simplePhysics.build())
+        val bank1C =
+            pipelineOutput.files["bank1.c"]
+                ?: error("bank1.c not generated by GBDKPipeline — pipeline output empty?")
+        return extractFunctionBody(bank1C, "play_frame")
+    }
+
+    // -------------------------------------------------------------------------
+    // D-11.1 — accel clamp upper bound uses signed comparison
+    //   RED at HEAD: `_spdX > 64u` and `_spdY > 64u` present.
+    //   GREEN target (Plan 04): positive literal in signed comparison RHS
+    //                            emits as `CIntLiteral` → no `u` suffix.
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `D-11_1 accel clamp emission - spdX and spdY upper bounds use signed comparison`() {
+        EVIDENCE_DIR.mkdirs()
+        val frameBody = playFrameBody()
+        File(EVIDENCE_DIR, "01-accel-clamp-upper-bound.txt").writeText(frameBody)
+
+        // POSITIVE assertions: the signed comparison MUST appear with bare integer literal.
+        assertTrue(
+            frameBody.contains("_spdX > 64"),
+            "Plan 04 contract: emitted body must contain `_spdX > 64` (bare, no u suffix). " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+        assertTrue(
+            frameBody.contains("_spdY > 64"),
+            "Plan 04 contract: emitted body must contain `_spdY > 64` (bare, no u suffix). " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+
+        // NEGATIVE assertions (the RED gate — fail at HEAD; pass after Plan 04 fix):
+        assertFalse(
+            frameBody.contains("_spdX > 64u"),
+            "Plan 04 contract: emitted body MUST NOT contain `_spdX > 64u`. " +
+                "Unsigned RHS makes signed `_spdX > 64u` produce SDCC warning 94 " +
+                "(comparison always-false). Bug A site — DSL-authored " +
+                "`whenever(spdX isAbove 64)` lowers Literal(64) to CLiteral(64) " +
+                "(emits `64u`); Plan 04 must route signed-comparison RHS to CIntLiteral. " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+        assertFalse(
+            frameBody.contains("_spdY > 64u"),
+            "Plan 04 contract: emitted body MUST NOT contain `_spdY > 64u`. " +
+                "Same Bug A site as `_spdX > 64u`. " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+    }
+
+    // -------------------------------------------------------------------------
+    // D-11.2 — jump impulse emits edge-detect + signed -JUMP_ACCELERATION_IN_SUBPIXELS
+    //   Expected GREEN at HEAD (post-09.3 Plan 01 oracle fix): negative literal already routes
+    // through
+    //   the post-07.9 Literal emitter without `u` suffix; impulse value is now
+    // JUMP_ACCELERATION_IN_SUBPIXELS (32) per phys.c:83.
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `D-11_2 jump impulse emission - A pressed emits edge-detect and signed spdY assignment`() {
+        EVIDENCE_DIR.mkdirs()
+        val frameBody = playFrameBody()
+        File(EVIDENCE_DIR, "02-jump-impulse.txt").writeText(frameBody)
+
+        // Edge-detect: A button uses button_pressed (rising edge), NOT button_held.
+        assertTrue(
+            frameBody.contains("button_pressed(J_A)"),
+            "Expected edge-detect `button_pressed(J_A)` for jump impulse. " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+
+        // Signed assignment: spdY = -JUMP_ACCELERATION_IN_SUBPIXELS with no `u` suffix on the
+        // negative literal.
+        assertTrue(
+            frameBody.contains("_spdY = -$JUMP_ACCELERATION_IN_SUBPIXELS"),
+            "Expected `_spdY = -$JUMP_ACCELERATION_IN_SUBPIXELS` (signed jump impulse, bare negative literal). " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+        assertFalse(
+            frameBody.contains("-${JUMP_ACCELERATION_IN_SUBPIXELS}u"),
+            "Must NOT emit `-${JUMP_ACCELERATION_IN_SUBPIXELS}u` — negative-context literal must stay signed. " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+    }
+
+    // -------------------------------------------------------------------------
+    // D-11.3 — decel ladder uses signed comparison against 0
+    //   RED at HEAD: `_spdX < 0u`, `_spdX > 0u`, `_spdY < 0u`, `_spdY > 0u`
+    //                present. Even `0` is a positive literal at the Literal IR
+    //                level → CLiteral → `0u`. Same Bug A site.
+    //   GREEN target (Plan 04): signed-comparison RHS Literal(0) routes through
+    //                CIntLiteral.
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `D-11_3 decel ladder emission - spdX and spdY zero comparisons use signed form`() {
+        EVIDENCE_DIR.mkdirs()
+        val frameBody = playFrameBody()
+        File(EVIDENCE_DIR, "03-decel-ladder.txt").writeText(frameBody)
+
+        // POSITIVE assertions: each branch of the decel ladder must compare against bare 0.
+        assertTrue(
+            frameBody.contains("_spdY < 0"),
+            "Expected `_spdY < 0` (decel from negative side). " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+        assertTrue(
+            frameBody.contains("_spdY > 0"),
+            "Expected `_spdY > 0` (decel from positive side). " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+        assertTrue(
+            frameBody.contains("_spdX < 0"),
+            "Expected `_spdX < 0` (decel from negative side). " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+        assertTrue(
+            frameBody.contains("_spdX > 0"),
+            "Expected `_spdX > 0` (decel from positive side). " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+
+        // NEGATIVE assertions (the RED gate — fail at HEAD; pass after Plan 04 fix):
+        assertFalse(
+            frameBody.contains("_spdY < 0u"),
+            "Plan 04 contract: emitted body MUST NOT contain `_spdY < 0u`. " +
+                "Bug A — Literal(0) in signed comparison must route through CIntLiteral. " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+        assertFalse(
+            frameBody.contains("_spdY > 0u"),
+            "Plan 04 contract: emitted body MUST NOT contain `_spdY > 0u`. " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+        assertFalse(
+            frameBody.contains("_spdX < 0u"),
+            "Plan 04 contract: emitted body MUST NOT contain `_spdX < 0u`. " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+        assertFalse(
+            frameBody.contains("_spdX > 0u"),
+            "Plan 04 contract: emitted body MUST NOT contain `_spdX > 0u`. " +
+                "play_frame body:\n${frameBody.take(4000)}",
+        )
+    }
+}

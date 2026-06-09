@@ -33,6 +33,14 @@ class EmulatorFrameException(message: String, cause: Throwable? = null) :
     RuntimeException(message, cause)
 
 /**
+ * Thrown by [io.github.gbkt.emulator.CoffeeGbEmulator.stepFrame] when the tick loop exceeds the
+ * `maxTicksPerFrame` watchdog ceiling, or when cancellation is requested mid-frame. Distinguishes a
+ * structural hang (no VBlank ever) from a transient frame-step failure ([EmulatorFrameException]).
+ */
+class EmulatorFrameHangException(message: String, cause: Throwable? = null) :
+    RuntimeException(message, cause)
+
+/**
  * Thrown when an input script fails to execute (invalid button state, frame mismatch).
  *
  * Includes the frame count at the time of failure for debugging context.

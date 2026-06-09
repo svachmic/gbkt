@@ -38,6 +38,86 @@ val midX = (ball.x + paddle.x) / 2   // Expr arithmetic
 // literal(5)                   →  5 (raw Int auto-wrapped)
 ```
 
+## Fixed-Point Variables (i16FixedVar / toPixel / subpixel / easeToZero)
+
+Use `i16FixedVar` when you need 12.4 fixed-point sub-pixel physics. Declare in pixels;
+the framework stores `initialPixels shl 4` internally. Extract pixel coords for rendering
+with `.toPixel()`. Group related declarations with the no-op `subpixel { }` scope.
+
+```kotlin
+// --- BEFORE (hand-rolled) ---
+// posX initialized to pixel 64 × 16 sub-pixels = 1024
+var posX by i16Var(1024)           // magic number: 64 * 16
+ball.moveTo(posX shr 4, posY shr 4)  // leaks shr 4 arithmetic
+
+// --- AFTER (idiomatic) ---
+var posX by i16FixedVar(64)        // declare in pixels; stores 1024 internally (D-12 byte-identical)
+var posY by i16FixedVar(72)        // screenCenter Y = 72 px
+ball.moveTo(posX.toPixel(), posY.toPixel())  // extracts pixel coord (>> 4u)
+
+// Optional: group declarations with subpixel { } for readability (no-op scope; same IR)
+subpixel {
+    var posX by i16FixedVar(80)
+    var posY by i16FixedVar(72)
+}
+
+// Custom fractional bits (default 4 = 12.4)
+var posX by i16FixedVar(64, fractionalBits = 4)  // same as i16FixedVar(64)
+posX.toPixel(fractionalBits = 4)                 // same as posX.toPixel()
+
+// Speed vars stay i16Var — speed is not a position (Pitfall 1/2)
+var spdX by i16Var(0)
+var spdY by i16Var(0)
+```
+
+### Ease Toward Zero (easeToZero)
+
+Replaces the hand-rolled two-`whenever` deceleration ladder. Emits two `IfOp` nodes —
+byte-identical to the ladder pattern (Pitfall 3: two separate checks, not one if-else).
+
+```kotlin
+// --- BEFORE (hand-rolled) ---
+whenever(spdY isBelow 0) { spdY++ }
+whenever(spdY isAbove 0) { spdY-- }
+whenever(spdX isBelow 0) { spdX++ }
+whenever(spdX isAbove 0) { spdX-- }
+
+// --- AFTER (idiomatic) ---
+spdY.easeToZero()        // default: by = 1
+spdX.easeToZero()
+
+// Custom step size
+spdY.easeToZero(by = 2)  // converges faster (increments by 2 per frame)
+```
+
+### Declarative Wrap (u8Var wrapAt)
+
+Declare the wrap invariant on the variable instead of emitting an explicit guard.
+Power-of-two N uses a bitmask AND; non-power-of-two N uses compare-reset — both
+are byte-identical to the hand-rolled patterns (D-15).
+
+```kotlin
+// --- BEFORE (hand-rolled) ---
+var idx by u8Var(0)
+var rot by u8Var(0)
+// ... later in frame { }:
+whenever(buttons.b.pressed) {
+    idx++
+    whenever(idx isAtLeast NUM_FRAMES) { idx set 0 }   // compare-reset
+}
+whenever(buttons.a.pressed) {
+    rot++
+    rot set (rot and 0xF)                               // bitmask wrap
+}
+
+// --- AFTER (idiomatic) ---
+var idx by u8Var(0, wrapAt = NUM_FRAMES)  // non-power-of-two: compare-reset emitted after idx++
+var rot by u8Var(0, wrapAt = 16)          // power-of-two: bitmask AND 15 emitted after rot++
+// ... later in frame { }:
+whenever(buttons.b.pressed) { idx++ }  // guard auto-emitted; no explicit wrap line
+whenever(buttons.a.pressed) { rot++ }  // guard auto-emitted; no explicit wrap line
+```
+
 ## Arrays
 
 Arrays are declared with `u8Array()` and accessed via bracket operators.
@@ -228,6 +308,72 @@ player.stopAnimation()
 player.setFrame(2)
 ```
 
+## Metasprite Primitives
+
+Metasprites are variable-length composite sprites made from multiple OAM hardware sprites. gbkt
+supports two authoring paths — asset-driven (preferred for PNG sprite sheets) and procedural
+(escape hatch for hand-crafted tile layouts).
+
+### Asset-Driven Metasprite (recommended)
+
+Declare with `sprite(asset(...)) { mode/pivot/frameSize }` + `frames(N)`. The asset pipeline
+invokes `png2asset` automatically — no tile transcription, no `METASPR_ITEM` hand-coding.
+
+```kotlin
+import io.github.gbkt.core.ir.SpriteMode
+
+// 5-frame elephant from a 64×240 px PNG (one 64×48 px frame per row)
+val elephant by metasprite {
+    sprite(asset("sprites/elephant.png")) {
+        mode(SpriteMode.SPR8x8)   // -spr8x8 flag to png2asset
+        pivot(0, 0)               // -px 0 -py 0  (origin at top-left)
+        frameSize(64, 48)         // -sw 64 -sh 48 (one frame = 64×48 px)
+    }
+    frames(5)  // build-time cross-validation against png2asset output
+}
+
+// In a scene frame block — renders the metasprite at its current position
+scene("play") {
+    frame {
+        moveMetasprite(elephant)
+    }
+}
+```
+
+**Note:** An author never writes `METASPR_ITEM` / `frame { tile(...) }` blocks for PNG-sourced
+metasprites. The asset pipeline generates the C tile arrays automatically from `frameSize` and
+`mode`. The `frames(N)` declaration enables build-time validation — the build fails with a clear
+message if png2asset produces a different frame count than declared.
+
+### Procedural Metasprite (frame{} escape hatch, D-04)
+
+For hand-crafted OAM layouts where no source PNG exists — legacy ports, generated tile sets, or
+metasprites whose tiles are shared with a background tileset. Each `frame { }` block describes one
+animation frame as an ordered list of OAM tile entries.
+
+```kotlin
+// Procedural: each tile() call is one OAM hardware sprite entry
+val cursor by metasprite {
+    frame {
+        tile(0, 0, 0)    // tile at (relX=0, relY=0), VRAM tileId=0
+        tile(8, 0, 1)    // tile at (relX=8, relY=0), VRAM tileId=1
+    }
+    frame {
+        tile(0, 0, 2)    // second animation frame, different tileIds
+        tile(8, 0, 3)
+    }
+}
+```
+
+**Distinction from asset-driven path:** `frame { tile(...) }` blocks and `sprite(asset(...))` are
+mutually exclusive within one `metasprite { }` block (D-08 exactly-one guard). Mixing both causes
+a DSL build-time error. Choose one path per metasprite.
+
+| Path | When to use |
+|------|-------------|
+| `sprite(asset(...)) + frames(N)` | PNG sprite sheet — png2asset cuts frames automatically |
+| `frame { tile(x, y, id) }` | Hand-crafted layouts; shared/legacy tile sets (D-04 escape hatch) |
+
 ## State Machine DSL
 
 ```kotlin
@@ -291,6 +437,37 @@ whileOp(i isBelow 30) {
 }
 ```
 
+## Single-Frame Conditionals (runIf / unless / orElse)
+
+Use `runIf` / `unless` for single-frame conditional logic (one-shot checks), not reactive
+event triggers. `whenever()` should be used at the top level for input/state reactive triggers.
+Nested `whenever` calls are the anti-pattern — use `runIf` instead (D-08 / Req #2).
+
+```kotlin
+// --- BEFORE (nested whenever — anti-pattern for single-frame logic) ---
+whenever(dpad.right.held) {
+    spdX += ACCEL
+    whenever(spdX isAbove MAX_SPEED) { spdX set MAX_SPEED }   // semantically `if`, not reactive
+}
+
+// --- AFTER (idiomatic: runIf for single-frame clamp) ---
+whenever(dpad.right.held) {
+    spdX += ACCEL
+    runIf(spdX isAbove MAX_SPEED) { spdX set MAX_SPEED }      // clear intent: one-shot check
+}
+
+// unless — negated condition (runs if condition is FALSE)
+unless(hp isAbove 0) { navigate(gameoverScene) }
+
+// orElse — chained else branch after runIf
+runIf(hp isAbove 0) { hp -= damage }
+    .orElse { navigate(gameoverScene) }
+
+// D-08 rule: top-level reactive triggers stay as whenever()
+whenever(buttons.a.pressed) { ... }    // KEEP whenever — reactive input trigger
+whenever(dpad.left.held) { ... }       // KEEP whenever — reactive input trigger
+```
+
 ## Input API
 
 The type-safe input API uses typed objects instead of magic strings.
@@ -312,7 +489,7 @@ whenever(dpad.none) { idle() }          // no direction held
 
 // Buttons — .held, .pressed, .released
 whenever(buttons.a.pressed) { shoot() }
-whenever(buttons.b.pressed) { navigate("title") }
+whenever(buttons.b.pressed) { navigate(titleScene) }   // SceneRef — type-safe
 whenever(buttons.start.pressed) { navigate(pauseScene) }
 whenever(buttons.select.held) { showMap() }
 
@@ -329,6 +506,211 @@ whenever(dpad.up.held logicalAnd buttons.b.held) { fastMove() }
 // dpadAny()               →  dpad.any
 ```
 
+## Zones
+
+Zones are named tilemap regions — banked tileset + optional tilemap PNG, loaded on scene entry.
+Declare with `val x by zone { }`: the zone ID is inferred from the Kotlin property name (no
+magic string), mirroring the `by metasprite { }` pattern.
+
+```kotlin
+// Tileset-only zone — 20×18 fallback (Game Boy full-screen)
+// No size() call → resolveZoneSize(explicit=null, pngDims=null) → (20, 18)
+val playZone by zone {
+    tileset(asset("tiles/checker.png"))
+}
+
+// Tilemap zone — size derived from tilemap PNG (D-03)
+// 480×256 px tilemap PNG → 60×32 tiles; explicit size() NOT needed
+val world1Area1Zone by zone {
+    tileset(asset("graphics/world1-tileset.png"))
+    tilemap(asset("graphics/world1-area1.png"))  // PNG dims drive the emitted tilemap size
+    spawn(40u, 120u)                              // optional player spawn point in this zone
+}
+
+// Banner zone — explicit size() always wins (D-03 priority 1)
+// 160×72 px banner → 20×9 tiles; must be explicit: tileset-only fallback would give 20×18
+val titleZone by zone {
+    tileset(asset("graphics/title-screen.png"))
+    size(20, 9)  // explicit: 160×72 px = 20 cols × 9 rows of 8×8 px tiles
+}
+```
+
+**Smart `size` default — D-03 priority chain:**
+
+| Condition | Resolved size | When to use |
+|-----------|--------------|-------------|
+| Explicit `size(w, h)` called | `(w, h)` — always wins | Banner zones, non-standard dimensions |
+| `tilemap(asset(...))` present | Derived from tilemap PNG IHDR (`px÷8`, `py÷8`) | World/level zones with full tilemap PNG |
+| Tileset-only (no `tilemap()`) | `(20, 18)` — Game Boy full-screen fallback | Checker/repeating background zones |
+
+The old `(32, 32)` default is eliminated. Omitting `size()` on a tileset-only zone is safe and
+intentional — it produces a full-screen 20×18 tilemap (Game Boy native resolution in 8×8 tiles).
+
+**Zone IDs from property names:** `val playZone by zone { }` registers a zone with ID
+`"playZone"`. No string argument required. Reusing the same delegate instance throws an
+`IllegalStateException` — each `by zone { }` must use a fresh delegate call.
+
+**Loading a zone in a scene** (load overload — distinct from the declaration form):
+
+```kotlin
+val gameScene = scene("gameplay") {
+    enter {
+        zone(playZone)    // binds playZone's banked tileset on scene entry
+    }
+}
+```
+
+## Static Full-Screen Images (screen)
+
+Use `screen(asset(...))` in a `scene { }` block when you want a static full-screen (or centered
+card) background image with no collision, scroll, or spawn semantics. It is a `SceneBuilder`-level
+call — place it at the top of the scene block alongside `palette()`, not inside `enter { }`.
+
+```kotlin
+// Title screen — static 160×144 px image fills the background
+val titleScene = scene("title") {
+    screen(asset("graphics/title-screen.png"))  // SceneBuilder level, not inside enter{}
+    enter {
+        // sprite/scroll state is already reset by screen() emit sequence:
+        //   hide_sprites_range, move_bkg(0,0), fill_bkg_rect, then _bkg_tiles_load_banked
+    }
+    frame {
+        whenever(buttons.start.pressed) { navigate(gameplayScene) }
+    }
+}
+
+// Inter-level card — smaller centered PNG (e.g. 128×112 px)
+val nextLevelScene = scene("nextlevel") {
+    screen(asset("graphics/next-level.png"))   // auto-centers; no size() needed
+    frame {
+        whenever(buttons.start.pressed) { navigate(gameplayScene) }
+    }
+}
+```
+
+**Key properties:**
+
+| Property | Detail |
+|----------|--------|
+| Placement | `SceneBuilder` scope (parallel to `zone()`), NOT inside `enter { }` |
+| PNG size | Derived from PNG IHDR at build time — no `size()` call needed |
+| Centering | Smaller-than-full-screen PNGs auto-center: `(DEVICE_SCREEN_WIDTH - tilemap_WIDTH) / 2` |
+| Reset sequence | Emits `hide_sprites_range`, `move_bkg(0,0)`, `fill_bkg_rect(0,0,32,32,0)` before tile load |
+| Single call | One `screen()` per scene; calling it twice throws at build time |
+| Static only | No collision, scroll, or spawn data. For scrollable game maps, use `zone { }` instead |
+
+**When NOT to use `screen()`:**
+
+`screen()` is for static pictures only. Use `zone { }` for any tilemap that scrolls, has
+collision data, or has a spawn point — that is, all game-world maps.
+
+```kotlin
+// CORRECT: static full-screen title — use screen()
+val titleScene = scene("title") {
+    screen(asset("graphics/title-screen.png"))
+}
+
+// CORRECT: scrollable game world with collision — use zone { }
+val world1Area1Zone by zone {
+    tileset(asset("graphics/world1-tileset.png"))
+    tilemap(asset("graphics/world1-area1.png"))
+    spawn(40u, 120u)
+}
+val gameplayScene = scene("gameplay") {
+    enter { zone(world1Area1Zone) }
+}
+```
+
+## Level Binding (bindCurrentLevel)
+
+Use `bindCurrentLevel()` inside `enter { }` or `frame { }` script blocks in platformer games to
+load the active level's tileset + tilemap into VRAM before the first gameplay frame. It is a
+`ScriptBuilder`-level call that lowers to `setup_current_level()` with no raw-C escape hatch and
+no build-time WARNING.
+
+```kotlin
+val gameplayScene = scene("gameplay") {
+    enter {
+        bindCurrentLevel()   // lowers to: setup_current_level();
+        showSprites()
+    }
+    frame {
+        // gameplay logic …
+    }
+}
+```
+
+**Valid only when** a `platformerPhysics { }` + `tilemapCollision { }` system pair is registered
+in the game. Without these systems, `setup_current_level()` is not generated and the call has no
+effect.
+
+**Replaces the `cEmit` escape hatch:**
+
+```kotlin
+// BEFORE (escape hatch — emits a build-time stderr WARNING):
+enter { cEmit("setup_current_level();") }
+
+// AFTER (typed — no WARNING, same generated C):
+enter { bindCurrentLevel() }
+```
+
+**Canonical names (D-01 / D-02):** The only valid name is `bindCurrentLevel()`. There is no
+`loadLevel()` alias. The only valid name for static-image scenes is `screen()` — no other alias
+exists.
+
+## Auto-Synthesized `*_exit` Functions (MBC games)
+
+In MBC cartridges (`maxRomBanks > 2`), every cross-bank scene automatically receives a BANKED
+`${scene.id}_exit` function even when the DSL `exit { }` block is empty or absent. Authors no
+longer need to declare a dummy `exit { }` block as a codegen trick to force the banked exit stub.
+
+```kotlin
+// MBC game — play_exit BANKED is auto-emitted even with no exit { } block
+config { cartridge(Cartridge.MBC5_RAM_BATTERY) }
+
+val playScene = scene("play") {
+    enter { showSprites(); bindCurrentLevel() }
+    frame {
+        // game logic …
+        whenever(buttons.start.pressed) { navigate(titleScene) }
+    }
+    // No exit { } needed — play_exit BANKED is auto-synthesized in bank1.c
+}
+```
+
+**Generated C shape (MBC game, play scene in bank 1):**
+
+```c
+void play_exit(void) BANKED { }
+```
+
+**Rules:**
+
+| Condition | Behavior |
+|-----------|----------|
+| MBC cartridge + cross-bank scene + no `exit { }` | `*_exit` BANKED auto-synthesized |
+| MBC cartridge + cross-bank scene + non-empty `exit { }` | `*_exit` emitted from explicit ops |
+| ROM_ONLY cartridge (`maxRomBanks <= 2`) | No auto-synthesis; single-bank games gain no new `*_exit` |
+| HOME-bank scene in any cartridge | No auto-synthesis |
+
+**Previous workaround (no longer needed):**
+
+```kotlin
+// BEFORE — empty exit block needed as codegen trick in MBC games:
+val playScene = scene("play") {
+    enter { showSprites() }
+    frame { /* … */ }
+    exit { hideSprites() }  // <-- TRICK: forces play_exit BANKED emission
+}
+
+// AFTER — remove the trick; auto-synthesis handles it:
+val playScene = scene("play") {
+    enter { showSprites() }
+    frame { /* … */ }
+    // exit {} removed — play_exit BANKED is auto-emitted in MBC games
+}
+```
+
 ## Scenes and Navigation
 
 Scenes are defined with the `scene()` builder that returns a `SceneRef` — a type-safe handle for navigation.
@@ -336,7 +718,7 @@ Scenes are defined with the `scene()` builder that returns a `SceneRef` — a ty
 ```kotlin
 // Define scenes — assign the returned SceneRef to a val
 // Scene ordering: define targets BEFORE the scene that navigates to them
-// (gameover before game, game before title) to avoid forward-reference strings.
+// (gameover before game, game before title) so each SceneRef is in scope.
 
 val gameoverScene = scene("gameover") {
     enter {
@@ -346,16 +728,15 @@ val gameoverScene = scene("gameover") {
         print("PRESS START", position = PositionDef(5, 13))
     }
     frame {
-        // navigate("title") kept as string — circular: title→game→gameover→title
-        whenever(buttons.start.pressed) { navigate("title") }
+        // titleScene defined below — use SceneRef("title") as a forward reference
+        whenever(buttons.start.pressed) { navigate(SceneRef("title")) }
     }
 }
 
 val gameScene = scene("game") {
     enter { showSprites() }
     frame {
-        // navigate via SceneRef — gameoverScene is defined above, no string needed
-        whenever(lives isEqualTo 0) { navigate(gameoverScene) }
+        whenever(lives isEqualTo 0) { navigate(gameoverScene) }  // SceneRef — type-safe
     }
 }
 
@@ -364,15 +745,26 @@ val titleScene = scene("title") {
     frame { whenever(buttons.start.pressed) { navigate(gameScene) } }
 }
 
-// Set start scene using .id
-start = titleScene.id   // (or start = "title" — both work)
+// Set the start scene — assign the SceneRef directly (no .id accessor)
+start = titleScene
 
-// Navigate within scenes using SceneRef or String
-navigate(gameoverScene)  // preferred — type-safe, validated at compile time
-navigate("title")        // fallback for circular dependencies (document why)
+// Navigate using SceneRef — validated at compile/build time
+navigate(gameoverScene)   // preferred: val in scope above current scene declaration
+navigate(SceneRef("title"))  // forward reference: scene defined later in the same game {} block
 ```
 
-**Circular navigation:** When scenes form a cycle (title→game→gameover→title), at least one `navigate()` call must use a string. Break the cycle at the scene that is defined earliest, keeping string navigation with a comment explaining the circular dependency.
+**Forward references:** When a scene navigates to a scene declared later in the same `game {}`
+block, use `SceneRef("id")` as a forward reference. This is the only case where a string appears
+in navigation — it is an explicit forward-reference, not an unvalidated magic string. Both forms
+are validated at build time against the registered scene set.
+
+**`navigate(sceneRef)` vs `SceneRef("id")`:** Use a captured `val` (`navigate(titleScene)`)
+whenever the target is defined above the current scene. Use `SceneRef("id")` only for forward
+references where the target is defined later.
+
+**`start = sceneRef`:** Assign the `SceneRef` val directly — no `.id` accessor. Assigning an
+unregistered `SceneRef` id causes a `DSLValidationError` at build time with a "Did you mean?"
+suggestion.
 
 **Timing in scenes:**
 
@@ -417,6 +809,103 @@ val player by actor {
 ```
 
 **Note:** GBC (Game Boy Color) games use 15-bit RGB color defined via hardware palette registers. DMG constants apply only to DMG-mode games where the 4-shade index controls which hardware shade is displayed.
+
+## GBC Color — Color Namespace
+
+For Game Boy Color games, use the unified `Color` namespace. It exposes three constructor functions
+and sixteen named constants — all returning `GBCColor` (a 15-bit RGB555 value). This supersedes
+the legacy `gbc` and `gbcHex` top-level functions (both removed in Phase 13.3).
+
+```kotlin
+import io.github.gbkt.core.dsl.Color
+
+// --- Constructor functions ---
+
+// rgb888: from standard 8-bit-per-channel web/Photoshop values
+// WARNING: prints to stderr when precision is lost in the RGB888→RGB555 conversion.
+// Precision is lost when any channel's low 3 bits are non-zero.
+// Exact multiples of 8 convert without a warning (e.g. 0, 8, 16, 24, 32, … 248).
+val sky    = Color.rgb888(0, 136, 255)    // warns: 255 low-3-bits=111 → lossy
+val exact  = Color.rgb888(0, 128, 248)    // no warning: all channels ≡ 0 mod 8
+
+// rgb555: from native 5-bit hardware components (0–31 per channel) — no precision loss
+// Use when you already know the hardware register values, e.g. from a palette editor.
+val gray   = Color.rgb555(21, 21, 21)     // mid gray  (r=21, g=21, b=21)
+val shadow = Color.rgb555(10, 10, 10)     // dark gray
+
+// hex: from CSS hex string "#RRGGBB" or "RRGGBB" (case-insensitive)
+// Delegates to GBCColor.fromHex → fromRGB888; same precision-loss rules as rgb888.
+val snow   = Color.hex("#FFFFFF")
+val ocean  = Color.hex("0080C8")
+
+// --- Named constants (compile-time GBCColor values) ---
+Color.WHITE        // (31, 31, 31) — brightest
+Color.BLACK        // ( 0,  0,  0) — darkest
+Color.RED          // (31,  0,  0)
+Color.GREEN        // ( 0, 31,  0)
+Color.BLUE         // ( 0,  0, 31)
+Color.YELLOW       // (31, 31,  0)
+Color.CYAN         // ( 0, 31, 31)
+Color.MAGENTA      // (31,  0, 31)
+Color.ORANGE       // (31, 16,  0)
+Color.LIGHT_GRAY   // (22, 22, 22)
+Color.DARK_GRAY    // (10, 10, 10)
+Color.BROWN        // (18, 10,  4)
+Color.PINK         // (31, 20, 24)
+Color.LIME         // (16, 31,  8)
+Color.NAVY         // ( 0,  0, 16)
+Color.TEAL         // ( 0, 20, 20)
+
+// --- Usage example — four sprite sub-palettes for GBC sub-palette cycling ---
+val gray by spritePalette {
+    color0(Color.WHITE);      color1(Color.rgb555(21, 21, 21))
+    color2(Color.rgb555(10, 10, 10)); color3(Color.BLACK)
+}
+val pink by spritePalette {
+    color0(Color.WHITE);      color1(Color.rgb555(31, 0, 31))
+    color2(Color.rgb555(21, 0, 21));  color3(Color.rgb555(10, 0, 10))
+}
+```
+
+**rgb888 precision-loss rule:** `Color.rgb888(r, g, b)` emits a `WARNING` to stderr when any
+channel's low 3 bits are non-zero (the value cannot be represented exactly in RGB555). Use
+`Color.rgb555(...)` for palette entries sourced from hardware registers or palette editors — the
+5-bit components map directly to hardware values with zero precision loss.
+
+## GBC Palette Slot Assignment
+
+`palette()` inside a `scene { }` block loads a GBC sprite palette into a hardware slot (0–7) at
+scene entry. Two overloads are available:
+
+```kotlin
+// Auto-increment (default) — slots assigned in declaration order (0, 1, 2, 3, …)
+scene("play") {
+    palette(gray)   // → slot 0
+    palette(pink)   // → slot 1
+    palette(cyan)   // → slot 2
+    palette(green)  // → slot 3
+    enter { /* ... */ }
+}
+
+// Explicit slot — override the auto-assigned slot for precise hardware control
+scene("battle") {
+    palette(heroSpritePalette, slot = 0)    // player always in slot 0
+    palette(enemySpritePalette, slot = 3)   // enemies always in slot 3
+    enter { /* ... */ }
+}
+```
+
+**Auto-increment detail:** When a palette is declared without an explicit `slot = N`, the slot
+equals the number of `palette()` calls already made in that scene (0-indexed). This means
+`palette(gray); palette(pink); palette(cyan); palette(green)` reliably produces
+`set_sprite_palette(0u,…)`, `set_sprite_palette(1u,…)`, etc.
+
+**Duplicate-slot guard (D-11):** If two palettes map to the same slot within one scene, the DSL
+throws an `IllegalArgumentException` at scene build time — the error is reported with a clear
+message identifying which scene and which slot is duplicated.
+
+**Slot range:** Hardware supports 8 GBC sprite palette slots (0–7). Passing a value outside this
+range to `palette(p, slot = N)` throws at call site.
 
 ## Raw C Escape Hatch
 
@@ -613,9 +1102,124 @@ val idx = mainMenu.selectedIndex  // Current cursor position
 - For inventories: use `gridMenu` with `itemsFrom` binding
 - Submenus: set `parent = parentMenu` for automatic back navigation
 
+## Game Configuration
+
+Configure cartridge hardware, ROM banking, and SRAM inside the `config { }` block.
+
+### Cartridge Type
+
+Select the cartridge hardware using the `Cartridge` enum. The enum owns the MBC hardware byte —
+no string magic values needed.
+
+```kotlin
+val myGame = gbGame("MyGame") {
+    config {
+        cartridge(Cartridge.MBC5_RAM_BATTERY)  // typed — replaces cartridge = "MBC5_RAM_BATTERY"
+        target(GbcTarget.GBC_COMPATIBLE)        // GBC palette support
+    }
+}
+```
+
+Valid `Cartridge` entries:
+
+| Enum entry | MBC byte | Notes |
+|---|---|---|
+| `Cartridge.ROM_ONLY` | 0x00 | Default — no MBC, 32 KB ROM, no SRAM |
+| `Cartridge.MBC1` | 0x01 | Up to 2 MB ROM, no SRAM |
+| `Cartridge.MBC1_RAM` | 0x02 | Up to 2 MB ROM + volatile SRAM |
+| `Cartridge.MBC1_RAM_BATTERY` | 0x03 | Up to 2 MB ROM + persistent SRAM |
+| `Cartridge.MBC3_TIMER_BATTERY` | 0x10 | MBC3 + real-time clock |
+| `Cartridge.MBC5` | 0x19 | Up to 8 MB ROM, no SRAM |
+| `Cartridge.MBC5_RAM_BATTERY` | 0x1B | Up to 8 MB ROM + persistent SRAM — required for `saveData` |
+
+### ROM Banking (auto-sized)
+
+gbkt automatically derives `romBanks` from `BankingAnalysisPass`. In most games you should
+omit `romBanks` entirely:
+
+```kotlin
+config {
+    cartridge(Cartridge.MBC1)
+    // romBanks omitted — derived automatically from analysis
+}
+```
+
+Advanced users may supply an explicit override to reserve headroom. The override must be
+**at least as large** as the derived count; setting it below the analysis result is a
+hard build error with an actionable message:
+
+```
+romBanks=4 too small; banking analysis needs 6.
+Set romBanks >= 6 or remove romBanks to auto-derive.
+```
+
+```kotlin
+config {
+    cartridge(Cartridge.MBC1)
+    romBanks = 8   // advanced override — must be >= derived count
+}
+```
+
+### SRAM Banks
+
+`ramBanks` is configured exclusively in the DSL `config { }` block. The Gradle
+`gbkt { ramBanks }` extension is deprecated — remove it from `build.gradle.kts` if
+present; the DSL value is the single source of truth.
+
+```kotlin
+config {
+    cartridge(Cartridge.MBC5_RAM_BATTERY)
+    ramBanks = 2   // 2 × 8 KB SRAM banks
+}
+```
+
+### Full Config Example
+
+```kotlin
+val myGame = gbGame("MyGame") {
+    config {
+        cartridge(Cartridge.MBC5_RAM_BATTERY)
+        ramBanks = 2
+        target(GbcTarget.GBC_COMPATIBLE)
+        // romBanks omitted — auto-derived by BankingAnalysisPass
+    }
+
+    // Declare save data — name inferred from property ("saves")
+    @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
+
+    scene("gameplay") {
+        every.frame {
+            // Trigger the save system by typed ref (not a magic string)
+            whenever(buttons.select.pressed) { triggerSystem(saves) }
+        }
+    }
+}
+```
+
 ## Save System DSL
 
 gbkt supports type-safe SRAM persistence with auto-serialization, multi-slot saves, and data integrity validation.
+
+### Declaring Save Data
+
+Use the `by saveData { }` property delegate. The system id is inferred from the property
+name — no string parameter needed. The `@Suppress("UNUSED_VARIABLE")` annotation suppresses
+the Kotlin unused-variable warning that arises because the delegate registers the system as a
+side effect of `provideDelegate`; this will be resolved globally in a future phase.
+
+```kotlin
+// Declare at game scope — id "saves" inferred from property name
+@Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
+
+// Trigger from a scene frame via typed ref (not triggerSystem("saves"))
+whenever(buttons.select.pressed) { triggerSystem(saves) }
+```
+
+> **Cartridge requirement:** `saveData` requires a persistent SRAM cartridge such as
+> `Cartridge.MBC1_RAM_BATTERY` or `Cartridge.MBC5_RAM_BATTERY`. Declare the cartridge in
+> `config { }` — the framework no longer auto-upgrades the cartridge type silently.
+
+### Save Data Fields
 
 ```kotlin
 // Define save data structure
@@ -687,7 +1291,8 @@ save.eraseAll()             // Erase all slots
 save.copy(from = 0, to = 1) // Copy slot 0 to slot 1
 ```
 
-**Note:** The cartridge type automatically upgrades to `MBC5_RAM_BATTERY` when using `saveData()`.
+**Note:** In Phase 13.1 and later, the cartridge type is NOT auto-upgraded. Declare
+`cartridge(Cartridge.MBC5_RAM_BATTERY)` explicitly in `config { }` when using `saveData`.
 
 ## Entity Pools
 

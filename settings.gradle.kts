@@ -55,13 +55,11 @@ include("gbkt-intellij-plugin")
 // Example games
 include("gbkt-examples:pong")
 include("gbkt-examples:breakout")
-include("gbkt-examples:explorer")
-include("gbkt-examples:rpg-lite")
-include("gbkt-examples:dungeon")
-include("gbkt-examples:platformer")
-include("gbkt-examples:platformer-gbc")
-include("gbkt-examples:shmup")
-include("gbkt-examples:racer")
+include("gbkt-examples:simple-physics")
+include("gbkt-examples:metasprites")
+include("gbkt-examples:metasprites-stress")
+include("gbkt-examples:banks")
+include("gbkt-examples:platformer-template")
 
-// Reference RPG implementation
-include("LabyrinthOfTheDragon-port")
+// DEFERRED to next milestone (Phase 13.4 D-13): re-wire + migrate 8 floor zone("floorN") decls to by zone
+// include("LabyrinthOfTheDragon-port")

@@ -55,7 +55,7 @@ import io.github.gbkt.genre.puzzle.domain.TimerMode
 /**
  * GenreSystemVisitor implementation for puzzle grid systems (`puzzle_grid` type).
  *
- * Registered via ServiceLoader from `gbkt-genre-puzzle` so that `GBDKPipelineV2` discovers it at
+ * Registered via ServiceLoader from `gbkt-genre-puzzle` so that `GBDKPipeline` discovers it at
  * runtime without a compile-time dependency on this module.
  *
  * Handles [PuzzleGridConfig] systems produced by

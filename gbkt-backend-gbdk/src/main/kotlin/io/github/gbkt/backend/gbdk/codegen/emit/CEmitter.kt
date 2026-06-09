@@ -419,6 +419,7 @@ object CEmitter {
     private fun emitExpr(expr: CExpr): String =
         when (expr) {
             is CLiteral -> if (expr.value >= 0) "${expr.value}u" else "${expr.value}"
+            is CIntLiteral -> "${expr.value}"
             is CStringLiteral -> "\"${expr.value}\""
             is CVar -> expr.name
             is CBinaryExpr -> "${emitExpr(expr.left)} ${expr.op} ${emitExpr(expr.right)}"
@@ -427,8 +428,33 @@ object CEmitter {
             is CTernary ->
                 "(${emitExpr(expr.condition)}) ? ${emitExpr(expr.thenExpr)} : ${emitExpr(expr.elseExpr)}"
             is CArrayAccess -> "${emitExpr(expr.array)}[${emitExpr(expr.index)}]"
-            is CCast -> "(${emitType(expr.type)})${emitExpr(expr.expr)}"
+            is CCast -> "(${emitType(expr.type)})${emitCastInner(expr.expr)}"
             is CRawExpr -> expr.code
+        }
+
+    /**
+     * Emit the inner expression of a [CCast], wrapping it in parentheses when its top-level
+     * operator has lower precedence than the C cast operator. Without these parens C parses
+     * `(UINT8)cond ? a : b` as `((UINT8)cond) ? a : b` — the cast binds only to the condition,
+     * which broke GAP-CAMERA-NO-FOLLOW (Plan 07.4-32 → 07.4-34).
+     *
+     * Parens are added when [expr] is:
+     * - a [CTernary] (`?:` has lower precedence than cast — the bug class above)
+     * - a [CBinaryExpr] (every binary op has lower precedence than cast)
+     * - a [CUnaryExpr] (defensive — unary prefix ops already work without parens in C because cast
+     *   and unary share the same precedence tier, but the parens keep the emitted text unambiguous
+     *   to downstream readers and grep gates)
+     *
+     * Parens are NOT added when [expr] is itself a parenthesised primary (literal, variable, call,
+     * array access, another cast, or raw escape) — those already render with sufficient grouping to
+     * bind correctly to the cast operator.
+     */
+    private fun emitCastInner(expr: CExpr): String =
+        when (expr) {
+            is CTernary,
+            is CBinaryExpr,
+            is CUnaryExpr -> "(${emitExpr(expr)})"
+            else -> emitExpr(expr)
         }
 
     // =========================================================================

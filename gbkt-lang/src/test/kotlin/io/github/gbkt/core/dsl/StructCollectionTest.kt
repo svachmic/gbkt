@@ -36,8 +36,8 @@ class StructCollectionTest {
                             field("key", u16)
                             field("value", u8)
                         }
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -62,8 +62,8 @@ class StructCollectionTest {
                             field("vx", i8) // 1 byte
                             field("speed", u16) // 2 bytes
                         }
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -88,8 +88,8 @@ class StructCollectionTest {
                     assertEquals("slot.key", keyRef.name)
                     val valueRef = proxy["value"]
                     assertEquals("slot.value", valueRef.name)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -126,8 +126,8 @@ class StructCollectionTest {
                             field("value", u8)
                         }
                     @Suppress("UNUSED_VARIABLE") val cache by hashtable(tileEntry, 64)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -149,8 +149,8 @@ class StructCollectionTest {
             game("TestGame") {
                     @Suppress("UNUSED_VARIABLE")
                     val scores by hashtable(VarType.U8, VarType.U16, 16)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -177,8 +177,8 @@ class StructCollectionTest {
                             field("y", i8)
                         }
                     @Suppress("UNUSED_VARIABLE") val entities by pool(entityDef, 8)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -194,8 +194,8 @@ class StructCollectionTest {
         val ir =
             game("TestGame") {
                     @Suppress("UNUSED_VARIABLE") val bullets by pool(VarType.U8, 16)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -214,8 +214,8 @@ class StructCollectionTest {
         val ir =
             game("TestGame") {
                     @Suppress("UNUSED_VARIABLE") val events by ringBuffer(VarType.U8, 8)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -235,8 +235,8 @@ class StructCollectionTest {
                             field("value", u8)
                         }
                     @Suppress("UNUSED_VARIABLE") val inputQueue by ringBuffer(inputEvent, 4)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -255,8 +255,8 @@ class StructCollectionTest {
         val ir =
             game("TestGame") {
                     @Suppress("UNUSED_VARIABLE") val powerups by fixedSlots(VarType.U8, 4)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -276,8 +276,8 @@ class StructCollectionTest {
                             field("count", u8)
                         }
                     @Suppress("UNUSED_VARIABLE") val inventory by fixedSlots(itemSlot, 8)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -322,8 +322,8 @@ class StructCollectionTest {
                             field("value", u8)
                         }
                     @Suppress("UNUSED_VARIABLE") val cache by hashtable<TileHashEntry>(64)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -348,8 +348,8 @@ class StructCollectionTest {
                             field("y", u8)
                         }
                     @Suppress("UNUSED_VARIABLE") val bullets by pool<Bullet>(16)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -371,8 +371,8 @@ class StructCollectionTest {
                             field("param", u8)
                         }
                     @Suppress("UNUSED_VARIABLE") val events by ringBuffer<GameEvent>(8)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -392,8 +392,8 @@ class StructCollectionTest {
                             field("active", u8)
                         }
                     @Suppress("UNUSED_VARIABLE") val slots by fixedSlots<PowerupSlot>(4)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -409,8 +409,8 @@ class StructCollectionTest {
                 game("TestGame") {
                         @Suppress("UNUSED_VARIABLE")
                         val cache by hashtable<TileHashEntry>(64) // TileHashEntry not registered!
-                        scene("main") {}
-                        start = "main"
+                        val mainScene = scene("main") {}
+                        start = mainScene
                     }
                     .build()
             }
@@ -434,8 +434,8 @@ class StructCollectionTest {
                     @Suppress("UNUSED_VARIABLE") val bullets by pool(VarType.U8, 8)
                     @Suppress("UNUSED_VARIABLE") val events by ringBuffer(VarType.U8, 4)
                     @Suppress("UNUSED_VARIABLE") val slots by fixedSlots(VarType.U8, 4)
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 

@@ -36,3 +36,27 @@ node_modules/
 # Build logs
 build_output.txt
 *_output.txt
+
+# Phase 10: metasprites reference ROM binaries (evidence/reference/)
+# BUILD.md and metasprites.c are committed; binaries are not (D-11)
+.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/reference/*.gb
+.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/reference/*.map
+.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/reference/*.noi
+.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/reference/*.ihx
+.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/reference/*.rel
+.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/reference/*.sym
+.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/reference/*.lst
+.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/reference/*.asm
+
+# Bisect worktree (not tracked, managed by git worktree)
+scratch/
+
+
+# Phase 12 evidence artifacts (reproducible from BUILD.md)
+.planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/reference/*.gb
+.planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/reference/*.map
+.planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/reference/*.noi
+.planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/reference/*.sym
+.planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/reference/build/
+.planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/reference/obj/
+# uat-screenshots .pngs may also be considered local artifacts; KEEP them tracked (small, evidence-binding per D-10).

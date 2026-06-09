@@ -31,7 +31,7 @@ Lowest-level module in the gbkt stack. Defines every IR node type (expressions, 
 | `AssetRef.kt` | `AssetRef` + `AssetType` enum -- type-safe asset references |
 | `PlatformAnnotations.kt` | `PlatformAnnotatable` interface, `BankSlot`, `VRAMRange`, `OAMSlot` -- backend-hint annotations |
 | `ExprVisitorI.kt` | Visitor interface for `Expr` nodes (10 visit methods) |
-| `ScriptOpVisitorI.kt` | Visitor interface for `ScriptOp` nodes (51 visit methods) |
+| `ScriptOpVisitorI.kt` | Visitor interface for `ScriptOp` nodes (56 visit methods) |
 | `SystemIRVisitorI.kt` | Visitor interface for `SystemIR` nodes (8 visit methods) |
 | `GameIRSerializer.kt` | `GameIRSerializer` object -- JSON round-trip for the full IR tree |
 | `PuzzleObjectIR.kt` | `PuzzleObjectIR` interface + concrete types: switch, door, pressure plate, timed block, trigger |
@@ -49,7 +49,7 @@ Lowest-level module in the gbkt stack. Defines every IR node type (expressions, 
 Each interface declares an `accept(visitor)` method. Backends implement the corresponding visitor:
 
 - `ExprVisitorI<R>` -- one `visit*` method per `Expr` subtype (10 methods)
-- `ScriptOpVisitorI<R>` -- one `visit*` method per `ScriptOp` subtype (51 methods)
+- `ScriptOpVisitorI<R>` -- one `visit*` method per `ScriptOp` subtype (56 methods)
 - `SystemIRVisitorI<R>` -- one `visit*` method per `SystemIR` subtype (8 methods)
 
 This pattern gives backends exhaustive dispatch over all IR nodes without requiring `when` expressions, making it impossible to silently skip a new node type.

@@ -140,7 +140,7 @@ abstract class BudgetReportWorkAction : WorkAction<BudgetReportParams> {
     private fun runAnalysisPipeline(game: Any) {
         try {
             // 1. Try to get a GameIR from the game — v2 game objects have getGameIR() or similar
-            // GBDKBackend.generateV2() builds the pipeline from a GameIR. We need to access:
+            // GBDKBackend.generate() builds the pipeline from a GameIR. We need to access:
             //   - GameIR: if game has getIr() or game itself is a GameIR
             //   - Otherwise fall back to using a v1 Game object path
 

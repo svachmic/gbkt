@@ -8,7 +8,7 @@ package io.github.gbkt.backend.gbdk.codegen.visitor
 
 import io.github.gbkt.backend.gbdk.codegen.ast.CRawCode
 import io.github.gbkt.backend.gbdk.codegen.ast.CStatement
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.CombatType
@@ -190,9 +190,9 @@ private fun buildMinimalGameIR(): GameIR =
         startScene = "main",
     )
 
-/** Generate main.c from a [GameIR] via [GBDKPipelineV2]. */
+/** Generate main.c from a [GameIR] via [GBDKPipeline]. */
 private fun generateMainC(gameIR: GameIR): String {
-    val pipeline = GBDKPipelineV2()
+    val pipeline = GBDKPipeline()
     val output = pipeline.generate(gameIR)
     return output.files["main.c"] ?: error("main.c not generated")
 }
@@ -223,7 +223,7 @@ private fun collectRawCode(statements: List<CStatement>): List<CRawCode> {
 
 class RpgCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Tests from Plan 06.5-01: Character stat structs and item names table
@@ -375,15 +375,12 @@ class RpgCodegenTest {
 
         val bodyText =
             useAbility!!.body.filterIsInstance<io.github.gbkt.backend.gbdk.codegen.ast.CIf>()
-        val spCheck =
-            bodyText.any { ifStmt ->
-                val cond = ifStmt.condition
-                cond is io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr &&
-                    (cond.left is io.github.gbkt.backend.gbdk.codegen.ast.CVar &&
-                        (cond.left as io.github.gbkt.backend.gbdk.codegen.ast.CVar)
-                            .name
-                            .contains("sp"))
-            }
+        val spCheck = bodyText.any { ifStmt ->
+            val cond = ifStmt.condition
+            cond is io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr &&
+                (cond.left is io.github.gbkt.backend.gbdk.codegen.ast.CVar &&
+                    (cond.left as io.github.gbkt.backend.gbdk.codegen.ast.CVar).name.contains("sp"))
+        }
         assertTrue(
             spCheck,
             "Expected SP cost check (if _char_active_sp < spCost) in use_ability body",
@@ -624,24 +621,22 @@ class RpgCodegenTest {
             "Expected 2 guarded removal blocks in dispel_buffs (GAP-8)",
         )
 
-        val hasHaste =
-            guardedRemovals.any { ifStmt ->
-                ifStmt.thenBody
-                    .filterIsInstance<io.github.gbkt.backend.gbdk.codegen.ast.CExprStatement>()
-                    .any { stmt ->
-                        val call = stmt.expr as? io.github.gbkt.backend.gbdk.codegen.ast.CCall
-                        call?.function == "remove_effect_haste"
-                    }
-            }
-        val hasShield =
-            guardedRemovals.any { ifStmt ->
-                ifStmt.thenBody
-                    .filterIsInstance<io.github.gbkt.backend.gbdk.codegen.ast.CExprStatement>()
-                    .any { stmt ->
-                        val call = stmt.expr as? io.github.gbkt.backend.gbdk.codegen.ast.CCall
-                        call?.function == "remove_effect_shield"
-                    }
-            }
+        val hasHaste = guardedRemovals.any { ifStmt ->
+            ifStmt.thenBody
+                .filterIsInstance<io.github.gbkt.backend.gbdk.codegen.ast.CExprStatement>()
+                .any { stmt ->
+                    val call = stmt.expr as? io.github.gbkt.backend.gbdk.codegen.ast.CCall
+                    call?.function == "remove_effect_haste"
+                }
+        }
+        val hasShield = guardedRemovals.any { ifStmt ->
+            ifStmt.thenBody
+                .filterIsInstance<io.github.gbkt.backend.gbdk.codegen.ast.CExprStatement>()
+                .any { stmt ->
+                    val call = stmt.expr as? io.github.gbkt.backend.gbdk.codegen.ast.CCall
+                    call?.function == "remove_effect_shield"
+                }
+        }
         assertTrue(hasHaste, "Expected 'remove_effect_haste' call in dispel_buffs (GAP-8)")
         assertTrue(hasShield, "Expected 'remove_effect_shield' call in dispel_buffs (GAP-8)")
     }

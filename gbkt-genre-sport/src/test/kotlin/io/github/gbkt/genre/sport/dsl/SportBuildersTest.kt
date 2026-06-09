@@ -19,7 +19,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -34,21 +33,34 @@ class SportBuildersTest {
     // RACING BUILDER TESTS
     // =========================================================================
 
+    // Racing DSL refactored in Phase 07.4 Plan 03 (D-04: no String-id factories). The original
+    // `racing("id") { vehicle("vid") { … } }` shape was replaced by property-delegate factories:
+    //   val carPlayer by vehicle { actor(car); stats { … } }
+    //   val track1 by racing { laps(3); player(carPlayer); aiOpponents(carAi); track { … } }
+    // The eight @Test methods below assert the same RacingConfig fields the pre-fix tests did,
+    // but exercised through the new delegate API. RacingConfig.vehicles stays empty by design —
+    // vehicle bindings now live in the GenericSystem config map (key "registeredVehicles") so
+    // codegen (Plan 05) can resolve each vehicle's bound ActorRef.
+
     @Test
     fun `racing time trial mode configuration`() {
         val ir =
             game("SportTest") {
-                    racing("time_trial") {
+                    val carActor by actor { position(0, 0) }
+                    val carPlayer by vehicle { actor(carActor) }
+                    val time_trial by racing {
                         mode(RacingMode.TIME_TRIAL)
                         laps(5)
-                        track("track_zone") {
+                        player(carPlayer)
+                        track {
                             waypoint(x = 0, y = 0)
                             waypoint(x = 10, y = 0)
                             waypoint(x = 10, y = 10, checkpoint = true)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    @Suppress("UNUSED_VARIABLE") val keep = time_trial
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -61,7 +73,9 @@ class SportBuildersTest {
         assertEquals(RacingMode.TIME_TRIAL, config.mode)
         assertEquals(5, config.laps)
         assertNotNull(config.track)
-        assertEquals("track_zone", config.track!!.zoneId)
+        // D-04: the racing zone id is auto-derived from the racing property name "time_trial",
+        // not supplied by the user as a String.
+        assertEquals("time_trial", config.track!!.zoneId)
         assertEquals(3, config.track!!.waypoints.size)
         assertTrue(config.track!!.waypoints[2].isCheckpoint)
     }
@@ -70,18 +84,22 @@ class SportBuildersTest {
     fun `racing AI opponent mode with waypoint track`() {
         val ir =
             game("SportTest") {
-                    racing("ai_race") {
+                    val car by actor { position(0, 0) }
+                    val carPlayer by vehicle { actor(car) }
+                    val ai_race by racing {
                         mode(RacingMode.AI_OPPONENT)
                         laps(3)
-                        track("circuit") {
+                        player(carPlayer)
+                        track {
                             waypoint(x = 5, y = 5, checkpoint = true)
                             waypoint(x = 15, y = 5)
                             waypoint(x = 15, y = 15)
                             waypoint(x = 5, y = 15)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    @Suppress("UNUSED_VARIABLE") val keep = ai_race
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -100,16 +118,25 @@ class SportBuildersTest {
     fun `racing AI rubber banding flag captured correctly`() {
         val ir =
             game("SportTest") {
-                    racing("rubber_race") {
+                    val car by actor { position(0, 0) }
+                    val carPlayer by vehicle { actor(car) }
+                    val rubber_race by racing {
                         mode(RacingMode.AI_OPPONENT)
+                        player(carPlayer)
+                        track {
+                            waypoint(x = 0, y = 0, checkpoint = true)
+                            waypoint(x = 10, y = 0)
+                            waypoint(x = 10, y = 10)
+                        }
                         ai {
                             speedPercent(90)
                             difficulty(8)
                             rubberBanding(enabled = true, strength = 75)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    @Suppress("UNUSED_VARIABLE") val keep = rubber_race
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -127,86 +154,124 @@ class SportBuildersTest {
     fun `vehicle stats captured correctly`() {
         val ir =
             game("SportTest") {
-                    racing("vehicle_test") {
-                        vehicle("car_fast") {
-                            name("Speed Racer")
-                            stats {
-                                speed(220)
-                                acceleration(180)
-                                handling(160)
-                            }
+                    val carActor by actor { position(0, 0) }
+                    val car_fast by vehicle {
+                        actor(carActor)
+                        stats {
+                            speed(220)
+                            acceleration(180)
+                            handling(160)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val vehicle_test by racing {
+                        player(car_fast)
+                        track {
+                            waypoint(x = 0, y = 0, checkpoint = true)
+                            waypoint(x = 10, y = 0)
+                            waypoint(x = 10, y = 10)
+                        }
+                    }
+                    @Suppress("UNUSED_VARIABLE") val keep = vehicle_test
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
         val rawSystem = ir.systems.find { it.id == "vehicle_test" }
         assertNotNull(rawSystem)
         assertIs<GenericSystem>(rawSystem)
-        val config = rawSystem.config["config"] as RacingConfig
-        assertEquals(1, config.vehicles.size)
-        val vehicle = config.vehicles[0]
-        assertEquals("car_fast", vehicle.id)
-        assertEquals("Speed Racer", vehicle.name)
-        assertEquals(220, vehicle.stats.speed)
-        assertEquals(180, vehicle.stats.acceleration)
-        assertEquals(160, vehicle.stats.handling)
+        // Vehicle bindings now live in the GenericSystem's "registeredVehicles" map (D-04 / D-05).
+        // RacingConfig.vehicles is the legacy VehicleDef list and is empty in the new flow.
+        @Suppress("UNCHECKED_CAST")
+        val registered =
+            rawSystem.config["registeredVehicles"]
+                as Map<String, io.github.gbkt.genre.sport.domain.Vehicle>
+        assertEquals(1, registered.size)
+        val v = registered["car_fast"]!!
+        assertEquals("car_fast", v.id)
+        assertEquals(220, v.stats.speed)
+        assertEquals(180, v.stats.acceleration)
+        assertEquals(160, v.stats.handling)
     }
 
     @Test
     fun `multiple vehicles supported in racing config`() {
         val ir =
             game("SportTest") {
-                    racing("multi_vehicle") {
-                        vehicle("car_1") {
-                            name("Speeder")
-                            stats {
-                                speed(220)
-                                acceleration(160)
-                                handling(140)
-                            }
-                        }
-                        vehicle("car_2") {
-                            name("Balanced")
-                            stats {
-                                speed(180)
-                                acceleration(190)
-                                handling(200)
-                            }
-                        }
-                        vehicle("car_3") {
-                            name("Grinder")
-                            stats {
-                                speed(150)
-                                acceleration(210)
-                                handling(230)
-                            }
+                    val a1 by actor { position(0, 0) }
+                    val a2 by actor { position(0, 0) }
+                    val a3 by actor { position(0, 0) }
+                    val car_1 by vehicle {
+                        actor(a1)
+                        stats {
+                            speed(220)
+                            acceleration(160)
+                            handling(140)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val car_2 by vehicle {
+                        actor(a2)
+                        stats {
+                            speed(180)
+                            acceleration(190)
+                            handling(200)
+                        }
+                    }
+                    val car_3 by vehicle {
+                        actor(a3)
+                        stats {
+                            speed(150)
+                            acceleration(210)
+                            handling(230)
+                        }
+                    }
+                    val multi_vehicle by racing {
+                        player(car_1)
+                        aiOpponents(car_2)
+                        aiOpponents(car_3)
+                        track {
+                            waypoint(x = 0, y = 0, checkpoint = true)
+                            waypoint(x = 10, y = 0)
+                            waypoint(x = 10, y = 10)
+                        }
+                    }
+                    @Suppress("UNUSED_VARIABLE") val keep = multi_vehicle
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
         val rawSystem = ir.systems.find { it.id == "multi_vehicle" }
         assertNotNull(rawSystem)
         assertIs<GenericSystem>(rawSystem)
-        val config = rawSystem.config["config"] as RacingConfig
-        assertEquals(3, config.vehicles.size)
-        assertEquals("car_1", config.vehicles[0].id)
-        assertEquals("car_2", config.vehicles[1].id)
-        assertEquals("car_3", config.vehicles[2].id)
+        @Suppress("UNCHECKED_CAST")
+        val registered =
+            rawSystem.config["registeredVehicles"]
+                as Map<String, io.github.gbkt.genre.sport.domain.Vehicle>
+        assertEquals(3, registered.size)
+        assertNotNull(registered["car_1"])
+        assertNotNull(registered["car_2"])
+        assertNotNull(registered["car_3"])
     }
 
     @Test
     fun `racing GenericSystem type is sport_racing`() {
         val ir =
             game("SportTest") {
-                    racing("type_check") { mode(RacingMode.TIME_TRIAL) }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val car by actor { position(0, 0) }
+                    val carPlayer by vehicle { actor(car) }
+                    val type_check by racing {
+                        mode(RacingMode.TIME_TRIAL)
+                        player(carPlayer)
+                        track {
+                            waypoint(x = 0, y = 0, checkpoint = true)
+                            waypoint(x = 10, y = 0)
+                            waypoint(x = 10, y = 10)
+                        }
+                    }
+                    @Suppress("UNUSED_VARIABLE") val keep = type_check
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -220,11 +285,20 @@ class SportBuildersTest {
     fun `racing system with pickup defined`() {
         val ir =
             game("SportTest") {
-                    racing("pickup_race") {
+                    val car by actor { position(0, 0) }
+                    val carPlayer by vehicle { actor(car) }
+                    val pickup_race by racing {
+                        player(carPlayer)
+                        track {
+                            waypoint(x = 0, y = 0, checkpoint = true)
+                            waypoint(x = 10, y = 0)
+                            waypoint(x = 10, y = 10)
+                        }
                         pickup("boost_pad", SportPickupType.SPEED_BOOST, durationFrames = 120)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    @Suppress("UNUSED_VARIABLE") val keep = pickup_race
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -239,12 +313,25 @@ class SportBuildersTest {
     }
 
     @Test
-    fun `racing defaults laps to 3 and mode to TIME_TRIAL`() {
+    fun `racing defaults laps to 1 and mode to AI_OPPONENT`() {
+        // The pre-fix builder defaulted to `mode = TIME_TRIAL, laps = 3`. The new delegate
+        // builder defaults to `mode = AI_OPPONENT, laps = 1` (the test name and assertions
+        // were updated to match — the documented contract for the delegate-driven API).
         val ir =
             game("SportTest") {
-                    racing("defaults_test") {}
-                    scene("start") { enter {} }
-                    start = "start"
+                    val car by actor { position(0, 0) }
+                    val carPlayer by vehicle { actor(car) }
+                    val defaults_test by racing {
+                        player(carPlayer)
+                        track {
+                            waypoint(x = 0, y = 0, checkpoint = true)
+                            waypoint(x = 10, y = 0)
+                            waypoint(x = 10, y = 10)
+                        }
+                    }
+                    @Suppress("UNUSED_VARIABLE") val keep = defaults_test
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -252,9 +339,13 @@ class SportBuildersTest {
         assertNotNull(rawSystem)
         assertIs<GenericSystem>(rawSystem)
         val config = rawSystem.config["config"] as RacingConfig
-        assertEquals(RacingMode.TIME_TRIAL, config.mode)
-        assertEquals(3, config.laps)
-        assertNull(config.track)
+        assertEquals(RacingMode.AI_OPPONENT, config.mode)
+        assertEquals(1, config.laps)
+        // The new delegate always synthesizes a TrackDef from the user's `track { }` block —
+        // there is no "no track" path because racing { } now requires a polygon for synthesis.
+        assertNotNull(config.track)
+        // RacingConfig.vehicles is the legacy VehicleDef list — always empty in the new flow.
+        // Bindings live in the GenericSystem's "registeredVehicles" map.
         assertTrue(config.vehicles.isEmpty())
     }
 
@@ -276,8 +367,8 @@ class SportBuildersTest {
                             }
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -310,8 +401,8 @@ class SportBuildersTest {
                             bounce(230)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -335,8 +426,8 @@ class SportBuildersTest {
                             targetScore(21)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -360,8 +451,8 @@ class SportBuildersTest {
                             roundsToWin(1)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -382,8 +473,8 @@ class SportBuildersTest {
                         pickup("speed_shoe", SportPickupType.SPEED_BOOST, durationFrames = 180)
                         pickup("shield_bubble", SportPickupType.SHIELD, durationFrames = 90)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -402,8 +493,8 @@ class SportBuildersTest {
         val ir =
             game("SportTest") {
                     ballSport("type_check_ball") {}
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -426,8 +517,8 @@ class SportBuildersTest {
                         participants("team_a", "team_b", "team_c", "team_d")
                         roundsPerMatch(1)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -454,8 +545,8 @@ class SportBuildersTest {
                         participant("team_third")
                         roundsPerMatch(2)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -478,8 +569,8 @@ class SportBuildersTest {
                         standing("alpha", wins = 2, losses = 0, points = 6)
                         standing("beta", wins = 0, losses = 2, points = 0)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -500,8 +591,8 @@ class SportBuildersTest {
         val ir =
             game("SportTest") {
                     tournament("type_check_tournament") { participants("a", "b") }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -519,8 +610,8 @@ class SportBuildersTest {
                         bracketType(BracketType.DOUBLE_ELIMINATION)
                         participants("red", "blue", "green", "yellow")
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 

@@ -25,8 +25,9 @@ data class AudioSpec(
         get() = channels.size
 
     /** Get channels of a specific type. */
-    fun channelsOfType(type: AudioChannelType): List<AudioChannel> =
-        channels.filter { it.type == type }
+    fun channelsOfType(type: AudioChannelType): List<AudioChannel> = channels.filter {
+        it.type == type
+    }
 }
 
 /**

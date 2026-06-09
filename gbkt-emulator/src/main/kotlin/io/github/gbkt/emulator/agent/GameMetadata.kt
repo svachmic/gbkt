@@ -130,6 +130,10 @@ class GameMetadata(
          * @param json The JSON content to parse.
          * @return A [GameMetadata] instance with scenes and actors.
          */
+        @Suppress("LongMethod", "CyclomaticComplexMethod", "ThrowsCount")
+        // Custom JSON parser for the codegen-emitted game_metadata.json. Each field validation
+        // has its own throw site (required-field, type-mismatch, out-of-range). Splitting into
+        // sub-parsers would only shuffle complexity since each field's failure mode is unique.
         fun fromJsonString(json: String): GameMetadata {
             try {
                 val root = JSONObject(json)

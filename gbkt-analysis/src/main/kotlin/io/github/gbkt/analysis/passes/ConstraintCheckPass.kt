@@ -38,12 +38,29 @@ class ConstraintCheckPass : AnalysisPass {
             }
 
         val diagnostics = mutableListOf<Diagnostic>()
+        checkOamBudget(inventory, context, diagnostics)
+        checkWramBudget(inventory, context, diagnostics)
+
+        val errors = diagnostics.filter { it.severity == Severity.ERROR }
+        return if (errors.isNotEmpty()) {
+            PassResult.Failed(diagnostics)
+        } else {
+            PassResult.Success(context.withDiagnostics(diagnostics))
+        }
+    }
+
+    /**
+     * Validates total OAM entries against [SpriteSpec.maxSprites]. Uses total OAM entries
+     * (accounting for multi-tile sprites — 16x16 needs 4 entries, 8x16 needs 2, etc.) rather than a
+     * naive actor count.
+     */
+    private fun checkOamBudget(
+        inventory: io.github.gbkt.analysis.ResourceInventory,
+        context: PassContext,
+        diagnostics: MutableList<Diagnostic>,
+    ) {
         val profile = context.profile
         val config = context.config
-
-        // --- OAM / sprite count check ---
-        // Use total OAM entries (accounting for multi-tile sprites) instead of actor count.
-        // A 16x16 sprite needs 4 OAM entries; a 8x16 sprite needs 2, etc.
         val totalOamEntries = inventory.spriteTileCounts.values.sum()
         val maxSprites = profile.sprites.maxSprites
         when {
@@ -77,8 +94,19 @@ class ConstraintCheckPass : AnalysisPass {
                     )
             }
         }
+    }
 
-        // --- WRAM usage check ---
+    /**
+     * Validates total WRAM consumption (variables + collections + actor state + engine overhead)
+     * against [MemorySpec.workRam].
+     */
+    private fun checkWramBudget(
+        inventory: io.github.gbkt.analysis.ResourceInventory,
+        context: PassContext,
+        diagnostics: MutableList<Diagnostic>,
+    ) {
+        val profile = context.profile
+        val config = context.config
         val actorStateBytes = context.game.actors.size * RAMPlanningPass.ACTOR_STATE_BYTES
         val overheadBytes = RAMPlanningPass.ENGINE_OVERHEAD_BYTES
         val totalRamBytes =
@@ -112,13 +140,6 @@ class ConstraintCheckPass : AnalysisPass {
                             "WRAM is approaching capacity. Review variable and collection sizes.",
                     )
             }
-        }
-
-        val errors = diagnostics.filter { it.severity == Severity.ERROR }
-        return if (errors.isNotEmpty()) {
-            PassResult.Failed(diagnostics)
-        } else {
-            PassResult.Success(context.withDiagnostics(diagnostics))
         }
     }
 }

@@ -104,13 +104,36 @@ jobs:
             --configure-on-demand --no-daemon
 
       - name: Build all modules
-        run: ./gradlew :gbkt-core:build :gbkt-cli:build :gbkt-backend-api:build :gbkt-backend-gbdk:build :gbkt-intellij-plugin:build :gbkt-examples:pong:build :gbkt-examples:breakout:build :gbkt-examples:explorer:build --no-daemon
+        run: |
+          ./gradlew \
+            :gbkt-core:build \
+            :gbkt-cli:build \
+            :gbkt-backend-api:build \
+            :gbkt-backend-gbdk:build \
+            :gbkt-intellij-plugin:build \
+            :gbkt-examples:pong:build \
+            :gbkt-examples:breakout:build \
+            :gbkt-examples:simple-physics:build \
+            :gbkt-examples:metasprites:build \
+            :gbkt-examples:metasprites-stress:build \
+            :gbkt-examples:banks:build \
+            :gbkt-examples:platformer-template:build \
+            --no-daemon
 
       - name: Run Tests
         run: ./gradlew :gbkt-core:test :gbkt-backend-api:test :gbkt-backend-gbdk:test :gbkt-gradle-plugin:test --no-daemon
 
       - name: Verify Example C Generation
-        run: ./gradlew :gbkt-examples:pong:generateC :gbkt-examples:breakout:generateC :gbkt-examples:explorer:generateC --no-daemon
+        run: |
+          ./gradlew \
+            :gbkt-examples:pong:generateC \
+            :gbkt-examples:breakout:generateC \
+            :gbkt-examples:simple-physics:generateC \
+            :gbkt-examples:metasprites:generateC \
+            :gbkt-examples:metasprites-stress:generateC \
+            :gbkt-examples:banks:generateC \
+            :gbkt-examples:platformer-template:generateC \
+            --no-daemon
 
       - name: Upload Test Reports
         if: failure()

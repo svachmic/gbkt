@@ -1,0 +1,7 @@
+void save_game_saves(UINT8 slotIndex) {
+    ENABLE_RAM;
+    UINT8* sram = (volatile UINT8 *)(0xA000 + (UINT16)slotIndex * 2u);
+    sram[0u] = _saveFlag;
+    sram[1u] = 171u;
+    DISABLE_RAM;
+}

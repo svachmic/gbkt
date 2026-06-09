@@ -84,11 +84,11 @@ class ProjectFileGenerator(
         """
         |plugins {
         |    kotlin("jvm") version "2.3.0"
-        |    id("io.github.gbkt") version "1.0.0-SNAPSHOT"
+        |    id("io.github.gbkt") version "0.1.0"
         |}
         |
         |group = "$packageName"
-        |version = "1.0.0-SNAPSHOT"
+        |version = "0.1.0"
         |
         |repositories {
         |    mavenCentral()
@@ -96,7 +96,7 @@ class ProjectFileGenerator(
         |}
         |
         |dependencies {
-        |    implementation("io.github.gbkt:gbkt-core:1.0.0-SNAPSHOT")
+        |    implementation("io.github.gbkt:gbkt-core:0.1.0")
         |    testImplementation(kotlin("test"))
         |}
         |

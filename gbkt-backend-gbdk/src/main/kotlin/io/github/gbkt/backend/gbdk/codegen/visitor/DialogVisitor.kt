@@ -177,7 +177,13 @@ class DialogVisitor(private val gameIR: GameIR) {
      * ```
      */
     private fun buildWinPrintAtHelper(): CFunction {
-        val loopVar = CVarDecl("i", CU8, initializer = null)
+        val loopVar =
+            CVarDecl(
+                "i",
+                CU8,
+                initializer = CLiteral(0),
+            ) // Plan 07.4-31 / DEFERRED-07.4-27-01: initialise loop counter; SDCC was lucky with
+        // stack slot 0
         val forLoop =
             CFor(
                 init = null, // C89: declare before for
@@ -255,9 +261,24 @@ class DialogVisitor(private val gameIR: GameIR) {
                 ),
             body =
                 listOf(
-                    CVarDecl("i", CU8, initializer = null),
-                    CVarDecl("px", CU8, initializer = null),
-                    CVarDecl("tile_x", CU8, initializer = null),
+                    CVarDecl(
+                        "i",
+                        CU8,
+                        initializer = CLiteral(0),
+                    ), // Plan 07.4-31 / DEFERRED-07.4-27-01: initialise loop counter; SDCC was
+                    // lucky with stack slot 0
+                    CVarDecl(
+                        "px",
+                        CU8,
+                        initializer = CLiteral(0),
+                    ), // Plan 07.4-31 / DEFERRED-07.4-27-01: initialise loop counter; SDCC was
+                    // lucky with stack slot 0
+                    CVarDecl(
+                        "tile_x",
+                        CU8,
+                        initializer = CLiteral(0),
+                    ), // Plan 07.4-31 / DEFERRED-07.4-27-01: initialise loop counter; SDCC was
+                    // lucky with stack slot 0
                     CRawCode("UINT8 tile_buf[8] = {0,0,0,0,0,0,0,0};"),
                     CExprStatement(CBinaryExpr(CVar("px"), "=", CLiteral(0))),
                     CExprStatement(CBinaryExpr(CVar("tile_x"), "=", CVar("x"))),
@@ -373,8 +394,18 @@ class DialogVisitor(private val gameIR: GameIR) {
             params = listOf(CParam("x", CU8), CParam("y", CU8), CParam("w", CU8), CParam("h", CU8)),
             body =
                 listOf(
-                    CVarDecl("ry", CU8, initializer = null),
-                    CVarDecl("rx", CU8, initializer = null),
+                    CVarDecl(
+                        "ry",
+                        CU8,
+                        initializer = CLiteral(0),
+                    ), // Plan 07.4-31 / DEFERRED-07.4-27-01: initialise loop counter; SDCC was
+                    // lucky with stack slot 0
+                    CVarDecl(
+                        "rx",
+                        CU8,
+                        initializer = CLiteral(0),
+                    ), // Plan 07.4-31 / DEFERRED-07.4-27-01: initialise loop counter; SDCC was
+                    // lucky with stack slot 0
                     blankTile,
                     outerLoop,
                 ),
@@ -434,8 +465,18 @@ class DialogVisitor(private val gameIR: GameIR) {
             params = listOf(CParam("tile", CU8)),
             body =
                 listOf(
-                    CVarDecl("fy", CU8, initializer = null),
-                    CVarDecl("fx", CU8, initializer = null),
+                    CVarDecl(
+                        "fy",
+                        CU8,
+                        initializer = CLiteral(0),
+                    ), // Plan 07.4-31 / DEFERRED-07.4-27-01: initialise loop counter; SDCC was
+                    // lucky with stack slot 0
+                    CVarDecl(
+                        "fx",
+                        CU8,
+                        initializer = CLiteral(0),
+                    ), // Plan 07.4-31 / DEFERRED-07.4-27-01: initialise loop counter; SDCC was
+                    // lucky with stack slot 0
                     outerLoop,
                 ),
             bank = 0,

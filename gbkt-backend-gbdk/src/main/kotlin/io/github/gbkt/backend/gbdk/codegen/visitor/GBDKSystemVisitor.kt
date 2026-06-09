@@ -21,6 +21,7 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CFunction
 import io.github.gbkt.backend.gbdk.codegen.ast.CI16
 import io.github.gbkt.backend.gbdk.codegen.ast.CI8
 import io.github.gbkt.backend.gbdk.codegen.ast.CIf
+import io.github.gbkt.backend.gbdk.codegen.ast.CIntLiteral
 import io.github.gbkt.backend.gbdk.codegen.ast.CLiteral
 import io.github.gbkt.backend.gbdk.codegen.ast.CParam
 import io.github.gbkt.backend.gbdk.codegen.ast.CRawCode
@@ -84,7 +85,7 @@ import io.github.gbkt.core.pickup.PickupSystemConfig
 // All typed systems generate real C code — no silent drops:
 //  - CameraSystem  → _camera_x/_camera_y globals + update_camera() function
 //  - SaveSystem    → save_game()/load_game() SRAM functions
-//  - SoundSystem   → empty list (sound handled by GBDKPipelineV2.buildSoundFunctions)
+//  - SoundSystem   → empty list (sound handled by GBDKPipeline.buildSoundFunctions)
 //  - ExplorationSystem → exploration state globals + exploration_move() function
 //  - DialogSystem  → delegates to existing buildDialogHelpers()
 //  - GenericSystem → delegates to buildSystemTriggerFunction()
@@ -96,7 +97,7 @@ import io.github.gbkt.core.pickup.PickupSystemConfig
  *
  * Implements [SystemIRVisitorI]<List<[CFunction]>> so that each system type dispatches via
  * [io.github.gbkt.core.ir.SystemIR.accept] instead of filterIsInstance pattern in
- * [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2.buildSystemFunctions].
+ * [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline.buildSystemFunctions].
  *
  * @param gameIR The full [GameIR] for context (variable names, actor IDs, etc.)
  * @param zoneBankAllocation Map from zone ID to allocated ROM bank number. Used to emit
@@ -161,16 +162,22 @@ class GBDKSystemVisitor(
 
                     // ---- Step 2: bounds clamping ----
                     if (boundsWidth != null && boundsHeight != null) {
-                        val maxX = boundsWidth - 160
-                        val maxY = boundsHeight - 144
+                        // Plan 07.4-21: clamp to non-negative. When the zone is smaller than the
+                        // screen (boundsWidth < 160 or boundsHeight < 144), the scroll range is
+                        // zero — the camera locks at the origin. Without this guard the negative
+                        // literal flows into a CTernary that ultimately casts to UINT8, producing
+                        // SCX/SCY = 248/etc. (wraparound) and scrolling the BG off-screen.
+                        // See 07.4-UAT.md secondary issue 1 (racer 19x19 zone → maxX = -8 → 248).
+                        val maxX = kotlin.math.max(0, boundsWidth - 160)
+                        val maxY = kotlin.math.max(0, boundsHeight - 144)
 
                         // _camera_x = (UINT8)(rawX < 0 ? 0 : (rawX > maxX ? maxX : rawX))
                         val clampX =
                             CTernary(
-                                CBinaryExpr(CVar("rawX"), "<", CLiteral(0)),
+                                CBinaryExpr(CVar("rawX"), "<", CIntLiteral(0)),
                                 CLiteral(0),
                                 CTernary(
-                                    CBinaryExpr(CVar("rawX"), ">", CLiteral(maxX)),
+                                    CBinaryExpr(CVar("rawX"), ">", CIntLiteral(maxX)),
                                     CLiteral(maxX),
                                     CVar("rawX"),
                                 ),
@@ -180,10 +187,10 @@ class GBDKSystemVisitor(
                         // _camera_y = (UINT8)(rawY < 0 ? 0 : (rawY > maxY ? maxY : rawY))
                         val clampY =
                             CTernary(
-                                CBinaryExpr(CVar("rawY"), "<", CLiteral(0)),
+                                CBinaryExpr(CVar("rawY"), "<", CIntLiteral(0)),
                                 CLiteral(0),
                                 CTernary(
-                                    CBinaryExpr(CVar("rawY"), ">", CLiteral(maxY)),
+                                    CBinaryExpr(CVar("rawY"), ">", CIntLiteral(maxY)),
                                     CLiteral(maxY),
                                     CVar("rawY"),
                                 ),
@@ -193,14 +200,14 @@ class GBDKSystemVisitor(
                         // No bounds — clamp to 0..255 (UINT8 range), prevent negative wrapping
                         val clampX =
                             CTernary(
-                                CBinaryExpr(CVar("rawX"), "<", CLiteral(0)),
+                                CBinaryExpr(CVar("rawX"), "<", CIntLiteral(0)),
                                 CLiteral(0),
                                 CVar("rawX"),
                             )
                         add(CExprStatement(CBinaryExpr(CVar("_camera_x"), "=", CCast(CU8, clampX))))
                         val clampY =
                             CTernary(
-                                CBinaryExpr(CVar("rawY"), "<", CLiteral(0)),
+                                CBinaryExpr(CVar("rawY"), "<", CIntLiteral(0)),
                                 CLiteral(0),
                                 CVar("rawY"),
                             )
@@ -475,7 +482,24 @@ class GBDKSystemVisitor(
                 body = loadBody,
             )
 
-        return listOf(saveGame, loadGame)
+        // ---- trigger_{id}() — Plan 11-10 named-bug fix + arity follow-on ----
+        // ScriptOpVisitor.visitTriggerSystem (line 666) emits CCall("trigger_<id>", args)
+        // where `args` come from `op.args.values`. The DSL surface `triggerSystem("saves")`
+        // produces zero args, so the trampoline must be zero-arg to match the caller.
+        // The trampoline delegates to save_game_<id>(0) — slot 0 default; multi-slot
+        // selection is a separate DSL surface and out of scope here.
+        // Without this stub, lcc reports `?ASlink-Warning-Undefined Global '_trigger_<id>'`.
+        val triggerStub =
+            CFunction(
+                name = "trigger_$sanitizedId",
+                returnType = CVoid,
+                params = emptyList(),
+                body = listOf(CExprStatement(CCall("save_game_$sanitizedId", listOf(CLiteral(0))))),
+                sectionComment =
+                    "SaveSystem trigger stub — called by ScriptOpVisitor.visitTriggerSystem",
+            )
+
+        return listOf(saveGame, loadGame, triggerStub)
     }
 
     // -------------------------------------------------------------------------
@@ -484,7 +508,7 @@ class GBDKSystemVisitor(
 
     /**
      * Return empty list for [SoundSystem] — sound driver functions are already generated by
-     * [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2.buildSoundFunctions].
+     * [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline.buildSoundFunctions].
      *
      * Returning an empty list here avoids duplicate function generation while still dispatching
      * through the visitor (no silent drop via filterIsInstance).
@@ -517,11 +541,10 @@ class GBDKSystemVisitor(
         val interactStatements: List<ScriptOp> = system.interactStatements
         val stepStatements: List<ScriptOp> = system.stepStatements
         val zones: List<ZoneIR> = gameIR.zones
-        val hasEncounters =
-            zones.any { zone ->
-                val table = zone.encounterTable
-                table != null && table.entries.isNotEmpty()
-            }
+        val hasEncounters = zones.any { zone ->
+            val table = zone.encounterTable
+            table != null && table.entries.isNotEmpty()
+        }
         val hasEdgeTransitions = zones.any { it.transitions.any { t -> t.edge != null } }
         val hasZoneObjects = zones.any { it.objects.isNotEmpty() }
         val playerX = CVar("_player_x")
@@ -1128,11 +1151,10 @@ class GBDKSystemVisitor(
         // -----------------------------------------------------------------------
         val nxVar = CVar("nx")
         val nyVar = CVar("ny")
-        val hasHitbox =
-            actors.any {
-                val ec = it.entityCollision
-                ec != null && ec.shape == CollisionShape.HITBOX
-            }
+        val hasHitbox = actors.any {
+            val ec = it.entityCollision
+            ec != null && ec.shape == CollisionShape.HITBOX
+        }
         val checkBody =
             buildList<CStatement> {
                 // TILE-based check: single bit lookup in _entity_grid
@@ -1830,11 +1852,10 @@ class GBDKSystemVisitor(
                         thenBody = listOf(CReturn(null)),
                     )
                 )
-                val allEntries: List<EncounterEntryIR> =
-                    zones.flatMap { zone ->
-                        val table = zone.encounterTable
-                        table?.entries ?: emptyList()
-                    }
+                val allEntries: List<EncounterEntryIR> = zones.flatMap { zone ->
+                    val table = zone.encounterTable
+                    table?.entries ?: emptyList()
+                }
                 if (allEntries.isNotEmpty()) {
                     val totalWeight = allEntries.sumOf { it.weight }
                     add(CVarDecl("roll", CU8, null))
@@ -1940,42 +1961,43 @@ class GBDKSystemVisitor(
                     )
                 )
                 if (zones.isNotEmpty()) {
-                    val tileLoadCases =
-                        zones.mapIndexed { idx, zone ->
-                            val zs = zone.id.replace('-', '_').replace(' ', '_')
-                            val tileRows =
-                                if (zone.tileData.isEmpty()) 128
-                                else zone.tileData.size / zone.mapWidth
-                            val bankNum = zoneBankAllocation[zone.id] ?: 0
-                            val caseBody =
-                                buildList<CStatement> {
-                                    // Emit SWITCH_ROM(bankN) before tilemap data access when in
-                                    // non-zero bank
-                                    if (bankNum > 0) {
-                                        add(CRawCode("SWITCH_ROM($bankNum);"))
-                                    }
-                                    add(
-                                        CExprStatement(
-                                            CCall(
-                                                "set_bkg_tiles",
-                                                listOf(
-                                                    CLiteral(0),
-                                                    CLiteral(0),
-                                                    CLiteral(zone.mapWidth),
-                                                    CLiteral(tileRows),
-                                                    CVar("_zone_${zs}_tiles"),
-                                                ),
-                                            )
+                    val tileLoadCases = zones.mapIndexed { idx, zone ->
+                        val zs = zone.id.replace('-', '_').replace(' ', '_')
+                        // REQ-14: mapWidth is nullable (auto sentinel); fall back to 20 (the standard
+                        // 20×18 GB screen width) for tileData-size calculation on legacy zones.
+                        val effectiveMapWidth = zone.mapWidth ?: 20
+                        val tileRows =
+                            if (zone.tileData.isEmpty()) 128 else zone.tileData.size / effectiveMapWidth
+                        val bankNum = zoneBankAllocation[zone.id] ?: 0
+                        val caseBody =
+                            buildList<CStatement> {
+                                // Emit SWITCH_ROM(bankN) before tilemap data access when in
+                                // non-zero bank
+                                if (bankNum > 0) {
+                                    add(CRawCode("SWITCH_ROM($bankNum);"))
+                                }
+                                add(
+                                    CExprStatement(
+                                        CCall(
+                                            "set_bkg_tiles",
+                                            listOf(
+                                                CLiteral(0),
+                                                CLiteral(0),
+                                                CLiteral(effectiveMapWidth),
+                                                CLiteral(tileRows),
+                                                CVar("_zone_${zs}_tiles"),
+                                            ),
                                         )
                                     )
-                                    // Restore scene bank (bank 1) after tilemap data access
-                                    if (bankNum > 0) {
-                                        add(CRawCode("SWITCH_ROM(1);"))
-                                    }
-                                    add(CBreak)
+                                )
+                                // Restore scene bank (bank 1) after tilemap data access
+                                if (bankNum > 0) {
+                                    add(CRawCode("SWITCH_ROM(1);"))
                                 }
-                            CSwitchCase(value = CLiteral(idx), body = caseBody)
-                        }
+                                add(CBreak)
+                            }
+                        CSwitchCase(value = CLiteral(idx), body = caseBody)
+                    }
                     add(
                         CSwitch(
                             expr = CVar("zone_id"),
@@ -1985,18 +2007,17 @@ class GBDKSystemVisitor(
                 }
                 val zonesWithOnEnter = zones.filter { it.onEnter.isNotEmpty() }
                 if (zonesWithOnEnter.isNotEmpty()) {
-                    val onEnterCases: List<CSwitchCase> =
-                        zones.mapIndexedNotNull { idx, zone ->
-                            val onEnterOps: List<ScriptOp> = zone.onEnter
-                            if (onEnterOps.isNotEmpty()) {
-                                CSwitchCase(
-                                    value = CLiteral(idx),
-                                    body =
-                                        onEnterOps.map { op -> ScriptOpVisitor.visit(op) } +
-                                            listOf(CBreak),
-                                )
-                            } else null
-                        }
+                    val onEnterCases: List<CSwitchCase> = zones.mapIndexedNotNull { idx, zone ->
+                        val onEnterOps: List<ScriptOp> = zone.onEnter
+                        if (onEnterOps.isNotEmpty()) {
+                            CSwitchCase(
+                                value = CLiteral(idx),
+                                body =
+                                    onEnterOps.map { op -> ScriptOpVisitor.visit(op) } +
+                                        listOf(CBreak),
+                            )
+                        } else null
+                    }
                     add(
                         CSwitch(
                             expr = CVar("zone_id"),
@@ -2005,23 +2026,22 @@ class GBDKSystemVisitor(
                     )
                 }
                 if (zones.isNotEmpty()) {
-                    val safeZoneCases =
-                        zones.mapIndexed { idx, zone ->
-                            CSwitchCase(
-                                value = CLiteral(idx),
-                                body =
-                                    listOf(
-                                        CExprStatement(
-                                            CBinaryExpr(
-                                                CVar("_current_zone_safe"),
-                                                "=",
-                                                CLiteral(if (zone.isSafeZone) 1 else 0),
-                                            )
-                                        ),
-                                        CBreak,
+                    val safeZoneCases = zones.mapIndexed { idx, zone ->
+                        CSwitchCase(
+                            value = CLiteral(idx),
+                            body =
+                                listOf(
+                                    CExprStatement(
+                                        CBinaryExpr(
+                                            CVar("_current_zone_safe"),
+                                            "=",
+                                            CLiteral(if (zone.isSafeZone) 1 else 0),
+                                        )
                                     ),
-                            )
-                        }
+                                    CBreak,
+                                ),
+                        )
+                    }
                     add(
                         CSwitch(
                             expr = CVar("zone_id"),
@@ -2068,18 +2088,17 @@ class GBDKSystemVisitor(
             buildList<CStatement> {
                 val zonesWithOnExit = zones.filter { it.onExit.isNotEmpty() }
                 if (zonesWithOnExit.isNotEmpty()) {
-                    val onExitCases: List<CSwitchCase> =
-                        zones.mapIndexedNotNull { idx, zone ->
-                            val onExitOps: List<ScriptOp> = zone.onExit
-                            if (onExitOps.isNotEmpty()) {
-                                CSwitchCase(
-                                    value = CLiteral(idx),
-                                    body =
-                                        onExitOps.map { op -> ScriptOpVisitor.visit(op) } +
-                                            listOf(CBreak),
-                                )
-                            } else null
-                        }
+                    val onExitCases: List<CSwitchCase> = zones.mapIndexedNotNull { idx, zone ->
+                        val onExitOps: List<ScriptOp> = zone.onExit
+                        if (onExitOps.isNotEmpty()) {
+                            CSwitchCase(
+                                value = CLiteral(idx),
+                                body =
+                                    onExitOps.map { op -> ScriptOpVisitor.visit(op) } +
+                                        listOf(CBreak),
+                            )
+                        } else null
+                    }
                     add(
                         CSwitch(
                             expr = CVar("_current_zone_id"),
@@ -2206,75 +2225,70 @@ class GBDKSystemVisitor(
         val body =
             buildList<CStatement> {
                 if (zonesWithTransitions.isNotEmpty()) {
-                    val switchCases: List<CSwitchCase> =
-                        zones.mapIndexedNotNull { zoneIdx, zone ->
-                            if (zone.transitions.isEmpty()) return@mapIndexedNotNull null
-                            val caseBody =
-                                buildList<CStatement> {
-                                    for (transition in zone.transitions) {
-                                        val edge = transition.edge ?: continue
-                                        // Edge condition: player at map boundary
-                                        val edgeCondition: CExpr =
-                                            when (edge) {
-                                                TransitionEdge.NORTH ->
-                                                    CBinaryExpr(playerY, "==", CLiteral(0))
-                                                TransitionEdge.SOUTH ->
-                                                    CBinaryExpr(playerY, "==", CLiteral(31))
-                                                TransitionEdge.WEST ->
-                                                    CBinaryExpr(playerX, "==", CLiteral(0))
-                                                TransitionEdge.EAST ->
-                                                    CBinaryExpr(playerX, "==", CLiteral(31))
-                                            }
-                                        // Target zone index in zones list
-                                        val targetIdx =
-                                            zones.indexOfFirst { it.id == transition.targetZoneId }
-                                        if (targetIdx < 0) return@mapIndexedNotNull null
-                                        // entryX / entryY (0xFF = not set, use edge auto-mapping)
-                                        val entryX = CLiteral(transition.entryX ?: 0xFF)
-                                        val entryY = CLiteral(transition.entryY ?: 0xFF)
-                                        // Build transition body: optional flag guard + call
-                                        val transitionCall =
-                                            CExprStatement(
-                                                CCall(
-                                                    "zone_transition_$sanitizedId",
-                                                    listOf(
-                                                        CLiteral(targetIdx),
-                                                        CLiteral(edge.ordinal),
-                                                        entryX,
-                                                        entryY,
-                                                    ),
-                                                )
-                                            )
-                                        val conditionFlag = transition.conditionFlag
-                                        val transitionBody: List<CStatement> =
-                                            if (conditionFlag != null) {
+                    val switchCases: List<CSwitchCase> = zones.mapIndexedNotNull { zoneIdx, zone ->
+                        if (zone.transitions.isEmpty()) return@mapIndexedNotNull null
+                        val caseBody =
+                            buildList<CStatement> {
+                                for (transition in zone.transitions) {
+                                    val edge = transition.edge ?: continue
+                                    // Edge condition: player at map boundary
+                                    val edgeCondition: CExpr =
+                                        when (edge) {
+                                            TransitionEdge.NORTH ->
+                                                CBinaryExpr(playerY, "==", CLiteral(0))
+                                            TransitionEdge.SOUTH ->
+                                                CBinaryExpr(playerY, "==", CLiteral(31))
+                                            TransitionEdge.WEST ->
+                                                CBinaryExpr(playerX, "==", CLiteral(0))
+                                            TransitionEdge.EAST ->
+                                                CBinaryExpr(playerX, "==", CLiteral(31))
+                                        }
+                                    // Target zone index in zones list
+                                    val targetIdx = zones.indexOfFirst {
+                                        it.id == transition.targetZoneId
+                                    }
+                                    if (targetIdx < 0) return@mapIndexedNotNull null
+                                    // entryX / entryY (0xFF = not set, use edge auto-mapping)
+                                    val entryX = CLiteral(transition.entryX ?: 0xFF)
+                                    val entryY = CLiteral(transition.entryY ?: 0xFF)
+                                    // Build transition body: optional flag guard + call
+                                    val transitionCall =
+                                        CExprStatement(
+                                            CCall(
+                                                "zone_transition_$sanitizedId",
                                                 listOf(
-                                                    // Block player if flag not set
-                                                    CIf(
-                                                        condition =
-                                                            CUnaryExpr(
-                                                                "!",
-                                                                CVar("_flag_${conditionFlag}"),
-                                                            ),
-                                                        thenBody = listOf(CReturn(null)),
-                                                    ),
-                                                    transitionCall,
-                                                    CReturn(null),
-                                                )
-                                            } else {
-                                                listOf(transitionCall, CReturn(null))
-                                            }
-                                        add(
-                                            CIf(
-                                                condition = edgeCondition,
-                                                thenBody = transitionBody,
+                                                    CLiteral(targetIdx),
+                                                    CLiteral(edge.ordinal),
+                                                    entryX,
+                                                    entryY,
+                                                ),
                                             )
                                         )
-                                    }
-                                    add(CBreak)
+                                    val conditionFlag = transition.conditionFlag
+                                    val transitionBody: List<CStatement> =
+                                        if (conditionFlag != null) {
+                                            listOf(
+                                                // Block player if flag not set
+                                                CIf(
+                                                    condition =
+                                                        CUnaryExpr(
+                                                            "!",
+                                                            CVar("_flag_${conditionFlag}"),
+                                                        ),
+                                                    thenBody = listOf(CReturn(null)),
+                                                ),
+                                                transitionCall,
+                                                CReturn(null),
+                                            )
+                                        } else {
+                                            listOf(transitionCall, CReturn(null))
+                                        }
+                                    add(CIf(condition = edgeCondition, thenBody = transitionBody))
                                 }
-                            CSwitchCase(value = CLiteral(zoneIdx), body = caseBody)
-                        }
+                                add(CBreak)
+                            }
+                        CSwitchCase(value = CLiteral(zoneIdx), body = caseBody)
+                    }
                     add(
                         CSwitch(
                             expr = CVar("_current_zone_id"),
@@ -2551,7 +2565,7 @@ class GBDKSystemVisitor(
      * Propagate extended [DialogSystem] configuration fields as global variables.
      *
      * The dialog helper functions (show_dialog, hide_dialog, etc.) are already generated by
-     * [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2.buildDialogFunctions]. This
+     * [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline.buildDialogFunctions]. This
      * visitor generates supplemental global variables for the extended config:
      * - `_dialog_default_speed` — system-level default typewriter speed
      * - `_dialog_default_border` — system-level default border style index
@@ -2564,7 +2578,7 @@ class GBDKSystemVisitor(
      * matches the pattern used by CameraSystem and ExplorationSystem globals.
      */
     override fun visitDialogSystem(system: DialogSystem): List<CFunction> {
-        // Extended config propagated via buildSystemGlobalVars in GBDKPipelineV2.
+        // Extended config propagated via buildSystemGlobalVars in GBDKPipeline.
         // _dialog_default_speed and _dialog_default_border globals generated there.
         // No CFunction output needed from this visitor.
         return emptyList()
@@ -2713,23 +2727,22 @@ class GBDKSystemVisitor(
                     CLiteral(1),
                 )
             )
-        val muteCases =
-            groups.mapIndexed { idx, group ->
-                CSwitchCase(
-                    value = CLiteral(idx),
-                    body =
-                        listOf(
-                            CExprStatement(
-                                CBinaryExpr(
-                                    CVar("NR51_REG"),
-                                    "&=",
-                                    CUnaryExpr("~", CVar("_mixer_channel_mask_${group.name}")),
-                                )
-                            ),
-                            CBreak,
+        val muteCases = groups.mapIndexed { idx, group ->
+            CSwitchCase(
+                value = CLiteral(idx),
+                body =
+                    listOf(
+                        CExprStatement(
+                            CBinaryExpr(
+                                CVar("NR51_REG"),
+                                "&=",
+                                CUnaryExpr("~", CVar("_mixer_channel_mask_${group.name}")),
+                            )
                         ),
-                )
-            }
+                        CBreak,
+                    ),
+            )
+        }
         muteGroupBody += CSwitch(expr = CVar("group"), cases = muteCases)
         val muteGroup =
             CFunction(
@@ -2750,23 +2763,22 @@ class GBDKSystemVisitor(
                     CLiteral(0),
                 )
             )
-        val unmuteCases =
-            groups.mapIndexed { idx, group ->
-                CSwitchCase(
-                    value = CLiteral(idx),
-                    body =
-                        listOf(
-                            CExprStatement(
-                                CBinaryExpr(
-                                    CVar("NR51_REG"),
-                                    "|=",
-                                    CVar("_mixer_channel_mask_${group.name}"),
-                                )
-                            ),
-                            CBreak,
+        val unmuteCases = groups.mapIndexed { idx, group ->
+            CSwitchCase(
+                value = CLiteral(idx),
+                body =
+                    listOf(
+                        CExprStatement(
+                            CBinaryExpr(
+                                CVar("NR51_REG"),
+                                "|=",
+                                CVar("_mixer_channel_mask_${group.name}"),
+                            )
                         ),
-                )
-            }
+                        CBreak,
+                    ),
+            )
+        }
         unmuteGroupBody += CSwitch(expr = CVar("group"), cases = unmuteCases)
         val unmuteGroup =
             CFunction(
@@ -2884,37 +2896,34 @@ class GBDKSystemVisitor(
         requestChannelBody += CVarDecl(name = "best_ch", type = CU8, initializer = CRawExpr("0xFF"))
         requestChannelBody +=
             CVarDecl(name = "best_pri", type = CU8, initializer = CVar("priority"))
-        val requestCases =
-            groups.mapIndexed { idx, group ->
-                val channelCheckStmts = mutableListOf<CStatement>()
-                for (ch in group.channels.sorted()) {
-                    val chIdx = ch - 1 // convert 1-based GB channel to 0-based array index
-                    channelCheckStmts +=
-                        CIf(
-                            condition =
-                                CBinaryExpr(
-                                    CArrayAccess(CVar("_mixer_priority"), CLiteral(chIdx)),
-                                    "<",
-                                    CVar("best_pri"),
+        val requestCases = groups.mapIndexed { idx, group ->
+            val channelCheckStmts = mutableListOf<CStatement>()
+            for (ch in group.channels.sorted()) {
+                val chIdx = ch - 1 // convert 1-based GB channel to 0-based array index
+                channelCheckStmts +=
+                    CIf(
+                        condition =
+                            CBinaryExpr(
+                                CArrayAccess(CVar("_mixer_priority"), CLiteral(chIdx)),
+                                "<",
+                                CVar("best_pri"),
+                            ),
+                        thenBody =
+                            listOf(
+                                CExprStatement(
+                                    CBinaryExpr(
+                                        CVar("best_pri"),
+                                        "=",
+                                        CArrayAccess(CVar("_mixer_priority"), CLiteral(chIdx)),
+                                    )
                                 ),
-                            thenBody =
-                                listOf(
-                                    CExprStatement(
-                                        CBinaryExpr(
-                                            CVar("best_pri"),
-                                            "=",
-                                            CArrayAccess(CVar("_mixer_priority"), CLiteral(chIdx)),
-                                        )
-                                    ),
-                                    CExprStatement(
-                                        CBinaryExpr(CVar("best_ch"), "=", CLiteral(chIdx))
-                                    ),
-                                ),
-                        )
-                }
-                channelCheckStmts += CBreak
-                CSwitchCase(value = CLiteral(idx), body = channelCheckStmts)
+                                CExprStatement(CBinaryExpr(CVar("best_ch"), "=", CLiteral(chIdx))),
+                            ),
+                    )
             }
+            channelCheckStmts += CBreak
+            CSwitchCase(value = CLiteral(idx), body = channelCheckStmts)
+        }
         requestChannelBody += CSwitch(expr = CVar("group"), cases = requestCases)
         requestChannelBody +=
             CIf(
@@ -4180,7 +4189,7 @@ class GBDKSystemVisitor(
         /**
          * Build global variable declarations for the pathfinding data structures.
          *
-         * Called by [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2] to add
+         * Called by [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline] to add
          * pathfinding globals to the main.c variable declarations section.
          *
          * Generated globals:
@@ -4191,7 +4200,7 @@ class GBDKSystemVisitor(
          * - `_pf_path_length` — result path length
          *
          * Walkability is checked via `_map_collision(nx, ny)` — the dispatch function generated by
-         * [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2.buildCollisionDispatchFunction]
+         * [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline.buildCollisionDispatchFunction]
          * that routes to per-scene `_map_collision_{sceneId}()` functions based on `current_scene`.
          * No function pointer global is needed.
          */
@@ -4374,7 +4383,9 @@ class GBDKSystemVisitor(
          *
          * For each pool:
          * - `UINT8 _pool_<id>_active[max]` — per-slot active bitmap (1=active, 0=free)
-         * - `UINT8 _pool_<id>_oam_base` — OAM start slot assigned at init
+         * - `UINT8 _pool_<id>_x[max]` — per-instance x positions
+         * - `UINT8 _pool_<id>_y[max]` — per-instance y positions
+         * - `UINT8 _pool_<id>_oam[max]` — per-instance OAM slot mapping (initialized to 0xFF)
          */
         fun buildActorPoolStateVars(gameIR: GameIR): List<CVarDecl> {
             val vars = mutableListOf<CVarDecl>()
@@ -4388,7 +4399,23 @@ class GBDKSystemVisitor(
                         initializer = null,
                     )
                 vars +=
-                    CVarDecl(name = "_pool_${id}_oam_base", type = CU8, initializer = CLiteral(0))
+                    CVarDecl(
+                        name = "_pool_${id}_x",
+                        type = CArray(CU8, maxSize),
+                        initializer = null,
+                    )
+                vars +=
+                    CVarDecl(
+                        name = "_pool_${id}_y",
+                        type = CArray(CU8, maxSize),
+                        initializer = null,
+                    )
+                vars +=
+                    CVarDecl(
+                        name = "_pool_${id}_oam",
+                        type = CArray(CU8, maxSize),
+                        initializer = null,
+                    )
                 // Per-instance property parallel arrays — one array per property per pool slot
                 for (prop in pool.instanceProperties) {
                     val elemType =
@@ -4410,25 +4437,73 @@ class GBDKSystemVisitor(
         }
 
         /**
-         * Generate all three lifecycle functions for every actor pool in a [GameIR].
+         * Generate all lifecycle functions for every actor pool in a [GameIR].
+         *
+         * Uses **static OAM assignment**: each pool entity `i` gets a fixed OAM base slot computed
+         * at codegen time. No dynamic free list is used for pool entities — this eliminates the OAM
+         * out-of-bounds write bug where a multi-tile pool sprite (e.g. 16x16 = 4 OAM entries) would
+         * use OAM slots beyond index 39, corrupting GBDK internal variables at 0xC0A0+ (shadow_OAM
+         * overflows into __cpu, __is_GBA, etc.).
+         *
+         * OAM base for the first pool = sum of all actor tile counts (pool templates reserve OAM
+         * space in the static actor layout even though they don't get static move_sprite calls).
+         * Subsequent pools follow immediately after the previous pool's OAM range.
          *
          * For each [ActorPoolIR] produces:
-         * - `pool_<id>_init()` — zeros the active bitmap
-         * - `pool_<id>_spawn(UINT8 x, UINT8 y) : UINT8` — finds a free slot, positions the sprite,
-         *   marks it active, returns the slot index. When full:
-         *     - [PoolOverflowStrategy.SILENT_NOOP] returns 0xFF
-         *     - [PoolOverflowStrategy.RECYCLE_OLDEST] reuses the oldest active slot round-robin
-         * - `pool_<id>_destroy(UINT8 slot)` — marks slot inactive, hides sprite off-screen
+         * - `pool_<id>_init()` — zeros the active bitmap and pre-initializes oam[i] = oamBase + i *
+         *   tilesPerEntity (permanent static assignment, not 0xFF sentinel).
+         * - `pool_<id>_spawn(UINT8 x, UINT8 y) : UINT8` — finds a free slot, stores position, marks
+         *   active, calls move_sprite for ALL tiles in the metasprite grid. Returns pool index.
+         *   When full: [PoolOverflowStrategy.SILENT_NOOP] returns 0xFF;
+         *   [PoolOverflowStrategy.RECYCLE_OLDEST] reuses oldest slot round-robin.
+         * - `pool_<id>_destroy(UINT8 i)` — calls move_sprite(oam[i]+t, 0, 0) for each tile to hide
+         *   all OAM entries, then marks slot inactive. Does NOT reset oam[i] (static assignment is
+         *   permanent).
          */
         fun buildActorPoolFunctions(gameIR: GameIR): List<CFunction> {
             val functions = mutableListOf<CFunction>()
+
+            // Compute the starting OAM slot for pools.
+            // All actors (including pool templates) consume OAM slots in the static actor layout:
+            // pool templates reserve their slot range even though they don't get static move_sprite
+            // calls.
+            // This mirrors ActorVisitor.generateUpdateSprites behavior which advances nextSlot for
+            // all actors (including excluded pool templates).
+            var poolOamBase = 0
+            for (actor in gameIR.actors) {
+                val sprite = actor.sprite ?: continue
+                val tw = (sprite.size.width + 7) / 8
+                val th = (sprite.size.height + 7) / 8
+                poolOamBase += tw * th
+            }
+            // poolOamBase now holds the first OAM slot available for pools (after all static
+            // actors)
+
             for (pool in gameIR.actorPools) {
                 val id = pool.id.replace('-', '_').replace(' ', '_')
                 val maxSize = pool.config.maxSize
                 val activeArr = CVar("_pool_${id}_active")
-                val oamBase = CVar("_pool_${id}_oam_base")
+                val oamArr = CVar("_pool_${id}_oam")
+                val xArr = CVar("_pool_${id}_x")
+                val yArr = CVar("_pool_${id}_y")
+
+                // Resolve template actor sprite dimensions for multi-tile OAM management
+                val templateActor = gameIR.actors.find { it.id == pool.actorTemplateId }
+                val tilesWide = templateActor?.sprite?.size?.let { (it.width + 7) / 8 } ?: 1
+                val tilesHigh = templateActor?.sprite?.size?.let { (it.height + 7) / 8 } ?: 1
+                val tilesPerEntity = tilesWide * tilesHigh
+
+                // This pool's OAM base (first entity gets slot oamBase, entity i gets oamBase +
+                // i*tilesPerEntity)
+                val thisPoolOamBase = poolOamBase
+
+                // Advance base for next pool
+                poolOamBase += maxSize * tilesPerEntity
 
                 // --- pool_<id>_init() ---
+                // Zeros active bitmap and pre-initializes oam[i] = oamBase + i * tilesPerEntity.
+                // Static OAM assignment: oam[i] is permanent, not a 0xFF sentinel. This means
+                // destroy does NOT need to reset oam[i], and there is no risk of move_sprite(0xFF).
                 functions +=
                     CFunction(
                         name = "pool_${id}_init",
@@ -4452,19 +4527,40 @@ class GBDKSystemVisitor(
                                                         "=",
                                                         CLiteral(0),
                                                     )
-                                                )
+                                                ),
+                                                // Static OAM assignment: oam[i] = oamBase + i *
+                                                // tilesPerEntity
+                                                CExprStatement(
+                                                    CBinaryExpr(
+                                                        CArrayAccess(oamArr, CVar("i")),
+                                                        "=",
+                                                        CBinaryExpr(
+                                                            CLiteral(thisPoolOamBase),
+                                                            "+",
+                                                            CBinaryExpr(
+                                                                CVar("i"),
+                                                                "*",
+                                                                CLiteral(tilesPerEntity),
+                                                            ),
+                                                        ),
+                                                    )
+                                                ),
                                             ),
                                     )
                                 )
                             },
-                        sectionComment = "Actor pool: $id (max=$maxSize)",
+                        sectionComment =
+                            "Actor pool: $id (max=$maxSize, oamBase=$thisPoolOamBase, tilesPerEntity=$tilesPerEntity)",
                     )
 
                 // --- pool_<id>_spawn(UINT8 x, UINT8 y) : UINT8 ---
+                // Static OAM: oam[i] is pre-initialized in init(). spawn just finds a free slot,
+                // stores position, marks it active, and calls move_sprite for ALL tiles.
+                // No spawn_actor() call needed — OAM slot is already known from the static
+                // assignment.
                 val spawnBody =
                     buildList<CStatement> {
                         add(CVarDecl("i", CU8, initializer = null))
-                        add(CVarDecl("slot", CU8, initializer = null))
 
                         when (pool.config.overflowStrategy) {
                             PoolOverflowStrategy.SILENT_NOOP -> {
@@ -4545,27 +4641,40 @@ class GBDKSystemVisitor(
                                         )
                                     )
                                 )
-                                // Hide recycled sprite before repositioning
-                                add(
-                                    CExprStatement(
-                                        CCall(
-                                            "move_sprite",
-                                            listOf(
-                                                CBinaryExpr(oamBase, "+", CVar("i")),
-                                                CLiteral(0),
-                                                CLiteral(0),
-                                            ),
+                                // Recycle: hide all OAM tiles for the slot being recycled
+                                for (tileIndex in 0 until tilesPerEntity) {
+                                    val oamSlotExpr: CExpr =
+                                        if (tileIndex == 0) CArrayAccess(oamArr, CVar("i"))
+                                        else
+                                            CBinaryExpr(
+                                                CArrayAccess(oamArr, CVar("i")),
+                                                "+",
+                                                CLiteral(tileIndex),
+                                            )
+                                    add(
+                                        CExprStatement(
+                                            CCall(
+                                                "move_sprite",
+                                                listOf(oamSlotExpr, CLiteral(0), CLiteral(0)),
+                                            )
                                         )
                                     )
-                                )
+                                }
                                 add(CRawCode("pool_${id}_found:"))
                             }
                         }
 
-                        // slot = oam_base + i; mark active; position sprite; return slot
+                        // Store per-instance position and mark active
+                        // Note: oam[i] is already set by pool_<id>_init() — no spawn_actor()
+                        // needed.
                         add(
                             CExprStatement(
-                                CBinaryExpr(CVar("slot"), "=", CBinaryExpr(oamBase, "+", CVar("i")))
+                                CBinaryExpr(CArrayAccess(xArr, CVar("i")), "=", CVar("x"))
+                            )
+                        )
+                        add(
+                            CExprStatement(
+                                CBinaryExpr(CArrayAccess(yArr, CVar("i")), "=", CVar("y"))
                             )
                         )
                         add(
@@ -4573,12 +4682,37 @@ class GBDKSystemVisitor(
                                 CBinaryExpr(CArrayAccess(activeArr, CVar("i")), "=", CLiteral(1))
                             )
                         )
-                        add(
-                            CExprStatement(
-                                CCall("move_sprite", listOf(CVar("slot"), CVar("x"), CVar("y")))
-                            )
-                        )
-                        add(CReturn(CVar("slot")))
+                        // Sync ALL tiles to OAM hardware on spawn
+                        var tileIndex = 0
+                        for (row in 0 until tilesHigh) {
+                            for (col in 0 until tilesWide) {
+                                val oamSlotExpr: CExpr =
+                                    if (tileIndex == 0) CArrayAccess(oamArr, CVar("i"))
+                                    else
+                                        CBinaryExpr(
+                                            CArrayAccess(oamArr, CVar("i")),
+                                            "+",
+                                            CLiteral(tileIndex),
+                                        )
+                                val xOffset = 8 + col * 8
+                                val yOffset = 16 + row * 8
+                                add(
+                                    CExprStatement(
+                                        CCall(
+                                            "move_sprite",
+                                            listOf(
+                                                oamSlotExpr,
+                                                CBinaryExpr(CVar("x"), "+", CLiteral(xOffset)),
+                                                CBinaryExpr(CVar("y"), "+", CLiteral(yOffset)),
+                                            ),
+                                        )
+                                    )
+                                )
+                                tileIndex++
+                            }
+                        }
+                        // Return pool index (not OAM slot)
+                        add(CReturn(CVar("i")))
                     }
 
                 functions +=
@@ -4589,31 +4723,17 @@ class GBDKSystemVisitor(
                         body = spawnBody,
                     )
 
-                // --- pool_<id>_destroy(UINT8 slot) ---
+                // --- pool_<id>_destroy(UINT8 i) ---
+                // Static OAM: hide all OAM tiles via move_sprite(oam[i]+t, 0, 0) for each tile.
+                // Does NOT reset oam[i] to 0xFF — the static assignment is permanent.
+                // Marks slot inactive.
                 functions +=
                     CFunction(
                         name = "pool_${id}_destroy",
                         returnType = CVoid,
-                        params = listOf(CParam("slot", CU8)),
+                        params = listOf(CParam("i", CU8)),
                         body =
                             buildList {
-                                add(CVarDecl("i", CU8, initializer = null))
-                                add(
-                                    CIf(
-                                        condition =
-                                            CBinaryExpr(CVar("slot"), "==", CRawExpr("0xFF")),
-                                        thenBody = listOf(CReturn(null)),
-                                    )
-                                )
-                                add(
-                                    CExprStatement(
-                                        CBinaryExpr(
-                                            CVar("i"),
-                                            "=",
-                                            CBinaryExpr(CVar("slot"), "-", oamBase),
-                                        )
-                                    )
-                                )
                                 add(
                                     CIf(
                                         condition = CBinaryExpr(CVar("i"), ">=", CLiteral(maxSize)),
@@ -4624,20 +4744,32 @@ class GBDKSystemVisitor(
                                 for (callbackOp in pool.deathCallback) {
                                     add(callbackOp.accept(ScriptOpVisitor))
                                 }
+                                // Hide all OAM tiles by moving them off-screen
+                                for (tileIndex in 0 until tilesPerEntity) {
+                                    val oamSlotExpr: CExpr =
+                                        if (tileIndex == 0) CArrayAccess(oamArr, CVar("i"))
+                                        else
+                                            CBinaryExpr(
+                                                CArrayAccess(oamArr, CVar("i")),
+                                                "+",
+                                                CLiteral(tileIndex),
+                                            )
+                                    add(
+                                        CExprStatement(
+                                            CCall(
+                                                "move_sprite",
+                                                listOf(oamSlotExpr, CLiteral(0), CLiteral(0)),
+                                            )
+                                        )
+                                    )
+                                }
+                                // Mark pool slot as inactive (oam[i] stays as static assignment)
                                 add(
                                     CExprStatement(
                                         CBinaryExpr(
                                             CArrayAccess(activeArr, CVar("i")),
                                             "=",
                                             CLiteral(0),
-                                        )
-                                    )
-                                )
-                                add(
-                                    CExprStatement(
-                                        CCall(
-                                            "move_sprite",
-                                            listOf(CVar("slot"), CLiteral(0), CLiteral(0)),
                                         )
                                     )
                                 )
@@ -5295,20 +5427,19 @@ class GBDKSystemVisitor(
 
         // Build condition: !req1 || !req2 || ...
         // If any required object is not active → return early
-        val conditions =
-            requiresIds.mapNotNull { reqId ->
-                val sanitizedId = reqId.replace('-', '_').replace(' ', '_')
-                val activeVar =
-                    when (val reqObj = puzzleById[reqId]) {
-                        is SwitchObjectIR -> "_switch_${sanitizedId}_active"
-                        is DoorObjectIR -> "_door_${sanitizedId}_open"
-                        is PressurePlateObjectIR -> "_plate_${sanitizedId}_pressed"
-                        is TimedBlockObjectIR -> "_timedblock_${sanitizedId}_solid"
-                        is TriggerObjectIR -> null // triggers have no simple active state — skip
-                        null -> "_switch_${sanitizedId}_active" // fallback: assume switch naming
-                    } ?: return@mapNotNull null
-                CRawExpr("!$activeVar")
-            }
+        val conditions = requiresIds.mapNotNull { reqId ->
+            val sanitizedId = reqId.replace('-', '_').replace(' ', '_')
+            val activeVar =
+                when (val reqObj = puzzleById[reqId]) {
+                    is SwitchObjectIR -> "_switch_${sanitizedId}_active"
+                    is DoorObjectIR -> "_door_${sanitizedId}_open"
+                    is PressurePlateObjectIR -> "_plate_${sanitizedId}_pressed"
+                    is TimedBlockObjectIR -> "_timedblock_${sanitizedId}_solid"
+                    is TriggerObjectIR -> null // triggers have no simple active state — skip
+                    null -> "_switch_${sanitizedId}_active" // fallback: assume switch naming
+                } ?: return@mapNotNull null
+            CRawExpr("!$activeVar")
+        }
 
         if (conditions.isEmpty()) return emptyList()
 
@@ -6161,7 +6292,7 @@ class GBDKSystemVisitor(
      * - `_pickup_respawn_timer_{id}[maxTotal]` — respawn countdown (only if respawning pickups
      *   exist)
      *
-     * Called from [GBDKPipelineV2.buildSystemGlobalVars] for `"pickup_system"` GenericSystems.
+     * Called from [GBDKPipeline.buildSystemGlobalVars] for `"pickup_system"` GenericSystems.
      *
      * @param system [GenericSystem] carrying `"pickupConfig"` → [PickupSystemConfig].
      * @param sanitizedId System ID with hyphens/spaces replaced by underscores.

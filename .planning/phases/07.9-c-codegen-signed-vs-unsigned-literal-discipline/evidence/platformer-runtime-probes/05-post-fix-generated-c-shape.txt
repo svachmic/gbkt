@@ -1,0 +1,12 @@
+29:INT8 _plat_vy = 0u;
+221:    if (_plat_vy < 12) {
+222:        _plat_vy += 2u;
+238:            _plat_vy = -8;
+247:    if (button_released(J_A) && _plat_vy < 0) {
+248:        _plat_vy /= 2u;
+258:        _plat_vy = -8;
+313:    _plat_vy = 0u;
+321:    if (_plat_vy > 0u) {
+323:        _plat_vy = 0u;
+332:    if (_plat_vy > 0u) {
+334:        _plat_vy = 0u;

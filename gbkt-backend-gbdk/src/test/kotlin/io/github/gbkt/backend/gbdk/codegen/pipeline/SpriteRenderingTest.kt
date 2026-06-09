@@ -9,6 +9,7 @@ package io.github.gbkt.backend.gbdk.codegen.pipeline
 import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.AssetRef
 import io.github.gbkt.core.ir.AssetType
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.OAMSlot
@@ -35,7 +36,7 @@ import kotlin.test.assertTrue
 private fun buildGameIR(vararg actors: ActorIR): GameIR =
     GameIR(
         name = "TestGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         actors = actors.toList(),
         scenes = listOf(SceneIR(id = "main")),
         startScene = "main",
@@ -43,7 +44,7 @@ private fun buildGameIR(vararg actors: ActorIR): GameIR =
 
 class SpriteRenderingTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: Single 8x8 sprite generates exactly one OAM slot in update_sprites()
@@ -183,7 +184,19 @@ class SpriteRenderingTest {
     }
 
     // =========================================================================
-    // Test 5: SHOW_SPRITES is present in main() after DISPLAY_ON
+    // Test 5: SHOW_SPRITES is present in main() BEFORE DISPLAY_ON
+    //
+    // Plan 10.1-20 (DEF-10.1-13-C / GAP-3) corrected the bootstrap order so DISPLAY_ON
+    // is the LAST LCDC-related macro, matching the GBDK reference
+    // (metasprites.c:186-194 — SHOW_BKG; SHOW_SPRITES; SPRITES_8x8; DISPLAY_ON).
+    // The pre-fix order (SHOW_SPRITES AFTER DISPLAY_ON) left the OAM-enable bit
+    // unset on the first composited frame, contributing to the all-black GBC
+    // sprite render documented in d-v3-visual-finding.md.
+    //
+    // See:
+    //   .planning/phases/10.1-metasprites-surplus-codegen-defects-inserted/
+    //     evidence/d-v3-visual-diagnostic/d-v3-visual-finding.md (GAP-3)
+    //   DV3GbcPaletteWriteDiagnosticTest (regression guard for the corrected order)
     // =========================================================================
     @Test
     fun `test show sprites in main`() {
@@ -203,12 +216,15 @@ class SpriteRenderingTest {
 
         assertTrue(mainC.contains("SHOW_SPRITES"), "Expected SHOW_SPRITES in main()")
         assertTrue(mainC.contains("DISPLAY_ON"), "Expected DISPLAY_ON in main()")
-        // SHOW_SPRITES should appear after DISPLAY_ON
+        // Plan 10.1-20: SHOW_SPRITES must precede DISPLAY_ON (DISPLAY_ON is the LAST
+        // bootstrap macro per the GBDK reference). The pre-fix assertion was the
+        // mirror image of this and encoded the bootstrap-order defect itself.
         val displayOnIdx = mainC.indexOf("DISPLAY_ON")
         val showSpritesIdx = mainC.indexOf("SHOW_SPRITES")
         assertTrue(
-            showSpritesIdx > displayOnIdx,
-            "Expected SHOW_SPRITES to appear after DISPLAY_ON in main()",
+            showSpritesIdx < displayOnIdx,
+            "Expected SHOW_SPRITES to appear BEFORE DISPLAY_ON in main() " +
+                "(Plan 10.1-20 corrected bootstrap order — reference metasprites.c:186-194).",
         )
     }
 

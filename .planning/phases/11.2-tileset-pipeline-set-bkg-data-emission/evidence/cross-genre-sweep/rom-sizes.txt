@@ -1,0 +1,5 @@
+=== ROM sizes ===
+banks: 65536 bytes (64 KB) — BUILD SUCCESSFUL
+dungeon: ROM not produced — BUILD FAILED (pre-existing RPG character codegen regression, fails at dfe52566)
+explorer: ROM not produced — BUILD FAILED (pre-existing RPG character codegen regression, fails at dfe52566)
+racer: 65536 bytes (64 KB) — BUILD SUCCESSFUL

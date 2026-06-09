@@ -8,6 +8,7 @@ package io.github.gbkt.backend.api
 
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.GenericSystem
+import io.github.gbkt.core.ir.ScriptOp
 
 /** Marker interface for codegen output fragments returned by genre visitors. */
 interface CodegenFragment
@@ -33,6 +34,27 @@ data class GenreVisitorResult(
     val functions: List<CodegenFragment> = emptyList(),
     /** C variable declarations to emit (e.g. `CVarDecl` instances in GBDK). */
     val varDecls: List<CodegenFragment> = emptyList(),
+    /**
+     * Per-frame [ScriptOp] sequences that the pipeline prepends to the named scene's frame
+     * `CFunction` body — same prepend phase as `update_movement_<id>()` /
+     * `update_animation_<id>()`, so injected ops run BEFORE user-authored frame ops.
+     *
+     * Map key is the [io.github.gbkt.core.ir.SceneIR.id]. Empty by default; only genre visitors
+     * that need to splice per-frame physics into a host scene populate it (e.g. `racing()` injects
+     * `racing_tick_<id>()` into the bound race scene's frame block).
+     */
+    val frameOps: Map<String, List<ScriptOp>> = emptyMap(),
+    /**
+     * Per-scene-enter [ScriptOp] sequences that the pipeline PREPENDS to the named scene's enter
+     * `CFunction` body. Mirror of [frameOps] but consumed during the enter splice phase, so
+     * injected ops run BEFORE any user-authored `enter { }` body.
+     *
+     * Map key is the [io.github.gbkt.core.ir.SceneIR.id]. Empty by default; only genre visitors
+     * that need to splice scene-enter setup into a host scene populate it (e.g. `racing()` injects
+     * pool spawn calls, zone tileset/tilemap loads, and `_camera_target` assignment into the bound
+     * race scene's enter block).
+     */
+    val enterOps: Map<String, List<ScriptOp>> = emptyMap(),
 )
 
 /**
@@ -53,7 +75,7 @@ data class GenreVisitorResult(
  *
  * ## Discovery
  *
- * `GBDKPipelineV2.buildSystemFunctions()` and `buildSystemGlobalVars()` call
+ * `GBDKPipeline.buildSystemFunctions()` and `buildSystemGlobalVars()` call
  * [ServiceLoader.load(GenreSystemVisitor::class.java)][java.util.ServiceLoader.load] before falling
  * through to the built-in [GBDKSystemVisitor]. If a visitor returns [canHandle] = `true` for the
  * given system type, its result is used instead.

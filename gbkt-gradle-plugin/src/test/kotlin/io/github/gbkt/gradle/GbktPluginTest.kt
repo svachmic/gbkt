@@ -355,6 +355,127 @@ class GbktPluginTest {
     }
 
     @Test
+    fun `convertZoneTilesets task is registered (Phase 11_2 D-A2)`() {
+        buildFile.writeText(
+            """
+            plugins {
+                kotlin("jvm") version "2.3.0"
+                id("io.github.gbkt")
+            }
+
+            repositories {
+                mavenLocal()
+                mavenCentral()
+            }
+
+            gbkt {
+                game("com.example.Game::myGame")
+            }
+            """
+                .trimIndent()
+        )
+
+        val result =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("tasks", "--all")
+                .withPluginClasspath()
+                .build()
+
+        assertTrue(
+            result.output.contains("convertZoneTilesets"),
+            "GbktPlugin should register convertZoneTilesets task (Phase 11.2 D-A2)",
+        )
+    }
+
+    @Test
+    fun `compileRom depends on convertZoneTilesets (Phase 11_2 D-A2)`() {
+        buildFile.writeText(
+            """
+            plugins {
+                kotlin("jvm") version "2.3.0"
+                id("io.github.gbkt")
+            }
+
+            repositories {
+                mavenLocal()
+                mavenCentral()
+            }
+
+            gbkt {
+                game("com.example.Game::myGame")
+            }
+            """
+                .trimIndent()
+        )
+
+        val result =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("compileRom", "--dry-run")
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        val output = result.output
+        // Both tasks must appear in the dry-run output, and convertZoneTilesets
+        // must precede compileRom (the dependsOn edge guarantees ordering).
+        assertTrue(
+            output.contains("convertZoneTilesets"),
+            "convertZoneTilesets must be invoked in the compileRom build graph",
+        )
+        assertTrue(output.contains("compileRom"), "compileRom must be invoked in dry-run output")
+        val ztIdx = output.indexOf("convertZoneTilesets")
+        val crIdx = output.indexOf(":compileRom ")
+        assertTrue(
+            ztIdx >= 0 && crIdx >= 0 && ztIdx < crIdx,
+            "convertZoneTilesets must appear before compileRom in dry-run (D-A2 edge)",
+        )
+    }
+
+    @Test
+    fun `convertZoneTilesets runs after generateC (Phase 11_2 D-A2)`() {
+        buildFile.writeText(
+            """
+            plugins {
+                kotlin("jvm") version "2.3.0"
+                id("io.github.gbkt")
+            }
+
+            repositories {
+                mavenLocal()
+                mavenCentral()
+            }
+
+            gbkt {
+                game("com.example.Game::myGame")
+            }
+            """
+                .trimIndent()
+        )
+
+        val result =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("convertZoneTilesets", "--dry-run")
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        val output = result.output
+        assertTrue(
+            output.contains("generateC"),
+            "convertZoneTilesets dry-run must include generateC (dependsOn edge)",
+        )
+        val gcIdx = output.indexOf(":generateC ")
+        val ztIdx = output.indexOf(":convertZoneTilesets ")
+        assertTrue(
+            gcIdx >= 0 && ztIdx >= 0 && gcIdx < ztIdx,
+            "generateC must appear before convertZoneTilesets in dry-run (D-A2 edge)",
+        )
+    }
+
+    @Test
     fun `emulator extension defaults work without explicit configuration`() {
         buildFile.writeText(
             """

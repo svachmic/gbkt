@@ -13,6 +13,7 @@ import io.github.gbkt.core.ir.Assign
 import io.github.gbkt.core.ir.AssignOp
 import io.github.gbkt.core.ir.BinaryExpr
 import io.github.gbkt.core.ir.BinaryOp
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.FadeOp
 import io.github.gbkt.core.ir.GameIR
@@ -36,9 +37,9 @@ import kotlin.test.assertTrue
 
 // =============================================================================
 // PONG PIPELINE TEST
-// Integration tests for GBDKPipelineV2 using an inline Pong GameIR fixture.
+// Integration tests for GBDKPipeline using an inline Pong GameIR fixture.
 //
-// The fixture mirrors PongV2.kt but is built directly from ir types to avoid
+// The fixture mirrors Pong.kt but is built directly from ir types to avoid
 // a cross-module dependency (gbkt-backend-gbdk cannot depend on gbkt-examples).
 //
 // Tests verify:
@@ -58,15 +59,15 @@ import kotlin.test.assertTrue
 // =============================================================================
 
 /**
- * Inline Pong GameIR fixture — mirrors PongV2.kt but without DSL import.
+ * Inline Pong GameIR fixture — mirrors Pong.kt but without DSL import.
  *
- * Built directly from IR v2 types so the test is self-contained within gbkt-backend-gbdk without
+ * Built directly from IR types so the test is self-contained within gbkt-backend-gbdk without
  * adding a circular cross-module dependency.
  */
 private val pongGameIR =
     GameIR(
         name = "Pong",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         variables =
             listOf(
                 VariableDef("p1Score", VarType.U8, 0),
@@ -239,7 +240,7 @@ private val pongGameIR =
 
 class PongPipelineTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
     private val pipelineOutput by lazy { pipeline.generate(pongGameIR) }
     private val output by lazy { pipelineOutput.files }
 

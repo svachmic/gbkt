@@ -63,8 +63,9 @@ fun GbktTestExtension.verifyTitleScreen(expectedTexts: List<String> = emptyList(
             val sceneNames = metaScenes.sceneNames
             if (sceneNames.isNotEmpty()) {
                 // Accept: either matches a title-like pattern, or is the smallest-index scene
-                val lowestIndexScene =
-                    sceneNames.minByOrNull { metaScenes.indexOf(it) ?: Int.MAX_VALUE }
+                val lowestIndexScene = sceneNames.minByOrNull {
+                    metaScenes.indexOf(it) ?: Int.MAX_VALUE
+                }
                 val isTitle =
                     TITLE_SCENE_PATTERNS.any { it in scene.lowercase() } ||
                         scene == lowestIndexScene
@@ -262,10 +263,14 @@ data class MetadataExpectation(
  * @param expectation The expected metadata values to verify against.
  * @param currentSceneVar The variable name for the current scene (default `"current_scene"`).
  */
+@Suppress("CyclomaticComplexMethod", "ThrowsCount")
 fun GbktTestExtension.verifyMetadataSymbolAgreement(
     expectation: MetadataExpectation,
     currentSceneVar: String = "current_scene",
 ) {
+    // 7 independent metadata-vs-symbol-table cross-checks, each fails fast via AssertionError.
+    // Cyclomatic + Throws thresholds are inherent to the validation surface — refactoring into
+    // 7 sub-validators would only shuffle complexity without improving readability.
     val metadataFile = File("build/gbkt/generated/game_metadata.json")
     val symFile = File("build/gbkt/output/$gameName.noi")
     val gameHeader = File("build/gbkt/generated/game.h")

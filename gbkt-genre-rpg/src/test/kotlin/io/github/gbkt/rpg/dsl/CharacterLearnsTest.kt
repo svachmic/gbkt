@@ -39,8 +39,8 @@ class CharacterLearnsTest {
                         }
                         block()
                     }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 

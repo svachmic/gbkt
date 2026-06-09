@@ -160,8 +160,8 @@ class FlagRefTest {
                             flag("defeatedBoss")
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -180,8 +180,8 @@ class FlagRefTest {
 
         game("FlagRefTest") {
                 flags { page("story") { capturedRef = flag("bossDefeated") } }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 

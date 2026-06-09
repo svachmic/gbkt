@@ -7,7 +7,7 @@
 package io.github.gbkt.examples.pong
 
 import io.github.gbkt.core.ir.GameIR
-import io.github.gbkt.core.test.SimulationContextV2
+import io.github.gbkt.core.test.SimulationContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 /**
  * Scenario-based game logic tests for the Pong v2 game.
  *
- * Tests run on JVM via SimulationContextV2 — no GBDK or ROM required.
+ * Tests run on JVM via SimulationContext — no GBDK or ROM required.
  *
  * Scenarios:
  * 1. Ball bounces off top wall — ballDy reverses from -1 to 1 when ball.y < 16
@@ -26,7 +26,7 @@ class PongGameTest {
 
     companion object {
         /** Build GameIR once for all tests in this class (shared fixture). */
-        private val ir: GameIR = pongV2.build()
+        private val ir: GameIR = pong.build()
     }
 
     // =========================================================================
@@ -35,7 +35,7 @@ class PongGameTest {
 
     @Test
     fun `ball bounces off top wall - ballDy reverses to positive when ball y below 16`() {
-        val sim = SimulationContextV2(ir)
+        val sim = SimulationContext(ir)
         sim.enterScene("game")
 
         // Set ball near top wall with upward velocity
@@ -54,7 +54,7 @@ class PongGameTest {
 
     @Test
     fun `ball bounces off bottom wall - ballDy reverses to negative when ball y above 148`() {
-        val sim = SimulationContextV2(ir)
+        val sim = SimulationContext(ir)
         sim.enterScene("game")
 
         // Set ball near bottom wall with downward velocity
@@ -75,7 +75,7 @@ class PongGameTest {
 
     @Test
     fun `p1Score increments when ball exits right side`() {
-        val sim = SimulationContextV2(ir)
+        val sim = SimulationContext(ir)
         sim.enterScene("game")
         sim.enableTracing()
 
@@ -107,7 +107,7 @@ class PongGameTest {
 
     @Test
     fun `win condition navigates to gameover when p1Score reaches 5`() {
-        val sim = SimulationContextV2(ir)
+        val sim = SimulationContext(ir)
         sim.enterScene("game")
 
         // Set p1Score to 4 (just below win threshold of 5)

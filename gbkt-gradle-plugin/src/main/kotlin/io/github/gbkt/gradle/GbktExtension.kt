@@ -49,6 +49,9 @@ abstract class GbktExtension @Inject constructor(objects: ObjectFactory) {
     val generateAssets: GenerateAssetsExtension =
         objects.newInstance(GenerateAssetsExtension::class.java)
 
+    /** Sprite pipeline settings (tRNS routing, strict mode). */
+    val sprites: SpritesExtension = objects.newInstance(SpritesExtension::class.java)
+
     /**
      * Path to GBDK installation directory. If not set, will auto-detect from GBDK_HOME environment
      * variable or common installation paths.
@@ -145,7 +148,7 @@ abstract class GbktExtension @Inject constructor(objects: ObjectFactory) {
      * }
      * ```
      *
-     * Note: The budget report is printed inline during `generateC` by `generateV2()`. The
+     * Note: The budget report is printed inline during `generateC` by `generate()`. The
      * standalone `budgetReport` task remains independently callable regardless of this flag.
      */
     abstract val budgetReport: Property<Boolean>
@@ -159,6 +162,11 @@ abstract class GbktExtension @Inject constructor(objects: ObjectFactory) {
      * - 4: 32KB SRAM (used by MBC5+RAM+Battery)
      *
      * Only meaningful for cartridge types with RAM (MBC1+RAM, MBC5+RAM+BATTERY, etc.).
+     *
+     * @deprecated Set `ramBanks` in the DSL `config { ramBanks = N }` block instead.
+     * The DSL value flows through `gbkt-build.properties` and takes precedence over this
+     * Gradle extension property. This property remains as a backward-compatibility fallback
+     * for builds that have not yet migrated to the typed `config { cartridge(Cartridge.X) }` DSL form.
      */
     abstract val ramBanks: Property<Int>
 
@@ -302,6 +310,28 @@ abstract class GbktExtension @Inject constructor(objects: ObjectFactory) {
      */
     fun generateAssets(action: Action<GenerateAssetsExtension>) {
         action.execute(generateAssets)
+    }
+
+    /**
+     * Configure sprite pipeline settings.
+     *
+     * Usage:
+     * ```kotlin
+     * gbkt {
+     *     sprites {
+     *         strictTransparency.set(true)
+     *     }
+     * }
+     * ```
+     *
+     * When [SpritesExtension.strictTransparency] is true, any sprite PNG that declares its
+     * transparent color at a non-zero palette index will fail the build with a
+     * [org.gradle.api.GradleException] naming the sprite file and the index. When false (default),
+     * the framework auto-corrects by pre-permuting the palette before handing to png2asset and
+     * emits a D-06 WARNING.
+     */
+    fun sprites(action: Action<SpritesExtension>) {
+        action.execute(sprites)
     }
 }
 
@@ -496,4 +526,42 @@ abstract class GenerateAssetsExtension @Inject constructor() {
 
     /** Name of the generated object. Default: "Assets" */
     abstract val objectName: Property<String>
+}
+
+/**
+ * Sprite pipeline settings for the gbkt plugin.
+ *
+ * Controls tRNS transparency routing behaviour for indexed sprite PNGs. When a sprite PNG
+ * declares its transparent color at a non-zero palette index, the framework can either
+ * auto-correct silently (default) or hard-fail the build (strict mode).
+ *
+ * Usage:
+ * ```kotlin
+ * gbkt {
+ *     sprites {
+ *         strictTransparency.set(true) // hard-fail on non-zero tRNS index (default: false)
+ *     }
+ * }
+ * ```
+ *
+ * Phase 13.6 REQ-4 / D-01 / D-02: SpritesExtension mirrors the existing sub-extension
+ * pattern (OptimizationExtension, EmulatorExtension, etc.) so the DSL surface is
+ * property-name-inferred (no magic strings).
+ */
+abstract class SpritesExtension @Inject constructor() {
+
+    /**
+     * Enable strict transparency routing mode.
+     *
+     * When `true`, any indexed sprite PNG whose tRNS chunk declares a transparent color at a
+     * non-zero palette index will fail the [io.github.gbkt.gradle.tasks.ConvertSpritesTask] with
+     * a [org.gradle.api.GradleException] naming the sprite file and the non-zero index.
+     *
+     * When `false` (default), the framework auto-corrects by pre-permuting the palette so the
+     * transparent color lands at index 0 before handing to png2asset, and emits a build WARNING
+     * (D-06) naming the auto-corrected sprite and index.
+     *
+     * Default: `false`
+     */
+    abstract val strictTransparency: Property<Boolean>
 }

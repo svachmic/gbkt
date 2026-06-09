@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.jupiter.api.io.TempDir
 
 /**
@@ -503,7 +504,7 @@ class IntegrationTest {
                 val mainScene = scene("main") {
                     frame { }
                 }
-                start = mainScene.id
+                start = mainScene
             }
             """
                 .trimIndent()
@@ -541,6 +542,13 @@ class IntegrationTest {
                 mavenLocal()
                 mavenCentral()
             }
+
+            // Defeat the changing-module SNAPSHOT cache (default 24h TTL) so this nested
+            // GradleRunner sandbox always re-resolves the freshly-republished 0.1.0-SNAPSHOT
+            // artifacts. Without this, gbkt-ir and gbkt-backend-gbdk can desync in the Gradle
+            // module cache and link mismatched SceneIR.copy${'$'}default arities → NoSuchMethodError
+            // (Phase 15 F1 / D-05; pluginTest republishes ~/.m2 but the cache, not ~/.m2, is read).
+            configurations.all { resolutionStrategy.cacheChangingModulesFor(0, "seconds") }
 
             dependencies {
                 implementation("io.github.gbkt:gbkt-core:0.1.0-SNAPSHOT")
@@ -580,7 +588,7 @@ class IntegrationTest {
                     }
                 }
 
-                start = mainScene.id
+                start = mainScene
             }
             """
                 .trimIndent()
@@ -611,7 +619,7 @@ class IntegrationTest {
                     }
                 }
 
-                start = mainScene.id
+                start = mainScene
             }
             """
                 .trimIndent()
@@ -685,7 +693,88 @@ class IntegrationTest {
                     }
                 }
 
-                start = titleScene.id
+                start = titleScene
+            }
+            """
+                .trimIndent()
+        )
+    }
+
+    /**
+     * Creates a simple-physics-shaped game fixture.
+     *
+     * Single scene with a frame loop, one actor, two i16 variables, and three `whenever(...)`
+     * conditions that mirror the player-movement pattern from `gbkt-examples/simple-physics`. The
+     * game is small enough that `estimatedBytes <= HOME_BANK_SCENE_BUDGET` so BankingAnalysisPass
+     * takes the single-scene-fits-HOME fast-path and folds bank1.c out of the emission set — the
+     * exact code path that exposed the stale-output bug (D-K-01..D-K-04).
+     */
+    private fun createSimplePhysicsLikeFixture() {
+        val gameFile = File(srcDir, "test/TestGame.kt")
+        gameFile.parentFile.mkdirs()
+        gameFile.writeText(
+            """
+            package test
+
+            import io.github.gbkt.core.dsl.*
+
+            val testGame = game("TestGame") {
+                var posX by i16Var(80 shl 4)
+                var posY by i16Var(72 shl 4)
+
+                val playScene = scene("play") {
+                    frame {
+                        whenever(dpad.left.held) { posX -= 16 }
+                        whenever(dpad.right.held) { posX += 16 }
+                        whenever(posX isBelow 0) { posX set 0 }
+                    }
+                }
+
+                start = playScene
+            }
+            """
+                .trimIndent()
+        )
+    }
+
+    /**
+     * Creates a game fixture with TWO scenes.
+     *
+     * Having two scenes prevents BankingAnalysisPass from taking the single-scene HOME fast-path,
+     * ensuring bank1.c IS emitted and Gradle snapshots it as an output file. This is Step 1 of the
+     * two-step stale-output regression test (D-R-02).
+     */
+    private fun createTwoSceneGameFixture() {
+        val gameFile = File(srcDir, "test/TestGame.kt")
+        gameFile.parentFile.mkdirs()
+        // NOTE: ScriptBuilder.whenever{} evaluates its body lambda synchronously during DSL
+        // construction (see ScriptBuilderContext.with). Forward references to SceneRef via a
+        // nullable var that is assigned after the referencing scene is built therefore NPE at
+        // DSL evaluation time — not at runtime. Avoid forward-reference patterns: define mainScene
+        // first so titleScene can capture its SceneRef directly.
+        gameFile.writeText(
+            """
+            package test
+
+            import io.github.gbkt.core.dsl.*
+
+            val testGame = game("TestGame") {
+                var score by u8Var(0)
+
+                val mainScene = scene("main") {
+                    frame {
+                        score += 1
+                    }
+                }
+
+                val titleScene = scene("title") {
+                    enter { clear() }
+                    frame {
+                        whenever(buttons.start.pressed) { navigate(mainScene) }
+                    }
+                }
+
+                start = titleScene
             }
             """
                 .trimIndent()
@@ -705,6 +794,82 @@ class IntegrationTest {
         g.fillRect(0, 0, width, height)
         g.dispose()
         ImageIO.write(image, "PNG", spriteFile)
+    }
+
+    // ============================================================================
+    // Output Sync — Staleness Regression Tests (09.2 D-R-01, D-R-02, D-S-04)
+    // ============================================================================
+
+    @Test
+    fun `generateC deletes stale files dropped from the emission set`() {
+        // Step 1: Run generateC with a two-scene game.
+        // The BankingAnalysisPass fast-path only fires for single-scene games, so a two-scene
+        // game routes via bank 1 → bank1.c IS emitted and Gradle snapshots it as an output.
+        // This reproduces the "prior MBC5 / multi-scene build left bank1.c behind" scenario
+        // from the 09.1 regression (D-R-02 hand-staged stale-file pattern).
+        createTwoSceneGameFixture()
+        createBasicBuildFile()
+
+        val firstResult =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("generateC", "--stacktrace")
+                .withPluginClasspath()
+                .build()
+
+        assertEquals(TaskOutcome.SUCCESS, firstResult.task(":generateC")?.outcome)
+        val generatedDir = File(testProjectDir, "build/gbkt/generated")
+        assertTrue(
+            File(generatedDir, "bank1.c").exists(),
+            "Step 1: two-scene game must emit bank1.c so Gradle snapshots it as an output",
+        )
+
+        // Step 2: Switch to a single-scene game small enough for the HOME fast-path.
+        // BankingAnalysisPass folds the scene into main.c → bank1.c is NOT emitted.
+        // bank1.c from Step 1 is in Gradle's output snapshot so it is NOT pre-cleaned by
+        // Gradle's own stale-output cleanup. Instead, syncOutputDir must delete it because
+        // it is absent from the current emission set — this is the bug-fix verification.
+        createMinimalGameFixture()
+
+        val result =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("generateC", "--stacktrace")
+                .withPluginClasspath()
+                .build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":generateC")?.outcome)
+        assertFalse(
+            File(generatedDir, "bank1.c").exists(),
+            "stale bank1.c should be deleted by syncOutputDir",
+        )
+        assertTrue(
+            result.output.contains("Removed stale: bank1.c"),
+            "S-04 lifecycle log must announce the deletion",
+        )
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(
+        named = "GBDK_HOME",
+        matches = ".+",
+        disabledReason = "Requires GBDK installation (GBDK_HOME env var)",
+    )
+    fun `simple-physics fixture builds ROM end-to-end without staleness errors`() {
+        createSimplePhysicsLikeFixture() // NEW helper — single-scene-fits-HOME shape
+        createBasicBuildFile() // outputName.set("game") → build/gbkt/output/game.gb
+
+        val result =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("buildRom", "--stacktrace")
+                .withPluginClasspath()
+                .build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":buildRom")?.outcome)
+        val romFile = File(testProjectDir, "build/gbkt/output/game.gb")
+        assertTrue(romFile.exists(), "ROM file must be produced by buildRom")
+        assertTrue(romFile.length() > 0, "ROM file must not be empty")
     }
 
     /**

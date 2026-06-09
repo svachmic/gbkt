@@ -111,15 +111,14 @@ class GbktCodegenService(private val project: Project) {
         }
 
         // Thread-safe check-and-set for generation flag
-        val canGenerate =
-            generationLock.withLock {
-                if (isGeneratingFlag.get()) {
-                    false
-                } else {
-                    isGeneratingFlag.set(true)
-                    true
-                }
+        val canGenerate = generationLock.withLock {
+            if (isGeneratingFlag.get()) {
+                false
+            } else {
+                isGeneratingFlag.set(true)
+                true
             }
+        }
 
         if (!canGenerate) {
             future.completeExceptionally(IllegalStateException("Generation already in progress"))

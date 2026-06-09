@@ -67,32 +67,23 @@ data class AnalysisConfig(
 ) {
     companion object {
         /**
-         * Derives an [AnalysisConfig] from a [CartridgeConfig], mapping cartridge type strings to
-         * their maximum ROM bank counts per the Game Boy hardware specification:
+         * Derives an [AnalysisConfig] from a [CartridgeConfig], using [Cartridge.maxRomBanks]
+         * as the authoritative per-type ROM bank cap per the Game Boy hardware specification:
          *
-         * | Cartridge | Max Banks |
-         * |-----------|-----------|
-         * | ROM_ONLY  | 2         |
-         * | MBC1      | 32        |
-         * | MBC2      | 16        |
-         * | MBC3      | 128       |
-         * | MBC5      | 256       |
-         * | (unknown) | 2         |
+         * | Cartridge             | Max Banks |
+         * |-----------------------|-----------|
+         * | ROM_ONLY              | 2         |
+         * | MBC1 / MBC1_RAM / …  | 32        |
+         * | MBC2 / MBC2_BATTERY   | 16        |
+         * | MBC3_* / MBC3 / …    | 128       |
+         * | MBC5 / MBC5_*         | 256       |
          *
-         * The actual bank count used is the lesser of the cartridge type maximum and the
+         * The actual bank count used is the lesser of [Cartridge.maxRomBanks] and the
          * [CartridgeConfig.romBanks] value declared by the game author.
          */
         fun fromCartridgeConfig(config: CartridgeConfig): AnalysisConfig {
-            val typeMax =
-                when {
-                    config.cartridge.startsWith("ROM_ONLY") -> 2
-                    config.cartridge.startsWith("MBC1") -> 32
-                    config.cartridge.startsWith("MBC2") -> 16
-                    config.cartridge.startsWith("MBC3") -> 128
-                    config.cartridge.startsWith("MBC5") -> 256
-                    else -> 2
-                }
-            val effectiveMax = minOf(typeMax, config.romBanks)
+            val typeMax = config.cartridge.maxRomBanks
+            val effectiveMax = minOf(typeMax, config.romBanks ?: typeMax)
             return AnalysisConfig(maxBanks = effectiveMax)
         }
     }

@@ -199,7 +199,8 @@ class UatRunner(
                     VisualDiff.compare(goldenFile, screenshotFile, tol, config.screenshotDir)
                 } else {
                     logger.info(
-                        "GOLDEN MISSING: $goldenFile — promote with: cp ${screenshotFile.absolutePath} ${goldenFile.absolutePath}"
+                        "GOLDEN MISSING: $goldenFile — promote with: " +
+                            "cp ${screenshotFile.absolutePath} ${goldenFile.absolutePath}"
                     )
                     null
                 }
@@ -450,13 +451,12 @@ class UatRunner(
     fun assertSpriteAt(x: Int, y: Int, tileIndex: Int? = null, tolerance: Int = 2) {
         val memory = session.getMemory()
         val visible = OamSpriteReader.readVisible(memory)
-        val match =
-            visible.any { sprite ->
-                val xMatch = (sprite.screenX - x) in -tolerance..tolerance
-                val yMatch = (sprite.screenY - y) in -tolerance..tolerance
-                val tileMatch = tileIndex == null || sprite.tileIndex == tileIndex
-                xMatch && yMatch && tileMatch
-            }
+        val match = visible.any { sprite ->
+            val xMatch = (sprite.screenX - x) in -tolerance..tolerance
+            val yMatch = (sprite.screenY - y) in -tolerance..tolerance
+            val tileMatch = tileIndex == null || sprite.tileIndex == tileIndex
+            xMatch && yMatch && tileMatch
+        }
         val desc =
             if (tileIndex != null) {
                 "sprite at ($x,$y) tile=$tileIndex ±$tolerance"

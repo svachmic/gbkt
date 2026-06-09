@@ -128,7 +128,8 @@ class ConstantFoldingPass : AnalysisPass {
         if (foldedCondition is Literal) {
             foldCount++
             foldDetails +=
-                "Folded ternary(${foldedCondition.value}) → ${if (foldedCondition.value != 0) "then" else "else"} branch"
+                "Folded ternary(${foldedCondition.value}) → " +
+                    "${if (foldedCondition.value != 0) "then" else "else"} branch"
             return if (foldedCondition.value != 0) foldedThen else foldedElse
         }
         return expr.copy(condition = foldedCondition, thenExpr = foldedThen, elseExpr = foldedElse)

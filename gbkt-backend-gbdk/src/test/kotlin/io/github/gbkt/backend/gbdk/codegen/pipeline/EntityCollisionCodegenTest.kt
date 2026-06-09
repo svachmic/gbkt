@@ -7,6 +7,7 @@
 package io.github.gbkt.backend.gbdk.codegen.pipeline
 
 import io.github.gbkt.core.ir.ActorIR
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.CollisionShape
 import io.github.gbkt.core.ir.EntityCollisionConfig
@@ -23,7 +24,7 @@ import kotlin.test.assertTrue
 
 // =============================================================================
 // ENTITY COLLISION CODEGEN TESTS (Plan 06.3-03)
-// Verifies that GBDKPipelineV2 generates correct C code for entity collision:
+// Verifies that GBDKPipeline generates correct C code for entity collision:
 //  - Entity grid management functions (_entity_register, _entity_remove, _entity_check)
 //  - All 5 collision modes in _entity_handle_block
 //  - Gap 1: _blocking_entity_id/_pushed_entity_id/_push_direction set before callbacks
@@ -39,7 +40,7 @@ private fun buildEntityCollisionGame(
 ): GameIR =
     GameIR(
         name = "TestGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = listOf(SceneIR(id = "gameplay")),
         systems = listOf(system),
         actors = actors,
@@ -126,7 +127,7 @@ private fun multiTileActor(
 
 class EntityCollisionCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: BLOCK mode entity generates grid check in exploration_move

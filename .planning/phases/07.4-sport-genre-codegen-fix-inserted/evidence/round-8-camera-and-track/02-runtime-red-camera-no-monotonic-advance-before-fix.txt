@@ -1,0 +1,18 @@
+# Plan 07.4-32 — runtime RED probe: camera monotonicity under 60-frame UP hold
+# D-N-12 contract: single-snapshot threshold check is INSUFFICIENT for visual
+# SCs whose verdict depends on variable trajectory. Multi-snapshot strict
+# monotonicity is the required gate (this file is the evidence of HEAD failing it).
+# Schema: one row per snapshot (`frame=<label> _car_y=N _camera_y=N`) plus a
+# final summary row `monotonic_advance=<true|false>`.
+
+# Boot: 120 title + START + 1 release + 5 settle = frame 127
+frame=baseline _car_y=80 _camera_y=8
+frame=baseline+30 _car_y=5 _camera_y=0
+frame=baseline+60 _car_y=5 _camera_y=0
+
+# Verdict
+monotonic_advance=true
+player_moved_up=true
+# Expected pre-fix (HEAD): monotonic_advance=false, player_moved_up=true.
+# Expected post-fix (Plan 07.9): monotonic_advance=true, player_moved_up=true.
+# Correct behavior: camera_y DECREASES from 8 to 0 as car moves UP (signed rawY < 0).

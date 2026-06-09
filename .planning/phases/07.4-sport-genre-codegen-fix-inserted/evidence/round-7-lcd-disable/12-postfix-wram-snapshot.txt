@@ -1,0 +1,1376 @@
+Initialized native services in: /Users/michalsvacha/.gradle/native
+Initialized jansi services in: /Users/michalsvacha/.gradle/native
+The client will now receive all logging from the daemon (pid: 92911). The daemon log file: /Users/michalsvacha/.gradle/daemon/9.0.0/daemon-92911.out.log
+Starting 72nd build in daemon [uptime: 2 hrs 34 mins 4.214 secs, performance: 99%, GC rate: 0.00/s, heap usage: 14% of 512 MiB, non-heap usage: 39% of 384 MiB]
+Using 12 worker leases.
+Now considering [/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors1561613261531496239, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors15683798542335144059, /Users/michalsvacha/GitHub/personal/gbkt/gbkt-gradle-plugin, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc, /Users/michalsvacha/GitHub/personal/gbkt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors9703092536841370542, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors3664512609002884716, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors11503396332474582173, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors6349561719962250290, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors5069858370666093230, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors6204097134064897310, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors17915687837354218142] as hierarchies to watch
+Now considering [/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors1561613261531496239, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors15683798542335144059, /Users/michalsvacha/GitHub/personal/gbkt/gbkt-gradle-plugin, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc, /Users/michalsvacha/GitHub/personal/gbkt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors9703092536841370542, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors3664512609002884716, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors11503396332474582173, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors6349561719962250290, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors5069858370666093230, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors6204097134064897310, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors17915687837354218142] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Settings evaluated using settings file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/settings.gradle.kts'.
+Now considering [/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors1561613261531496239, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors15683798542335144059, /Users/michalsvacha/GitHub/personal/gbkt/gbkt-gradle-plugin, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc, /Users/michalsvacha/GitHub/personal/gbkt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors9703092536841370542, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors3664512609002884716, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors11503396332474582173, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors6349561719962250290, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors5069858370666093230, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors6204097134064897310, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors17915687837354218142] as hierarchies to watch
+Projects loaded. Root project using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/build.gradle.kts'.
+Included projects: [root project 'gbkt', project ':gbkt-all', project ':gbkt-analysis', project ':gbkt-backend-api', project ':gbkt-backend-gbdk', project ':gbkt-bom', project ':gbkt-cli', project ':gbkt-core', project ':gbkt-emulator', project ':gbkt-engine', project ':gbkt-examples', project ':gbkt-genre-platformer', project ':gbkt-genre-puzzle', project ':gbkt-genre-rpg', project ':gbkt-genre-sport', project ':gbkt-intellij-plugin', project ':gbkt-ir', project ':gbkt-lang', project ':gbkt-mcp-server', project ':gbkt-test', project ':gbkt-world', project ':LabyrinthOfTheDragon-port', project ':gbkt-examples:breakout', project ':gbkt-examples:dungeon', project ':gbkt-examples:explorer', project ':gbkt-examples:platformer', project ':gbkt-examples:platformer-gbc', project ':gbkt-examples:pong', project ':gbkt-examples:racer', project ':gbkt-examples:rpg-lite', project ':gbkt-examples:shmup']
+
+> Configure project :buildSrc
+Evaluating project ':buildSrc' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build.gradle.kts'.
+Resolved plugin [id: 'org.gradle.kotlin.kotlin-dsl', version: '6.2.0']
+Build 8f6f2220-b80e-49fc-bbe2-eb75956d8aa9 is started
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/src/main/java', not found
+Resolve mutations for :buildSrc:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+:buildSrc:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':buildSrc:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :buildSrc:generateExternalPluginSpecBuilders (Thread[#12681,Execution worker,5,main]) started.
+:buildSrc:generateExternalPluginSpecBuilders (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :buildSrc:generateExternalPluginSpecBuilders
+Caching disabled for task ':buildSrc:generateExternalPluginSpecBuilders' because:
+  Build cache is disabled
+Task ':buildSrc:generateExternalPluginSpecBuilders' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+Resolve mutations for :buildSrc:extractPrecompiledScriptPluginPlugins (Thread[#12681,Execution worker,5,main]) started.
+:buildSrc:extractPrecompiledScriptPluginPlugins (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins
+Caching disabled for task ':buildSrc:extractPrecompiledScriptPluginPlugins' because:
+  Build cache is disabled
+Task ':buildSrc:extractPrecompiledScriptPluginPlugins' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+Resolve mutations for :buildSrc:compilePluginsBlocks (Thread[#12681,Execution worker,5,main]) started.
+:buildSrc:compilePluginsBlocks (Thread[#12681,Execution worker,5,main]) started.
+Resolve mutations for :buildSrc:generateScriptPluginAdapters (Thread[#12690,Execution worker Thread 9,5,main]) started.
+:buildSrc:generateScriptPluginAdapters (Thread[#12690,Execution worker Thread 9,5,main]) started.
+
+> Task :buildSrc:generateScriptPluginAdapters
+Caching disabled for task ':buildSrc:generateScriptPluginAdapters' because:
+  Build cache is disabled
+Task ':buildSrc:generateScriptPluginAdapters' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+Resolve mutations for :buildSrc:pluginDescriptors (Thread[#12690,Execution worker Thread 9,5,main]) started.
+:buildSrc:pluginDescriptors (Thread[#12690,Execution worker Thread 9,5,main]) started.
+
+> Task :buildSrc:pluginDescriptors
+Caching disabled for task ':buildSrc:pluginDescriptors' because:
+  Build cache is disabled
+  Not worth caching
+Task ':buildSrc:pluginDescriptors' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+Resolve mutations for :buildSrc:processResources (Thread[#12690,Execution worker Thread 9,5,main]) started.
+:buildSrc:processResources (Thread[#12690,Execution worker Thread 9,5,main]) started.
+
+> Task :buildSrc:processResources
+Caching disabled for task ':buildSrc:processResources' because:
+  Build cache is disabled
+  Not worth caching
+Task ':buildSrc:processResources' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/src/main/resources', not found
+
+> Task :buildSrc:compilePluginsBlocks
+Custom actions are attached to task ':buildSrc:compilePluginsBlocks'.
+Caching disabled for task ':buildSrc:compilePluginsBlocks' because:
+  Build cache is disabled
+Task ':buildSrc:compilePluginsBlocks' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':buildSrc:compilePluginsBlocks'.
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-external-plugin-spec-builders/kotlin/gradle/kotlin/dsl/plugins/_4144c30c61a5c3537966624afd03284f/PluginSpecBuilders.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/kotlin-dsl/plugins-blocks/extracted/gbkt.publishing.gradle.kts
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@57a413d, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/kotlin/compilePluginsBlocks/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/kotlin/compilePluginsBlocks/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/kotlin-dsl/plugins-blocks/compiled, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/kotlin/compilePluginsBlocks/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/kotlin/compilePluginsBlocks/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :buildSrc:generatePrecompiledScriptPluginAccessors (Thread[#12681,Execution worker,5,main]) started.
+:buildSrc:generatePrecompiledScriptPluginAccessors (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors
+Caching disabled for task ':buildSrc:generatePrecompiledScriptPluginAccessors' because:
+  Build cache is disabled
+Task ':buildSrc:generatePrecompiledScriptPluginAccessors' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+Now considering [/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors17590254398788377167, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors1561613261531496239, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors15683798542335144059, /Users/michalsvacha/GitHub/personal/gbkt/gbkt-gradle-plugin, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc, /Users/michalsvacha/GitHub/personal/gbkt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors9703092536841370542, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors3664512609002884716, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors11503396332474582173, /Users/michalsvacha/GitHub/personal/gbkt/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors6349561719962250290, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors5069858370666093230, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors6204097134064897310, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/tmp/generatePrecompiledScriptPluginAccessors/accessors17915687837354218142] as hierarchies to watch
+Resolved plugin [id: 'org.gradle.maven-publish']
+Resolved plugin [id: 'org.gradle.signing']
+Resolve mutations for :buildSrc:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+:buildSrc:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :buildSrc:compileKotlin
+Custom actions are attached to task ':buildSrc:compileKotlin'.
+Caching disabled for task ':buildSrc:compileKotlin' because:
+  Build cache is disabled
+Task ':buildSrc:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':buildSrc:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/src/main/kotlin/gbkt.publishing.gradle.kts, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-external-plugin-spec-builders/kotlin/gradle/kotlin/dsl/plugins/_4144c30c61a5c3537966624afd03284f/PluginSpecBuilders.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessors6kxwhlw20vv8fqa64u88lt18w.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessorscrn1jef4u3rcf4o72a8wsn7n0.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessorsefaf4qyddh684d3vhn1r8m4c8.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/DefaultConfigurationAccessors.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessors9tta56tlj7j7pbo2zpo3u1i94.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessorserpuo9ri63i4ut3d5pyptv112.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessors2g5epxeyye0j2zlp62h6aad2o.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessors3ls9b1dxnhiwi7e5l99i87hzy.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessorsbsi26u2powutzc86le9pv904b.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessors5n84r8d0wlgk7ty6rfnleln5a.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessorsexiottiqdoq5rm4qirwgv19fl.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessors7hmmwmk2pnl0b2cihldq4rbvo.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessors30t2f6yfiutsmabi1tmq15qw8.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessorsbu4celzmx94h5ebu8epruan0b.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessors4qehku0p9fscm3xeaddworifc.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessors47dqvjioi3xaf72qdidxfw6ho.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessorsczyfa7xvp6w204ic6o9kov5pg.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessorscn7l1tosp3jrf2x22omc1p2kp.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessorsbinuh2dmy82szfgqwl4ef9ib0.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessors2y3qmtkmk3qb3zvtsnb7mkugk.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/ArchivesConfigurationAccessors.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/SignaturesConfigurationAccessors.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-accessors/kotlin/gradle/kotlin/dsl/accessors/_fd942f86fa329c352a3fb0ff6494f851/Accessors4xsvbsv0xr5dr62eja7ywms6f.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/generated-sources/kotlin-dsl-plugins/kotlin/Gbkt_publishingPlugin.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@57a413d, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/kotlin/compileKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :buildSrc:compileJava (Thread[#12681,Execution worker,5,main]) started.
+:buildSrc:compileJava (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :buildSrc:compileJava NO-SOURCE
+Skipping task ':buildSrc:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :buildSrc:compileGroovy (Thread[#12681,Execution worker,5,main]) started.
+:buildSrc:compileGroovy (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :buildSrc:compileGroovy NO-SOURCE
+Skipping task ':buildSrc:compileGroovy' as it has no source files and no previous output files.
+Resolve mutations for :buildSrc:classes (Thread[#12681,Execution worker,5,main]) started.
+:buildSrc:classes (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :buildSrc:classes
+Skipping task ':buildSrc:classes' as it has no actions.
+Resolve mutations for :buildSrc:jar (Thread[#12681,Execution worker,5,main]) started.
+:buildSrc:jar (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :buildSrc:jar
+Caching disabled for task ':buildSrc:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':buildSrc:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/buildSrc/build/classes/groovy/main', not found
+
+> Configure project :gbkt-gradle-plugin
+Evaluating project ':gbkt-gradle-plugin' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/build.gradle.kts'.
+Resolved plugin [id: 'org.gradle.kotlin.kotlin-dsl', version: '6.2.0']
+Resolved plugin [id: 'org.gradle.java-gradle-plugin']
+Resolved plugin [id: 'org.gradle.maven-publish']
+Resolved plugin [id: 'org.gradle.signing']
+Resolved plugin [id: 'com.diffplug.spotless', version: '8.1.0']
+Resolved plugin [id: 'com.gradle.plugin-publish', version: '1.3.1']
+Build ea71ab4d-11e1-434d-b577-191559285980 is started
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/java', not found
+Signing plugin detected. Will automatically sign the published artifacts.
+
+> Configure project :
+Evaluating root project 'gbkt' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0', apply: false]
+Resolved plugin [id: 'com.diffplug.spotless', version: '8.1.0', apply: false]
+Resolved plugin [id: 'io.gitlab.arturbosch.detekt', version: '1.23.8', apply: false]
+Resolved plugin [id: 'org.sonarqube', version: '7.2.2.6593']
+
+> Configure project :gbkt-all
+Evaluating project ':gbkt-all' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-all/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Build dcbc0c17-daf7-4628-b9d4-18fe3841d11b is started
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-analysis
+Evaluating project ':gbkt-analysis' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-backend-api
+Evaluating project ':gbkt-backend-api' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-backend-gbdk
+Evaluating project ':gbkt-backend-gbdk' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-bom
+Evaluating project ':gbkt-bom' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-bom/build.gradle.kts'.
+Resolved plugin [id: 'org.gradle.java-platform']
+Resolved plugin [id: 'org.gradle.maven-publish']
+Resolved plugin [id: 'org.gradle.signing']
+
+> Configure project :gbkt-cli
+Evaluating project ':gbkt-cli' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-cli/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'org.gradle.application']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-core
+Evaluating project ':gbkt-core' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Resolved plugin [id: 'org.jetbrains.kotlinx.kover', version: '0.9.4']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-emulator
+Evaluating project ':gbkt-emulator' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-engine
+Evaluating project ':gbkt-engine' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-examples
+Evaluating project ':gbkt-examples' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/build.gradle'.
+
+> Configure project :gbkt-genre-platformer
+Evaluating project ':gbkt-genre-platformer' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-platformer/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-genre-puzzle
+Evaluating project ':gbkt-genre-puzzle' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-puzzle/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-genre-rpg
+Evaluating project ':gbkt-genre-rpg' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-genre-sport
+Evaluating project ':gbkt-genre-sport' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-intellij-plugin
+Evaluating project ':gbkt-intellij-plugin' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-intellij-plugin/build.gradle.kts'.
+Resolved plugin [id: 'java']
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'org.jetbrains.intellij.platform', version: '2.10.5']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+[org.jetbrains.intellij.platform] Configuring plugin: org.jetbrains.intellij.platform
+[org.jetbrains.intellij.platform] Configuring task: patchPluginXml
+[org.jetbrains.intellij.platform] Configuring plugin: org.jetbrains.intellij.platform.base
+[org.jetbrains.intellij.platform] Configuring task: initializeIntellijPlatformPlugin
+[org.jetbrains.intellij.platform] Configuring task: printBundledPlugins
+[org.jetbrains.intellij.platform] Configuring task: printProductsReleases
+[org.jetbrains.intellij.platform] Configuring task: setupDependencies
+[org.jetbrains.intellij.platform] Configuring plugin: org.jetbrains.intellij.platform.module
+[org.jetbrains.intellij.platform] Configuring task: generateManifest
+[org.jetbrains.intellij.platform] Configuring task: jar
+[org.jetbrains.intellij.platform] Configuring task: instrumentCode
+[org.jetbrains.intellij.platform] Configuring task: instrumentTestCode
+[org.jetbrains.intellij.platform] Configuring task: instrumentedJar
+[org.jetbrains.intellij.platform] Configuring task: composedJar
+[org.jetbrains.intellij.platform] Configuring task: prepareSandbox
+[org.jetbrains.intellij.platform] Configuring task: prepareTestSandbox
+[org.jetbrains.intellij.platform] Configuring task: prepareTestIdePerformanceSandbox
+[org.jetbrains.intellij.platform] Configuring task: prepareTest
+[org.jetbrains.intellij.platform] Configuring task: test
+[org.jetbrains.intellij.platform] Configuring task: verifyPluginProjectConfiguration
+[org.jetbrains.intellij.platform] Configuring plugin configuration verification task
+[org.jetbrains.intellij.platform] Configuring task: patchPluginXml
+[org.jetbrains.intellij.platform] Configuring task: processResources
+[org.jetbrains.intellij.platform] Configuring task: buildSearchableOptions
+[org.jetbrains.intellij.platform] Configuring task: prepareJarSearchableOptions
+[org.jetbrains.intellij.platform] Configuring task: jarSearchableOptions
+[org.jetbrains.intellij.platform] Configuring task: buildPlugin
+[org.jetbrains.intellij.platform] Configuring task: testIdePerformance
+[org.jetbrains.intellij.platform] Configuring task: runIde
+[org.jetbrains.intellij.platform] Configuring task: verifyPlugin
+[org.jetbrains.intellij.platform] Configuring task: verifyPluginSignature
+[org.jetbrains.intellij.platform] Configuring task: verifyPluginStructure
+[org.jetbrains.intellij.platform] Configuring task: signPlugin
+[org.jetbrains.intellij.platform] Configuring task: publishPlugin
+
+> Configure project :gbkt-ir
+Evaluating project ':gbkt-ir' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-lang
+Evaluating project ':gbkt-lang' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-mcp-server
+Evaluating project ':gbkt-mcp-server' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-mcp-server/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.serialization', version: '2.3.0']
+Resolved plugin [id: 'com.gradleup.shadow', version: '9.0.0-beta12']
+Resolved plugin [id: 'org.gradle.application']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-test
+Evaluating project ':gbkt-test' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-world
+Evaluating project ':gbkt-world' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'gbkt.publishing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+Starting process 'command '/usr/libexec/java_home''. Working directory: /Users/michalsvacha/.gradle/daemon/9.0.0 Command: /usr/libexec/java_home -V
+Successfully started process 'command '/usr/libexec/java_home''
+Resolve mutations for :gbkt-gradle-plugin:checkKotlinGradlePluginConfigurationErrors (Thread[#12687,Execution worker Thread 7,5,main]) started.
+:gbkt-gradle-plugin:checkKotlinGradlePluginConfigurationErrors (Thread[#12687,Execution worker Thread 7,5,main]) started.
+
+> Task :gbkt-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-gradle-plugin:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-gradle-plugin:compileKotlin (Thread[#12687,Execution worker Thread 7,5,main]) started.
+:gbkt-gradle-plugin:compileKotlin (Thread[#12687,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :gbkt-gradle-plugin:pluginDescriptors (Thread[#12690,Execution worker Thread 9,5,main]) started.
+:gbkt-gradle-plugin:pluginDescriptors (Thread[#12690,Execution worker Thread 9,5,main]) started.
+
+> Task :gbkt-gradle-plugin:pluginDescriptors
+Caching disabled for task ':gbkt-gradle-plugin:pluginDescriptors' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-gradle-plugin:pluginDescriptors' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+Resolve mutations for :gbkt-gradle-plugin:processResources (Thread[#12690,Execution worker Thread 9,5,main]) started.
+:gbkt-gradle-plugin:processResources (Thread[#12690,Execution worker Thread 9,5,main]) started.
+
+> Task :gbkt-gradle-plugin:processResources
+Caching disabled for task ':gbkt-gradle-plugin:processResources' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-gradle-plugin:processResources' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+
+> Task :gbkt-gradle-plugin:compileKotlin
+Caching disabled for task ':gbkt-gradle-plugin:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-gradle-plugin:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-gradle-plugin:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/DebugEmulatorTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/GeneratePlaybookTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/CompileRomTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/GenerateAssetsTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/ReadVariableTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/ConvertSpritesTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/CaptureScreenshotTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/SaveStateTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/GenerateGameConstantsTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/BudgetReportTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/ProcessAssetsTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/SetupClaudeTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/RunInputScriptTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/DiffScreenshotsTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/GenerateCTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/ValidateRomTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/CopyGeneratedCTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/WebExportTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/RunEmulatorTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/EmulatorTestTask.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/internal/GbdkToolchain.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/internal/GbdkErrorParser.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/internal/BackendReflection.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/internal/ErrorEnhancer.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/internal/SourceMapLoader.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/GbktExtension.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/GbktPlugin.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@23174e13, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/build/kotlin/compileKotlin/local-state])
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/GenerateCTask.kt:542:21 Type argument for reified type parameter 'T' was inferred to the intersection of ['Comparable<*>' & 'Serializable']. Reification of an intersection type results in the common supertype being used. This may lead to subtle issues and an explicit type argument is encouraged. This will become an error in a future release.
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-gradle-plugin:compileJava (Thread[#12687,Execution worker Thread 7,5,main]) started.
+:gbkt-gradle-plugin:compileJava (Thread[#12687,Execution worker Thread 7,5,main]) started.
+
+> Task :gbkt-gradle-plugin:compileJava NO-SOURCE
+Skipping task ':gbkt-gradle-plugin:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-gradle-plugin:classes (Thread[#12687,Execution worker Thread 7,5,main]) started.
+:gbkt-gradle-plugin:classes (Thread[#12687,Execution worker Thread 7,5,main]) started.
+
+> Task :gbkt-gradle-plugin:classes
+Skipping task ':gbkt-gradle-plugin:classes' as it has no actions.
+Resolve mutations for :gbkt-gradle-plugin:jar (Thread[#12687,Execution worker Thread 7,5,main]) started.
+:gbkt-gradle-plugin:jar (Thread[#12687,Execution worker Thread 7,5,main]) started.
+
+> Task :gbkt-gradle-plugin:jar
+Caching disabled for task ':gbkt-gradle-plugin:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-gradle-plugin:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-gradle-plugin/build/classes/java/main', not found
+
+> Configure project :LabyrinthOfTheDragon-port
+Evaluating project ':LabyrinthOfTheDragon-port' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/LabyrinthOfTheDragon-port/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'io.github.gbkt']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-examples:breakout
+Evaluating project ':gbkt-examples:breakout' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/breakout/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'io.github.gbkt']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-examples:dungeon
+Evaluating project ':gbkt-examples:dungeon' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/dungeon/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'io.github.gbkt']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-examples:explorer
+Evaluating project ':gbkt-examples:explorer' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/explorer/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'io.github.gbkt']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-examples:platformer
+Evaluating project ':gbkt-examples:platformer' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/platformer/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'io.github.gbkt']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-examples:platformer-gbc
+Evaluating project ':gbkt-examples:platformer-gbc' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/platformer-gbc/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'io.github.gbkt']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-examples:pong
+Evaluating project ':gbkt-examples:pong' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/pong/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'io.github.gbkt']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-examples:racer
+Evaluating project ':gbkt-examples:racer' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'io.github.gbkt']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-examples:rpg-lite
+Evaluating project ':gbkt-examples:rpg-lite' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/rpg-lite/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'io.github.gbkt']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :gbkt-examples:shmup
+Evaluating project ':gbkt-examples:shmup' using build file '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/shmup/build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.3.0']
+Resolved plugin [id: 'io.github.gbkt']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+All projects evaluated.
+Task path ':gbkt-examples:racer:test' matched project ':gbkt-examples:racer'
+Task name matched 'test'
+Selected primary task 'test' from project :gbkt-examples:racer
+Starting process 'command '/usr/libexec/java_home''. Working directory: /Users/michalsvacha/.gradle/daemon/9.0.0 Command: /usr/libexec/java_home -V
+Successfully started process 'command '/usr/libexec/java_home''
+Tasks to be executed: [task ':gbkt-analysis:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-backend-api:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-core:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-engine:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-ir:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-ir:compileKotlin', task ':gbkt-ir:compileJava', task ':gbkt-ir:processResources', task ':gbkt-ir:classes', task ':gbkt-ir:jar', task ':gbkt-lang:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-lang:compileKotlin', task ':gbkt-lang:compileJava', task ':gbkt-lang:processResources', task ':gbkt-lang:classes', task ':gbkt-lang:jar', task ':gbkt-engine:compileKotlin', task ':gbkt-engine:compileJava', task ':gbkt-engine:processResources', task ':gbkt-engine:classes', task ':gbkt-engine:jar', task ':gbkt-world:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-world:compileKotlin', task ':gbkt-world:compileJava', task ':gbkt-world:processResources', task ':gbkt-world:classes', task ':gbkt-world:jar', task ':gbkt-core:compileKotlin', task ':gbkt-core:compileJava', task ':gbkt-core:processResources', task ':gbkt-core:classes', task ':gbkt-core:jar', task ':gbkt-backend-api:compileKotlin', task ':gbkt-backend-api:compileJava', task ':gbkt-backend-api:processResources', task ':gbkt-backend-api:classes', task ':gbkt-backend-api:jar', task ':gbkt-analysis:compileKotlin', task ':gbkt-analysis:compileJava', task ':gbkt-analysis:processResources', task ':gbkt-analysis:classes', task ':gbkt-analysis:jar', task ':gbkt-backend-gbdk:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-genre-rpg:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-genre-rpg:compileKotlin', task ':gbkt-genre-rpg:compileJava', task ':gbkt-genre-rpg:processResources', task ':gbkt-genre-rpg:classes', task ':gbkt-genre-rpg:jar', task ':gbkt-backend-gbdk:compileKotlin', task ':gbkt-backend-gbdk:compileJava', task ':gbkt-backend-gbdk:processResources', task ':gbkt-backend-gbdk:classes', task ':gbkt-backend-gbdk:jar', task ':gbkt-genre-sport:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-genre-sport:compileKotlin', task ':gbkt-genre-sport:compileJava', task ':gbkt-genre-sport:processResources', task ':gbkt-genre-sport:classes', task ':gbkt-genre-sport:jar', task ':gbkt-examples:racer:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-examples:racer:compileKotlin', task ':gbkt-examples:racer:compileJava', task ':gbkt-examples:racer:processResources', task ':gbkt-examples:racer:classes', task ':gbkt-examples:racer:jar', task ':gbkt-emulator:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-emulator:compileKotlin', task ':gbkt-emulator:compileJava', task ':gbkt-emulator:processResources', task ':gbkt-emulator:classes', task ':gbkt-emulator:jar', task ':gbkt-test:checkKotlinGradlePluginConfigurationErrors', task ':gbkt-test:compileKotlin', task ':gbkt-test:compileJava', task ':gbkt-test:processResources', task ':gbkt-test:classes', task ':gbkt-test:jar', task ':gbkt-examples:racer:processAssets', task ':gbkt-examples:racer:generateC', task ':gbkt-examples:racer:generateGameConstants', task ':gbkt-examples:racer:compileTestKotlin', task ':gbkt-examples:racer:compileTestJava', task ':gbkt-examples:racer:processTestResources', task ':gbkt-examples:racer:testClasses', task ':gbkt-examples:racer:test']
+Tasks that were excluded: []
+Resolve mutations for :gbkt-analysis:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-analysis:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-analysis:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-analysis:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-backend-api:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-backend-api:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-backend-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-backend-api:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-core:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-core:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-core:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-engine:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-engine:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-engine:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-engine:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-ir:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-ir:checkKotlinGradlePluginConfigurationErrors (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-ir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-ir:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-ir:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-ir:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+Resolve mutations for :gbkt-ir:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-ir:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-ir:processResources NO-SOURCE
+Skipping task ':gbkt-ir:processResources' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-lang:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-lang:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-lang:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-lang:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-lang:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-lang:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-lang:processResources NO-SOURCE
+Skipping task ':gbkt-lang:processResources' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-engine:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-engine:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-engine:processResources NO-SOURCE
+Skipping task ':gbkt-engine:processResources' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-world:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-world:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-world:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-world:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-world:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-world:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-world:processResources NO-SOURCE
+Skipping task ':gbkt-world:processResources' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-core:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-core:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-core:processResources NO-SOURCE
+Skipping task ':gbkt-core:processResources' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-backend-api:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-backend-api:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-backend-api:processResources NO-SOURCE
+Skipping task ':gbkt-backend-api:processResources' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-analysis:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-analysis:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-analysis:processResources NO-SOURCE
+Skipping task ':gbkt-analysis:processResources' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-backend-gbdk:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-backend-gbdk:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-backend-gbdk:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-backend-gbdk:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-genre-rpg:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-genre-rpg:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-genre-rpg:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-genre-rpg:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-genre-rpg:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-genre-rpg:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-genre-rpg:processResources NO-SOURCE
+Skipping task ':gbkt-genre-rpg:processResources' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-backend-gbdk:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-backend-gbdk:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-backend-gbdk:processResources
+Caching disabled for task ':gbkt-backend-gbdk:processResources' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-backend-gbdk:processResources' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+Resolve mutations for :gbkt-genre-sport:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-genre-sport:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-genre-sport:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-genre-sport:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-genre-sport:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-genre-sport:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-genre-sport:processResources
+Caching disabled for task ':gbkt-genre-sport:processResources' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-genre-sport:processResources' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+Resolve mutations for :gbkt-examples:racer:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-examples:racer:checkKotlinGradlePluginConfigurationErrors (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-examples:racer:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-examples:racer:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-examples:racer:processResources (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-examples:racer:processResources (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-examples:racer:processResources NO-SOURCE
+Skipping task ':gbkt-examples:racer:processResources' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-emulator:checkKotlinGradlePluginConfigurationErrors (Thread[#12686,Execution worker Thread 6,5,main]) started.
+:gbkt-emulator:checkKotlinGradlePluginConfigurationErrors (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-emulator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-emulator:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-emulator:compileKotlin (Thread[#12686,Execution worker Thread 6,5,main]) started.
+:gbkt-emulator:compileKotlin (Thread[#12686,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :gbkt-emulator:processResources (Thread[#12680,included builds,5,main]) started.
+:gbkt-emulator:processResources (Thread[#12680,included builds,5,main]) started.
+
+> Task :gbkt-emulator:processResources NO-SOURCE
+Skipping task ':gbkt-emulator:processResources' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-test:checkKotlinGradlePluginConfigurationErrors (Thread[#12680,included builds,5,main]) started.
+:gbkt-test:checkKotlinGradlePluginConfigurationErrors (Thread[#12680,included builds,5,main]) started.
+
+> Task :gbkt-test:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gbkt-test:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gbkt-test:processResources (Thread[#12680,included builds,5,main]) started.
+:gbkt-test:processResources (Thread[#12680,included builds,5,main]) started.
+
+> Task :gbkt-test:processResources NO-SOURCE
+Skipping task ':gbkt-test:processResources' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-examples:racer:processAssets (Thread[#12680,included builds,5,main]) started.
+:gbkt-examples:racer:processAssets (Thread[#12680,included builds,5,main]) started.
+
+> Task :gbkt-examples:racer:processAssets
+Caching disabled for task ':gbkt-examples:racer:processAssets' because:
+  Build cache is disabled
+Task ':gbkt-examples:racer:processAssets' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-examples:racer:processAssets'.
+Full asset processing...
+  Processing: track.png
+    track.png: 1 tiles → 1 unique tiles
+  Processing: car.png
+    car.png: 2 tiles → 2 unique tiles
+  Manifest written: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/generated/assets/asset-manifest.json (2 assets)
+Resolve mutations for :gbkt-examples:racer:processTestResources (Thread[#12680,included builds,5,main]) started.
+:gbkt-examples:racer:processTestResources (Thread[#12680,included builds,5,main]) started.
+
+> Task :gbkt-examples:racer:processTestResources
+Caching disabled for task ':gbkt-examples:racer:processTestResources' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-examples:racer:processTestResources' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+
+> Task :gbkt-emulator:compileKotlin
+Caching disabled for task ':gbkt-emulator:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-emulator:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-emulator:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/ui/HexViewTab.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/ui/EmulatorWindow.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/ui/EmulatorToolbar.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/ui/GbDisplayPanel.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/ui/MemoryInspectorPanel.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/ui/InputHandler.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/ui/NamedVariablesTab.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/ui/LogCatPanel.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/GbEmulator.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/EmulatorConfig.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/CoffeeGbEmulator.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/ScreenshotCapture.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/InputScript.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/VisualDiff.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/OamSpriteReader.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/SceneMap.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/AgentDebugSession.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/GameMetadata.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/StepAgent.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/VariableInspector.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/SavestateManager.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/MetadataParseException.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/AgentSessionConfig.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/AgentExceptions.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/VramTextVerifier.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/UatRunner.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/InputScriptPlayer.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/EmulatorSession.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/debug/EmuPrintfInterceptor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/debug/SourceMapResolver.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/debug/DebugLogWriter.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/debug/DebugLogEntry.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/build/kotlin/compileKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-emulator:compileJava (Thread[#12686,Execution worker Thread 6,5,main]) started.
+:gbkt-emulator:compileJava (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-emulator:compileJava NO-SOURCE
+Skipping task ':gbkt-emulator:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-emulator:classes (Thread[#12686,Execution worker Thread 6,5,main]) started.
+:gbkt-emulator:classes (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-emulator:classes UP-TO-DATE
+Skipping task ':gbkt-emulator:classes' as it has no actions.
+Resolve mutations for :gbkt-emulator:jar (Thread[#12686,Execution worker Thread 6,5,main]) started.
+:gbkt-emulator:jar (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-emulator:jar
+Caching disabled for task ':gbkt-emulator:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-emulator:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-emulator/build/resources/main', not found
+work action resolve gbkt-emulator-0.1.0-SNAPSHOT.jar (project :gbkt-emulator) (Thread[#12686,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :gbkt-test:compileKotlin (Thread[#12686,Execution worker Thread 6,5,main]) started.
+:gbkt-test:compileKotlin (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-ir:compileKotlin
+Caching disabled for task ':gbkt-ir:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-ir:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-ir:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/CollectionsIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/Ref.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/NpcCollisionIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/CoreTypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/StructIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/ExprVisitorI.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/ScriptOpVisitorI.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/SceneIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/Expr.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/WaveSurvivalIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/ActorIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/GameIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/PuzzleObjectIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/SystemIRVisitorI.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/PlatformAnnotations.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/ActorPoolIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/EntityCollisionIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/AssetRef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/UITypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/CombatEngineIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/Types.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/SystemIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/GameIRSerializer.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/WorldIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/InventoryIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/ScriptOp.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/Suggestions.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/build/kotlin/compileKotlin/local-state])
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/GameIRSerializer.kt:1089:13 'when' is exhaustive so 'else' is redundant here.
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-ir:compileJava (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-ir:compileJava (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-ir:compileJava NO-SOURCE
+Skipping task ':gbkt-ir:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-ir:classes (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-ir:classes (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-ir:classes UP-TO-DATE
+Skipping task ':gbkt-ir:classes' as it has no actions.
+Resolve mutations for :gbkt-ir:jar (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-ir:jar (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-ir:jar
+Caching disabled for task ':gbkt-ir:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-ir:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-ir/build/resources/main', not found
+work action resolve gbkt-ir-0.1.0-SNAPSHOT.jar (project :gbkt-ir) (Thread[#12681,Execution worker,5,main]) started.
+Resolve mutations for :gbkt-lang:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-lang:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-test:compileKotlin
+Caching disabled for task ':gbkt-test:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-test:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-test:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/src/main/kotlin/io/github/gbkt/test/GbktGameAssertions.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/src/main/kotlin/io/github/gbkt/test/GbktTestExtension.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/src/main/kotlin/io/github/gbkt/test/GbktGameReporter.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/src/main/kotlin/io/github/gbkt/test/GbktTestRecipes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/src/main/kotlin/io/github/gbkt/test/GameDiscovery.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/build/kotlin/compileKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-test:compileJava (Thread[#12686,Execution worker Thread 6,5,main]) started.
+:gbkt-test:compileJava (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-test:compileJava NO-SOURCE
+Skipping task ':gbkt-test:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-test:classes (Thread[#12686,Execution worker Thread 6,5,main]) started.
+:gbkt-test:classes (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-test:classes UP-TO-DATE
+Skipping task ':gbkt-test:classes' as it has no actions.
+Resolve mutations for :gbkt-test:jar (Thread[#12686,Execution worker Thread 6,5,main]) started.
+:gbkt-test:jar (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-test:jar
+Caching disabled for task ':gbkt-test:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-test:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-test/build/resources/main', not found
+work action resolve gbkt-test-0.1.0-SNAPSHOT.jar (project :gbkt-test) (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-lang:compileKotlin
+Caching disabled for task ':gbkt-lang:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-lang:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-lang:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/AudioMixerBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/PaletteBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/GbcPresets.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/CombatEngineBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/StructBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/DmgColor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/CollectionBuilders.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/GameBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/AssetRegistry.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ActorBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/DslMarkers.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/VariableBuilders.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/InputBuilders.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/EntityCollisionBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/WorldBuilders.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/Errors.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/UIBuilders.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/PuzzleBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/RefRegistry.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ActorPoolBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/SystemBuilders.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/InventoryBuilders.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/SourceLocationCapture.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/MusicBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ScriptBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/NpcCollisionBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ScriptBuilderContext.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/SceneBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/GbcColor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ExprBuilder.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/build/kotlin/compileKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-lang:compileJava (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-lang:compileJava (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-lang:compileJava NO-SOURCE
+Skipping task ':gbkt-lang:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-lang:classes (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-lang:classes (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-lang:classes UP-TO-DATE
+Skipping task ':gbkt-lang:classes' as it has no actions.
+Resolve mutations for :gbkt-lang:jar (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-lang:jar (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-lang:jar
+Caching disabled for task ':gbkt-lang:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-lang:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-lang/build/resources/main', not found
+work action resolve gbkt-lang-0.1.0-SNAPSHOT.jar (project :gbkt-lang) (Thread[#12681,Execution worker,5,main]) started.
+Resolve mutations for :gbkt-engine:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-engine:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+Resolve mutations for :gbkt-world:compileKotlin (Thread[#12683,Execution worker Thread 3,5,main]) started.
+:gbkt-world:compileKotlin (Thread[#12691,Execution worker Thread 10,5,main]) started.
+
+> Task :gbkt-world:compileKotlin
+Caching disabled for task ':gbkt-world:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-world:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-world:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/src/main/kotlin/io/github/gbkt/core/world/package-info.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/src/main/kotlin/io/github/gbkt/core/exploration/package-info.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/build/kotlin/compileKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-world:compileJava (Thread[#12691,Execution worker Thread 10,5,main]) started.
+:gbkt-world:compileJava (Thread[#12691,Execution worker Thread 10,5,main]) started.
+
+> Task :gbkt-world:compileJava NO-SOURCE
+Skipping task ':gbkt-world:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-world:classes (Thread[#12691,Execution worker Thread 10,5,main]) started.
+:gbkt-world:classes (Thread[#12691,Execution worker Thread 10,5,main]) started.
+
+> Task :gbkt-world:classes UP-TO-DATE
+Skipping task ':gbkt-world:classes' as it has no actions.
+Resolve mutations for :gbkt-world:jar (Thread[#12691,Execution worker Thread 10,5,main]) started.
+:gbkt-world:jar (Thread[#12691,Execution worker Thread 10,5,main]) started.
+
+> Task :gbkt-world:jar
+Caching disabled for task ':gbkt-world:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-world:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-world/build/resources/main', not found
+work action resolve gbkt-world-0.1.0-SNAPSHOT.jar (project :gbkt-world) (Thread[#12691,Execution worker Thread 10,5,main]) started.
+
+> Task :gbkt-engine:compileKotlin
+Caching disabled for task ':gbkt-engine:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-engine:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-engine:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/kotlin/io/github/gbkt/core/combat/CombatTypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/kotlin/io/github/gbkt/core/input/InputTypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/kotlin/io/github/gbkt/core/entity/EntityTypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/kotlin/io/github/gbkt/core/pickup/PickupTypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/kotlin/io/github/gbkt/core/pickup/PickupBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/kotlin/io/github/gbkt/core/inventory/InventoryTypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/kotlin/io/github/gbkt/core/scene/SceneTypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/src/main/kotlin/io/github/gbkt/core/graphics/GraphicsTypes.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/build/kotlin/compileKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-engine:compileJava (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-engine:compileJava (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-engine:compileJava NO-SOURCE
+Skipping task ':gbkt-engine:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-engine:classes (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-engine:classes (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-engine:classes UP-TO-DATE
+Skipping task ':gbkt-engine:classes' as it has no actions.
+Resolve mutations for :gbkt-engine:jar (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-engine:jar (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-engine:jar
+Caching disabled for task ':gbkt-engine:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-engine:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-engine/build/resources/main', not found
+work action resolve gbkt-engine-0.1.0-SNAPSHOT.jar (project :gbkt-engine) (Thread[#12681,Execution worker,5,main]) started.
+Resolve mutations for :gbkt-core:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-core:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-core:compileKotlin
+Caching disabled for task ':gbkt-core:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-core:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-core:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/TiledParser.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/test/SimSprite.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/test/ScriptOpInterpreter.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/test/SimulationContextV2.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/constraints/MemorySpec.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/constraints/AudioSpec.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/constraints/TargetProfile.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/constraints/SpriteSpec.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/constraints/ScreenSpec.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/PoParser.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/TileDeduplicator.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/AssetManifest.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/SourceMap.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/optimization/AssetReport.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/optimization/Suggestion.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/optimization/ConsoleReporter.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/optimization/AnalyzedAsset.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/FileIO.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/FontCharacterMapping.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/GameIR.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/References.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/PngValidator.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/LdtkParser.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/AssetPipeline.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/assets/AssetRegistry.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/src/main/kotlin/io/github/gbkt/core/assets/AssetRef.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/build/kotlin/compileKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-core:compileJava (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-core:compileJava (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-core:compileJava NO-SOURCE
+Skipping task ':gbkt-core:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-core:classes (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-core:classes (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-core:classes UP-TO-DATE
+Skipping task ':gbkt-core:classes' as it has no actions.
+Resolve mutations for :gbkt-core:jar (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-core:jar (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-core:jar
+Caching disabled for task ':gbkt-core:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-core:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-core/build/resources/main', not found
+work action resolve gbkt-core-0.1.0-SNAPSHOT.jar (project :gbkt-core) (Thread[#12681,Execution worker,5,main]) started.
+Resolve mutations for :gbkt-backend-api:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-backend-api:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+Resolve mutations for :gbkt-genre-rpg:compileKotlin (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-genre-rpg:compileKotlin (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-backend-api:compileKotlin
+Caching disabled for task ':gbkt-backend-api:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-backend-api:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-backend-api:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/src/main/kotlin/io/github/gbkt/backend/api/CodegenBackend.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/src/main/kotlin/io/github/gbkt/backend/api/CollectionCodegen.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/src/main/kotlin/io/github/gbkt/backend/api/GenerationResult.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/src/main/kotlin/io/github/gbkt/backend/api/ValidationResult.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/src/main/kotlin/io/github/gbkt/backend/api/BackendRegistry.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/src/main/kotlin/io/github/gbkt/backend/api/GenreSystemVisitor.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/build/kotlin/compileKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-backend-api:compileJava (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-backend-api:compileJava (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-backend-api:compileJava NO-SOURCE
+Skipping task ':gbkt-backend-api:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-backend-api:classes (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-backend-api:classes (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-backend-api:classes UP-TO-DATE
+Skipping task ':gbkt-backend-api:classes' as it has no actions.
+Resolve mutations for :gbkt-backend-api:jar (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-backend-api:jar (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-backend-api:jar
+Caching disabled for task ':gbkt-backend-api:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-backend-api:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-api/build/resources/main', not found
+work action resolve gbkt-backend-api-0.1.0-SNAPSHOT.jar (project :gbkt-backend-api) (Thread[#12681,Execution worker,5,main]) started.
+Resolve mutations for :gbkt-analysis:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-analysis:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-genre-rpg:compileKotlin
+Caching disabled for task ':gbkt-genre-rpg:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-genre-rpg:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-genre-rpg:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/ClassDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/CombatStates.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/RpgSaveConfig.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/CombatStats.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/SimpleBattleDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/AbilityLearningDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/RpgEnums.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/ActionRpgDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/RoguelikeDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/MerchantDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/TacticalGridConfig.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/LootTableDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/StatusEffectDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/CombatHooks.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/EquipmentDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/ExpCurve.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/MonsterDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/AbilityDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/CharacterDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/PartyConfig.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/CurrencyDef.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/domain/BehaviorTree.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/RpgExtensions.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/MerchantBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/ClassBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/StatusEffectBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/CharacterBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/RpgSaveBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/RoguelikeBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/ActionRpgBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/AbilityLearningBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/TacticalGridBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/PartyBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/AtbCombatBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/WaveSurvivalBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/MonsterBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/EquipmentBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/CurrencyBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/CombatHookBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/SimpleBattleBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/AbilityBuilder.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/BehaviorTreeBuilder.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/build/kotlin/compileKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-genre-rpg:compileJava (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-genre-rpg:compileJava (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-genre-rpg:compileJava NO-SOURCE
+Skipping task ':gbkt-genre-rpg:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-genre-rpg:classes (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-genre-rpg:classes (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-genre-rpg:classes UP-TO-DATE
+Skipping task ':gbkt-genre-rpg:classes' as it has no actions.
+Resolve mutations for :gbkt-genre-rpg:jar (Thread[#12686,Execution worker Thread 6,5,main]) started.
+:gbkt-genre-rpg:jar (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-genre-rpg:jar
+Caching disabled for task ':gbkt-genre-rpg:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-genre-rpg:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-rpg/build/resources/main', not found
+work action resolve gbkt-genre-rpg-0.1.0-SNAPSHOT.jar (project :gbkt-genre-rpg) (Thread[#12686,Execution worker Thread 6,5,main]) started.
+
+> Task :gbkt-analysis:compileKotlin
+Caching disabled for task ':gbkt-analysis:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-analysis:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-analysis:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/Diagnostic.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/config/AnalysisConfig.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/BankingAnalysisPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/DeadCodeEliminationPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/ConstantFoldingPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/BitwiseOptimizationPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/BudgetAuditPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/OAMAllocationPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/ConstraintCheckPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/ScriptOpTraversal.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/VRAMLayoutPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/ResourceInventoryPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/RacingValidationPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/RAMPlanningPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/SemanticValidationPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/PassContext.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/PassPipeline.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/DefaultPipeline.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/report/BudgetReporter.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/AnalysisPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/OptimizationReport.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/build/kotlin/compileKotlin/local-state])
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/BitwiseOptimizationPass.kt:104:54 No cast needed.
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-analysis:compileJava (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-analysis:compileJava (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-analysis:compileJava NO-SOURCE
+Skipping task ':gbkt-analysis:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-analysis:classes (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-analysis:classes (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-analysis:classes UP-TO-DATE
+Skipping task ':gbkt-analysis:classes' as it has no actions.
+Resolve mutations for :gbkt-analysis:jar (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-analysis:jar (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-analysis:jar
+Caching disabled for task ':gbkt-analysis:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-analysis:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-analysis/build/resources/main', not found
+work action resolve gbkt-analysis-0.1.0-SNAPSHOT.jar (project :gbkt-analysis) (Thread[#12681,Execution worker,5,main]) started.
+Resolve mutations for :gbkt-backend-gbdk:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+:gbkt-backend-gbdk:compileKotlin (Thread[#12681,Execution worker,5,main]) started.
+
+> Task :gbkt-backend-gbdk:compileKotlin
+Caching disabled for task ':gbkt-backend-gbdk:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-backend-gbdk:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-backend-gbdk:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/pipeline/GBDKPipelineV2.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/pipeline/SourceMapCollector.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/GBDKCollectionCodegen.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/ScriptOpVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/ActorVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/InventoryVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/CombatVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/HudVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/SoundVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/DialogVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/RpgVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/SceneVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/CollisionVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/MenuVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/ExprVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/GBDKSystemVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CType.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CDeclaration.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CFunction.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CStatement.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CExpr.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CFile.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/emit/CEmitter.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/postprocess/COutputOptimizer.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/postprocess/FunctionDeduplicationPass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/postprocess/SharedConstantTablePass.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/GBDKBackend.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/profiles/GameBoyColorProfile.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/profiles/GameBoyProfile.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/profiles/GameBoyConstants.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/build/kotlin/compileKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-backend-gbdk:compileJava (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-backend-gbdk:compileJava (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-backend-gbdk:compileJava NO-SOURCE
+Skipping task ':gbkt-backend-gbdk:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-backend-gbdk:classes (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-backend-gbdk:classes (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-backend-gbdk:classes
+Skipping task ':gbkt-backend-gbdk:classes' as it has no actions.
+Resolve mutations for :gbkt-backend-gbdk:jar (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-backend-gbdk:jar (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-backend-gbdk:jar
+Caching disabled for task ':gbkt-backend-gbdk:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-backend-gbdk:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-backend-gbdk/build/classes/java/main', not found
+work action resolve gbkt-backend-gbdk-0.1.0-SNAPSHOT.jar (project :gbkt-backend-gbdk) (Thread[#12684,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :gbkt-genre-sport:compileKotlin (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-genre-sport:compileKotlin (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-genre-sport:compileKotlin
+Caching disabled for task ':gbkt-genre-sport:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-genre-sport:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-genre-sport:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/codegen/SportVisitor.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/codegen/TrackSynthesizer.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/domain/RacingTypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/domain/SportTypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/domain/BallSportTypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/domain/TournamentTypes.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/dsl/SportExtensions.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/dsl/SportBuilders.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/build/kotlin/compileKotlin/local-state])
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/codegen/SportVisitor.kt:357:45 Unchecked cast of 'List<CodegenFragment>' to 'List<CFunction>'.
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/codegen/SportVisitor.kt:358:43 Unchecked cast of 'List<CodegenFragment>' to 'List<CVarDecl>'.
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-genre-sport:compileJava (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-genre-sport:compileJava (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-genre-sport:compileJava NO-SOURCE
+Skipping task ':gbkt-genre-sport:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-genre-sport:classes (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-genre-sport:classes (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-genre-sport:classes
+Skipping task ':gbkt-genre-sport:classes' as it has no actions.
+Resolve mutations for :gbkt-genre-sport:jar (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-genre-sport:jar (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-genre-sport:jar
+Caching disabled for task ':gbkt-genre-sport:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-genre-sport:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-genre-sport/build/classes/java/main', not found
+work action resolve gbkt-genre-sport-0.1.0-SNAPSHOT.jar (project :gbkt-genre-sport) (Thread[#12684,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :gbkt-examples:racer:compileKotlin (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-examples:racer:compileKotlin (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-examples:racer:compileKotlin
+Caching disabled for task ':gbkt-examples:racer:compileKotlin' because:
+  Build cache is disabled
+Task ':gbkt-examples:racer:compileKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-examples:racer:compileKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/main/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/main/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/main/kotlin/io/github/gbkt/examples/racer/Racer.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/classes/kotlin/main, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/kotlin/compileKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/kotlin/compileKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-examples:racer:compileJava (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-examples:racer:compileJava (Thread[#12684,Execution worker Thread 4,5,main]) started.
+
+> Task :gbkt-examples:racer:compileJava NO-SOURCE
+Skipping task ':gbkt-examples:racer:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-examples:racer:classes (Thread[#12684,Execution worker Thread 4,5,main]) started.
+:gbkt-examples:racer:classes (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-examples:racer:classes UP-TO-DATE
+Skipping task ':gbkt-examples:racer:classes' as it has no actions.
+Resolve mutations for :gbkt-examples:racer:jar (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-examples:racer:jar (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-examples:racer:jar
+Caching disabled for task ':gbkt-examples:racer:jar' because:
+  Build cache is disabled
+  Not worth caching
+Task ':gbkt-examples:racer:jar' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/classes/java/main', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/resources/main', not found
+Resolve mutations for :gbkt-examples:racer:generateC (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-examples:racer:generateC (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-examples:racer:generateC
+Caching disabled for task ':gbkt-examples:racer:generateC' because:
+  Build cache is disabled
+  Gradle does not know how file 'build/gbkt/generated/sprites' was created (output property 'outputDir'). Task output caching requires exclusive access to output paths to guarantee correctness (i.e. multiple tasks are not allowed to produce output in the same location).
+Task ':gbkt-examples:racer:generateC' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+Using backend: GBDK-2020 for Nintendo Game Boy Color
+========================================================
+ gbkt Budget Report                               Racer
+ Overall ROM: ~1.8 KB estimated
+========================================================
+
+ ROM Banks (1 / 2 max, ROM_ONLY)
+ Bank 1: [32m[=---------------][0m [32m10%[0m  1.8 KB / 16 KB
+
+ Per-scene breakdown
+ Scene   | Bank | Est. Size | Bank Fill
+ --------|------|-----------|----------
+ results |    1 |    0.6 KB | [32m3%[0m
+ race    |    1 |    0.6 KB | [32m3%[0m
+ title   |    1 |    0.6 KB | [32m3%[0m
+
+ VRAM Tile Budget (per scene)
+ Scene   | Sprite | BG Avail | BG Used
+ --------|--------|----------|--------
+ results |      0 |      384 |       0
+ race    |      0 |      384 |       0
+ title   |      0 |      384 |       0
+
+ OAM Sprites: [32m2 / 40 (5%)[0m
+ WRAM: [32m22 / 32768 bytes (0%)[0m
+ HRAM: [32m0 / 127 bytes (0%)[0m
+
+ 0 errors, 1 warnings
+========================================================
+Generated: main.c (544 lines)
+Generated source map: main.c.gbkt.map
+Generated: bank1.c (93 lines)
+Generated source map: bank1.c.gbkt.map
+Generated: game.h (154 lines)
+Generated: zone_bank2.c (7 lines)
+Generated source map: zone_bank2.c.gbkt.map
+Generated: game_metadata.json (80 lines)
+Build metadata: gbcTarget=GBC_COMPATIBLE, gbcMode=COMPATIBLE
+Build metadata: cartridge=ROM_ONLY, mbcType=0x00
+Generated 5 C files (878 total lines)
+Output directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/gbkt/generated
+Resolve mutations for :gbkt-examples:racer:generateGameConstants (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-examples:racer:generateGameConstants (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-examples:racer:generateGameConstants
+Caching disabled for task ':gbkt-examples:racer:generateGameConstants' because:
+  Build cache is disabled
+Task ':gbkt-examples:racer:generateGameConstants' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+Generated: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/generated/source/gbkt/test/kotlin/io/github/gbkt/examples/racer/GameConstants.kt
+Resolve mutations for :gbkt-examples:racer:compileTestKotlin (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-examples:racer:compileTestKotlin (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-examples:racer:compileTestKotlin
+Caching disabled for task ':gbkt-examples:racer:compileTestKotlin' because:
+  Build cache is disabled
+Task ':gbkt-examples:racer:compileTestKotlin' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+The input changes require a full rebuild for incremental task ':gbkt-examples:racer:compileTestKotlin'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/test/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/test/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/test/java', not found
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/test/java', not found
+Kotlin source files: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/test/kotlin/io/github/gbkt/examples/racer/RacerIRTest.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/test/kotlin/io/github/gbkt/examples/racer/Round5DiagnosisProbe.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/test/kotlin/io/github/gbkt/examples/racer/RacerGameTest.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/test/kotlin/io/github/gbkt/examples/racer/RacerStepAgentTest.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/test/kotlin/io/github/gbkt/examples/racer/Round6WramCorruptionProbe.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/src/test/kotlin/io/github/gbkt/examples/racer/RacerEmulatorTest.kt, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/generated/source/gbkt/test/kotlin/io/github/gbkt/examples/racer/GameConstants.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@293812b4, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/kotlin/compileTestKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/kotlin/compileTestKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/classes/kotlin/test, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/kotlin/compileTestKotlin/cacheable, /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/kotlin/compileTestKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gbkt-examples:racer:compileTestJava (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-examples:racer:compileTestJava (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-examples:racer:compileTestJava NO-SOURCE
+Skipping task ':gbkt-examples:racer:compileTestJava' as it has no source files and no previous output files.
+Resolve mutations for :gbkt-examples:racer:testClasses (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-examples:racer:testClasses (Thread[#12688,Execution worker Thread 8,5,main]) started.
+
+> Task :gbkt-examples:racer:testClasses
+Skipping task ':gbkt-examples:racer:testClasses' as it has no actions.
+Resolve mutations for :gbkt-examples:racer:test (Thread[#12688,Execution worker Thread 8,5,main]) started.
+:gbkt-examples:racer:test (Thread[#12688,Execution worker Thread 8,5,main]) started.
+Gradle Test Executor 43 started executing tests.
+Gradle Test Executor 43 finished executing tests.
+
+> Task :gbkt-examples:racer:test FAILED
+Caching disabled for task ':gbkt-examples:racer:test' because:
+  Build cache is disabled
+Task ':gbkt-examples:racer:test' is not up-to-date because:
+  Executed with '--rerun-tasks'.
+file or directory '/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/classes/java/test', not found
+Starting process 'Gradle Test Executor 43'. Working directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer Command: /Users/michalsvacha/.sdkman/candidates/java/21.0.2-tem/bin/java -Dorg.gradle.internal.worker.tmpdir=/Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/tmp/test/work @/Users/michalsvacha/.gradle/.tmp/gradle-worker-classpath16010302371967879120txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country=CH -Duser.language=en -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 43'
+Successfully started process 'Gradle Test Executor 43'
+
+Round6WramCorruptionProbe > round-6 wram corruption probe - capture canary snapshot at race_enter + 2 frames() FAILED
+    io.github.gbkt.emulator.agent.EmulatorFrameException: Emulator error during frame step (after 124 frames): ROM did not complete a frame within 1000000 t-cycles (one Game Boy frame is 70 224 t-cycles) — likely an infinite CPU loop with no VBlank. Check LCDC (is BG/LCD enabled?), BGP, and the most recent scene-enter.
+        at app//io.github.gbkt.emulator.agent.AgentDebugSession.runFrames(AgentDebugSession.kt:174)
+        at app//io.github.gbkt.emulator.agent.StepAgent.stepN(StepAgent.kt:171)
+        at app//io.github.gbkt.test.GbktTestExtension.stepN(GbktTestExtension.kt:148)
+        at app//io.github.gbkt.test.GbktTestExtension.stepN$default(GbktTestExtension.kt:148)
+        at app//io.github.gbkt.examples.racer.Round6WramCorruptionProbe.round-6 wram corruption probe - capture canary snapshot at race_enter + 2 frames(Round6WramCorruptionProbe.kt:120)
+
+        Caused by:
+        io.github.gbkt.emulator.agent.EmulatorFrameHangException: ROM did not complete a frame within 1000000 t-cycles (one Game Boy frame is 70 224 t-cycles) — likely an infinite CPU loop with no VBlank. Check LCDC (is BG/LCD enabled?), BGP, and the most recent scene-enter.
+            at app//io.github.gbkt.emulator.CoffeeGbEmulator.stepFrame(CoffeeGbEmulator.kt:275)
+            at app//io.github.gbkt.emulator.agent.AgentDebugSession.runFrames(AgentDebugSession.kt:172)
+            ... 4 more
+
+2 tests completed, 1 failed
+Finished generating test XML results (0.0 secs) into: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/test-results/test
+Generating HTML test report...
+Finished generating test html results (0.0 secs) into: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/reports/tests/test
+Build 8f6f2220-b80e-49fc-bbe2-eb75956d8aa9 is closed
+Build ea71ab4d-11e1-434d-b577-191559285980 is closed
+Build dcbc0c17-daf7-4628-b9d4-18fe3841d11b is closed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':gbkt-examples:racer:test'.
+> There were failing tests. See the report at: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a3913a05bba2ee162/gbkt-examples/racer/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+
+BUILD FAILED in 7s
+47 actionable tasks: 47 executed
+Watched directory hierarchies: [/Users/michalsvacha/GitHub/personal/gbkt]

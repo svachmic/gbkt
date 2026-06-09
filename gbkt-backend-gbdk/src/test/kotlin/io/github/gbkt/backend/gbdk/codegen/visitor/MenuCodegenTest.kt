@@ -6,7 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import io.github.gbkt.core.ir.ArrayDataSource
 import io.github.gbkt.core.ir.AssetRef
 import io.github.gbkt.core.ir.AssetType
@@ -85,7 +85,7 @@ class MenuCodegenTest {
     /** Generate main.c for a GameIR with the given menu. */
     private fun generateForMenu(menuDef: MenuDef): String {
         val gameIR = baseGameIR.copy(menus = listOf(menuDef))
-        val pipeline = GBDKPipelineV2()
+        val pipeline = GBDKPipeline()
         return pipeline.generate(gameIR).files["main.c"]
             ?: error("main.c not found in pipeline output")
     }

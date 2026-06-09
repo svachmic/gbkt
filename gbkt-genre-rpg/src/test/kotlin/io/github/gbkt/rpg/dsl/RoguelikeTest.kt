@@ -37,8 +37,8 @@ class RoguelikeTest {
 
         game("RogueTest") {
                 system = roguelike("run") {}
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -63,8 +63,8 @@ class RoguelikeTest {
                         seedBased(true)
                     }
                     .let { config = it.config["config"] as RoguelikeConfig }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -84,8 +84,8 @@ class RoguelikeTest {
                         metaProgression { unlockSlots(8) }
                     }
                     .let { config = it.config["config"] as RoguelikeConfig }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -101,8 +101,8 @@ class RoguelikeTest {
         game("RogueTest") {
                 roguelike("run") { permadeath(false) }
                     .let { config = it.config["config"] as RoguelikeConfig }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -117,8 +117,8 @@ class RoguelikeTest {
         game("RogueTest") {
                 roguelike("run") { seedBased(false) }
                     .let { config = it.config["config"] as RoguelikeConfig }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -137,8 +137,8 @@ class RoguelikeTest {
         game("RogueTest") {
                 roguelike("run") { dailyChallenge { enabled(true) } }
                     .let { config = it.config["config"] as RoguelikeConfig }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -156,8 +156,8 @@ class RoguelikeTest {
         game("RogueTest") {
                 roguelike("run") { dailyChallenge { enabled(false) } }
                     .let { config = it.config["config"] as RoguelikeConfig }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -181,8 +181,8 @@ class RoguelikeTest {
                         metaProgression { unlockSlots(16) }
                     }
                     .let { config = it.config["config"] as RoguelikeConfig }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -207,8 +207,8 @@ class RoguelikeTest {
                         }
                     }
                     .let { config = it.config["config"] as RoguelikeConfig }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -229,8 +229,8 @@ class RoguelikeTest {
         game("RogueTest") {
                 roguelike("run") { roomClearGating(true) }
                     .let { config = it.config["config"] as RoguelikeConfig }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -244,8 +244,8 @@ class RoguelikeTest {
 
         game("RogueTest") {
                 roguelike("run") {}.let { config = it.config["config"] as RoguelikeConfig }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -263,8 +263,8 @@ class RoguelikeTest {
 
         game("RogueTest") {
                 system = roguelike("dungeon_run") { mode(RoguelikeMode.PURE) }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -279,8 +279,8 @@ class RoguelikeTest {
         val gameIR =
             game("RogueTest") {
                     roguelike("dungeon_run") { mode(RoguelikeMode.PURE) }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -307,8 +307,8 @@ class RoguelikeTest {
                         roomClearGating(true)
                     }
                     .let { config = it.config["config"] as RoguelikeConfig }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 

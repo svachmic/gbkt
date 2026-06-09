@@ -1,0 +1,23 @@
+{
+  "address_port": "0xFF69",
+  "index_port": "0xFF68",
+  "auto_increment_used": false,
+  "byte_count": 64,
+  "bytes_hex": ["0xFF", "0x7F", "0xB5", "0x56", "0x4A", "0x29", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00"],
+  "palettes": [
+    {"slot": 0, "colors_15bit": ["0x7FFF", "0x56B5", "0x294A", "0x0000"], "interpretation": "_gbkt_default_bg_pal or cgb_compatibility() default"},
+    {"slot": 1, "colors_15bit": ["0x0000", "0x0000", "0x0000", "0x0000"], "interpretation": "all zero — BCPD slot 1 not written"},
+    {"slot": 2, "colors_15bit": ["0x0000", "0x0000", "0x0000", "0x0000"], "interpretation": "all zero — BCPD slot 2 not written"},
+    {"slot": 3, "colors_15bit": ["0x0000", "0x0000", "0x0000", "0x0000"], "interpretation": "all zero — BCPD slot 3 not written"},
+    {"slot": 4, "colors_15bit": ["0x0000", "0x0000", "0x0000", "0x0000"], "interpretation": "all zero — BCPD slot 4 not written"},
+    {"slot": 5, "colors_15bit": ["0x0000", "0x0000", "0x0000", "0x0000"], "interpretation": "all zero — BCPD slot 5 not written"},
+    {"slot": 6, "colors_15bit": ["0x0000", "0x0000", "0x0000", "0x0000"], "interpretation": "all zero — BCPD slot 6 not written"},
+    {"slot": 7, "colors_15bit": ["0x0000", "0x0000", "0x0000", "0x0000"], "interpretation": "all zero — BCPD slot 7 not written"}
+  ],
+  "summary": {
+    "any_slot_non_zero": true,
+    "slot_0_non_zero": true,
+    "slot_2_non_zero": false,
+    "notes": "BCPD BG palette RAM dump — slot 0 = BG pal from set_bkg_palette or cgb_compatibility; slot 2 = unused by BG"
+  }
+}

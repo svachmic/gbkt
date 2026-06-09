@@ -27,8 +27,9 @@ data class SpriteSpec(
     val supportsPriority: Boolean = true,
 ) {
     /** Check if a sprite size is supported. */
-    fun supportsSize(width: Int, height: Int): Boolean =
-        sizes.any { it.width == width && it.height == height }
+    fun supportsSize(width: Int, height: Int): Boolean = sizes.any {
+        it.width == width && it.height == height
+    }
 }
 
 /**

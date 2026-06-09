@@ -23,6 +23,20 @@ sealed interface CExpr
 /** Integer literal constant (e.g. `42`, `0xFF`). */
 data class CLiteral(val value: Int) : CExpr
 
+/**
+ * Signed-safe integer literal — emits bare value with NO `u` suffix. Use in [CBinaryExpr]
+ * signed-context comparison RHS (Phase 07.9; see
+ * [io.github.gbkt.backend.gbdk.codegen.emit.CEmitter] `emitExpr` branch and
+ * `gbkt-backend-gbdk/CLAUDE.md` § Literal Emission Convention).
+ *
+ * Contrast with [CLiteral] which emits `${value}u` for non-negative values (unsigned-safe default).
+ * Use [CIntLiteral] only at signed-context comparison call sites (bucket-a per Phase 07.9
+ * RESEARCH.md §5.1) where the compared variable has a signed type (INT8 / INT16). Using it at
+ * unsigned-typed sites is incorrect and will be caught by `SignedComparisonLiteralEmissionTest`
+ * test 7 (unsigned regression guard).
+ */
+data class CIntLiteral(val value: Int) : CExpr
+
 /** String literal constant (e.g. `"Hello"` — includes quotes in output). */
 data class CStringLiteral(val value: String) : CExpr
 

@@ -6,7 +6,8 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.GenericSystem
@@ -36,7 +37,7 @@ private fun buildPickupGameIR(
         GenericSystem(id = id, config = mapOf("type" to "pickup_system", "pickupConfig" to config))
     return GameIR(
         name = "TestPickupGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = listOf(SceneIR(id = "gameplay")),
         systems = listOf(system),
         startScene = "gameplay",
@@ -45,7 +46,7 @@ private fun buildPickupGameIR(
 
 class PickupCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: pickup system generates pickup_init and pickup_check_collect functions

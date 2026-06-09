@@ -1,0 +1,1 @@
+game_exit body (must be empty — ROM_ONLY no-growth gate):

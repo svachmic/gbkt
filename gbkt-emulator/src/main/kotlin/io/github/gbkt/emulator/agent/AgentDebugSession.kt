@@ -143,6 +143,18 @@ class AgentDebugSession(
     /** Implements [Closeable] — delegates to [stop] for use-with-resources pattern. */
     override fun close() = stop()
 
+    /**
+     * Requests cooperative cancellation of an in-flight [runFrames]/[GbEmulator.stepFrame] call.
+     * Safe to invoke from any thread without holding any lock. No-op if the session was never
+     * started or has already been stopped.
+     *
+     * See `CoffeeGbEmulator.requestCancellation` for the mechanism; used by stop paths to preempt a
+     * runaway frame before the watchdog ceiling fires.
+     */
+    fun requestCancellation() {
+        emulator?.requestCancellation()
+    }
+
     // ── Frame control ─────────────────────────────────────────────────────────
 
     /**

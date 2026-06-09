@@ -39,10 +39,33 @@ data class SceneIR(
     val tilesetRef: AssetRef? = null,
     val collisionData: ByteArray? = null,
     val mapWidth: Int? = null,
+    /** Zone IDs to load on scene-enter (SEED-014; scene-to-zone binder DSL per CONTEXT D-01). */
+    val zoneRefs: List<String> = emptyList(),
     val sourceLocation: SourceLocation? = null,
     override val bankSlot: BankSlot? = null,
     override val vramRange: VRAMRange? = null,
     override val oamSlot: OAMSlot? = null,
+    /**
+     * The ROM bank allocated for this scene's zone data by [allocateZoneBanks] in the pipeline.
+     *
+     * Pipeline-transient annotation (D-01, Phase 13.8 Plan 06): populated by
+     * [GBDKPipeline.buildCFiles] after [allocateZoneBanks] returns via
+     * `scene.copy(allocatedZoneBank = zoneBank)`. Null when the scene has no [zoneRefs] or in
+     * pre-bank-allocation contexts (e.g. unit tests that do not run the full pipeline).
+     *
+     * Single source of truth: [SceneVisitor] reads this field for the [_bkg_tiles_load_banked]
+     * bank literal, replacing a direct [zoneBankAllocation] map lookup at the visitor level.
+     * This structural guarantee prevents future divergence if [allocateZoneBanks] were called
+     * with inconsistent inputs at different pipeline stages (D-01 field-over-lookup).
+     *
+     * NOT serialized by [GameIRSerializer]: treated as a pipeline-transient annotation like
+     * [bankSlot]/[vramRange]/[oamSlot] — recomputed on every codegen run. Omitting it from
+     * serialization keeps the JSON schema stable and avoids stale-bank round-trip hazards.
+     *
+     * Contrast with runtime `_<id>_subPalette` variable (RESEARCH Pitfall 5): this field is a
+     * compile-time bank number, not a runtime palette-slot selector.
+     */
+    val allocatedZoneBank: Int? = null,
 ) : PlatformAnnotatable {
 
     override fun equals(other: Any?): Boolean {
@@ -56,10 +79,12 @@ data class SceneIR(
             tilesetRef == other.tilesetRef &&
             collisionData.contentEquals(other.collisionData) &&
             mapWidth == other.mapWidth &&
+            zoneRefs == other.zoneRefs &&
             sourceLocation == other.sourceLocation &&
             bankSlot == other.bankSlot &&
             vramRange == other.vramRange &&
-            oamSlot == other.oamSlot
+            oamSlot == other.oamSlot &&
+            allocatedZoneBank == other.allocatedZoneBank
     }
 
     override fun hashCode(): Int {
@@ -71,10 +96,12 @@ data class SceneIR(
         result = 31 * result + (tilesetRef?.hashCode() ?: 0)
         result = 31 * result + (collisionData?.contentHashCode() ?: 0)
         result = 31 * result + (mapWidth ?: 0)
+        result = 31 * result + zoneRefs.hashCode()
         result = 31 * result + (sourceLocation?.hashCode() ?: 0)
         result = 31 * result + (bankSlot?.hashCode() ?: 0)
         result = 31 * result + (vramRange?.hashCode() ?: 0)
         result = 31 * result + (oamSlot?.hashCode() ?: 0)
+        result = 31 * result + (allocatedZoneBank ?: 0)
         return result
     }
 }

@@ -1,0 +1,7 @@
+# Plan 07.4-29 Task 4 — D-N-10 (a) watchdog liveness probe
+# 60-frame held-UP after race-entry; clean completion required.
+
+checkpoint: race scene reached at frame 152 (120 title + 1 start press + 1 release + 30 settle)
+frames_completed=60
+liveness=true watchdog_triggered=false frames_completed=60
+BUILD SUCCESSFUL

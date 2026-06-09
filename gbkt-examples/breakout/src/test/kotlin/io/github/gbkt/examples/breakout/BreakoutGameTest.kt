@@ -7,7 +7,7 @@
 package io.github.gbkt.examples.breakout
 
 import io.github.gbkt.core.ir.GameIR
-import io.github.gbkt.core.test.SimulationContextV2
+import io.github.gbkt.core.test.SimulationContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 /**
  * Scenario-based game logic tests for the Breakout v2 game.
  *
- * Tests run on JVM via SimulationContextV2 — no GBDK or ROM required.
+ * Tests run on JVM via SimulationContext — no GBDK or ROM required.
  *
  * Scenarios:
  * 1. Ball bounces off paddle — AABB collision: ballDy reverses when ball overlaps paddle hitbox
@@ -26,7 +26,7 @@ class BreakoutGameTest {
 
     companion object {
         /** Build GameIR once for all tests in this class (shared fixture). */
-        private val ir: GameIR = breakoutV2.build()
+        private val ir: GameIR = breakout.build()
     }
 
     // =========================================================================
@@ -35,7 +35,7 @@ class BreakoutGameTest {
 
     @Test
     fun `ball bounces off paddle - ballDy reverses to negative when ball overlaps paddle AABB`() {
-        val sim = SimulationContextV2(ir)
+        val sim = SimulationContext(ir)
         sim.enterScene("game")
         sim.enableTracing()
 
@@ -73,7 +73,7 @@ class BreakoutGameTest {
 
     @Test
     fun `score increments and bricksLeft decrements when ball in brick zone`() {
-        val sim = SimulationContextV2(ir)
+        val sim = SimulationContext(ir)
         sim.enterScene("game")
 
         // Initial state: score=0, bricksLeft=30 (set in enter block)
@@ -109,7 +109,7 @@ class BreakoutGameTest {
 
     @Test
     fun `lives decrement and ball resets when ball exits bottom of screen`() {
-        val sim = SimulationContextV2(ir)
+        val sim = SimulationContext(ir)
         sim.enterScene("game")
 
         // Initial lives = 3

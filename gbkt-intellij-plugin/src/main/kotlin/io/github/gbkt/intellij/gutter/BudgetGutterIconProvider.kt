@@ -213,8 +213,9 @@ class BudgetGutterIconProvider : LineMarkerProvider {
     )
 
     private class BudgetData(private val entries: List<BudgetEntry>) {
-        fun findEntryFor(id: String): BudgetEntry? =
-            entries.firstOrNull { it.id == id || it.id.endsWith(":$id") }
+        fun findEntryFor(id: String): BudgetEntry? = entries.firstOrNull {
+            it.id == id || it.id.endsWith(":$id")
+        }
     }
 
     companion object {

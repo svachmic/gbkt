@@ -6,7 +6,8 @@
  */
 package io.github.gbkt.backend.gbdk.codegen
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.CollElementType
 import io.github.gbkt.core.ir.GameIR
@@ -266,7 +267,7 @@ class GBDKCollectionCodegenTest {
             )
         val gameIR = buildMinimalGameIR(hashTables = listOf(ht))
 
-        val output = GBDKPipelineV2().generate(gameIR)
+        val output = GBDKPipeline().generate(gameIR)
         val mainC = output.files["main.c"] ?: error("main.c not found")
 
         assertContains(mainC, "_ht_scores_keys[16]")
@@ -286,7 +287,7 @@ class GBDKCollectionCodegenTest {
             )
         val gameIR = buildMinimalGameIR(pools = listOf(pool))
 
-        val output = GBDKPipelineV2().generate(gameIR)
+        val output = GBDKPipeline().generate(gameIR)
         val mainC = output.files["main.c"] ?: error("main.c not found")
 
         assertContains(mainC, "_pool_bullets_data[8]")
@@ -298,7 +299,7 @@ class GBDKCollectionCodegenTest {
     fun `empty collections in GameIR produce no collection code in main_c`() {
         val gameIR = buildMinimalGameIR()
 
-        val output = GBDKPipelineV2().generate(gameIR)
+        val output = GBDKPipeline().generate(gameIR)
         val mainC = output.files["main.c"] ?: error("main.c not found")
 
         // No collection declarations when no collections declared
@@ -321,7 +322,7 @@ class GBDKCollectionCodegenTest {
             )
         val gameIR = buildMinimalGameIR(structs = listOf(struct))
 
-        val output = GBDKPipelineV2().generate(gameIR)
+        val output = GBDKPipeline().generate(gameIR)
         val mainC = output.files["main.c"] ?: error("main.c not found")
 
         // Struct typedef should appear in main.c
@@ -351,7 +352,7 @@ class GBDKCollectionCodegenTest {
             )
         val gameIR = buildMinimalGameIR(hashTables = listOf(ht), structs = listOf(struct))
 
-        val output = GBDKPipelineV2().generate(gameIR)
+        val output = GBDKPipeline().generate(gameIR)
         val mainC = output.files["main.c"] ?: error("main.c not found")
 
         // Value array should use the struct type name
@@ -375,7 +376,7 @@ class GBDKCollectionCodegenTest {
             )
         val gameIR = buildMinimalGameIR(hashTables = listOf(ht))
 
-        val output = GBDKPipelineV2().generate(gameIR)
+        val output = GBDKPipeline().generate(gameIR)
         val gameH = output.files["game.h"] ?: error("game.h not found")
 
         assertContains(gameH, "void ht_scores_insert(")
@@ -396,7 +397,7 @@ class GBDKCollectionCodegenTest {
             )
         val gameIR = buildMinimalGameIR(pools = listOf(pool))
 
-        val output = GBDKPipelineV2().generate(gameIR)
+        val output = GBDKPipeline().generate(gameIR)
         val gameH = output.files["game.h"] ?: error("game.h not found")
 
         assertContains(gameH, "UINT8 pool_bullets_alloc(")
@@ -415,7 +416,7 @@ class GBDKCollectionCodegenTest {
             )
         val gameIR = buildMinimalGameIR(ringBuffers = listOf(rb))
 
-        val output = GBDKPipelineV2().generate(gameIR)
+        val output = GBDKPipeline().generate(gameIR)
         val gameH = output.files["game.h"] ?: error("game.h not found")
 
         assertContains(gameH, "void rb_events_push(")
@@ -434,7 +435,7 @@ class GBDKCollectionCodegenTest {
             )
         val gameIR = buildMinimalGameIR(fixedSlots = listOf(fs))
 
-        val output = GBDKPipelineV2().generate(gameIR)
+        val output = GBDKPipeline().generate(gameIR)
         val gameH = output.files["game.h"] ?: error("game.h not found")
 
         assertContains(gameH, "UINT8 fs_party_claim(")
@@ -446,7 +447,7 @@ class GBDKCollectionCodegenTest {
     fun `empty collections produce no prototypes in game_h`() {
         val gameIR = buildMinimalGameIR()
 
-        val output = GBDKPipelineV2().generate(gameIR)
+        val output = GBDKPipeline().generate(gameIR)
         val gameH = output.files["game.h"] ?: error("game.h not found")
 
         // No collection function prototypes should appear
@@ -470,7 +471,7 @@ private fun buildMinimalGameIR(
 ): GameIR =
     GameIR(
         name = "TestGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = listOf(SceneIR(id = "main", frameOps = emptyList())),
         hashTables = hashTables,
         pools = pools,

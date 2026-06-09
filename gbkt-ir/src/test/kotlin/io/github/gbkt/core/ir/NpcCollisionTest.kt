@@ -173,7 +173,7 @@ class NpcCollisionTest {
         val game =
             GameIR(
                 name = "Test",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes = emptyList(),
                 actors = emptyList(),
                 startScene = "main",
@@ -186,7 +186,7 @@ class NpcCollisionTest {
         val game =
             GameIR(
                 name = "Test",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes = emptyList(),
                 actors = emptyList(),
                 startScene = "main",
@@ -200,7 +200,7 @@ class NpcCollisionTest {
         val game =
             GameIR(
                 name = "Test",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes = emptyList(),
                 actors = emptyList(),
                 startScene = "main",
@@ -219,7 +219,7 @@ class NpcCollisionTest {
         val game =
             GameIR(
                 name = "Test",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes = emptyList(),
                 actors = emptyList(),
                 startScene = "main",

@@ -228,8 +228,8 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
                 }
 
             if (gameBuilderClass != null && gameBuilderClass.isInstance(rawGame)) {
-                // v2 path: call build() to get GameIR, then route to generateV2
-                executeV2Path(rawGame, outputDir, target)
+                // GameBuilder path: call build() to get GameIR, then route to generate
+                executePath(rawGame, outputDir, target)
                 return
             }
 
@@ -281,6 +281,8 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
                 println("Generated: $filename (${content.lines().size} lines)")
             }
 
+            val writtenSidecars = mutableSetOf<String>()
+
             // Generate and write source map for main.c
             try {
                 val codeGenClass =
@@ -298,6 +300,7 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
 
                 val sourceMapFile = File(outputDir, "main.c.gbkt.map")
                 sourceMapFile.writeText(sourceMapJson)
+                writtenSidecars += "main.c.gbkt.map"
                 println("Generated source map: ${sourceMapFile.absolutePath}")
             } catch (e: Exception) {
                 // Source map generation is optional - don't fail the build
@@ -308,7 +311,9 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
             }
 
             // Write build metadata for CompileRomTask
-            writeBuildMetadata(game, outputDir)
+            if (writeBuildMetadata(game, outputDir)) {
+                writtenSidecars += "gbkt-build.properties"
+            }
 
             println("Generated ${files.size} C files ($totalLines total lines)")
             println("Output directory: ${outputDir.absolutePath}")
@@ -317,6 +322,11 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
             if (parameters.optimizationEnabled.getOrElse(true)) {
                 runAssetOptimization(game, assetDir)
             }
+
+            // 09.2 D-S-03 + plan-05 CR-01: reconcile output dir; emittedSet built from actual write
+            // outcomes
+            val emittedSet = files.keys + writtenSidecars
+            syncOutputDir(outputDir, emittedSet)
         } catch (e: ClassNotFoundException) {
             throw GradleException(
                 """
@@ -338,20 +348,25 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
     }
 
     /**
-     * Execute the v2 pipeline path for games defined with [io.github.gbkt.core.dsl.GameBuilder].
+     * Execute the pipeline path for games defined with [io.github.gbkt.core.dsl.GameBuilder].
      *
      * Calls [GameBuilder.build] to produce a [GameIR], discovers the backend for the target, and
-     * invokes [GBDKBackend.generateV2] via reflection.
+     * invokes [GBDKBackend.generate] via reflection.
      *
-     * Source map generation is skipped for v2 games. The v1 [GBDKCodeGenerator] is architecturally
-     * incompatible with [GameIR]; v2 source map support requires a new implementation in
-     * [GBDKPipelineV2] and is deferred to a gap-closure plan after Phase 5 core integration.
+     * Source map generation is skipped for GameBuilder games. The legacy [GBDKCodeGenerator] is
+     * architecturally incompatible with [GameIR]; source map support requires a new implementation
+     * in [GBDKPipeline] and is deferred to a gap-closure plan after Phase 5 core integration.
      */
-    private fun executeV2Path(rawGame: Any, outputDir: File, target: String) {
+    private fun executePath(rawGame: Any, outputDir: File, target: String) {
         // 1. Call build() to get GameIR
         val gameIR =
             rawGame.javaClass.getMethod("build").invoke(rawGame)
                 ?: throw GradleException("GameBuilder.build() returned null")
+
+        // Phase 12.4 D-01b validation gate: every metasprite must have a sprite(asset(...)) binding
+        // before backend codegen runs. Runs BEFORE backend lookup so the error surfaces immediately
+        // with an actionable fix message rather than deep in the codegen stack or at lcc link time.
+        validateMetaspriteSpritePaths(gameIR)
 
         // 2. Find backend for target
         val backend =
@@ -360,23 +375,24 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
 
         println("Using backend: ${BackendReflection.getBackendDisplayName(backend)}")
 
-        // 3. Call generateV2(GameIR, AssetManifest?, File?) via reflection
+        // 3. Call generate(GameIR, AssetManifest?, File?) via reflection
         val gameIrClass = Class.forName("io.github.gbkt.core.ir.GameIR")
         val assetManifestClass = Class.forName("io.github.gbkt.core.AssetManifest")
-        val generateV2Method =
+        val generateMethod =
             backend.javaClass.getMethod(
-                "generateV2",
+                "generate",
                 gameIrClass,
                 assetManifestClass,
                 java.io.File::class.java,
             )
         val result =
-            generateV2Method.invoke(backend, gameIR, null, outputDir)
-                ?: throw GradleException("generateV2 returned null")
+            generateMethod.invoke(backend, gameIR, null, outputDir)
+                ?: throw GradleException("generate returned null")
 
         // 4. Extract files from GenerationResult via reflection
         val generationResultWrapper = GenerationResultWrapper(result)
         val files = generationResultWrapper.getFilesOrThrow()
+        val writtenSidecars = mutableSetOf<String>()
 
         // 5. Write each file to output directory, and write source map files where available
         var totalLines = 0
@@ -391,6 +407,7 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
             if (sourceMapJson != null) {
                 val sourceMapFile = File(outputDir, "$filename.gbkt.map")
                 sourceMapFile.writeText(sourceMapJson)
+                writtenSidecars += "$filename.gbkt.map"
                 println("Generated source map: $filename.gbkt.map")
             }
         }
@@ -398,13 +415,20 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
         // 7. Build metadata — may fail for GameIR (no getConfig() matching v1 Game.config);
         //    wrap in try-catch and skip gracefully
         try {
-            writeBuildMetadata(gameIR, outputDir)
+            if (writeBuildMetadata(gameIR, outputDir)) {
+                writtenSidecars += "gbkt-build.properties"
+            }
         } catch (_: Exception) {
             // Not critical — skip silently for v2 games
         }
 
         println("Generated ${files.size} C files ($totalLines total lines)")
         println("Output directory: ${outputDir.absolutePath}")
+
+        // 09.2 D-S-03 + plan-05 CR-01: reconcile output dir; emittedSet built from actual write
+        // outcomes
+        val emittedSet = files.keys + writtenSidecars
+        syncOutputDir(outputDir, emittedSet)
         // Note: asset optimization skipped for v2 games (expects v1 Game object)
     }
 
@@ -462,34 +486,64 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
     /**
      * Extract cartridge type from game config via reflection and write build metadata.
      *
-     * This writes a `gbkt-build.properties` file that CompileRomTask reads to determine the correct
-     * MBC type flag instead of hardcoding it.
+     * Returns `true` when `gbkt-build.properties` was successfully written this run; `false` on
+     * every silent-skip path (game class lacks `getConfig`, config lacks `getCartridge`, null
+     * values along the way, or any uncaught exception). Callers MUST gate `writtenSidecars +=
+     * "gbkt-build.properties"` on this return value so a failed write this run does not protect a
+     * stale sidecar from a prior run (09.2 plan 05, CR-01 fix per REVIEW.md).
      */
-    private fun writeBuildMetadata(game: Any, outputDir: File) {
+    private fun writeBuildMetadata(game: Any, outputDir: File): Boolean {
         try {
             val gameClass = game::class.java
             val configMethod =
                 try {
                     gameClass.getMethod("getConfig")
                 } catch (_: NoSuchMethodException) {
-                    return
+                    return false
                 }
-            val config = configMethod.invoke(game) ?: return
+            val config = configMethod.invoke(game) ?: return false
 
             val cartridgeMethod =
                 try {
                     config::class.java.getMethod("getCartridge")
                 } catch (_: NoSuchMethodException) {
-                    return
+                    return false
                 }
-            val cartridge = cartridgeMethod.invoke(config) ?: return
+            val cartridge = cartridgeMethod.invoke(config) ?: return false
             val cartridgeName = cartridge.toString()
 
-            val mbcType = CARTRIDGE_MBC_MAP[cartridgeName] ?: "0x00"
+            // D-03/D-04: resolve mbcByte reflectively from the enum instance
+            // (enum is the single source of truth per D-03). Guarded to handle legacy
+            // Cartridge enums that may not have getMbcByte — mirrors getRamBanks/getGbcTarget.
+            val mbcByteMethod =
+                try {
+                    cartridge::class.java.getMethod("getMbcByte")
+                } catch (_: NoSuchMethodException) {
+                    null
+                }
+            val mbcType = if (mbcByteMethod != null) {
+                val mbcByteInt = mbcByteMethod.invoke(cartridge) as? Int
+                if (mbcByteInt != null) "0x%02X".format(mbcByteInt) else null
+            } else null
 
             val props = java.util.Properties()
             props.setProperty("cartridge", cartridgeName)
-            props.setProperty("mbcType", mbcType)
+            if (mbcType != null) props.setProperty("mbcType", mbcType)
+
+            // D-07: write ramBanks from DSL config to gbkt-build.properties
+            // (same reflective try/catch pattern as gbcTarget below)
+            val ramBanksMethod =
+                try {
+                    config::class.java.getMethod("getRamBanks")
+                } catch (_: NoSuchMethodException) {
+                    null
+                }
+            if (ramBanksMethod != null) {
+                val ramBanksValue = ramBanksMethod.invoke(config)
+                if (ramBanksValue != null) {
+                    props.setProperty("ramBanks", ramBanksValue.toString())
+                }
+            }
 
             // Write GBC target mode for CompileRomTask (DSL config {
             // target(GbcTarget.GBC_COMPATIBLE) })
@@ -516,9 +570,11 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
 
             val propsFile = File(outputDir, "gbkt-build.properties")
             propsFile.outputStream().use { props.store(it, "gbkt build metadata") }
-            println("Build metadata: cartridge=$cartridgeName, mbcType=$mbcType")
+            println("Build metadata: cartridge=$cartridgeName" + if (mbcType != null) ", mbcType=$mbcType" else "")
+            return true
         } catch (e: Exception) {
             println("WARNING: Could not extract build metadata: ${e.message}")
+            return false
         }
     }
 
@@ -639,17 +695,232 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
         }
     }
 
-    companion object {
-        /** Maps Cartridge enum names to GBDK `-Wm-yt` hex codes. */
-        val CARTRIDGE_MBC_MAP =
-            mapOf(
-                "ROM_ONLY" to "0x00",
-                "MBC1" to "0x01",
-                "MBC1_RAM" to "0x02",
-                "MBC1_RAM_BATTERY" to "0x03",
-                "MBC3_TIMER_BATTERY" to "0x10",
-                "MBC5" to "0x19",
-                "MBC5_RAM_BATTERY" to "0x1B",
+}
+
+// =============================================================================
+// 09.2 D-S-01 + D-S-02: syncOutputDir helper (dormant — call sites added in Plan 2)
+// =============================================================================
+
+/**
+ * Always-survive sidecar filenames whose presence in [outputDir] is tolerated even when no pipeline
+ * writes them this run — used for backward-compatible cleanup of files that may have been written
+ * by an earlier pipeline version against the same output dir.
+ *
+ * NOTE: `main.c.gbkt.map` is NOT in this list. Source-map files (`*.gbkt.map`) MUST be deleted if
+ * not written this run — that is the exact staleness bug Phase 09.2 was created to eliminate. v1
+ * and v2 call sites track actual write outcomes via `writtenSidecars` and pass `emittedSet =
+ * files.keys + writtenSidecars` to [syncOutputDir]. (09.2 plan 05, CR-01 + WR-01 disposition per
+ * REVIEW.md)
+ */
+private val SIDECAR_WHITELIST: Set<String> = setOf("gbkt-build.properties", "game_metadata.json")
+
+private fun isProtected(name: String, emittedSet: Set<String>): Boolean =
+    name in emittedSet || name in SIDECAR_WHITELIST || name.startsWith(".")
+
+/**
+ * Reconcile [outputDir] to exactly [emittedSet]. Files present in [outputDir] but absent from
+ * [emittedSet] are deleted unless protected by the whitelist or dotfile exemption.
+ *
+ * Protection rules (09.2 D-S-02):
+ * - Files in [emittedSet] survive.
+ * - Files in [SIDECAR_WHITELIST] survive: `gbkt-build.properties`, `game_metadata.json` (only files
+ *   written outside the codegen `files` map AND tolerated when missing this run).
+ * - Files with `.gbkt.map` suffix survive ONLY if listed in [emittedSet] — each call site tracks
+ *   ACTUAL write outcomes via `writtenSidecars` (added only after successful write) and constructs
+ *   `emittedSet = files.keys + writtenSidecars`. A failed sidecar write this run leaves the
+ *   prior-run stale copy unprotected and deleted. (09.2 plan 05, CR-01 fix)
+ * - Files starting with `.` survive (dotfiles: `.gitkeep`, `.DS_Store`, IDE markers).
+ *
+ * Per deletion: emits `println("Removed stale: $name")` matching the existing `Generated: $name`
+ * lifecycle log style (09.2 D-S-04, lines 281, 387).
+ *
+ * On delete failure (read-only / locked file): emits a WARNING line and skips — does NOT fail the
+ * task (09.2 RESEARCH §Pitfall 2).
+ *
+ * @return List of deleted filenames (may be empty).
+ */
+internal fun syncOutputDir(outputDir: File, emittedSet: Set<String>): List<String> {
+    if (!outputDir.exists() || !outputDir.isDirectory) return emptyList()
+
+    val deleted = mutableListOf<String>()
+    outputDir
+        .listFiles()
+        ?.filter { it.isFile }
+        ?.forEach { file ->
+            val name = file.name
+            if (isProtected(name, emittedSet)) return@forEach
+            if (file.delete()) {
+                println("Removed stale: $name")
+                deleted += name
+            } else {
+                println("WARNING: Could not delete stale: $name — file may be locked or read-only")
+            }
+        }
+    return deleted
+}
+
+// =============================================================================
+// Phase 12.4 D-01b — MetaspriteIR.spritePath null-check gate
+// =============================================================================
+
+/**
+ * Pre-codegen validation gate: throws [GradleException] if any [MetaspriteIR] in [gameIR] has a
+ * null `spritePath` field.
+ *
+ * **Why reflection?** `GenerateCTask` runs in a Gradle classloader-isolated worker (see
+ * `GenerateCWorkAction`). The `gameIR` value is produced by the user's classpath via reflection
+ * throughout `executePath()`; direct typed access to `gbkt-ir` types would require adding
+ * `gbkt-ir` as a compile dependency to the plugin, coupling the plugin build to the IR module
+ * version. Using reflection keeps the same coupling assumptions as the rest of the file (lines 362,
+ * 373, 374, etc.).
+ *
+ * **When is this gate active?** The `MetaspriteIR.spritePath` field is *nullable* during the Phase
+ * 12.4 migration window (D-01b) so that existing tests that create `MetaspriteIR` instances without
+ * `spritePath` still compile. Once Plans 12.4-09/10/11 migrate all 3 in-tree games to call
+ * `sprite(asset(...))`, the gate enforces the contract: any future metasprite without a binding
+ * fails the build with an actionable message.
+ *
+ * **Silent-skip alternative rejected:** Without this gate, a metasprite with null `spritePath` is
+ * silently skipped by the sidecar emitter in [GBDKPipeline], so [ConvertSpritesTask] never sees
+ * it, `sprites_<id>_tiles` is never defined, and `lcc` fails with an opaque "undefined symbol"
+ * error deep in the link step — exactly the failure mode D-04 targeted.
+ *
+ * @param gameIR The IR root produced by `GameBuilder.build()` — typed as `Any` because this
+ *   function is called from a classloader-isolated worker context where `GameIR` is only accessible
+ *   via reflection.
+ * @throws GradleException if any metasprite has `spritePath == null`.
+ */
+@Suppress("UNCHECKED_CAST")
+internal fun validateMetaspriteSpritePaths(gameIR: Any) {
+    val metasprites =
+        try {
+            gameIR.javaClass.getMethod("getMetasprites").invoke(gameIR) as List<Any>
+        } catch (_: NoSuchMethodException) {
+            // GameIR version predates metasprites field — skip validation gracefully.
+            return
+        }
+
+    for (ms in metasprites) {
+        val spritePath =
+            try {
+                ms.javaClass.getMethod("getSpritePath").invoke(ms) as String?
+            } catch (_: NoSuchMethodException) {
+                // MetaspriteIR version predates spritePath field — skip this entry.
+                continue
+            }
+
+        if (spritePath == null) {
+            val id =
+                try {
+                    ms.javaClass.getMethod("getId").invoke(ms) as String
+                } catch (_: Exception) {
+                    "<unknown>"
+                }
+            throw GradleException(
+                "Metasprite '$id' is missing sprite(asset(...)) — add " +
+                    "sprite(asset(\"<path/to/sprite.png>\")) to your metasprite { } block. " +
+                    "Every metasprite MUST declare its PNG asset explicitly so " +
+                    "ConvertSpritesTask can resolve it via the game_metadata.json sidecar. " +
+                    "(Phase 12.4 D-01b)"
+            )
+        }
+
+        // Resolve the metasprite id for use in Phase 12.5 D-04b error messages below.
+        // Done here (after spritePath check) so the id is available for all subsequent checks.
+        val id =
+            try {
+                ms.javaClass.getMethod("getId").invoke(ms) as String
+            } catch (_: Exception) {
+                "<unknown>"
+            }
+
+        // ---------------------------------------------------------------
+        // Phase 12.5 D-04b checks — png2asset cutting flags
+        //
+        // Per Pitfall 3 (RESEARCH.md): use invoke(ms) != null (NOT type-cast)
+        // because classloader isolation makes casting across boundaries unsafe.
+        // ---------------------------------------------------------------
+
+        // Check spriteMode — declared via mode(SpriteMode.SPR8x16) or mode(SpriteMode.SPR8x8)
+        val spriteMode =
+            try {
+                ms.javaClass.getMethod("getSpriteMode").invoke(ms)
+            } catch (_: NoSuchMethodException) {
+                null  // legacy IR — treat same as not-set; gate below throws
+            }
+        if (spriteMode == null)
+            throw GradleException(
+                "Metasprite '$id' missing mode() — declare mode(SpriteMode.SPR8x16) or " +
+                    "mode(SpriteMode.SPR8x8) inside sprite() { ... } block. (Phase 12.5 D-04b)"
+            )
+
+        // Check pivot — declared via pivot(x, y); either null means pivot() was not called
+        val pivotX =
+            try {
+                ms.javaClass.getMethod("getPivotX").invoke(ms)
+            } catch (_: NoSuchMethodException) {
+                null
+            }
+        val pivotY =
+            try {
+                ms.javaClass.getMethod("getPivotY").invoke(ms)
+            } catch (_: NoSuchMethodException) {
+                null
+            }
+        if (pivotX == null || pivotY == null)
+            throw GradleException(
+                "Metasprite '$id' missing pivot() — declare pivot(x, y) inside " +
+                    "sprite() { ... } block. (Phase 12.5 D-04b)"
+            )
+
+        // Check frameSize — declared via frameSize(w, h); either null means frameSize() was not
+        // called
+        val frameWidth =
+            try {
+                ms.javaClass.getMethod("getFrameWidth").invoke(ms)
+            } catch (_: NoSuchMethodException) {
+                null
+            }
+        val frameHeight =
+            try {
+                ms.javaClass.getMethod("getFrameHeight").invoke(ms)
+            } catch (_: NoSuchMethodException) {
+                null
+            }
+        if (frameWidth == null || frameHeight == null)
+            throw GradleException(
+                "Metasprite '$id' missing frameSize() — declare frameSize(w, h) inside " +
+                    "sprite() { ... } block. (Phase 12.5 D-04b)"
             )
     }
+
+    // -----------------------------------------------------------------------
+    // WR-03: cross-metasprite mixed-mode guard
+    //
+    // GBDK hardware sprite mode is a GLOBAL LCDC bit. All metasprites in a game
+    // must declare the same SpriteMode. Mixing SPR8x8 and SPR8x16 produces
+    // incorrect rendering at runtime: the global SPRITES_8x16 macro sets 8×16
+    // hardware mode, which causes SPR8x8 metasprites to render with doubled rows.
+    //
+    // Collect the distinct toString() representations of each metasprite's
+    // spriteMode (via invoke) and throw if more than one distinct value exists.
+    // Using toString() avoids cross-classloader enum comparison issues (Pitfall 3).
+    // -----------------------------------------------------------------------
+    val spriteModeNames =
+        metasprites
+            .mapNotNull { ms ->
+                try {
+                    ms.javaClass.getMethod("getSpriteMode").invoke(ms)?.toString()
+                } catch (_: NoSuchMethodException) {
+                    null
+                }
+            }
+            .distinct()
+    if (spriteModeNames.size > 1)
+        throw GradleException(
+            "All metasprites in a game must use the same SpriteMode — hardware LCDC.SPRITE_SIZE " +
+                "is a global bit. Found both ${spriteModeNames.joinToString(" and ")}. " +
+                "Declare the same mode(SpriteMode.SPR8x8) or mode(SpriteMode.SPR8x16) in every " +
+                "metasprite { } block. (Phase 12.5 WR-03)"
+        )
 }

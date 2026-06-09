@@ -177,14 +177,13 @@ class RpgVisitor(private val gameIR: GameIR) {
     }
 
     fun generateAbilityDispatch(abilityIds: List<String>): CFunction {
-        val cases =
-            abilityIds.mapIndexed { index, abilityId ->
-                val sanitizedId = abilityId.replace('-', '_').replace(' ', '_')
-                CSwitchCase(
-                    value = CLiteral(index),
-                    body = listOf(CExprStatement(CCall("use_ability_$sanitizedId")), CBreak),
-                )
-            }
+        val cases = abilityIds.mapIndexed { index, abilityId ->
+            val sanitizedId = abilityId.replace('-', '_').replace(' ', '_')
+            CSwitchCase(
+                value = CLiteral(index),
+                body = listOf(CExprStatement(CCall("use_ability_$sanitizedId")), CBreak),
+            )
+        }
         return CFunction(
             name = "dispatch_ability",
             returnType = CVoid,
@@ -2072,26 +2071,25 @@ class RpgVisitor(private val gameIR: GameIR) {
     }
 
     private fun generateCheckAutoLearnFunction(methods: List<AutoLearn>): CFunction {
-        val cases =
-            methods.map { method ->
-                val abilityId = method.abilityId.replace('-', '_').replace(' ', '_')
-                CSwitchCase(
-                    value = CLiteral(method.atLevel),
-                    body =
-                        listOf(
-                            CComment(
-                                "Auto-learn ability '${method.abilityId}' at level ${method.atLevel}"
-                            ),
-                            CExprStatement(
-                                CCall(
-                                    "unlock_ability",
-                                    listOf(CVar("char_id"), CVar("ability_id_$abilityId")),
-                                )
-                            ),
-                            CBreak,
+        val cases = methods.map { method ->
+            val abilityId = method.abilityId.replace('-', '_').replace(' ', '_')
+            CSwitchCase(
+                value = CLiteral(method.atLevel),
+                body =
+                    listOf(
+                        CComment(
+                            "Auto-learn ability '${method.abilityId}' at level ${method.atLevel}"
                         ),
-                )
-            }
+                        CExprStatement(
+                            CCall(
+                                "unlock_ability",
+                                listOf(CVar("char_id"), CVar("ability_id_$abilityId")),
+                            )
+                        ),
+                        CBreak,
+                    ),
+            )
+        }
         return CFunction(
             name = "check_auto_learn",
             returnType = CVoid,

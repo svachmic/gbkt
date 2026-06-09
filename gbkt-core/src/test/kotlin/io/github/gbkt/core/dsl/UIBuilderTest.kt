@@ -44,8 +44,8 @@ class UIBuilderTest {
         val ir =
             game("test") {
                     dialog("elder") {}
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -66,8 +66,8 @@ class UIBuilderTest {
                         textSpeed(3)
                         border(BorderStyle.SINGLE)
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -85,8 +85,8 @@ class UIBuilderTest {
                         speaker("Ancient Sage")
                         portrait(asset("sprites/sage_portrait.png"))
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -105,8 +105,8 @@ class UIBuilderTest {
                         border(BorderStyle.CUSTOM)
                         customBorderTiles(tiles)
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -120,8 +120,8 @@ class UIBuilderTest {
         val ir =
             game("test") {
                     dialog("vwf") { fontMode(FontMode.VARIABLE_WIDTH) }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -133,8 +133,8 @@ class UIBuilderTest {
         val ir =
             game("test") {
                     val elder = dialog("elder") { textSpeed(2) }
-                    scene("main") { enter { elder.say("Hello traveler") } }
-                    start = "main"
+                    val mainScene = scene("main") { enter { elder.say("Hello traveler") } }
+                    start = mainScene
                 }
                 .build()
 
@@ -152,17 +152,17 @@ class UIBuilderTest {
         val ir =
             game("test") {
                     val elder = dialog("elder") {}
-                    scene("quest") {
+                    val questActiveScene = scene("quest_active") { enter {} }
+                    val villageScene = scene("village") { enter {} }
+                    val questScene = scene("quest") {
                         enter {
                             elder.choice {
-                                option("Accept") { navigate("quest_active") }
-                                option("Decline") { navigate("village") }
+                                option("Accept") { navigate(questActiveScene) }
+                                option("Decline") { navigate(villageScene) }
                             }
                         }
                     }
-                    scene("quest_active") { enter {} }
-                    scene("village") { enter {} }
-                    start = "quest"
+                    start = questScene
                 }
                 .build()
 
@@ -184,10 +184,10 @@ class UIBuilderTest {
     fun `menu builder produces MenuDef with vertical layout by default`() {
         val ir =
             game("test") {
-                    menu("main") { item("Start") { navigate("game") } }
-                    scene("main") { enter {} }
-                    scene("game") { enter {} }
-                    start = "main"
+                    val gameScene = scene("game") { enter {} }
+                    menu("main") { item("Start") { navigate(gameScene) } }
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -207,8 +207,8 @@ class UIBuilderTest {
                         layout(MenuLayout.GRID)
                         columns(4)
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -223,8 +223,8 @@ class UIBuilderTest {
             game("test") {
                     val mainMenu = menu("main") {}
                     menu("options") { parent(mainMenu) }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -243,8 +243,8 @@ class UIBuilderTest {
                             onCancel = SoundRef("cancel"),
                         )
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -259,10 +259,10 @@ class UIBuilderTest {
         val ir =
             game("test") {
                     val pauseMenu = menu("pause") {}
-                    scene("gameplay") {
+                    val gameplayScene = scene("gameplay") {
                         frame { whenever(buttons.start.pressed) { pauseMenu.show() } }
                     }
-                    start = "gameplay"
+                    start = gameplayScene
                 }
                 .build()
 
@@ -288,8 +288,8 @@ class UIBuilderTest {
                             label("Score: ")
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -311,8 +311,8 @@ class UIBuilderTest {
                             width(8)
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -336,8 +336,8 @@ class UIBuilderTest {
                             emptyTile(0x11)
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -351,8 +351,8 @@ class UIBuilderTest {
         val ir =
             game("test") {
                     hud("bg_hud") { renderOnBackground() }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -372,8 +372,8 @@ class UIBuilderTest {
                             format("%04d")
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -398,8 +398,8 @@ class UIBuilderTest {
                             displayMode(IconDisplayMode.FULL_AND_EMPTY)
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -425,8 +425,8 @@ class UIBuilderTest {
                         textSpeed(2)
                         border(BorderStyle.DOUBLE)
                     }
-                    scene("village") { enter {} }
-                    start = "village"
+                    val villageScene = scene("village") { enter {} }
+                    start = villageScene
                 }
                 .build()
 
@@ -441,10 +441,12 @@ class UIBuilderTest {
         val ir =
             game("test") {
                     var score by u8Var(0)
+                    val gameplayScene = scene("gameplay") { enter {} }
+                    val titleScene = scene("title") { enter {} }
                     menu("pause") {
                         layout(MenuLayout.VERTICAL)
-                        item("Resume") { navigate("gameplay") }
-                        item("Quit") { navigate("title") }
+                        item("Resume") { navigate(gameplayScene) }
+                        item("Quit") { navigate(titleScene) }
                     }
                     hud("score_hud") {
                         anchor(Anchor.TOP_LEFT)
@@ -453,9 +455,7 @@ class UIBuilderTest {
                             label("Score: ")
                         }
                     }
-                    scene("gameplay") { enter {} }
-                    scene("title") { enter {} }
-                    start = "gameplay"
+                    start = gameplayScene
                 }
                 .build()
 
@@ -486,8 +486,8 @@ class UIBuilderTest {
                             displayMode(IconDisplayMode.FILLED_ONLY)
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -502,8 +502,8 @@ class UIBuilderTest {
             game("test") {
                     var hp by u8Var(20)
                     val statsHud = hud("stats") { bar("hp") { variable(hp) } }
-                    scene("gameplay") { enter { statsHud.show() } }
-                    start = "gameplay"
+                    val gameplayScene = scene("gameplay") { enter { statsHud.show() } }
+                    start = gameplayScene
                 }
                 .build()
 
@@ -517,13 +517,13 @@ class UIBuilderTest {
     fun `menu builder items define correct navigation bodies`() {
         val ir =
             game("test") {
+                    val titleScene = scene("title") { enter {} }
+                    val gameScene = scene("game") { enter {} }
                     menu("main") {
-                        item("Play") { navigate("game") }
-                        item("Quit") { navigate("title") }
+                        item("Play") { navigate(gameScene) }
+                        item("Quit") { navigate(titleScene) }
                     }
-                    scene("title") { enter {} }
-                    scene("game") { enter {} }
-                    start = "title"
+                    start = titleScene
                 }
                 .build()
 
@@ -542,8 +542,8 @@ class UIBuilderTest {
                     dialog("elder") { textSpeed(2) }
                     dialog("merchant") { speaker("Bob's Shop") }
                     dialog("inn_keeper") { border(BorderStyle.SINGLE) }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 

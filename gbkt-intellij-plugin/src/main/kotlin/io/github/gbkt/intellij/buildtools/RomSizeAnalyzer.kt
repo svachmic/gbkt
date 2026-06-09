@@ -225,11 +225,10 @@ class RomSizeAnalyzer(private val project: Project) : JPanel(BorderLayout()) {
 
     private fun looksLikeStrings(bytes: ByteArray): Boolean {
         // Check for ASCII-like content
-        val printableCount =
-            bytes.count { b ->
-                val v = b.toInt() and 0xFF
-                v in 0x20..0x7E || v == 0x00 || v == 0x0A
-            }
+        val printableCount = bytes.count { b ->
+            val v = b.toInt() and 0xFF
+            v in 0x20..0x7E || v == 0x00 || v == 0x0A
+        }
         return printableCount > bytes.size * 3 / 4
     }
 

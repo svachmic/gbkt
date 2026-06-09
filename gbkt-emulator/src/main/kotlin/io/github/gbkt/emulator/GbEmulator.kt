@@ -78,6 +78,16 @@ interface GbEmulator {
      * not support event-driven input.
      */
     fun getEventBus(): eu.rekawek.coffeegb.core.events.EventBus? = null
+
+    /**
+     * Requests cooperative cancellation of an in-flight [stepFrame] call. Safe to invoke from any
+     * thread without holding any lock. The default implementation is a no-op; concrete emulators
+     * (e.g. `CoffeeGbEmulator`) set a `@Volatile` flag that the tick loop polls each iteration.
+     *
+     * Used by stop/teardown paths to preempt a runaway frame before falling back to the watchdog
+     * timeout.
+     */
+    fun requestCancellation() {}
 }
 
 /**

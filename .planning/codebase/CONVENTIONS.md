@@ -1,435 +1,166 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-02-17
+**Analysis Date:** 2026-05-27
 
 ## Naming Patterns
 
 **Files:**
-- Match primary public declaration: `LogicBlock.kt` for `class LogicBlock`
-- Domain-grouped files use suffix: `CameraIR.kt`, `SaveSystemIR.kt`, `PositionComponent.kt`
-- Test files end with `Test`: `InputTest.kt`, `ExpressionCodegenTest.kt`
-- Internal utilities separate by package: `src/main/kotlin/io/github/gbkt/core/{package}/`
+- PascalCase, one primary public declaration per file (`GameBuilder.kt`, `ScriptOpVisitor.kt`)
+- Filename matches the primary public type. Domain-grouped IR files use a descriptive suffix (`CameraIR.kt`, `SaveSystemIR.kt`, `ActorPoolIR.kt`)
+- Visitor implementations end in `Visitor.kt` (e.g. `ScriptOpVisitor.kt`, `ExprVisitor.kt`); visitor interfaces end in `VisitorI.kt` (e.g. `ScriptOpVisitorI.kt`)
+- Codegen helpers end in `Codegen.kt` (e.g. `GBDKCollectionCodegen.kt`, `WindowTextCodegen.kt`)
+- Builder classes end in `Builder.kt` (`SceneBuilder.kt`, `ActorBuilder.kt`); the corresponding delegate class ends in `Delegate.kt` (e.g. `ActorDelegate`)
+- Tests end in `Test.kt`. Suffix encodes the testing tier (see `.planning/codebase/TESTING.md`):
+  - `*IRTest.kt`, `*SimTest.kt`, `*GameTest.kt` for JVM-only logic / IR validation
+  - `*EmissionTest.kt` for golden-shape codegen tests
+  - `*EmulatorTest.kt`, `*StepAgentTest.kt`, `*IntegrationTest.kt` for ROM-loading integration tests
+  - `*UatTest.kt` for `UatRunner`-driven checkpoint tests
+- Directories: kebab-case at the module level (`gbkt-lang`, `gbkt-backend-gbdk`, `gbkt-genre-rpg`); lowercase single-word packages within (`ir`, `dsl`, `codegen`, `visitor`)
 
-**Functions:**
-- camelCase for all functions: `logicBlock()`, `u8Var()`, `calculateDamage()`
-- DSL builders use lowercase: `scene()`, `entity()`, `menu()`, `battle()`
-- Test functions use backtick-quoted names for clarity: ``fun `button A held generates correct mask check`() {}``
-- Helpers starting with `get`/`create`/`set`: `getOrCreate()`, `createSprite()`, `setVariable()`
+**Classes / Types:**
+- PascalCase (`GameBuilder`, `AssignableVar`, `ActorPropertyRef`, `StepAgent`, `CFunction`)
+- Detekt rule: `naming.ClassNaming` with pattern `[A-Z][a-zA-Z0-9]*` (see `detekt.yml`)
+- IR data classes match their domain (`SceneIR`, `ActorIR`, `BinaryExpr`, `Assign`)
+- C AST types are prefixed `C` (`CFile`, `CFunction`, `CExpr`, `CLiteral`, `CIntLiteral`)
+- Visitor interface suffix is `I` (`ExprVisitorI`, `ScriptOpVisitorI`, `SystemIRVisitorI`) — the implementing object/class drops the `I` (`ExprVisitor`, `ScriptOpVisitor`)
+- Codegen visitor naming is consistent across `gbkt-backend-gbdk/.../codegen/visitor/`: `ScriptOpVisitor`, `ExprVisitor`, `ActorVisitor`, `SceneVisitor`, `DialogVisitor`, `MenuVisitor`, `HudVisitor`, `InventoryVisitor`, `CombatVisitor`, `RpgVisitor`, `SoundVisitor`, `CollisionVisitor`, `GBDKSystemVisitor`, `MetaspriteVisitor`
+
+**Functions / properties:**
+- camelCase (`registerActor`, `bootToScene`, `assertScene`, `readTypedValue`)
+- Detekt `naming.FunctionNaming` pattern `[a-z][a-zA-Z0-9]*` — exception allowed for short type-name functions like `u8()`, `i16()` (DSL factories)
+- DSL operators use the canonical Kotlin operator names (`plus`, `minus`, `plusAssign`, `inc`, `dec`, `times`, `div`, `rem`) and infix comparison verbs (`isAbove`, `isBelow`, `isAtLeast`, `isAtMost`, `isEqualTo`, `isNotEqualTo`, `logicalAnd`, `logicalOr`, `and`, `or`, `xor`, `shl`, `shr`)
+- Test method names use backticked-spaces: ``fun `title screen shows PONG`()`` (see `gbkt-test/.../GbktTestExtension.kt:41`)
 
 **Variables:**
-- camelCase in Kotlin code: `playerX`, `velocityY`, `buttonPressed`
-- In-game variables (u8Var/u16Var) use snake_case for multi-word: `player_x`, `enemy_count`, `sprite_bank`
-- Private fields prefixed with underscore for generated code: `_joypad`, `_joypad_prev`
-- Boolean variables: `isVisible`, `hasCollided`, `isRecording`
+- Detekt `naming.VariableNaming`: `[a-z][A-Za-z0-9]*` (private may start with `_`)
+- Test fixtures may use SCREAMING_SNAKE_CASE for tile/coord constants (`TILE_WALL`, `RACER_MAP_W`) — exempted in `detekt.yml` under `**/test/**`
+- Top-level constants: `[A-Z][_A-Z0-9]*` (`TITLE_SCENE_PATTERNS` in `gbkt-test/.../GbktTestRecipes.kt:42`)
+- DSL property names ARE the runtime identifier — `var score by u8Var(0)` registers a variable named `"score"` via `provideDelegate`. See "No Magic Strings" below.
 
-**Types:**
-- PascalCase for classes: `GameBuilder`, `SimulationContext`, `MenuBuilder`
-- Sealed interfaces end with base name: `IRStatement`, `IRExpression`, `GameFlowScene`
-- Data classes follow domain naming: `TestEntity`, `GBCColor`, `Dimensions`
-- Type aliases in lowercase: `Condition`, `Expr`, `AssignableExpr`
+**Packages:**
+- Lowercase, dot-separated (`io.github.gbkt.core.dsl`, `io.github.gbkt.backend.gbdk.codegen.visitor`)
+- Detekt `naming.PackageNaming`: `[a-z]+(\.[a-z][A-Za-z0-9]*)*`
 
 ## Code Style
 
 **Formatting:**
-- Spotless with KTFmt (kotlinlangStyle)
-- Line length max: 120 characters (exceptions: tests, codegen, raw strings)
-- License header: MPL 2.0 for most modules, Apache 2.0 for IntelliJ plugin
-- Trailing whitespace trimmed, files end with newline
+- ktfmt 0.62, Kotlin-lang style (configured via Spotless in `build.gradle.kts:88`)
+- License header is auto-applied by Spotless. MPL 2.0 for all modules; Apache 2.0 only for `gbkt-intellij-plugin` (per `build.gradle.kts:46-78`)
+- Trailing whitespace trimmed, file ends with newline
+- Run: `./gradlew spotlessApply` to format, `./gradlew spotlessCheck` to verify
 
 **Linting:**
-- Detekt enabled with detekt.yml config
-- maxIssues: 0 (enforce on each module)
-- Baseline tracking via detekt-baseline.xml for incremental cleanup
-- Key rule exceptions:
-  - `MagicNumber`: Disabled (game dev has coordinate/color constants)
-  - `UnusedPrivateMember`: Disabled (DSL receivers trigger false positives)
-  - Complexity thresholds relaxed for codegen, IR, validation packages
+- Detekt with config at `detekt.yml`, baseline at each subproject's `detekt-baseline.xml`
+- `buildUponDefaultConfig = true`, `parallel = true`
+- `style.MaxLineLength = 120` (excludes test files, codegen, raw strings, KDoc comments)
+- `style.WildcardImport` active. Excludes: `**/test/**`, `**/codegen/**`. Allowed wildcard imports anywhere: `java.util.*`, `kotlinx.coroutines.*`, `kotlin.test.*`, `io.github.gbkt.core.dsl.*` (DSL operator extensions)
+- Run: `./gradlew detekt` per module
+
+## Detekt Exclusions (with rationale)
+
+The `detekt.yml` rules are deliberately relaxed for specific packages. Future code MUST stay within the same exemptions — don't widen them:
+
+| Rule | Globally Disabled? | Per-package exemptions | Rationale |
+|------|--------------------|------------------------|-----------|
+| `style.MagicNumber` | YES (active: false) | n/a | Game dev uses many constants (screen dimensions 160x144, sprite sizes 8x8/8x16, frame counts, tile coords, color values). Inlining is more readable than naming each one. |
+| `style.UnusedPrivateMember` | YES (active: false) | n/a | DSL receivers trigger false positives — the `this` receiver of a DSL lambda is required for scoping even when not explicitly used. |
+| `style.UnusedPrivateProperty` | YES (active: false) | n/a | DSL builders may have unused private properties needed for the API surface. |
+| `style.ForbiddenComment` | YES (active: false) | n/a | TODO/FIXME comments are allowed. |
+| `complexity.LongMethod` (threshold 80) | NO | `**/codegen/**`, `**/test/**`, `**/ir/**`, `**/validation/**`, `**/collision/**`, `**/CodeGenerator.kt`, `**/dsl/**`, `**/mcp/**` | C codegen methods produce large output blocks; IR transformations are inherently long; DSL `GameBuilder.build()` accumulates IR per feature; MCP tool dispatch is large by design. |
+| `complexity.LongParameterList` (fn 6, ctor 7) | NO | `**/entity/**`, `**/rpg/**`, `**/ui/**`, `**/test/**`, `**/world/**`, `**/exploration/**`, `**/builder/**`, `**/collision/**`, `**/codegen/**`, `**/validation/**`, `**/combat/**`, `**/movement/**` | Domain models (Character, Monster, Battle, Floor, Camera) genuinely have many fields; codegen helpers take many positional inputs (position, hitbox, expressions). |
+| `complexity.TooManyFunctions` | NO | `**/codegen/**`, `**/ir/**`, `**/test/**`, `**/builder/**`, `**/dsl/**`, `**/scene/**`, `**/graphics/**`, `**/world/**`, `**/CodeGenerator.kt`, `**/analysis/passes/**`, `**/mcp/**`, `**/emulator/agent/**` | `ExpressionWrapper`/`VariableBuilders`/`ActorBuilder`/`ExprBuilder` have 60+ operator overloads each (see "Operator Overloading" below); MCP server has one handler method per exposed tool. |
+| `complexity.LargeClass` (600) | NO | `**/codegen/**`, `**/test/**` | Codegen classes may exceed for complex systems. |
+| `complexity.CyclomaticComplexMethod` (15) | NO | `**/codegen/**`, `**/ir/**`, `**/dsl/**`, `**/optimization/**`, `**/validation/**`, `**/analysis/passes/**`, `**/collision/**`, `**/intellij/completion/**`, `**/mcp/**` | Visitor `when` dispatch over all IR types is inherently complex; cross-subsystem polymorphic walks span many cases. |
+| `complexity.NestedBlockDepth` (5) | NO | `**/codegen/**`, `**/validation/**`, `**/collision/**` | Nested control flow is structural for C generation. |
+| `style.UnusedParameter` | NO | `**/codegen/**`, `**/dsl/**`, `**/rpg/**`, `**/flow/**`, `**/ui/**`, `**/scene/**` | Callback parameters needed for interface compliance or future expansion. |
+| `style.ReturnCount` (4) | NO | `**/intellij/**`, `**/codegen/**`, `**/mcp/**` | Codegen visitors use fail-fast pattern; MCP tool handlers return early on invalid input. |
+| `style.WildcardImport` | NO | `**/test/**`, `**/codegen/**` (`io.github.gbkt.core.dsl.*` always allowed for DSL operator imports in game files) | Game DSL files import the operator extensions wholesale. |
+| `exceptions.TooGenericExceptionCaught` | NO | `**/intellij/codegen/**`, `**/mcp/**`, `**/emulator/**` | Caught broadly only at IO / protocol boundaries (savestate IO, metadata parse, MCP JSON dispatch). |
+| `performance.SpreadOperator` | NO | `**/intellij/inspections/**`, `**/test/**` | IntelliJ API requires vararg spread; test code prioritises readability. |
+
+**Implication for new code:** outside the exempted packages above, methods must stay under 80 lines, ≤15 cyclomatic complexity, ≤6 function parameters, ≤25 functions per file. The exemptions are NOT carte blanche — they exist because the alternative (over-decomposed visitor dispatch) would be less readable.
 
 ## Import Organization
 
 **Order:**
-1. Kotlin stdlib imports
-2. Third-party imports (kotest, json, etc.)
-3. Project imports (io.github.gbkt.*)
-4. Blank line between groups, sorted alphabetically within
+1. Kotlin stdlib (`kotlin.properties`, `kotlin.reflect`)
+2. Third-party (`java.io`, `java.util`, `org.junit.jupiter`, `org.json`)
+3. Project (`io.github.gbkt.*`)
 
-**Rules:**
-- No star imports except `kotlin.test.*` in test files (exception)
-- Explicit imports improve IDE refactoring and prevent collisions
-- Test files may use `import kotlin.test.*` for brevity
-- Always `import kotlin.test.Test`, `import kotlin.test.assertEquals`, etc. in unit tests
+Blank line between groups. Sort alphabetically within groups.
 
-**Example:**
+**No star imports** in main source. CONTRIBUTING.md §8 enforces explicit imports. Exceptions allowed per detekt config: tests (`kotlin.test.*`), codegen wildcard imports of the C AST, and `io.github.gbkt.core.dsl.*` in game files (required to bring operator extensions into scope).
+
+**Path aliases:** None — Kotlin uses fully-qualified imports, not bundler-style aliases.
+
+## DSL Authoring Patterns
+
+The DSL is the user-facing API. These patterns are non-negotiable for code that builds IR.
+
+### 1. `@GbktDsl` marker (mandatory)
+
+Every DSL builder class is annotated `@GbktDsl` (`gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/DslMarkers.kt:17`). This prevents implicit-receiver leakage between nested builders — the compiler rejects calls to outer-scope methods from inside a nested block.
+
 ```kotlin
-import io.github.gbkt.core.ir.IRStatement
-import io.github.gbkt.core.ir.IRExpression
-import io.github.gbkt.core.dsl.GameScope
-import io.github.gbkt.core.dsl.RecordingContext
-import kotlin.test.*  // Allowed in tests only
+@GbktDsl
+class EntityBuilder(private val entityName: String) { /* ... */ }
 ```
 
-## Error Handling
+### 2. Property-delegate name inference (No Magic Strings)
 
-**Approach:**
-- Use `require()` for precondition validation with descriptive message
-- Use `check()` for invariant validation
-- Use `error()` when recoverable code path is impossible
-- Use `requireNotNull()` instead of `!!` (never force unwrap)
-
-**Patterns:**
+**Project Rule #1 (from `userMemory feedback_no_magic_strings.md`):** the DSL MUST reflect the name from the Kotlin property delegate or lambda parameter — never duplicate it as a `String` argument.
 
 ```kotlin
-// Precondition validation
-require(speed >= 0) { "Animation speed must be non-negative" }
-require(index >= 0 && index < 40) { "Sprite index must be 0-39" }
+// CORRECT: name inferred from property via VarDelegate.provideDelegate
+var score by u8Var(0)        // registers VariableDef("score", U8, 0)
+var ballDx by i8Var(-1)      // registers VariableDef("ballDx", I8, -1)
+val ball by actor { ... }    // registers ActorIR with id "ball"
+val pause by scene { ... }   // registers SceneIR with id "pause"
 
-// Invariant validation
-check(currentBank >= 0) { "Bank must be initialized before use" }
-
-// Impossible path
-error("Toggle requires a variable") // After exhaustive type checking
-
-// Null safety
-val name = requireNotNull(variable) { "Variable not initialized" }.name
-val value = variable?.let { processIt(it) }  // Safe navigation
+// WRONG: name duplicated as a String
+var score = variable("score", u8(0))   // banned — duplicates "score"
+val ball = actor("ball") { ... }       // banned — duplicates "ball"
 ```
 
-**Recording Context Require:**
-- Operations that must run during DSL recording use `RecordingContext.require()`:
-  ```kotlin
-  fun menuShow() {
-      RecordingContext.require().emit(IRMenuShow(definition.name))
-  }
-  ```
-- Throws clear error if called outside recording context
+The mechanism: every delegate class implements `operator fun provideDelegate(thisRef, property: KProperty<*>)` and reads `property.name`. See:
+- `VarDelegate.provideDelegate` at `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/VariableBuilders.kt:353`
+- `ActorDelegate.provideDelegate` at `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ActorBuilder.kt:1228`
+- `ActorPropDelegate.provideDelegate` at `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ActorBuilder.kt:1179`
 
-## Logging
+When you add a new DSL construct, follow this pattern. There are still legacy `name: String` overloads (e.g. `actor("explicit")`) for cases that genuinely need a different identifier — these are the exception, not the default.
 
-**Framework:** `println()` or Kotlin `println` for simple logging (no SLF4J dependency)
+### 3. Thread-local recording contexts
 
-**When to Log:**
-- DSL debug output uses `println()` guarded by `if (debugGraphics)`
-- Test output via standard assertion messages
-- Code generation debug info in codegen methods (disabled by default)
-- Never log in hot loops or per-frame operations
+Two thread-locals carry builder state without explicit receivers:
 
-**Pattern:**
+- `GameBuilderContext` (`VariableBuilders.kt:47`) — holds the active `GameBuilder` so variable/actor delegates can register themselves at `provideDelegate` time. Set by `GameBuilder` while executing the DSL lambda.
+- `ScriptBuilderContext` (`gbkt-lang/.../ScriptBuilderContext.kt`) — holds the active `ScriptBuilder` so operator extensions on `AssignableVar`/`ActorPropertyRef`/`ArrayVar` can emit `ScriptOp` nodes into the enclosing `enter`/`frame`/`exit` block.
+
+Both follow the same idiom:
+
 ```kotlin
-if (debugGraphics) {
-    println("Loading tilemap: $tilesetName")
+fun <T> with(builder: GameBuilder, block: () -> T): T {
+    val previous = holder.get()
+    holder.set(builder)
+    return try { block() } finally { holder.set(previous) }
 }
 ```
 
-## Null Safety
+Nested contexts are supported (the restore happens in `finally`).
 
-**Approach:**
-
-1. **lateinit for definitely-initialized properties:**
-   ```kotlin
-   private lateinit var variable: GBVar<u8>
-   // Used when property is always set before access
-   ```
-
-2. **requireNotNull with descriptive message:**
-   ```kotlin
-   val name = requireNotNull(variable) { "Variable not initialized" }.name
-   ```
-
-3. **Refactor to return non-null:**
-   ```kotlin
-   private fun getOrCreate(property: KProperty<*>): GBVar<u8> {
-       return variable ?: GBVar(property.name, u8(0), GBVar.VarType.U8).also {
-           variable = it
-       }
-   }
-   ```
-
-4. **Safe call with let:**
-   ```kotlin
-   variable?.let { registerVariable(it) }
-   ```
-
-## Scope Functions
-
-Use appropriately for cleaner, expressive code:
-
-| Function | Use Case | Returns | Example |
-|----------|----------|---------|---------|
-| `apply` | Object configuration | `this` | `PositionComponent().apply { xOffset = 0 }` |
-| `also` | Side effects (logging, registration) | `this` | `createSprite(asset).also { gameBuilder.registerSprite(it) }` |
-| `let` | Null-safe transformations | Lambda result | `sprite?.let { render(it) }` |
-| `run` | Computing a result with receiver | Lambda result | `context.run { compute() }` |
-| `with` | Multiple operations on same object | Lambda result | `with(builder) { add(); configure() }` |
-
-## Builder Methods
-
-Builder methods that configure state return `this` via `apply` for fluent APIs:
+### 4. Fluent builders return `this` via `apply`
 
 ```kotlin
-// PREFER: Fluent builder pattern
 fun position(x: Int, y: Int) = apply {
     this.x = x
     this.y = y
 }
-
-// Usage
-MenuStyleBuilder()
-    .position(5, 8)
-    .width(12)
-    .build()
 ```
 
-## When Expressions
+See `CONTRIBUTING.md` §3 — chainable configuration is the convention.
 
-Use `when` instead of `if/else if/else` chains for 3+ branches:
+### 5. RecordingContext for capturing DSL blocks as IR
 
-```kotlin
-// PREFER: when expression
-val cType = when (varType) {
-    VarType.U8 -> "UINT8"
-    VarType.U16 -> "UINT16"
-    VarType.I8 -> "INT8"
-    VarType.I16 -> "INT16"
-}
-
-// Let sealed classes provide exhaustiveness checking
-// Don't add unnecessary 'else' branches
-```
-
-## Type Inference
-
-Let compiler infer types where obvious:
-
-```kotlin
-// PREFER: Let compiler infer
-val builder = GameBuilder(name)
-val sprites = mutableListOf<Sprite>()
-
-// AVOID: Redundant type declarations
-val builder: GameBuilder = GameBuilder(name)
-
-// EXCEPTION: Public API return types are explicit
-fun createGame(name: String): Game { ... }
-```
-
-## Collections
-
-Prefer immutable collections when mutation not needed:
-
-```kotlin
-// PREFER: Immutable by default
-val items: List<MenuItem> = listOf(item1, item2)
-
-// Use buildList/buildMap for conditional construction
-val sprites = buildList {
-    add(mainSprite)
-    if (hasAnimation) add(animationSprite)
-}
-
-// Use sequences for large collection chains (3+ operations)
-sprites.asSequence()
-    .filter { it.isVisible }
-    .map { it.toBitmap() }
-    .toList()
-```
-
-## Extension Functions
-
-Prefer extension functions over utility classes:
-
-```kotlin
-// PREFER: Extension function
-fun Entity.jumpWithParticles() {
-    velY set -8
-    spawnParticles(x, y)
-}
-
-// AVOID: Utility class
-object EntityUtils {
-    fun jumpWithParticles(entity: Entity) { ... }
-}
-```
-
-## File Organization
-
-**Size guidelines:**
-- Target: <400 lines per file
-- Hard limit: 600 lines (except codegen files which may exceed)
-- Codegen files allowed to exceed due to complex IR → C transformations
-
-**Declaration limits:**
-- Maximum 5-7 top-level declarations per file
-- Sealed hierarchies may exceed when logically cohesive (IR nodes)
-- Each file should have one primary public class/object
-
-**When to split:**
-- File exceeds 400 lines
-- Multiple distinct responsibilities emerge
-- IDE navigation becomes cumbersome
-
-## Package Organization
-
-**gbkt-core structure:**
-```
-gbkt-core/src/main/kotlin/io/github/gbkt/core/
-├── ir/         # Pure IR data classes, no business logic
-├── dsl/        # DSL builders and recording context
-├── builder/    # Game builder and configuration
-├── entity/     # Entity system and pools
-├── graphics/   # Sprites, animation, camera, tilemap
-├── collision/  # Collision detection (AABB, sweep)
-├── rpg/        # RPG system (characters, battles, items)
-├── world/      # World system (floors, encounters, flags)
-├── scene/      # Scene management and transitions
-├── input/      # Input handling and buffering
-├── ui/         # Menu system
-├── test/       # Simulation testing framework
-├── services/   # Dependency injection
-├── assets/     # Type-safe asset references
-├── validation/ # Array bounds, IR reference checking
-├── exploration/# Dungeon crawling system
-├── movement/   # Entity movement controller
-├── combat/     # Battle engine core
-├── flow/       # Game flow and pause menus
-└── optimization/# Asset analysis and suggestions
-```
-
-**Dependency rules (gbkt-core):**
-- `ir/` ← Pure data, no dependencies on other packages
-- `dsl/` ← Depends only on `ir/`
-- Domain packages (`rpg/`, `world/`, etc.) ← Depend on `ir/` and `dsl/`
-- No circular dependencies between packages
-
-**gbkt-backend-gbdk structure:**
-```
-gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/
-├── codegen/
-│   ├── core/        # Core codegen (variables, expressions, statements)
-│   ├── rpg/         # RPG system codegen
-│   └── world/       # World system codegen
-├── profiles/        # Target profiles (GB, GBC)
-└── *.kt             # Backend implementation
-```
-
-**Test structure mirrors source:**
-```
-gbkt-core/src/test/kotlin/io/github/gbkt/core/
-├── LogicBlockTest.kt       # Maps to dsl/LogicBlock.kt
-├── InputTest.kt            # Maps to input/
-├── rpg/
-│   ├── BattleTest.kt       # Maps to rpg/Battle.kt
-│   └── ...
-└── ...
-```
-
-## Comments
-
-**When to comment:**
-- Non-obvious algorithm logic (e.g., collision math)
-- WHY code exists (not WHAT it does - code shows that)
-- Workarounds or edge cases with explanation
-- Complex DSL patterns that aren't self-documenting
-
-**Avoid:**
-- Redundant comments that repeat the code
-- Outdated comments that contradict implementation
-
-**Example:**
-
-```kotlin
-// Deep copy with substitution needed because parameterized logic blocks
-// reuse the same IR tree across multiple invocations.
-// Without copying, modifications would affect the original definition.
-fun deepCopy(substitutions: Map<String, IRExpression>): LogicBlock {
-    // ...
-}
-```
-
-**JSDoc/KDoc:**
-- Used on public APIs and complex functions
-- Document parameters, return value, and usage example
-- Example for DSL functions:
-
-```kotlin
-/**
- * Record IR statements from a block without executing them.
- *
- * The block is executed within a recording context, capturing all operations as IR nodes.
- *
- * @param block The logic to record
- * @return [RecordedIR] for fluent assertions
- *
- * ## Example
- *
- * ```kotlin
- * record { playerX += 10 }
- *     .assertEmitted<IRAssign>()
- *     .assertCount(1)
- * ```
- */
-fun record(block: () -> Unit): RecordedIR
-```
-
-## Function Design
-
-**Size:** Target <50 lines, hard limit <80 lines (except codegen)
-
-**Parameters:**
-- Maximum 6 positional parameters (thresholds: 6 functions, 7 constructors)
-- Use ignoreDefaultParameters = true
-- Data classes ignored in length checks
-- Long parameter lists indicate domain complexity, not poor design
-
-**Return values:**
-- Prefer explicit return over implicit (lambda result)
-- Early return for guard clauses allowed
-- Max 4 explicit returns (excludes equals, labeled returns, guard clauses)
-
-## Module Design
-
-**Exports:**
-- Single primary public class/interface per file
-- Companion object for factory methods
-- Extension functions on domain types
-
-**Barrel Files:**
-- Use for grouping related exports
-- Example: `src/main/kotlin/io/github/gbkt/core/input/ButtonState.kt` re-exports all button types
-
-## DSL Authoring
-
-**@GbktDsl Marker:**
-All DSL builder classes must be annotated:
-```kotlin
-@GbktDsl
-class EntityBuilder(private val entityName: String) {
-    // ...
-}
-```
-
-This prevents accidental access to outer scope receivers in nested builders.
-
-**PropertyDelegateProvider:**
-Use when registration must happen at declaration time:
-```kotlin
-class EntityDelegate(
-    private val gameBuilder: GameBuilder,
-    private val init: EntityBuilder.() -> Unit
-) : PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, Entity>> {
-    override fun provideDelegate(
-        thisRef: Any?,
-        property: KProperty<*>
-    ): ReadOnlyProperty<Any?, Entity> {
-        // Build and register immediately when delegate is created
-        val entity = EntityBuilder(property.name).apply(init).build()
-        gameBuilder.registerEntity(entity)
-        return ReadOnlyProperty { _, _ -> entity }
-    }
-}
-```
-
-**Recording Context:**
-Use `RecordingContext.record()` for capturing DSL blocks as IR:
 ```kotlin
 fun onSelect(block: MenuActionScope.() -> Unit) {
     val recorder = StatementRecorder()
@@ -440,29 +171,161 @@ fun onSelect(block: MenuActionScope.() -> Unit) {
 }
 ```
 
-## Detekt Rule Justifications
+When a builder needs to capture a lambda's side-effects as IR (not values), use `RecordingContext.record()`. CONTRIBUTING.md §"Recording Context".
 
-**LongMethod (80 line threshold, excludes codegen/ir/test):**
-- C code generation inherently produces large methods
-- Each IR node maps to C output
-- Breaking up would reduce readability
+## Operator Overloading
 
-**TooManyFunctions (25 in files, excludes codegen/ir/builder/scene/graphics):**
-- `ExpressionWrapper.kt` has 60+ operator overloads for DSL ergonomics
-- Builder classes have many configuration methods
-- Scene transition scope has many transition types
+The DSL aggressively uses operator overloads to make Kotlin syntax mirror imperative game code. Counts (verified via grep):
 
-**LongParameterList (6 functions, 7 constructors, excludes rpg/entity/ui/world/exploration/combat/movement):**
-- Domain models (Character, Monster, Battle) require comprehensive fields
-- RPG systems have many attributes by nature
+| File | `operator fun` / `infix fun` |
+|------|-------------------------------|
+| `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/VariableBuilders.kt` | 81 |
+| `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ActorBuilder.kt` | 72 |
+| `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ExprBuilder.kt` | 70 |
 
-**Complexity rules relaxed for:**
-- `codegen/` - C code generation inherently complex
-- `ir/` - IR substitution/deepCopy inherently complex
-- `validation/` - Validation has complex branching
-- `collision/` - Collision math is complex
-- `intellij/completion/` - Type resolution checks many types
+**Pattern: one function per operator × type combination.** The receiver is `AssignableVar`, `ActorPropertyRef`, or `Expr`. The right-hand side is `Int`, `Expr`, `AssignableVar`, or `ActorPropertyRef`. Three RHS types × ~7 operators × 3 receivers ≈ 60+ overloads each. Detekt `TooManyFunctions` is suppressed per-file via `@file:Suppress("TooManyFunctions")` with the rationale comment "Operator extensions require one function per operator/type combination" (see `VariableBuilders.kt:7-9`).
+
+**Assignment operators emit into the active `ScriptBuilder`:**
+
+```kotlin
+// VariableBuilders.kt
+infix fun AssignableVar.set(value: Expr) {
+    ScriptBuilderContext.current?.assign(name, value, AssignOp.SET)
+        ?: error("set() called outside a ScriptBuilder block")
+}
+
+operator fun AssignableVar.plusAssign(value: Expr) {
+    ScriptBuilderContext.current?.assign(name, value, AssignOp.ADD)
+        ?: error("+= called outside a ScriptBuilder block")
+}
+```
+
+**Arithmetic operators return `Expr` (pure value):**
+
+```kotlin
+operator fun AssignableVar.plus(other: Int): Expr = toExpr() + other
+operator fun AssignableVar.plus(other: AssignableVar): Expr = toExpr() + other.toExpr()
+```
+
+**Comparisons use English infix names** (`isAbove`, `isBelow`, `isAtLeast`, `isAtMost`, `isEqualTo`, `isNotEqualTo`) — not operator symbols — because Kotlin doesn't allow custom `<`/`>` operators on arbitrary types. This is why `whenever(score isAtLeast 100) { ... }` reads naturally.
+
+**Logical operators:** `&&` and `||` cannot be overloaded in Kotlin. The DSL provides `logicalAnd` / `logicalOr` infix functions for combining `Expr` conditions.
+
+**Bitwise operators:** `and`, `or`, `xor`, `shl`, `shr`, `inv` for hardware bit manipulation (tile coordinate shifts, mask checks).
+
+## Visitor Implementation Pattern
+
+The `gbkt-ir` module defines three non-sealed visitor interfaces. Backends and analysis passes implement them:
+
+- `ExprVisitorI<R>` (`gbkt-ir/.../ExprVisitorI.kt`) — 10 `visit*` methods, one per `Expr` subtype
+- `ScriptOpVisitorI<R>` (`gbkt-ir/.../ScriptOpVisitorI.kt`) — 51 `visit*` methods, one per `ScriptOp` subtype
+- `SystemIRVisitorI<R>` (`gbkt-ir/.../SystemIRVisitorI.kt`) — 8 `visit*` methods, one per `SystemIR` subtype
+
+Each IR node implements `fun <R> accept(visitor: VisitorI<R>): R = visitor.visitX(this)`. **The interfaces are non-sealed deliberately** (`gbkt-ir/CLAUDE.md` "Architecture"): sealed would force every implementation into one module, defeating the multi-module split. The compiler still enforces exhaustiveness because each visitor interface declares every `visit*` method explicitly — implementing classes that miss one fail to compile.
+
+**Backend conventions** (`gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/CLAUDE.md`):
+- `object` visitors are stateless (`ScriptOpVisitor`, `ActorVisitor`, `SceneVisitor`)
+- `class` visitors receive `GameIR` (or subsets) in their constructor for cross-cutting queries (`ExprVisitor`, `DialogVisitor`, `MenuVisitor`, `HudVisitor`, `InventoryVisitor`, `CombatVisitor`, `RpgVisitor`, `SoundVisitor`, `CollisionVisitor`, `GBDKSystemVisitor`)
+- Visitors return immutable `CFile`/`CFunction`/`CVarDecl` data classes. The pipeline assembles them into `CFile` instances; `CEmitter` is the single point of text serialization.
+
+**Literal-emission discipline** (signed-vs-unsigned C literals): use `CLiteral(N)` everywhere by default; use `CIntLiteral(N)` only as the RHS of a comparison `CBinaryExpr` whose LHS is an INT8/INT16-typed expression. The rationale is in `gbkt-backend-gbdk/CLAUDE.md` § "Literal Emission Convention" — C11 §6.3.1.8 silently promotes signed operands of mixed-signedness comparisons, inverting the test. The split is enforced by the sealed `CExpr` hierarchy in the AST and by `ExprVisitor`'s variable-type registry.
+
+## Error Handling
+
+**Strategy:** fail fast with descriptive exceptions. No silent failures.
+
+**DSL validation errors:** `DSLValidationError` (`gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/Errors.kt:22`) is thrown at recording time or at `GameBuilder.build()`. The message format follows compiler conventions:
+
+```
+error: Unresolved reference "X". Did you mean 'Y'?
+```
+
+The "did you mean" suggestion is computed via Levenshtein distance in `gbkt-ir/src/main/kotlin/io/github/gbkt/core/Suggestions.kt`.
+
+**`error(...)` for invariant violations:** the standard library `error()` (throws `IllegalStateException`) is used inside DSL operator implementations to enforce context:
+
+```kotlin
+infix fun AssignableVar.set(value: Expr) {
+    ScriptBuilderContext.current?.assign(name, value, AssignOp.SET)
+        ?: error("set() called outside a ScriptBuilder block")
+}
+```
+
+**`requireNotNull` and Elvis pattern** for null safety (per CONTRIBUTING.md §1):
+
+```kotlin
+val gameBuilder = GameBuilderContext.current
+    ?: error("actor {} must be called inside a game {} block")
+```
+
+**Broad catch only at boundaries:** detekt `TooGenericExceptionCaught` is excluded for `**/intellij/codegen/**`, `**/mcp/**`, and `**/emulator/**` — catching `Exception` is allowed only at protocol boundaries (savestate IO, metadata parse, MCP JSON dispatch). The `@Suppress("TooGenericExceptionCaught")` annotation must be present with an inline comment explaining why (see `GbktTestExtension.kt:125-130`).
+
+**Test failure handling:** `throw AssertionError(...)` directly in main source (because `kotlin.test` and JUnit5 `Assertions` are only available in test source sets). All `gbkt-test` assertion functions follow this pattern. Failure messages always include the frame number and current scene for diagnostic context (`gbkt-test/.../GbktTestExtension.kt:40-41`).
+
+## Null Safety
+
+**Never use `!!` in production code** (CONTRIBUTING.md §1). Preferred alternatives, in order:
+
+1. `lateinit var` — for definitely-initialized properties (e.g. `agent: StepAgent` in `GbktTestExtension`)
+2. `requireNotNull(x) { "descriptive message" }` — for runtime invariants
+3. Refactor to return non-null (e.g. lazy-initialize)
+4. Safe-call with `let` — for nullable side-effects
+
+Test code is allowed `!!` for terse fixture access (e.g. `game.metadata!!` in `PongStepAgentTest.kt:64`) — this is a pragmatic exception, not a green light for main source.
+
+## Immutability Defaults
+
+- **Prefer immutable collections** (CONTRIBUTING.md §6): `listOf`, `mapOf`, `setOf` by default; `buildList`/`buildMap` for conditional construction; `mutableListOf` only when mutation is required (e.g. recording IR ops in a `ScriptBuilder`)
+- **Use sequences for large chains** (3+ operations): `sprites.asSequence().filter {...}.map {...}.toList()`
+- IR types are `data class` with `val` properties throughout (`Expr.kt`, `ScriptOp.kt`, `Types.kt`) — IR is immutable by construction
+- C AST types in `gbkt-backend-gbdk/.../codegen/ast/` are also immutable data classes. The pipeline assembles them into `CFile` instances that are emitted once
+
+## Scope Functions
+
+Per CONTRIBUTING.md §2:
+
+| Function | Use Case | Returns |
+|----------|----------|---------|
+| `apply`  | Object configuration (fluent builders) | `this` |
+| `also`   | Side effects (logging, registration) | `this` |
+| `let`    | Null-safe transformations | Lambda result |
+| `run`    | Computing a result with receiver | Lambda result |
+| `with`   | Multiple operations on same object | Lambda result |
+
+## Comments
+
+**KDoc on public types and DSL builders** — non-trivial DSL constructs document their semantics, intended usage, and the IR node they produce. See `VarDelegate` at `VariableBuilders.kt:330-389` for the canonical pattern.
+
+**Inline `// rationale:` comments** for `@Suppress` annotations explain why a detekt rule is disabled at that site (e.g. `GbktTestExtension.kt:124-125`: "Broad catch is intentional: failure-reporting code must not throw new exceptions that would mask the original test failure.").
+
+**TODO/FIXME/HACK** allowed (detekt `ForbiddenComment` disabled). No outstanding occurrences in `gbkt-test/src/main/kotlin/`.
+
+## Function Design
+
+- **Size:** target <80 lines (detekt `LongMethod` threshold); excluded packages may exceed (codegen, IR, validation, DSL builders — see the exclusion table)
+- **Parameters:** ≤6 for functions, ≤7 for constructors; exempted packages allow more
+- **Return values:** ≤4 return statements per function (detekt `ReturnCount`); IntelliJ/MCP/codegen exempted for fail-fast input validation
+
+## Module Design
+
+- **Exports:** Kotlin's default `public` visibility for the API; `internal` for module-private helpers (used in `gbkt-test` for stub injection: `GbktTestExtension.stubEmulatorFactory` at line 62)
+- **Barrel files:** not used. Explicit imports per CONTRIBUTING.md §8
+- **Module boundary enforcement:** `gbkt-ir` runs a `validateModuleBoundaries` task during `check` that rejects any dependency on `gbkt-lang`/`gbkt-engine`/`gbkt-world`/`gbkt-core` — `gbkt-ir` must remain a leaf
+- **One primary class per file**; max 5–7 top-level declarations (CONTRIBUTING.md §9); IR domain files (one file per IR subsystem) are the exception
+
+## License Headers
+
+All `.kt` files start with the MPL 2.0 header (Apache 2.0 for `gbkt-intellij-plugin`). Spotless enforces this automatically (`build.gradle.kts:46-88`). The header is:
+
+```kotlin
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Copyright (c) 2026 Michal Svacha
+ */
+```
 
 ---
 
-*Convention analysis: 2026-02-17*
+*Convention analysis: 2026-05-27*

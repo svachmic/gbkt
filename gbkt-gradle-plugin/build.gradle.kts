@@ -63,6 +63,10 @@ dependencies {
     // Backend needed for integration tests (ServiceLoader discovery via withPluginClasspath)
     testImplementation("io.github.gbkt:gbkt-backend-api:$gbktVersion-SNAPSHOT")
     testImplementation("io.github.gbkt:gbkt-backend-gbdk:$gbktVersion-SNAPSHOT")
+    // IR types needed for D-01b validation gate unit tests (Plan 12.4-05 Task 2)
+    // The production code uses reflection (worker classloader isolation), but the test can use
+    // typed GameIR/MetaspriteIR directly since tests run in the plugin's own classloader.
+    testImplementation("io.github.gbkt:gbkt-ir:$gbktVersion-SNAPSHOT")
 }
 
 kotlin {

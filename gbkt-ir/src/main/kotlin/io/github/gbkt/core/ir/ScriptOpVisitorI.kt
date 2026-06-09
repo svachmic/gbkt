@@ -13,8 +13,9 @@ package io.github.gbkt.core.ir
 /**
  * Visitor interface for [ScriptOp] dispatch.
  *
- * Provides one `visit*` method per [ScriptOp] subtype (36 total). Implementations convert IR nodes
+ * Provides one `visit*` method per [ScriptOp] subtype. Implementations convert IR nodes
  * to a result of type [T].
+ * (Do not maintain a manual count — use `grep -c "^    fun visit" ScriptOpVisitorI.kt` to check.)
  *
  * The `I` suffix distinguishes this interface from the backend's `ScriptOpVisitor` object (which is
  * an implementation of this interface).
@@ -140,6 +141,10 @@ interface ScriptOpVisitorI<T> {
 
     fun visitMathOp(op: MathOp): T
 
+    // --- Level binding ---
+
+    fun visitBindCurrentLevel(op: BindCurrentLevel): T
+
     // --- Escape hatch ---
 
     fun visitRawOp(op: RawOp): T
@@ -165,6 +170,11 @@ interface ScriptOpVisitorI<T> {
     // --- Animation state machine ---
 
     fun visitSetAnimationState(op: SetAnimationState): T
+
+    // --- Metasprites ---
+
+    /** Dispatched by [MoveMetasprite.accept]. Backend implementation lands in Plan 07. */
+    fun visitMoveMetasprite(op: MoveMetasprite): T
 
     // --- Physics ---
 

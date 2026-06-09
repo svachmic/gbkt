@@ -28,7 +28,7 @@ import kotlin.test.assertTrue
  */
 class BreakoutIRTest {
 
-    private val ir = breakoutV2.build()
+    private val ir = breakout.build()
 
     @Test
     fun `has 4 scenes`() {

@@ -6,10 +6,11 @@
  */
 package io.github.gbkt.backend.gbdk.codegen
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.ActorPoolConfig
 import io.github.gbkt.core.ir.ActorPoolIR
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.CollisionGroupIR
 import io.github.gbkt.core.ir.CollisionResponse
@@ -43,7 +44,7 @@ import kotlin.test.assertTrue
 
 // =============================================================================
 // PHASE 06.7 CODEGEN INTEGRATION TESTS
-// Verifies that the full GBDKPipelineV2 produces correct combined C output for
+// Verifies that the full GBDKPipeline produces correct combined C output for
 // all 7 Phase 06.7 features working together in a single game.
 //
 // Tests:
@@ -233,7 +234,7 @@ private fun buildPhase067CodegenGameIR(): GameIR {
 
     return GameIR(
         name = "Phase067IntegrationGame",
-        config = CartridgeConfig(cartridge = "ROM_MBC5", romBanks = 16),
+        config = CartridgeConfig(cartridge = Cartridge.MBC5, romBanks = 16),
         scenes = listOf(gameScene),
         actors = listOf(bullet, smoothPlayer, physicsHero, enemyNpc),
         actorPools = listOf(bulletPool),
@@ -249,7 +250,7 @@ private fun buildPhase067CodegenGameIR(): GameIR {
 
 class Phase067CodegenIntegrationTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: Full pipeline produces output without exceptions

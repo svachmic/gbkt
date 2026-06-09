@@ -29,7 +29,7 @@ Move your paddle up and down to deflect the ball past your opponent. When the ba
 - AI paddle uses center tracking: it tracks `paddle2.y + 8` against `ball.y`, moving 2px/frame, clamped between y=16 and y=112
 - Ball resets to center (80, 72) after each score; direction reverses toward the scoring player
 - Score is displayed via `print("P1:%d    P2:%d")` at position (5, 1) — updated on each score event
-- Paddle collision uses coordinate-range checks (x 4..20 for P1, x 148..156 for P2) rather than AABB hitboxes, for tighter gameplay feel
+- Paddle collision uses coordinate-range checks (x 2..8 for P1, x 148..156 for P2) rather than AABB hitboxes, for tighter gameplay feel
 
 ## Variables Reference
 | Variable | Type | Semantic | Description |

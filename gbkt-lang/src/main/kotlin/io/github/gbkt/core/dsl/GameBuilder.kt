@@ -25,6 +25,7 @@ import io.github.gbkt.core.ir.IRCollRingBuffer
 import io.github.gbkt.core.ir.ItemCategoryDef
 import io.github.gbkt.core.ir.ItemDef
 import io.github.gbkt.core.ir.MenuDef
+import io.github.gbkt.core.ir.MetaspriteIR
 import io.github.gbkt.core.ir.MusicDef
 import io.github.gbkt.core.ir.PaletteType
 import io.github.gbkt.core.ir.RefKind
@@ -43,7 +44,7 @@ import io.github.gbkt.core.ir.ZoneIR
  * val ir = game("MyGame") {
  *     val player = actor("player") { position(80, 72) }
  *     val titleScene = scene("title") { enter { hideSprites() } }
- *     start = "title"
+ *     start = titleScene
  * }.build()
  * ```
  *
@@ -89,11 +90,12 @@ class GameBuilder(val name: String) {
         mutableListOf()
     private val _collisionRules: MutableList<io.github.gbkt.core.ir.CollisionRuleIR> =
         mutableListOf()
+    private val _metaspriteIRs: MutableList<MetaspriteIR> = mutableListOf()
 
     private var config: CartridgeConfig = CartridgeConfig()
 
-    /** The ID of the scene to display on game boot. Must be set before [build]. */
-    var start: String? = null
+    /** The start scene shown on game boot. Must be set before [build]. */
+    var start: SceneRef? = null
 
     // -------------------------------------------------------------------------
     // Internal: variable registration (called by VarDelegate via GameBuilderContext)
@@ -157,9 +159,40 @@ class GameBuilder(val name: String) {
      * Called by [ActorPoolDelegate.provideDelegate] when a `val bullets by pool(bullet, max = 8)`
      * property is initialized inside a `game {}` block.
      */
-    internal fun registerActorPool(pool: io.github.gbkt.core.ir.ActorPoolIR) {
+    fun registerActorPool(pool: io.github.gbkt.core.ir.ActorPoolIR) {
         _actorPools.add(pool)
     }
+
+    /**
+     * Registers a [ZoneIR] directly with this builder.
+     *
+     * Used by genre packages (e.g., gbkt-genre-sport's `RacingDelegate`) to inject a synthesized
+     * zone — for example, a track zone whose tile data was rasterized from a waypoint polygon by
+     * `TrackSynthesizer` — without going through the user-facing `zone(id) { … }` factory. The zone
+     * is appended to the same registry the public `zone()` factory uses, so codegen sees it
+     * identically.
+     */
+    fun registerZone(zone: ZoneIR) {
+        _zones += zone
+    }
+
+    /**
+     * Read-only snapshot of registered systems for genre-DSL inspection.
+     *
+     * Returns a defensive copy so genre packages can check for existing entries (e.g., "did the
+     * user already declare a `camera { }`?") without being able to mutate the list. Read-only;
+     * registrations still go through `registerSystem(...)`.
+     */
+    fun currentSystems(): List<SystemIR> = systems.toList()
+
+    /**
+     * Read-only snapshot of registered zones for genre-DSL inspection.
+     *
+     * Returns a defensive copy. Used by `gbkt-genre-sport`'s `RacingDelegate` to honor D-12: if the
+     * user already supplied a populated `ZoneIR` for the racing id, the delegate skips the track
+     * synthesis pass and reuses the user's tile data.
+     */
+    fun currentZones(): List<ZoneIR> = _zones.toList()
 
     /**
      * Registers a [MusicDef] with this game builder so that it is included in [GameIR.musicDefs].
@@ -298,12 +331,14 @@ class GameBuilder(val name: String) {
         systems.add(system)
     }
 
-    /** Configures and registers a save/load system with the given ID. */
-    fun saveData(id: String, block: SaveDataBuilder.() -> Unit) {
-        val builder = SaveDataBuilder(id)
-        builder.block()
-        val system = builder.build()
-        refRegistry.register(id, RefKind.SYSTEM)
+    /**
+     * Registers a [SaveSystem] built by [SaveDataDelegate].
+     *
+     * Called by [SaveDataDelegate.provideDelegate] when `val saves by saveData { }` is evaluated
+     * inside a `game { }` block. The system id is inferred from the property name (Project Rule #1).
+     */
+    internal fun registerSaveData(system: io.github.gbkt.core.ir.SaveSystem) {
+        refRegistry.register(system.id, RefKind.SYSTEM)
         systems.add(system)
     }
 
@@ -425,32 +460,6 @@ class GameBuilder(val name: String) {
     // -------------------------------------------------------------------------
     // World system builders — zones and flags
     // -------------------------------------------------------------------------
-
-    /**
-     * Defines a navigable zone (dungeon floor, overworld region, town, etc.) and returns a
-     * [ZoneRef] for use in [ExplorationBuilder.startZone] and transition configurations.
-     *
-     * Usage:
-     * ```kotlin
-     * val floor1 = zone("floor1") {
-     *     name("Dungeon Level 1")
-     *     tileset("dungeon.png")
-     *     size(32, 32)
-     *     encounters { safeSteps(10); entry("goblin_pack", weight = 30) }
-     * }
-     * // Then reference it in exploration:
-     * exploration { startZone(floor1) }
-     * ```
-     *
-     * @return [ZoneRef] with the zone's ID for type-safe references.
-     */
-    fun zone(id: String, block: ZoneBuilder.() -> Unit): ZoneRef {
-        val builder = ZoneBuilder(id)
-        builder.block()
-        val zone = builder.build()
-        _zones += zone
-        return ZoneRef(id)
-    }
 
     /**
      * Defines a global flags container grouping named boolean flags into pages.
@@ -616,6 +625,31 @@ class GameBuilder(val name: String) {
         _collisionRules.add(rule)
     }
 
+    /**
+     * Registers a [MetaspriteIR] so it is included in [GameIR.metasprites].
+     *
+     * Called by [MetaspriteDelegate.provideDelegate] when a `val elephant by metasprite { ... }`
+     * property is initialized inside a `game {}` block.
+     */
+    internal fun registerMetasprite(ir: MetaspriteIR) {
+        _metaspriteIRs.add(ir)
+    }
+
+    /**
+     * Looks up an already-registered [MetaspriteIR] by id.
+     *
+     * Used by the `moveMetasprite()` DSL helper (Plan 10.1-03) to read back the captured
+     * `posXVarName` / `posYVarName` / `idxVarName` / `rotVarName` fields and mirror them onto the
+     * emitted [io.github.gbkt.core.ir.MoveMetasprite] ScriptOp so the visitor (Plan 05) can emit
+     * per-metasprite-namespaced variable references.
+     *
+     * Returns `null` if no metasprite with [id] has been registered — the helper falls through with
+     * all four var-name fields left at their default `null`, preserving Phase 10 back-compat.
+     */
+    internal fun findMetasprite(id: String): MetaspriteIR? = _metaspriteIRs.firstOrNull {
+        it.id == id
+    }
+
     // -------------------------------------------------------------------------
     // Build
     // -------------------------------------------------------------------------
@@ -636,20 +670,20 @@ class GameBuilder(val name: String) {
         refRegistry.resolveAll()
 
         // Step 2: start scene must be set
-        val startScene =
+        val startRef =
             start
                 ?: throw DSLValidationError(
-                    "error: No start scene set. Use `start = \"sceneId\"` in the game block."
+                    "error: No start scene set. Use `start = sceneRef` in the game block."
                 )
 
         // Step 3: start scene must reference a known scene
         val knownScenes = refRegistry.registeredIds(RefKind.SCENE)
-        if (!knownScenes.contains(startScene)) {
+        if (!knownScenes.contains(startRef.id)) {
             // Use Suggestions for "Did you mean?"
             val suggestion =
-                io.github.gbkt.core.Suggestions.formatSuggestion(startScene, knownScenes)
+                io.github.gbkt.core.Suggestions.formatSuggestion(startRef.id, knownScenes)
             throw DSLValidationError(
-                "error: Unresolved reference \"$startScene\" in start scene.$suggestion"
+                "error: Unresolved reference \"${startRef.id}\" in start scene.$suggestion"
             )
         }
 
@@ -664,13 +698,24 @@ class GameBuilder(val name: String) {
 
         // Inject per-actor palette SetPalette ops into each scene's enter handler.
         // Actors with a non-null palette override get a SPRITE palette load at scene enter time.
-        val actorPaletteOps =
-            actors.mapNotNull { actor ->
-                actor.palette?.let { pal ->
-                    val slot = if (pal.slot >= 0) pal.slot else 0
-                    SetPalette(pal.name, slot, PaletteType.SPRITE)
-                }
+        //
+        // SEED-007 / D-extra fix (Phase 10.1 Plan 01): the auto-slot fallback must be a running
+        // counter, not the constant 0 — otherwise every auto-slotted actor palette collapses
+        // into slot 0 and only the LAST actor's palette is actually loaded at runtime.
+        //
+        // Mirrors the already-merged SceneBuilder.palette() fix (commit 2e8fb256, Phase 10
+        // Plan 16). The SceneBuilder fix uses `paletteOps.size` because its list is built
+        // incrementally; here `mapNotNull` skips actors without palettes, so we use a
+        // standalone `actorPaletteAutoSlot++` counter rather than `mapIndexedNotNull { idx, … }`
+        // (the seed's first proposal — `idx` there is the actor index, not the auto-slot count,
+        // so an explicit-slot actor in the middle would still bump the next auto slot wrongly).
+        var actorPaletteAutoSlot = 0
+        val actorPaletteOps = actors.mapNotNull { actor ->
+            actor.palette?.let { pal ->
+                val slot = if (pal.slot >= 0) pal.slot else actorPaletteAutoSlot++
+                SetPalette(pal.name, slot, PaletteType.SPRITE)
             }
+        }
         val scenes =
             if (actorPaletteOps.isNotEmpty()) {
                 sceneBuilders.map { scene ->
@@ -683,11 +728,10 @@ class GameBuilder(val name: String) {
         // Auto-create implicit _default_npc group and OVERLAP rule.
         // Any actor with collidesWithNpcs=true but NO explicit groupIds gets added to this group.
         // Actors with explicit groupIds are NOT added to _default_npc (no double-checking).
-        val implicitNpcActors =
-            actors.filter { actor ->
-                val cfg = actor.npcCollisionConfig
-                cfg != null && cfg.collidesWithNpcs && cfg.groupIds.isEmpty()
-            }
+        val implicitNpcActors = actors.filter { actor ->
+            val cfg = actor.npcCollisionConfig
+            cfg != null && cfg.collidesWithNpcs && cfg.groupIds.isEmpty()
+        }
         val effectiveGroups = _collisionGroups.toMutableList()
         val effectiveRules = _collisionRules.toMutableList()
         if (implicitNpcActors.isNotEmpty()) {
@@ -710,24 +754,24 @@ class GameBuilder(val name: String) {
             }
         }
         // Re-map actors: assign implicit _default_npc groupId to eligible actors
-        val finalActors =
-            actors.map { actor ->
-                val cfg = actor.npcCollisionConfig
-                if (cfg != null && cfg.collidesWithNpcs && cfg.groupIds.isEmpty()) {
-                    actor.copy(
-                        npcCollisionConfig =
-                            cfg.copy(groupIds = listOf(CollisionGroupIR.DEFAULT_NPC_GROUP))
-                    )
-                } else {
-                    actor
-                }
+        val finalActors = actors.map { actor ->
+            val cfg = actor.npcCollisionConfig
+            if (cfg != null && cfg.collidesWithNpcs && cfg.groupIds.isEmpty()) {
+                actor.copy(
+                    npcCollisionConfig =
+                        cfg.copy(groupIds = listOf(CollisionGroupIR.DEFAULT_NPC_GROUP))
+                )
+            } else {
+                actor
             }
+        }
 
         return GameIR(
             name = name,
             config = config,
             scenes = scenes,
             actors = finalActors,
+            metasprites = _metaspriteIRs.toList(),
             systems = systems.toList(),
             variables = variables.toList(),
             arrays = arrays.toList(),
@@ -739,7 +783,7 @@ class GameBuilder(val name: String) {
             fixedSlots = _fixedSlots.toList(),
             assets = assets,
             palettes = _palettes.toList(),
-            startScene = startScene,
+            startScene = startRef.id,
             sourceLocation = captureV2Location(),
             dialogs = dialogs.toList(),
             menus = menus.toList(),
@@ -773,8 +817,8 @@ class GameBuilder(val name: String) {
  *
  * ```kotlin
  * val ir = game("Pong") {
- *     scene("game") { ... }
- *     start = "game"
+ *     val gameScene = scene("game") { ... }
+ *     start = gameScene
  * }.build()
  * ```
  */

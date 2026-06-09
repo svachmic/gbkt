@@ -1,0 +1,810 @@
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins
+> Task :buildSrc:generateScriptPluginAdapters
+> Task :buildSrc:pluginDescriptors
+> Task :buildSrc:processResources
+> Task :buildSrc:compilePluginsBlocks
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors
+> Task :buildSrc:compileKotlin
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:classes
+> Task :buildSrc:jar
+> Task :gbkt-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-gradle-plugin:pluginDescriptors
+> Task :gbkt-gradle-plugin:processResources
+
+> Task :gbkt-gradle-plugin:compileKotlin
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/GenerateCTask.kt:571:21 Type argument for reified type parameter 'T' was inferred to the intersection of ['Comparable<*>' & 'Serializable']. Reification of an intersection type results in the common supertype being used. This may lead to subtle issues and an explicit type argument is encouraged. This will become an error in a future release.
+
+> Task :gbkt-gradle-plugin:compileJava NO-SOURCE
+> Task :gbkt-gradle-plugin:classes
+> Task :gbkt-gradle-plugin:jar
+> Task :gbkt-all:clean
+> Task :gbkt-analysis:clean
+> Task :gbkt-backend-api:clean
+> Task :gbkt-backend-gbdk:clean
+> Task :gbkt-bom:clean UP-TO-DATE
+> Task :gbkt-cli:clean
+> Task :gbkt-core:clean
+> Task :gbkt-emulator:clean
+> Task :gbkt-engine:clean
+> Task :gbkt-genre-platformer:clean
+> Task :gbkt-genre-puzzle:clean
+> Task :gbkt-genre-rpg:clean
+> Task :gbkt-genre-sport:clean
+> Task :gbkt-intellij-plugin:clean
+> Task :gbkt-ir:clean
+> Task :gbkt-lang:clean
+> Task :gbkt-mcp-server:clean
+> Task :gbkt-test:clean
+> Task :gbkt-world:clean
+> Task :LabyrinthOfTheDragon-port:clean
+> Task :gbkt-examples:banks:clean
+> Task :gbkt-examples:breakout:clean
+> Task :gbkt-examples:metasprites:clean
+> Task :gbkt-examples:metasprites-stress:clean
+> Task :gbkt-examples:platformer-template:clean
+> Task :gbkt-examples:pong:clean
+> Task :gbkt-examples:racer:clean
+> Task :gbkt-examples:simple-physics:clean
+> Task :gbkt-analysis:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-backend-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-engine:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:processResources NO-SOURCE
+> Task :gbkt-lang:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-lang:processResources NO-SOURCE
+> Task :gbkt-engine:processResources NO-SOURCE
+> Task :gbkt-world:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-world:processResources NO-SOURCE
+> Task :gbkt-core:processResources NO-SOURCE
+> Task :gbkt-backend-api:processResources NO-SOURCE
+> Task :gbkt-analysis:processResources NO-SOURCE
+> Task :gbkt-backend-gbdk:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:processResources NO-SOURCE
+> Task :gbkt-backend-gbdk:processResources
+> Task :gbkt-examples:pong:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-examples:pong:processResources
+
+> Task :gbkt-examples:pong:processAssets
+Full asset processing...
+  Processing: ball.png
+    ball.png: 1 tiles → 1 unique tiles
+  Processing: paddle.png
+    paddle.png: 2 tiles → 1 unique tiles
+  Manifest written: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/pong/build/generated/assets/asset-manifest.json (2 assets)
+
+> Task :gbkt-examples:breakout:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-examples:breakout:processResources
+
+> Task :gbkt-examples:breakout:processAssets
+Full asset processing...
+  Processing: ball.png
+    ball.png: 1 tiles → 1 unique tiles
+  Processing: paddle.png
+    paddle.png: 3 tiles → 3 unique tiles
+  Processing: brick.png
+    brick.png: 2 tiles → 2 unique tiles
+  Manifest written: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/breakout/build/generated/assets/asset-manifest.json (3 assets)
+
+> Task :gbkt-examples:simple-physics:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-examples:simple-physics:processResources NO-SOURCE
+
+> Task :gbkt-examples:simple-physics:processAssets
+Full asset processing...
+  Processing: ball.png
+    ball.png: 1 tiles → 1 unique tiles
+  Manifest written: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/simple-physics/build/generated/assets/asset-manifest.json (1 assets)
+
+> Task :gbkt-examples:metasprites:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-examples:metasprites:processResources NO-SOURCE
+
+> Task :gbkt-examples:metasprites:processAssets
+Full asset processing...
+  Processing: elephant.png
+    elephant.png: 240 tiles → 49 unique tiles
+  Manifest written: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/metasprites/build/generated/assets/asset-manifest.json (1 assets)
+
+> Task :gbkt-examples:metasprites-stress:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-examples:metasprites-stress:processResources NO-SOURCE
+
+> Task :gbkt-examples:metasprites-stress:processAssets
+Full asset processing...
+  Processing: elephant.png
+    elephant.png: 240 tiles → 49 unique tiles
+  Processing: tiger.png
+    tiger.png: 240 tiles → 49 unique tiles
+  Processing: player.png
+    player.png: 2 tiles → 2 unique tiles
+  Manifest written: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/metasprites-stress/build/generated/assets/asset-manifest.json (3 assets)
+
+> Task :gbkt-examples:banks:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-examples:banks:processResources NO-SOURCE
+
+> Task :gbkt-examples:banks:processAssets
+Full asset processing...
+  Processing: .gitkeep
+  Skipping unsupported asset type: .gitkeep
+  Processing: checker.png
+    checker.png: 4 tiles → 2 unique tiles
+  Manifest written: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/banks/build/generated/assets/asset-manifest.json (1 assets)
+
+> Task :gbkt-genre-sport:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-sport:processResources
+> Task :gbkt-examples:racer:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-examples:racer:processResources NO-SOURCE
+
+> Task :gbkt-examples:racer:processAssets
+Full asset processing...
+  Processing: track.png
+    track.png: 1 tiles → 1 unique tiles
+  Processing: car.png
+    car.png: 2 tiles → 2 unique tiles
+  Manifest written: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/racer/build/generated/assets/asset-manifest.json (2 assets)
+
+> Task :gbkt-genre-platformer:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-platformer:processResources
+> Task :gbkt-examples:platformer-template:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-examples:platformer-template:processResources NO-SOURCE
+
+> Task :gbkt-examples:platformer-template:processAssets
+Full asset processing...
+  Processing: .gitkeep
+  Skipping unsupported asset type: .gitkeep
+  Processing: README.md
+  Skipping unsupported asset type: README.md
+  Processing: world1-tileset.png
+    world1-tileset.png: 32 tiles → 27 unique tiles
+  Processing: next-level.png
+    next-level.png: 180 tiles → 28 unique tiles
+  Processing: world2-area1.png
+    world2-area1.png: 1920 tiles → 41 unique tiles
+  Processing: title-screen.png
+    title-screen.png: 180 tiles → 117 unique tiles
+  Processing: world2-tileset.png
+    world2-tileset.png: 70 tiles → 69 unique tiles
+  Processing: world1-area2.png
+    world1-area2.png: 1920 tiles → 26 unique tiles
+  Processing: world1-area1.png
+    world1-area1.png: 1920 tiles → 27 unique tiles
+  Processing: player-character-gbapduck-sprites.png
+    player-character-gbapduck-sprites.png: 144 tiles → 109 unique tiles
+  Manifest written: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/platformer-template/build/generated/assets/asset-manifest.json (8 assets)
+
+> Task :gbkt-ir:compileKotlin
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/GameIRSerializer.kt:1135:13 'when' is exhaustive so 'else' is redundant here.
+
+> Task :gbkt-ir:compileJava NO-SOURCE
+> Task :gbkt-ir:classes UP-TO-DATE
+> Task :gbkt-ir:jar
+> Task :gbkt-lang:compileKotlin
+> Task :gbkt-lang:compileJava NO-SOURCE
+> Task :gbkt-lang:classes UP-TO-DATE
+> Task :gbkt-lang:jar
+> Task :gbkt-world:compileKotlin
+> Task :gbkt-world:compileJava NO-SOURCE
+> Task :gbkt-world:classes UP-TO-DATE
+> Task :gbkt-world:jar
+> Task :gbkt-engine:compileKotlin
+> Task :gbkt-engine:compileJava NO-SOURCE
+> Task :gbkt-engine:classes UP-TO-DATE
+> Task :gbkt-engine:jar
+> Task :gbkt-core:compileKotlin
+> Task :gbkt-core:compileJava NO-SOURCE
+> Task :gbkt-core:classes UP-TO-DATE
+> Task :gbkt-core:jar
+> Task :gbkt-backend-api:compileKotlin
+> Task :gbkt-backend-api:compileJava NO-SOURCE
+> Task :gbkt-backend-api:classes UP-TO-DATE
+> Task :gbkt-backend-api:jar
+> Task :gbkt-genre-rpg:compileKotlin
+> Task :gbkt-genre-rpg:compileJava NO-SOURCE
+> Task :gbkt-genre-rpg:classes UP-TO-DATE
+> Task :gbkt-genre-rpg:jar
+
+> Task :gbkt-analysis:compileKotlin
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/BitwiseOptimizationPass.kt:104:54 No cast needed.
+
+> Task :gbkt-analysis:compileJava NO-SOURCE
+> Task :gbkt-analysis:classes UP-TO-DATE
+> Task :gbkt-analysis:jar
+> Task :gbkt-backend-gbdk:compileKotlin
+> Task :gbkt-backend-gbdk:compileJava NO-SOURCE
+> Task :gbkt-backend-gbdk:classes
+> Task :gbkt-backend-gbdk:jar
+> Task :gbkt-examples:banks:compileKotlin
+> Task :gbkt-examples:banks:compileJava NO-SOURCE
+> Task :gbkt-examples:banks:classes UP-TO-DATE
+> Task :gbkt-examples:metasprites-stress:compileKotlin
+> Task :gbkt-examples:simple-physics:compileKotlin
+> Task :gbkt-examples:pong:compileKotlin
+> Task :gbkt-examples:breakout:compileKotlin
+> Task :gbkt-examples:metasprites:compileKotlin
+> Task :gbkt-examples:pong:compileJava NO-SOURCE
+> Task :gbkt-examples:pong:classes
+> Task :gbkt-examples:breakout:compileJava NO-SOURCE
+> Task :gbkt-examples:breakout:classes
+> Task :gbkt-examples:simple-physics:compileJava NO-SOURCE
+> Task :gbkt-examples:simple-physics:classes UP-TO-DATE
+> Task :gbkt-examples:metasprites:compileJava NO-SOURCE
+> Task :gbkt-examples:metasprites:classes UP-TO-DATE
+> Task :gbkt-examples:metasprites-stress:compileJava NO-SOURCE
+> Task :gbkt-examples:metasprites-stress:classes UP-TO-DATE
+
+> Task :gbkt-examples:pong:generateC
+Using backend: GBDK-2020 for Nintendo Game Boy Color
+========================================================
+ gbkt Budget Report                                Pong
+ Overall ROM: ~1.8 KB estimated
+========================================================
+
+ ROM Banks (1 / 2 max, ROM_ONLY)
+ Bank 1: [32m[=---------------][0m [32m10%[0m  1.8 KB / 16 KB
+
+ Per-scene breakdown
+ Scene    | Bank | Est. Size | Bank Fill
+ ---------|------|-----------|----------
+ gameover |    1 |    0.6 KB | [32m3%[0m
+ game     |    1 |    0.6 KB | [32m3%[0m
+ title    |    1 |    0.6 KB | [32m3%[0m
+
+ VRAM Tile Budget (per scene)
+ Scene    | Sprite | BG Avail | BG Used
+ ---------|--------|----------|--------
+ gameover |      0 |      384 |       0
+ game     |      0 |      384 |       0
+ title    |      0 |      384 |       0
+
+ OAM Sprites: [32m3 / 40 (7%)[0m
+ WRAM: [32m29 / 32768 bytes (0%)[0m
+ HRAM: [32m0 / 127 bytes (0%)[0m
+
+ 0 errors, 1 warnings
+========================================================
+Generated: main.c (282 lines)
+Generated source map: main.c.gbkt.map
+Generated: bank1.c (192 lines)
+Generated source map: bank1.c.gbkt.map
+Generated: game.h (121 lines)
+Generated: game_metadata.json (135 lines)
+Build metadata: gbcTarget=DMG, gbcMode=DISABLED
+Build metadata: cartridge=ROM_ONLY, mbcType=0x00
+Generated 4 C files (730 total lines)
+Output directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/pong/build/gbkt/generated
+Removed stale: optimization-report.json
+
+> Task :gbkt-examples:simple-physics:generateC
+Using backend: GBDK-2020 for Nintendo Game Boy Color
+========================================================
+ gbkt Budget Report                       SimplePhysics
+ Overall ROM: ~0.6 KB estimated
+========================================================
+
+ ROM Banks (1 / 2 max, ROM_ONLY)
+
+ Per-scene breakdown
+ Scene | Bank | Est. Size | Bank Fill
+ ------|------|-----------|----------
+ play  |    0 |    0.6 KB | [32m3%[0m
+
+ VRAM Tile Budget (per scene)
+ Scene | Sprite | BG Avail | BG Used
+ ------|--------|----------|--------
+ play  |      0 |      384 |       0
+
+ OAM Sprites: [32m1 / 40 (2%)[0m
+ WRAM: [32m23 / 32768 bytes (0%)[0m
+ HRAM: [32m0 / 127 bytes (0%)[0m
+
+ 0 errors, 1 warnings
+========================================================
+Generated: main.c (256 lines)
+Generated source map: main.c.gbkt.map
+Generated: game.h (81 lines)
+Generated: game_metadata.json (77 lines)
+Build metadata: gbcTarget=DMG, gbcMode=DISABLED
+Build metadata: cartridge=ROM_ONLY, mbcType=0x00
+Generated 3 C files (414 total lines)
+Output directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/simple-physics/build/gbkt/generated
+Removed stale: optimization-report.json
+
+> Task :gbkt-examples:metasprites:generateC
+Using backend: GBDK-2020 for Nintendo Game Boy Color
+========================================================
+ gbkt Budget Report                         Metasprites
+ Overall ROM: ~0.6 KB estimated
+========================================================
+
+ ROM Banks (1 / 2 max, ROM_ONLY)
+
+ Per-scene breakdown
+ Scene | Bank | Est. Size | Bank Fill
+ ------|------|-----------|----------
+ play  |    0 |    0.6 KB | [32m3%[0m
+
+ VRAM Tile Budget (per scene)
+ Scene | Sprite | BG Avail | BG Used
+ ------|--------|----------|--------
+ play  |      0 |      384 |       0
+
+ OAM Sprites: [32m0 / 40 (0%)[0m
+ WRAM: [32m20 / 32768 bytes (0%)[0m
+ HRAM: [32m0 / 127 bytes (0%)[0m
+
+ 0 errors, 1 warnings
+========================================================
+Generated: main.c (345 lines)
+Generated source map: main.c.gbkt.map
+Generated: game.h (93 lines)
+Generated: game_metadata.json (81 lines)
+Build metadata: gbcTarget=GBC_COMPATIBLE, gbcMode=COMPATIBLE
+Build metadata: cartridge=ROM_ONLY, mbcType=0x00
+Generated 3 C files (519 total lines)
+Output directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/metasprites/build/gbkt/generated
+Removed stale: optimization-report.json
+
+> Task :gbkt-examples:metasprites-stress:generateC
+Using backend: GBDK-2020 for Nintendo Game Boy Color
+========================================================
+ gbkt Budget Report                   MetaspritesStress
+ Overall ROM: ~1.2 KB estimated
+========================================================
+
+ ROM Banks (1 / 2 max, ROM_ONLY)
+ Bank 1: [32m[=---------------][0m [32m7%[0m  1.2 KB / 16 KB
+
+ Per-scene breakdown
+ Scene | Bank | Est. Size | Bank Fill
+ ------|------|-----------|----------
+ play  |    1 |    0.6 KB | [32m3%[0m
+ title |    1 |    0.6 KB | [32m3%[0m
+
+ VRAM Tile Budget (per scene)
+ Scene | Sprite | BG Avail | BG Used
+ ------|--------|----------|--------
+ play  |      0 |      384 |       0
+ title |      0 |      384 |       0
+
+ OAM Sprites: [32m1 / 40 (2%)[0m
+ WRAM: [32m27 / 32768 bytes (0%)[0m
+ HRAM: [32m0 / 127 bytes (0%)[0m
+
+ 0 errors, 1 warnings
+========================================================
+Generated: main.c (260 lines)
+Generated source map: main.c.gbkt.map
+Generated: bank1.c (85 lines)
+Generated source map: bank1.c.gbkt.map
+Generated: game.h (112 lines)
+Generated: game_metadata.json (109 lines)
+Build metadata: gbcTarget=GBC_COMPATIBLE, gbcMode=COMPATIBLE
+Build metadata: cartridge=ROM_ONLY, mbcType=0x00
+Generated 4 C files (566 total lines)
+Output directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/metasprites-stress/build/gbkt/generated
+Removed stale: optimization-report.json
+
+> Task :gbkt-examples:banks:generateC
+Using backend: GBDK-2020 for Nintendo Game Boy Color
+========================================================
+ gbkt Budget Report                               Banks
+ Overall ROM: ~1.8 KB estimated
+========================================================
+
+ ROM Banks (1 / 4 max, MBC5_RAM_BATTERY)
+ Bank 1: [32m[=---------------][0m [32m10%[0m  1.8 KB / 16 KB
+
+ Per-scene breakdown
+ Scene | Bank | Est. Size | Bank Fill
+ ------|------|-----------|----------
+ pause |    1 |    0.6 KB | [32m3%[0m
+ play  |    1 |    0.6 KB | [32m3%[0m
+ title |    1 |    0.6 KB | [32m3%[0m
+
+ VRAM Tile Budget (per scene)
+ Scene | Sprite | BG Avail | BG Used
+ ------|--------|----------|--------
+ pause |      0 |      384 |       0
+ play  |      0 |      384 |       0
+ title |      0 |      384 |       0
+
+ OAM Sprites: [32m0 / 40 (0%)[0m
+ WRAM: [32m11 / 32768 bytes (0%)[0m
+ HRAM: [32m0 / 127 bytes (0%)[0m
+
+ 0 errors, 1 warnings
+========================================================
+Generated: main.c (273 lines)
+Generated source map: main.c.gbkt.map
+Generated: bank1.c (45 lines)
+Generated source map: bank1.c.gbkt.map
+Generated: game.h (119 lines)
+Generated: zone_bank2.c (5 lines)
+Generated source map: zone_bank2.c.gbkt.map
+Generated: game_metadata.json (63 lines)
+Build metadata: gbcTarget=DMG, gbcMode=DISABLED
+Build metadata: cartridge=MBC5_RAM_BATTERY, mbcType=0x1B
+Generated 5 C files (505 total lines)
+Output directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/banks/build/gbkt/generated
+Removed stale: optimization-report.json
+
+> Task :gbkt-examples:breakout:generateC
+Using backend: GBDK-2020 for Nintendo Game Boy Color
+========================================================
+ gbkt Budget Report                            Breakout
+ Overall ROM: ~2.3 KB estimated
+========================================================
+
+ ROM Banks (1 / 2 max, ROM_ONLY)
+ Bank 1: [32m[==--------------][0m [32m14%[0m  2.3 KB / 16 KB
+
+ Per-scene breakdown
+ Scene    | Bank | Est. Size | Bank Fill
+ ---------|------|-----------|----------
+ win      |    1 |    0.6 KB | [32m3%[0m
+ gameover |    1 |    0.6 KB | [32m3%[0m
+ game     |    1 |    0.6 KB | [32m3%[0m
+ title    |    1 |    0.6 KB | [32m3%[0m
+
+ VRAM Tile Budget (per scene)
+ Scene    | Sprite | BG Avail | BG Used
+ ---------|--------|----------|--------
+ win      |      0 |      384 |       0
+ gameover |      0 |      384 |       0
+ game     |      0 |      384 |       0
+ title    |      0 |      384 |       0
+
+ OAM Sprites: [32m2 / 40 (5%)[0m
+ WRAM: [32m28 / 32768 bytes (0%)[0m
+ HRAM: [32m0 / 127 bytes (0%)[0m
+
+ 0 errors, 1 warnings
+========================================================
+Generated: main.c (356 lines)
+Generated source map: main.c.gbkt.map
+Generated: bank1.c (206 lines)
+Generated source map: bank1.c.gbkt.map
+Generated: game.h (152 lines)
+Generated: game_metadata.json (161 lines)
+Build metadata: gbcTarget=DMG, gbcMode=DISABLED
+Build metadata: cartridge=ROM_ONLY, mbcType=0x00
+Generated 4 C files (875 total lines)
+Output directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/breakout/build/gbkt/generated
+Removed stale: optimization-report.json
+
+> Task :gbkt-examples:pong:convertSprites
+ConvertSpritesTask: Converting 2 sprite(s) from sidecar
+  Converting: paddle.png → paddle.c
+    → paddle.h (alias: sprites_paddle_tiles)
+  Converting: ball.png → ball.c
+    → ball.h (alias: sprites_ball_tiles)
+
+> Task :gbkt-examples:pong:convertZoneTilesets
+ConvertZoneTilesetsTask: No zone tilesets -- skipping
+
+> Task :gbkt-examples:pong:copyResources
+> Task :gbkt-genre-platformer:compileKotlin
+
+> Task :gbkt-genre-sport:compileKotlin
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/codegen/SportVisitor.kt:369:45 Unchecked cast of 'List<CodegenFragment>' to 'List<CFunction>'.
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-genre-sport/src/main/kotlin/io/github/gbkt/genre/sport/codegen/SportVisitor.kt:370:43 Unchecked cast of 'List<CodegenFragment>' to 'List<CVarDecl>'.
+
+> Task :gbkt-examples:pong:compileRom
+Cartridge upgraded from ROM_ONLY to MBC5 (banking detected)
+  Suggestion: set `config { cartridge = "MBC5" }` to silence this upgrade.
+Banking: 2 banks (highest bank: 1), MBC: 0x19
+Compiling ROM: 4 source files -> pong.gb
+ROM created: pong.gb (32 KB)
+
+> Task :gbkt-examples:pong:buildRom
+
+==================================================
+ROM built successfully!
+Output: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/pong/build/gbkt/output/pong.gb
+==================================================
+
+> Task :gbkt-examples:breakout:convertSprites
+ConvertSpritesTask: Converting 2 sprite(s) from sidecar
+  Converting: paddle.png → paddle.c
+    → paddle.h (alias: sprites_paddle_tiles)
+  Converting: ball.png → ball.c
+    → ball.h (alias: sprites_ball_tiles)
+
+> Task :gbkt-examples:breakout:convertZoneTilesets
+ConvertZoneTilesetsTask: No zone tilesets -- skipping
+
+> Task :gbkt-examples:breakout:copyResources
+
+> Task :gbkt-examples:breakout:compileRom
+Cartridge upgraded from ROM_ONLY to MBC5 (banking detected)
+  Suggestion: set `config { cartridge = "MBC5" }` to silence this upgrade.
+Banking: 2 banks (highest bank: 1), MBC: 0x19
+Compiling ROM: 4 source files -> breakout.gb
+ROM created: breakout.gb (32 KB)
+
+> Task :gbkt-examples:breakout:buildRom
+
+==================================================
+ROM built successfully!
+Output: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/breakout/build/gbkt/output/breakout.gb
+==================================================
+
+> Task :gbkt-examples:simple-physics:convertSprites
+ConvertSpritesTask: Converting 1 sprite(s) from sidecar
+  Converting: ball.png → ball.c
+    → ball.h (alias: sprites_ball_tiles)
+
+> Task :gbkt-examples:simple-physics:convertZoneTilesets
+ConvertZoneTilesetsTask: No zone tilesets -- skipping
+
+> Task :gbkt-examples:simple-physics:copyResources
+
+> Task :gbkt-examples:simple-physics:compileRom
+Compiling ROM: 2 source files -> simple-physics.gb
+ROM created: simple-physics.gb (32 KB)
+
+> Task :gbkt-examples:simple-physics:buildRom
+
+==================================================
+ROM built successfully!
+Output: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/simple-physics/build/gbkt/output/simple-physics.gb
+==================================================
+
+> Task :gbkt-examples:metasprites:convertSprites
+ConvertSpritesTask: Converting 1 sprite(s) from sidecar
+  Converting: elephant.png → elephant.c
+    → elephant.h (alias: sprites_elephant_tiles)
+
+> Task :gbkt-examples:metasprites:convertZoneTilesets
+ConvertZoneTilesetsTask: No zone tilesets -- skipping
+
+> Task :gbkt-examples:metasprites:copyResources
+
+> Task :gbkt-examples:metasprites:compileRom
+Compiling ROM: 2 source files -> metasprites.gb
+ROM created: metasprites.gb (32 KB)
+
+> Task :gbkt-examples:metasprites:buildRom
+
+==================================================
+ROM built successfully!
+Output: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/metasprites/build/gbkt/output/metasprites.gb
+==================================================
+
+> Task :gbkt-examples:metasprites-stress:convertSprites
+ConvertSpritesTask: Converting 3 sprite(s) from sidecar
+  Converting: elephant.png → elephant.c
+    → elephant.h (alias: sprites_elephant_tiles)
+  Converting: tiger.png → tiger.c
+    → tiger.h (alias: sprites_tiger_tiles)
+  Converting: player.png → player.c
+    → player.h (alias: sprites_player_tiles)
+
+> Task :gbkt-examples:metasprites-stress:convertZoneTilesets
+ConvertZoneTilesetsTask: No zone tilesets -- skipping
+
+> Task :gbkt-examples:metasprites-stress:copyResources
+
+> Task :gbkt-examples:metasprites-stress:compileRom
+Cartridge upgraded from ROM_ONLY to MBC5 (banking detected)
+  Suggestion: set `config { cartridge = "MBC5" }` to silence this upgrade.
+Banking: 2 banks (highest bank: 1), MBC: 0x19
+Compiling ROM: 5 source files -> metasprites-stress.gb
+ROM created: metasprites-stress.gb (32 KB)
+
+> Task :gbkt-examples:metasprites-stress:buildRom
+
+==================================================
+ROM built successfully!
+Output: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/metasprites-stress/build/gbkt/output/metasprites-stress.gb
+==================================================
+
+> Task :gbkt-examples:banks:convertSprites
+ConvertSpritesTask: No sprites in metadata — skipping sprite conversion
+
+> Task :gbkt-examples:banks:convertZoneTilesets
+ConvertZoneTilesetsTask: Converting 1 zone tileset(s)
+  Converting zone play_zone: checker.png -> _zone_play_zone_tileset.c
+    -> _zone_play_zone_tileset.h (alias: _zone_play_zone_tileset)
+    -> _zone_play_zone_tilemap.c (4 bytes, one-invocation D-01 path)
+
+> Task :gbkt-examples:banks:copyResources
+
+> Task :gbkt-examples:banks:compileRom
+Banking: 4 banks (highest bank: 2), MBC: 0x1B
+RAM banks: 2
+Compiling ROM: 5 source files -> banks.gb
+ROM created: banks.gb (64 KB)
+
+> Task :gbkt-examples:banks:buildRom
+
+==================================================
+ROM built successfully!
+Output: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/banks/build/gbkt/output/banks.gb
+==================================================
+
+> Task :gbkt-genre-sport:compileJava NO-SOURCE
+> Task :gbkt-genre-sport:classes
+> Task :gbkt-genre-sport:jar
+> Task :gbkt-genre-platformer:compileJava NO-SOURCE
+> Task :gbkt-genre-platformer:classes
+> Task :gbkt-genre-platformer:jar
+> Task :gbkt-examples:racer:compileKotlin
+> Task :gbkt-examples:racer:compileJava NO-SOURCE
+> Task :gbkt-examples:racer:classes UP-TO-DATE
+> Task :gbkt-examples:platformer-template:compileKotlin
+> Task :gbkt-examples:platformer-template:compileJava NO-SOURCE
+> Task :gbkt-examples:platformer-template:classes UP-TO-DATE
+
+> Task :gbkt-examples:platformer-template:generateC
+WARNING: cEmit() used — consider adding DSL support for this pattern
+WARNING: cEmit() used — consider adding DSL support for this pattern
+WARNING: cEmit() used — consider adding DSL support for this pattern
+WARNING: cEmit() used — consider adding DSL support for this pattern
+WARNING: cEmit() used — consider adding DSL support for this pattern
+WARNING: cEmit() used — consider adding DSL support for this pattern
+WARNING: cEmit() used — consider adding DSL support for this pattern
+Using backend: GBDK-2020 for Nintendo Game Boy Color
+========================================================
+ gbkt Budget Report                  PlatformerTemplate
+ Overall ROM: ~1.8 KB estimated
+========================================================
+
+ ROM Banks (1 / 8 max, MBC1)
+ Bank 1: [32m[=---------------][0m [32m10%[0m  1.8 KB / 16 KB
+
+ Per-scene breakdown
+ Scene          | Bank | Est. Size | Bank Fill
+ ---------------|------|-----------|----------
+ title          |    1 |    0.6 KB | [32m3%[0m
+ gameplay       |    1 |    0.6 KB | [32m3%[0m
+ nextLevelScene |    1 |    0.6 KB | [32m3%[0m
+
+ VRAM Tile Budget (per scene)
+ Scene          | Sprite | BG Avail | BG Used
+ ---------------|--------|----------|--------
+ title          |      0 |      384 |       0
+ gameplay       |      0 |      384 |       0
+ nextLevelScene |      0 |      384 |       0
+
+ OAM Sprites: [32m0 / 40 (0%)[0m
+ WRAM: [32m22 / 32768 bytes (0%)[0m
+ HRAM: [32m0 / 127 bytes (0%)[0m
+
+ 0 errors, 1 warnings
+========================================================
+Generated: main.c (730 lines)
+Generated source map: main.c.gbkt.map
+Generated: bank1.c (89 lines)
+Generated source map: bank1.c.gbkt.map
+Generated: game.h (164 lines)
+Generated: zone_bank2.c (5 lines)
+Generated source map: zone_bank2.c.gbkt.map
+Generated: game_metadata.json (144 lines)
+Build metadata: gbcTarget=GBC_COMPATIBLE, gbcMode=COMPATIBLE
+Build metadata: cartridge=MBC1, mbcType=0x01
+Generated 5 C files (1132 total lines)
+Output directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/platformer-template/build/gbkt/generated
+Removed stale: optimization-report.json
+
+> Task :gbkt-examples:racer:generateC
+Using backend: GBDK-2020 for Nintendo Game Boy Color
+========================================================
+ gbkt Budget Report                               Racer
+ Overall ROM: ~1.8 KB estimated
+========================================================
+
+ ROM Banks (1 / 2 max, ROM_ONLY)
+ Bank 1: [32m[=---------------][0m [32m10%[0m  1.8 KB / 16 KB
+
+ Per-scene breakdown
+ Scene   | Bank | Est. Size | Bank Fill
+ --------|------|-----------|----------
+ results |    1 |    0.6 KB | [32m3%[0m
+ race    |    1 |    0.6 KB | [32m3%[0m
+ title   |    1 |    0.6 KB | [32m3%[0m
+
+ VRAM Tile Budget (per scene)
+ Scene   | Sprite | BG Avail | BG Used
+ --------|--------|----------|--------
+ results |      0 |      384 |       0
+ race    |      0 |      384 |       0
+ title   |      0 |      384 |       0
+
+ OAM Sprites: [32m2 / 40 (5%)[0m
+ WRAM: [32m22 / 32768 bytes (0%)[0m
+ HRAM: [32m0 / 127 bytes (0%)[0m
+
+ 0 errors, 1 warnings
+========================================================
+Generated: main.c (557 lines)
+Generated source map: main.c.gbkt.map
+Generated: bank1.c (92 lines)
+Generated source map: bank1.c.gbkt.map
+Generated: game.h (157 lines)
+Generated: zone_bank2.c (7 lines)
+Generated source map: zone_bank2.c.gbkt.map
+Generated: game_metadata.json (92 lines)
+Build metadata: gbcTarget=GBC_COMPATIBLE, gbcMode=COMPATIBLE
+Build metadata: cartridge=ROM_ONLY, mbcType=0x00
+Generated 5 C files (905 total lines)
+Output directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/racer/build/gbkt/generated
+Removed stale: optimization-report.json
+
+> Task :gbkt-examples:racer:convertSprites
+ConvertSpritesTask: Converting 1 sprite(s) from sidecar
+  Converting: car.png → car.c
+    → car.h (alias: sprites_car_tiles)
+
+> Task :gbkt-examples:racer:convertZoneTilesets
+ConvertZoneTilesetsTask: No zone tilesets -- skipping
+
+> Task :gbkt-examples:racer:copyResources
+
+> Task :gbkt-examples:racer:compileRom
+Cartridge upgraded from ROM_ONLY to MBC5 (banking detected)
+  Suggestion: set `config { cartridge = "MBC5" }` to silence this upgrade.
+Banking: 4 banks (highest bank: 2), MBC: 0x19
+Compiling ROM: 4 source files -> racer.gb
+ROM created: racer.gb (64 KB)
+
+> Task :gbkt-examples:racer:buildRom
+
+==================================================
+ROM built successfully!
+Output: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/racer/build/gbkt/output/racer.gb
+==================================================
+
+> Task :gbkt-examples:platformer-template:convertSprites
+ConvertSpritesTask: Converting 1 sprite(s) from sidecar
+  Converting: player-character-gbapduck-sprites.png → player.c
+    → player.h (alias: sprites_player_tiles)
+
+> Task :gbkt-examples:platformer-template:convertZoneTilesets
+ConvertZoneTilesetsTask: Converting 5 zone tileset(s)
+  Converting zone world1Area1Zone: world1-tileset.png -> _zone_world1Area1Zone_tileset.c
+    -> _zone_world1Area1Zone_tileset.h (alias: _zone_world1Area1Zone_tileset)
+  Tilemap extraction zone world1Area1Zone: world1-area1.png -> _zone_world1Area1Zone_tilemap_raw.c
+Got 27 tiles from the source tileset.
+Got 1 palettes from the source tileset.
+    -> _zone_world1Area1Zone_tilemap.c (1920 bytes, two-invocation D-01 path)
+  Converting zone world1Area2Zone: world1-tileset.png -> _zone_world1Area2Zone_tileset.c
+    -> _zone_world1Area2Zone_tileset.h (alias: _zone_world1Area2Zone_tileset)
+  Tilemap extraction zone world1Area2Zone: world1-area2.png -> _zone_world1Area2Zone_tilemap_raw.c
+Got 27 tiles from the source tileset.
+Got 1 palettes from the source tileset.
+    -> _zone_world1Area2Zone_tilemap.c (1920 bytes, two-invocation D-01 path)
+  Converting zone world2Area1Zone: world2-tileset.png -> _zone_world2Area1Zone_tileset.c
+    -> _zone_world2Area1Zone_tileset.h (alias: _zone_world2Area1Zone_tileset)
+  Tilemap extraction zone world2Area1Zone: world2-area1.png -> _zone_world2Area1Zone_tilemap_raw.c
+Got 69 tiles from the source tileset.
+Got 1 palettes from the source tileset.
+    -> _zone_world2Area1Zone_tilemap.c (1920 bytes, two-invocation D-01 path)
+  Converting zone titleZone: title-screen.png -> _zone_titleZone_tileset.c
+    -> _zone_titleZone_tileset.h (alias: _zone_titleZone_tileset)
+    -> _zone_titleZone_tilemap.c (180 bytes, one-invocation D-01 path)
+  Converting zone nextLevelZone: next-level.png -> _zone_nextLevelZone_tileset.c
+    -> _zone_nextLevelZone_tileset.h (alias: _zone_nextLevelZone_tileset)
+    -> _zone_nextLevelZone_tilemap.c (180 bytes, one-invocation D-01 path)
+
+> Task :gbkt-examples:platformer-template:copyResources
+
+> Task :gbkt-examples:platformer-template:compileRom
+Banking: 4 banks (highest bank: 2), MBC: 0x01
+Compiling ROM: 17 source files -> platformer-template.gb
+ROM created: platformer-template.gb (64 KB)
+
+> Task :gbkt-examples:platformer-template:buildRom
+
+==================================================
+ROM built successfully!
+Output: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a5b6af9712a0ec46e/gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb
+==================================================
+
+BUILD SUCCESSFUL in 13s
+124 actionable tasks: 123 executed, 1 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.0.0/userguide/configuration_cache_enabling.html
+EXIT_CODE=0

@@ -9,6 +9,7 @@ package io.github.gbkt.backend.gbdk.codegen.pipeline
 import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.AssetRef
 import io.github.gbkt.core.ir.AssetType
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.HitboxDef
@@ -32,7 +33,7 @@ import kotlin.test.assertTrue
 
 // =============================================================================
 // METADATA FILE ROUND-TRIP TEST
-// Verifies that GBDKPipelineV2.buildMetadataFile() produces JSON that
+// Verifies that GBDKPipeline.buildMetadataFile() produces JSON that
 // GameMetadata.fromJsonString() can parse back faithfully.
 //
 // Fixture: 3 scenes, 5 actors (one spriteless, one with null OAM slot).
@@ -41,17 +42,17 @@ import kotlin.test.assertTrue
 /**
  * Minimal GameIR fixture for metadata round-trip testing.
  *
- * Actors:
- * - "player": 8x16 sprite, OAMSlot(0) -> oamCount = 1*2 = 2
- * - "enemy": 16x16 sprite, OAMSlot(2) -> oamCount = 2*2 = 4
- * - "bullet": 8x8 sprite, OAMSlot(6) -> oamCount = 1*1 = 1
+ * Actors (WR-02: oamCount uses hardware OAM slot height, not raw tile count):
+ * - "player": 8x16 sprite, OAMSlot(0) -> oamSlotHeight=16 -> oamCount = 1*1 = 1
+ * - "enemy": 16x16 sprite, OAMSlot(2) -> oamSlotHeight=16 -> oamCount = 2*1 = 2
+ * - "bullet": 8x8 sprite, OAMSlot(6) -> oamSlotHeight=8 -> oamCount = 1*1 = 1
  * - "trigger": NO sprite -> excluded from JSON
  * - "particle": 8x8 sprite, null OAM -> oamStart = -1
  */
 private val metadataTestFixture =
     GameIR(
         name = "MetadataTest",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         variables =
             listOf(VariableDef("score", VarType.U8, 0), VariableDef("ballDx", VarType.I8, 1)),
         actors =
@@ -141,7 +142,7 @@ private val metadataTestFixture =
 
 class MetadataFileTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
     private val json by lazy { pipeline.buildMetadataFile(metadataTestFixture) }
     private val metadata by lazy { GameMetadata.fromJsonString(json) }
 
@@ -176,24 +177,34 @@ class MetadataFileTest {
     }
 
     // =========================================================================
-    // Test 3: Round trip preserves OAM start and tile count
+    // Test 3: Round trip preserves OAM start and OAM slot count (WR-02 corrected)
+    //
+    // WR-02 fix: oamCount uses hardware OAM slot height (8 for SPR8x8, 16 for
+    // SPR8x16), NOT raw tile count. Each SPRITES_8x16 OAM slot covers a full
+    // 8×16 pair — a 8x16 sprite consumes 1 OAM slot (not 2).
+    //
+    // Before fix: player(8x16)=2, enemy(16x16)=4 (incorrect raw tile count)
+    // After fix:  player(8x16)=1, enemy(16x16)=2 (correct hardware slot count)
     // =========================================================================
     @Test
-    fun `round trip preserves OAM start and tile count`() {
+    fun `round trip preserves OAM start and OAM slot count`() {
         val player = metadata.actor("player")
         assertNotNull(player, "player actor should exist")
         assertEquals(0, player.oamStart, "player oamStart")
-        assertEquals(2, player.oamCount, "player oamCount (8x16 = 1*2 tiles)")
+        // WR-02: 8x16 sprite in SPRITES_8x16 mode → 1 OAM slot (one 8x16 pair)
+        assertEquals(1, player.oamCount, "player oamCount (8x16 sprite = 1 OAM slot)")
 
         val enemy = metadata.actor("enemy")
         assertNotNull(enemy, "enemy actor should exist")
         assertEquals(2, enemy.oamStart, "enemy oamStart")
-        assertEquals(4, enemy.oamCount, "enemy oamCount (16x16 = 2*2 tiles)")
+        // WR-02: 16x16 sprite in SPRITES_8x16 mode → 2 OAM slots (2 columns × 1 row of 8x16)
+        assertEquals(2, enemy.oamCount, "enemy oamCount (16x16 sprite = 2 OAM slots)")
 
         val bullet = metadata.actor("bullet")
         assertNotNull(bullet, "bullet actor should exist")
         assertEquals(6, bullet.oamStart, "bullet oamStart")
-        assertEquals(1, bullet.oamCount, "bullet oamCount (8x8 = 1*1 tile)")
+        // 8x8 sprite in SPR8x8 mode → 1 OAM slot (unchanged)
+        assertEquals(1, bullet.oamCount, "bullet oamCount (8x8 sprite = 1 OAM slot)")
     }
 
     // =========================================================================
@@ -296,7 +307,7 @@ class MetadataFileTest {
         val game =
             GameIR(
                 name = "TrimTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -323,7 +334,7 @@ class MetadataFileTest {
         val game =
             GameIR(
                 name = "MergeTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -355,7 +366,7 @@ class MetadataFileTest {
         val game =
             GameIR(
                 name = "WhitespaceTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -383,7 +394,7 @@ class MetadataFileTest {
         val game =
             GameIR(
                 name = "InternalSpaceTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -423,7 +434,7 @@ class MetadataFileTest {
         val game =
             GameIR(
                 name = "NoTerminalTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(id = "title", enterOps = emptyList(), frameOps = emptyList()),
@@ -454,5 +465,56 @@ class MetadataFileTest {
     @Test
     fun `round trip preserves terminalScenes in GameMetadata`() {
         assertEquals(setOf("gameover"), metadata.terminalScenes)
+    }
+
+    // =========================================================================
+    // Test 17: WR-02 regression — oamCount for SPRITES_8x16 actors is 1 OAM slot
+    //
+    // Before fix: tilesHigh=2 for 8×16, oamCount=1*2=2 (wrong — overcounts OAM slots).
+    // After fix: oamSlotHeight=16, oamCount=1*((16+15)/16)=1 (correct hardware count).
+    //
+    // Contrast: 8×8 actor always has oamCount=1 (both old and new logic agree).
+    //
+    // RED: the pre-fix formula tilesWide * tilesHigh returns 2 for 8×16.
+    // GREEN: after fix, returns 1 for 8×16 (one SPRITES_8x16 OAM slot).
+    // =========================================================================
+    @Test
+    fun `WR-02 regression - 8x16 actor has oamCount of 1 not 2`() {
+        val game = GameIR(
+            name = "Wr02Test",
+            config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
+            actors = listOf(
+                ActorIR(
+                    id = "duck",
+                    position = PositionDef(80, 72),
+                    sprite = SpriteDef(
+                        assetRef = AssetRef("sprites/duck.png", AssetType.SPRITE),
+                        size = SizeDef(8, 16),
+                    ),
+                    oamSlot = OAMSlot(0),
+                ),
+                ActorIR(
+                    id = "ball",
+                    position = PositionDef(80, 80),
+                    sprite = SpriteDef(
+                        assetRef = AssetRef("sprites/ball.png", AssetType.SPRITE),
+                        size = SizeDef(8, 8),
+                    ),
+                    oamSlot = OAMSlot(1),
+                ),
+            ),
+        )
+        val metadata = GameMetadata.fromJsonString(pipeline.buildMetadataFile(game))
+
+        val duck = metadata.actor("duck")
+        assertNotNull(duck, "duck actor should exist")
+        assertEquals(1, duck.oamCount,
+            "WR-02: 8x16 actor must have oamCount=1 (one SPRITES_8x16 OAM slot), not 2 (raw tiles).\n" +
+                "Pre-fix: tilesWide*tilesHigh=1*2=2. Post-fix: tilesWide*((height+15)/16)=1*1=1.")
+
+        val ball = metadata.actor("ball")
+        assertNotNull(ball, "ball actor should exist")
+        assertEquals(1, ball.oamCount,
+            "WR-02: 8x8 actor must have oamCount=1 (unchanged by fix)")
     }
 }

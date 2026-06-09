@@ -9,6 +9,7 @@ package io.github.gbkt.backend.gbdk.codegen.pipeline
 import io.github.gbkt.core.dsl.ChannelGroupDef
 import io.github.gbkt.core.ir.Assign
 import io.github.gbkt.core.ir.AssignOp
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.GenericSystem
@@ -24,7 +25,7 @@ import kotlin.test.assertTrue
 
 // =============================================================================
 // MUSIC CODEGEN TESTS (A2+A5)
-// Verifies that GBDKPipelineV2 generates correct hUGETracker integration:
+// Verifies that GBDKPipeline generates correct hUGETracker integration:
 // A2: MusicPlay → hUGE_init(&song_<id>)
 //     MusicStop  → hUGEDriver_mute_channel(0..3)
 //     MusicPause → hUGE_set_pause(1)
@@ -46,7 +47,7 @@ import kotlin.test.assertTrue
 private fun buildGameWithFrameOps(vararg ops: io.github.gbkt.core.ir.ScriptOp): GameIR {
     return GameIR(
         name = "TestGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = listOf(SceneIR(id = "main", frameOps = ops.toList())),
         startScene = "main",
     )
@@ -70,7 +71,7 @@ private fun buildGameWithAudioMixer(
     val audioMixer = GenericSystem(id = "mixer", config = config)
     return GameIR(
         name = "TestGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = listOf(SceneIR(id = "main")),
         systems = listOf(audioMixer),
         startScene = "main",
@@ -79,7 +80,7 @@ private fun buildGameWithAudioMixer(
 
 class MusicCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: MusicPlay generates hUGE_init call in scene code
@@ -403,7 +404,7 @@ class MusicCodegenTest {
         val gameIR =
             GameIR(
                 name = "TestGame",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes = listOf(SceneIR(id = "main")),
                 systems = listOf(audioMixer),
                 startScene = "main",

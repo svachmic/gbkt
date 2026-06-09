@@ -1,0 +1,39 @@
+=== Test Output: BanksUatTest anchor 1 + anchor 2 ===
+Date: 2026-05-20T20:06:43Z
+ROM: gbkt-examples/banks/build/gbkt/output/banks.gb
+Test command: ./gradlew :gbkt-examples:banks:test --tests '*BanksUatTest.anchor 1 *' --tests '*BanksUatTest.anchor 2 *' --rerun-tasks
+
+=== RESULT: BUILD FAILED ===
+
+BanksUatTest > anchor 2 banked zone tilemap visible() FAILED
+  AssertionFailedError: anchor2-tilemap: screenshot must contain >= 4 distinct RGB colours
+  (Game Boy palette has 4 colours; a blank frame has 1). Found 1 distinct colour(s).
+
+BanksUatTest > anchor 1 cross-bank scene navigation() FAILED
+  AssertionFailedError: anchor1-play-scene: screenshot must contain >= 4 distinct RGB colours
+  (Game Boy palette has 4 colours; a blank frame has 1). Found 1 distinct colour(s).
+
+2 tests completed, 2 failed
+
+=== DIAGNOSIS ===
+
+Root cause: zone_bank2.c contains _zone_play_zone_tiles[1] = { 0 }
+  (placeholder array — ZoneIR.tileData is empty for play_zone)
+
+Phase 11.2 fixed: set_bkg_data emission (tileset pixel data → VRAM tile slots)
+Phase 11.2 did NOT fix: _zone_play_zone_tiles tilemap array (which tiles go at each position)
+
+set_bkg_data(0, _zone_play_zone_tileset_count, _zone_play_zone_tileset) — LOADS tile pixel data (2 tiles)
+_bkg_tiles_load_banked(2, 0, 0, 20, 18, _zone_play_zone_tiles) — SETS tile positions
+  → _zone_play_zone_tiles = {0} → all 20x18 positions use tile 0 (the white/transparent tile)
+  → screen is uniform white → 1 distinct colour → perceptual check FAILS
+
+png2asset DOES generate _zone_play_zone_tileset_map[4] = {0x00, 0x01, 0x01, 0x00}
+  (2x2 checker tilemap), but this is NOT wired into zone_bank2.c
+
+=== CONTINGENCY CASE (a): Plan 15 cannot close ===
+Escalate residual gap to Plan 16 (closing plan).
+
+=== SIDECAR JSON EVIDENCE ===
+anchor1 sidecar: current_scene=1 (PLAY), current_tileset_id=255 (unchanged from init default)
+anchor2 sidecar: current_scene=1 (PLAY), current_tileset_id=255 (unchanged from init default)

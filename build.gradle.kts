@@ -26,6 +26,48 @@ sonarqube {
     }
 }
 
+// ============================================================================
+// Composite-build test wiring
+//
+// IntegrationTest writes a TestKit sandbox whose build file declares:
+//   implementation("io.github.gbkt:gbkt-core:0.1.0-SNAPSHOT")
+//   implementation("io.github.gbkt:gbkt-backend-api:0.1.0-SNAPSHOT")
+//   runtimeOnly("io.github.gbkt:gbkt-backend-gbdk:0.1.0-SNAPSHOT")
+// plus transitive deps resolved from mavenLocal(). Against a stale ~/.m2
+// the sandbox Kotlin compile fails (13 failures when GameBuilder.start was
+// still String? in cache while DSL surface had already changed to SceneRef?).
+//
+// The :gbkt-gradle-plugin is an includeBuild so its :test task cannot directly
+// depend on root-project tasks via dependsOn. The supported pattern is a root
+// aggregator lifecycle task that callers (CI / local dev) invoke instead of
+// reaching the plugin :test task directly.
+// ============================================================================
+val mavenLocalModulesForPluginTest = listOf(
+    ":gbkt-ir", ":gbkt-lang", ":gbkt-engine", ":gbkt-world",
+    ":gbkt-core", ":gbkt-backend-api", ":gbkt-backend-gbdk",
+    // gbkt-analysis is a transitive api() dependency of gbkt-backend-gbdk
+    // (gbkt-backend-gbdk/build.gradle.kts:27). The IntegrationTest sandbox resolves it
+    // via the runtimeOnly gbkt-backend-gbdk:0.1.0-SNAPSHOT edge, so it MUST be republished
+    // too — otherwise a stale gbkt-analysis links against the fresh gbkt-ir and throws
+    // NoSuchMethodError: SceneIR.copy$default (Phase 15 F1 / D-05 — the actual root cause).
+    ":gbkt-analysis",
+)
+
+tasks.register("publishConsumedModulesToMavenLocal") {
+    group = "verification"
+    description = "Publish all modules consumed by the gbkt-gradle-plugin IntegrationTest TestKit sandbox to mavenLocal"
+    mavenLocalModulesForPluginTest.forEach { path ->
+        dependsOn("$path:publishToMavenLocal")
+    }
+}
+
+tasks.register("pluginTest") {
+    group = "verification"
+    description = "Publish consumed SNAPSHOT modules to mavenLocal then run :gbkt-gradle-plugin:test (use instead of :gbkt-gradle-plugin:test to avoid stale-mavenLocal IntegrationTest failures)"
+    dependsOn("publishConsumedModulesToMavenLocal")
+    dependsOn(gradle.includedBuild("gbkt-gradle-plugin").task(":test"))
+}
+
 // Task to check version consistency across the project
 tasks.register("checkVersionConsistency") {
     group = "verification"
@@ -85,7 +127,7 @@ subprojects {
             kotlin {
                 target("src/**/*.kt")
                 licenseHeader(licenseHeader)
-                ktfmt().kotlinlangStyle()
+                ktfmt("0.62").kotlinlangStyle()
                 trimTrailingWhitespace()
                 endWithNewline()
             }
@@ -109,7 +151,7 @@ subprojects {
             kotlin {
                 target("src/**/*.kt")
                 licenseHeader(licenseHeader)
-                ktfmt().kotlinlangStyle()
+                ktfmt("0.62").kotlinlangStyle()
                 trimTrailingWhitespace()
                 endWithNewline()
             }

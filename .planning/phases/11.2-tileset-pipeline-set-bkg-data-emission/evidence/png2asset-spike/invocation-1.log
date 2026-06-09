@@ -1,0 +1,1 @@
+png2asset: Error: keep_palette_order only works with indexed png images (pngtype: 2, bits:8)

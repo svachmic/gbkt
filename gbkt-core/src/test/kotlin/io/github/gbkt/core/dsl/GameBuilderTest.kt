@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.core.dsl
 
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.PositionDef
 import io.github.gbkt.core.ir.VarType
 import kotlin.test.Test
@@ -20,11 +21,11 @@ class GameBuilderTest {
     fun `game builder produces GameIR with correct name`() {
         val ir =
             game("TestGame") {
-                    scene("title") {
+                    val titleScene = scene("title") {
                         enter { hideSprites() }
                         frame {}
                     }
-                    start = "title"
+                    start = titleScene
                 }
                 .build()
 
@@ -35,9 +36,9 @@ class GameBuilderTest {
     fun `game builder with two scenes produces GameIR with two scenes`() {
         val ir =
             game("TestGame") {
-                    scene("title") { enter { hideSprites() } }
-                    scene("game") { enter { showSprites() } }
-                    start = "title"
+                    val titleScene = scene("title") { enter { hideSprites() } }
+                    val gameScene = scene("game") { enter { showSprites() } }
+                    start = titleScene
                 }
                 .build()
 
@@ -52,8 +53,8 @@ class GameBuilderTest {
                         position(80, 72)
                         sprite(asset("sprites/player.png")) { size(8, 16) }
                     }
-                    scene("game") { enter { showSprites() } }
-                    start = "game"
+                    val gameScene = scene("game") { enter { showSprites() } }
+                    start = gameScene
                 }
                 .build()
 
@@ -64,8 +65,8 @@ class GameBuilderTest {
     fun `game builder sets start scene correctly`() {
         val ir =
             game("TestGame") {
-                    scene("title") { enter { hideSprites() } }
-                    start = "title"
+                    val titleScene = scene("title") { enter { hideSprites() } }
+                    start = titleScene
                 }
                 .build()
 
@@ -76,13 +77,13 @@ class GameBuilderTest {
     fun `game builder scene enter block produces non-empty enterOps`() {
         val ir =
             game("TestGame") {
-                    scene("title") {
+                    val titleScene = scene("title") {
                         enter {
                             hideSprites()
                             clear()
                         }
                     }
-                    start = "title"
+                    start = titleScene
                 }
                 .build()
 
@@ -94,10 +95,10 @@ class GameBuilderTest {
     fun `game builder scene frame block produces non-empty frameOps`() {
         val ir =
             game("TestGame") {
-                    scene("title") {
-                        frame { whenever(buttons.start.pressed) { navigate("title") } }
+                    val titleScene = scene("title") {
+                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("title")) } }
                     }
-                    start = "title"
+                    start = titleScene
                 }
                 .build()
 
@@ -113,8 +114,8 @@ class GameBuilderTest {
                         position(80, 72)
                         sprite(asset("sprites/player.png")) { size(8, 16) }
                     }
-                    scene("game") { enter { showSprites() } }
-                    start = "game"
+                    val gameScene = scene("game") { enter { showSprites() } }
+                    start = gameScene
                 }
                 .build()
 
@@ -123,21 +124,34 @@ class GameBuilderTest {
     }
 
     @Test
-    fun `game builder throws DSLValidationError for unresolved start scene`() {
+    fun `game builder throws DSLValidationError when no start is set`() {
         val exception =
             assertFailsWith<DSLValidationError> {
-                game("TestGame") { start = "nonexistent" }.build()
+                game("TestGame") {
+                        val gameScene = scene("game") { enter {} }
+                        // neither start nor startScene set
+                    }
+                    .build()
+            }
+        assertTrue(exception.message!!.contains("No start scene set"))
+    }
+
+    @Test
+    fun `game builder throws DSLValidationError for unresolved start scene via startScene`() {
+        val exception =
+            assertFailsWith<DSLValidationError> {
+                game("TestGame") { start = SceneRef("nonexistent") }.build()
             }
         assertTrue(exception.message!!.contains("Unresolved"))
     }
 
     @Test
-    fun `game builder throws DSLValidationError with Did you mean suggestion`() {
+    fun `game builder throws DSLValidationError with Did you mean suggestion via startScene`() {
         val exception =
             assertFailsWith<DSLValidationError> {
                 game("TestGame") {
                         scene("gameplay") { enter {} }
-                        start = "gamepaly"
+                        start = SceneRef("gamepaly")
                     }
                     .build()
             }
@@ -151,8 +165,8 @@ class GameBuilderTest {
         val ir =
             game("TestGame") {
                     @Suppress("UNUSED_VARIABLE") var score by u8Var(0)
-                    scene("game") { enter {} }
-                    start = "game"
+                    val gameScene = scene("game") { enter {} }
+                    start = gameScene
                 }
                 .build()
 
@@ -167,8 +181,8 @@ class GameBuilderTest {
         val ir =
             game("TestGame") {
                     @Suppress("UNUSED_VARIABLE") var speed by i8Var(1)
-                    scene("game") { enter {} }
-                    start = "game"
+                    val gameScene = scene("game") { enter {} }
+                    start = gameScene
                 }
                 .build()
 
@@ -183,8 +197,8 @@ class GameBuilderTest {
         val ir =
             game("TestGame") {
                     @Suppress("UNUSED_VARIABLE") var highScore by u16Var(0)
-                    scene("game") { enter {} }
-                    start = "game"
+                    val gameScene = scene("game") { enter {} }
+                    start = gameScene
                 }
                 .build()
 
@@ -198,8 +212,8 @@ class GameBuilderTest {
         val ir =
             game("TestGame") {
                     @Suppress("UNUSED_VARIABLE") var bigValue by i16Var(-100)
-                    scene("game") { enter {} }
-                    start = "game"
+                    val gameScene = scene("game") { enter {} }
+                    start = gameScene
                 }
                 .build()
 
@@ -216,8 +230,8 @@ class GameBuilderTest {
         val ir =
             game("TestGame") {
                     camera { smoothing = 0.2f }
-                    scene("game") { enter {} }
-                    start = "game"
+                    val gameScene = scene("game") { enter {} }
+                    start = gameScene
                 }
                 .build()
 
@@ -229,9 +243,9 @@ class GameBuilderTest {
     fun `saveData builder registers SaveSystem in GameIR`() {
         val ir =
             game("TestGame") {
-                    saveData("save") { slots(1) }
-                    scene("game") { enter {} }
-                    start = "game"
+                    @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(1) }
+                    val gameScene = scene("game") { enter {} }
+                    start = gameScene
                 }
                 .build()
 
@@ -247,8 +261,8 @@ class GameBuilderTest {
                         position(0, 0)
                         sprite(asset("sprites/player.png")) { size(8, 16) }
                     }
-                    scene("game") { enter {} }
-                    start = "game"
+                    val gameScene = scene("game") { enter {} }
+                    start = gameScene
                 }
                 .build()
 
@@ -262,16 +276,16 @@ class GameBuilderTest {
         val ir =
             game("TestGame") {
                     config {
-                        cartridge = "ROM_ONLY"
+                        cartridge = Cartridge.ROM_ONLY
                         romBanks = 2
                     }
-                    scene("game") { enter {} }
-                    start = "game"
+                    val gameScene = scene("game") { enter {} }
+                    start = gameScene
                 }
                 .build()
 
-        assertEquals("ROM_ONLY", ir.config.cartridge)
-        assertEquals(2, ir.config.romBanks)
+        assertEquals(Cartridge.ROM_ONLY, ir.config.cartridge)
+        assertEquals(2, ir.config.romBanks!!)
     }
 
     @Test
@@ -284,27 +298,23 @@ class GameBuilderTest {
                             sprite(asset("sprites/player.png")) { size(8, 16) }
                         }
 
-                    @Suppress("UNUSED_VARIABLE")
-                    val titleScene =
-                        scene("title") {
-                            enter {
-                                hideSprites()
-                                clear()
-                            }
-                            frame { whenever(buttons.start.pressed) { navigate("game") } }
+                    val gameScene = scene("game") {
+                        enter { showSprites() }
+                        frame {
+                            whenever(dpad.up.held) { moveBy(player, 0, -2) }
+                            whenever(dpad.down.held) { moveBy(player, 0, 2) }
                         }
+                    }
 
-                    @Suppress("UNUSED_VARIABLE")
-                    val gameScene =
-                        scene("game") {
-                            enter { showSprites() }
-                            frame {
-                                whenever(dpad.up.held) { moveBy(player, 0, -2) }
-                                whenever(dpad.down.held) { moveBy(player, 0, 2) }
-                            }
+                    val titleScene = scene("title") {
+                        enter {
+                            hideSprites()
+                            clear()
                         }
+                        frame { whenever(buttons.start.pressed) { navigate(gameScene) } }
+                    }
 
-                    start = "title"
+                    start = titleScene
                 }
                 .build()
 

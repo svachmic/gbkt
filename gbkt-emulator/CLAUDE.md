@@ -15,6 +15,22 @@ Three layers:
 2. **Debug** (`EmuPrintfInterceptor`, `SourceMapResolver`, `DebugLogWriter`, `DebugLogEntry`) — EMU_printf trap detection, C→Kotlin source mapping, log persistence
 3. **UI** (`EmulatorWindow`, `EmulatorToolbar`, `GbDisplayPanel`, `LogCatPanel`, `MemoryInspectorPanel`) — Swing developer tools
 
+### Hung-ROM watchdog (`CoffeeGbEmulator.stepFrame`)
+
+`stepFrame()`'s inner `do { gb.tick() } while (!frameDone)` loop is bounded by `maxTicksPerFrame`
+(default 1 000 000 t-cycles ≈ 14 normal frames). If a ROM stalls — e.g. LCD disabled with a CPU
+busy-wait, or a corrupted scene-enter that hangs the PPU — the loop throws
+`EmulatorFrameHangException` instead of spinning forever. The watchdog also honours a `@Volatile`
+cancellation flag (`requestCancellation()` on `GbEmulator`), so stop paths preempt within one tick.
+
+The default ceiling is comfortable for any legitimate ROM init phase but bounded. Test code in
+the same module may set `maxTicksPerFrame` lower to assert the watchdog fires.
+
+History: the watchdog was added after a racer-fix regression where `gb.tick()` returned false
+forever after `SHOW_BKG` was enabled with no valid BG state — the MCP server held its mutex
+indefinitely and only an external `kill -9` recovered the JVM. The unit tests
+(`CoffeeGbEmulatorTest`) lock both the watchdog trip and the cancellation path.
+
 ## Key Files
 
 | File | Role |

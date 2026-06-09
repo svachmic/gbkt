@@ -43,8 +43,8 @@ class ActionRpgTest {
 
         game("ArpgTest") {
                 actionRpg("combat") { combatModel(CombatModel.HYBRID_ATB) }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
@@ -73,8 +73,8 @@ class ActionRpgTest {
                 actionRpg("combat") {
                     // no combatModel call — should default
                 }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
@@ -104,8 +104,8 @@ class ActionRpgTest {
                         cooldown(24)
                     }
                 }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
@@ -140,8 +140,8 @@ class ActionRpgTest {
                         dodgeCost(40)
                     }
                 }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
@@ -178,8 +178,8 @@ class ActionRpgTest {
                         baseSpeed(3)
                     }
                 }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
@@ -211,8 +211,8 @@ class ActionRpgTest {
                     behaviorPreset(BehaviorPresetType.ATTACK_WHEN_CLOSE, range = 1)
                     behaviorPreset(BehaviorPresetType.FLEE, threshold = 25)
                 }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
@@ -252,8 +252,8 @@ class ActionRpgTest {
                 actionRpg("combat") {
                     // no dodgeRoll block
                 }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
@@ -289,8 +289,8 @@ class ActionRpgTest {
                         path = listOf(Pair(1, 1), Pair(5, 1), Pair(5, 5), Pair(1, 5)),
                     )
                 }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->

@@ -28,7 +28,7 @@ import kotlin.test.assertTrue
 
 class SimpleBattleAndTilesetTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // C3 — SimpleBattle state machine tests

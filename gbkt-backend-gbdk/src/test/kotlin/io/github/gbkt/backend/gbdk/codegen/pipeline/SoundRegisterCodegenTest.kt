@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.pipeline
 
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.PlaySound
@@ -37,7 +38,7 @@ private fun buildGameWithSoundDef(
 ): GameIR {
     return GameIR(
         name = "TestGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = listOf(SceneIR(id = "main", frameOps = listOf(PlaySound(soundId)))),
         soundEffects = listOf(def),
         systems = extraSystems,
@@ -47,7 +48,7 @@ private fun buildGameWithSoundDef(
 
 class SoundRegisterCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: BEEP preset generates NR1x register writes (not hashCode)
@@ -234,7 +235,7 @@ class SoundRegisterCodegenTest {
         val gameIR =
             GameIR(
                 name = "TestGame",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes = listOf(SceneIR(id = "main")),
                 soundEffects = listOf(def),
                 startScene = "main",
@@ -258,7 +259,7 @@ class SoundRegisterCodegenTest {
         val gameIR =
             GameIR(
                 name = "TestGame",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes = listOf(SceneIR(id = "main")),
                 systems = listOf(SoundSystem(id = "sound")),
                 startScene = "main",
@@ -328,7 +329,7 @@ class SoundRegisterCodegenTest {
         val gameIR =
             GameIR(
                 name = "TestGame",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(

@@ -104,7 +104,7 @@ class GbktDocumentationProvider : AbstractDocumentationProvider() {
                         """
                         gbGame {
                             title = "My Game"
-                            startScene = mainScene
+                            start = mainScene
                         }
                         """
                             .trimIndent(),

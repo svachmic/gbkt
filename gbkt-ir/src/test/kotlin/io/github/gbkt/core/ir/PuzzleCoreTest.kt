@@ -411,16 +411,15 @@ class PuzzleCoreTest {
                 ),
             )
         // This function compiles only if all cases are handled — no else needed
-        val descriptions =
-            objects.map { obj ->
-                when (obj) {
-                    is SwitchObjectIR -> "Switch(${obj.id})"
-                    is DoorObjectIR -> "Door(${obj.id})"
-                    is PressurePlateObjectIR -> "Plate(${obj.id})"
-                    is TimedBlockObjectIR -> "Block(${obj.id})"
-                    is TriggerObjectIR -> "Trigger(${obj.id})"
-                }
+        val descriptions = objects.map { obj ->
+            when (obj) {
+                is SwitchObjectIR -> "Switch(${obj.id})"
+                is DoorObjectIR -> "Door(${obj.id})"
+                is PressurePlateObjectIR -> "Plate(${obj.id})"
+                is TimedBlockObjectIR -> "Block(${obj.id})"
+                is TriggerObjectIR -> "Trigger(${obj.id})"
             }
+        }
         assertEquals(
             listOf("Switch(sw)", "Door(door)", "Plate(plate)", "Block(block)"),
             descriptions,
@@ -537,6 +536,8 @@ private object PuzzleOpDescriber : ScriptOpVisitorI<String> {
 
     override fun visitScreenFill(op: ScreenFill): String = "ScreenFill"
 
+    override fun visitBindCurrentLevel(op: BindCurrentLevel): String = "BindCurrentLevel"
+
     override fun visitPrintOp(op: PrintOp): String = "PrintOp"
 
     override fun visitFadeOp(op: FadeOp): String = "FadeOp"
@@ -580,6 +581,10 @@ private object PuzzleOpDescriber : ScriptOpVisitorI<String> {
     override fun visitPoolForEachActive(op: PoolForEachActive): String = "PoolForEachActive"
 
     override fun visitPoolDestroyAll(op: PoolDestroyAll): String = "PoolDestroyAll"
+
+    // Plan 07 — MetaspriteVisitor will replace this stub
+    override fun visitMoveMetasprite(op: MoveMetasprite): String =
+        "MoveMetasprite(${op.metaspriteId})"
 
     // Puzzle ScriptOp dispatch — the actual implementations under test
     override fun visitActivatePuzzleObject(op: ActivatePuzzleObject): String =

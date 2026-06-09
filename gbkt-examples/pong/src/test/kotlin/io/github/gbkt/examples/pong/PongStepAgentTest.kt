@@ -50,9 +50,13 @@ class PongStepAgentTest {
                 expectedSceneCount = 3,
                 expectedScenes = setOf(Scenes.TITLE, Scenes.GAME, Scenes.GAMEOVER),
                 expectedActors = setOf(Actors.PADDLE1, Actors.PADDLE2, Actors.BALL),
+                // 4x16 paddles occupy ONE 16px hardware OAM slot each (GBDKPipeline 16px-OAM-slot
+                // rule, GBDKPipeline.kt:227-229), so metadata oamCount=1 per paddle and the runtime
+                // StepAgent OAM read also returns 1. Corrected from the pre-16px-slot {2,2,1}/5
+                // (Phase 15 F2 — provably-stale assertion realigned to the proven runtime/metadata).
                 expectedOamCounts =
-                    mapOf(Actors.PADDLE1 to 2, Actors.PADDLE2 to 2, Actors.BALL to 1),
-                expectedTotalOam = 5,
+                    mapOf(Actors.PADDLE1 to 1, Actors.PADDLE2 to 1, Actors.BALL to 1),
+                expectedTotalOam = 3,
             )
         )
     }

@@ -220,7 +220,7 @@ private fun buildPhase067GameIR(): GameIR {
 
     return GameIR(
         name = "Phase067IntegrationGame",
-        config = CartridgeConfig(cartridge = "ROM_MBC5", romBanks = 16),
+        config = CartridgeConfig(cartridge = Cartridge.MBC5, romBanks = 16),
         scenes = listOf(gameScene),
         actors = listOf(bullet, smoothActor, physicsActor, enemyActor),
         actorPools = listOf(bulletPool),

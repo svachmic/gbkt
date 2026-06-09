@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.rpg.dsl
 
+import io.github.gbkt.core.dsl.SceneRef
 import io.github.gbkt.core.dsl.game
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.CombatHookPoint
@@ -34,9 +35,9 @@ class CombatHooksTest {
     @Test
     fun `CombatHookBuilder records ops per hook point`() {
         val builder = CombatHookBuilder()
-        builder.beforeAction { navigate("flash") }
-        builder.afterDamage { navigate("damage") }
-        builder.onVictory { navigate("win") }
+        builder.beforeAction { navigate(SceneRef("flash")) }
+        builder.afterDamage { navigate(SceneRef("damage")) }
+        builder.onVictory { navigate(SceneRef("win")) }
 
         val hooks = builder.build()
         assertTrue(
@@ -54,7 +55,7 @@ class CombatHooksTest {
     @Test
     fun `beforeAction hook stores ops under BEFORE_ACTION key`() {
         val builder = CombatHookBuilder()
-        builder.beforeAction { navigate("before_action_scene") }
+        builder.beforeAction { navigate(SceneRef("before_action_scene")) }
 
         val hooks = builder.build()
         val ops = hooks[CombatHookPoint.BEFORE_ACTION]
@@ -71,8 +72,8 @@ class CombatHooksTest {
     @Test
     fun `multiple hooks on same point are concatenated`() {
         val builder = CombatHookBuilder()
-        builder.beforeAction { navigate("scene1") }
-        builder.beforeAction { navigate("scene2") }
+        builder.beforeAction { navigate(SceneRef("scene1")) }
+        builder.beforeAction { navigate(SceneRef("scene2")) }
 
         val hooks = builder.build()
         val ops = hooks[CombatHookPoint.BEFORE_ACTION]
@@ -104,16 +105,16 @@ class CombatHooksTest {
             game("HooksTest") {
                     combatEngine("combat") {
                         hooks {
-                            beforeAction { navigate("pre_action") }
-                            afterTurn { navigate("post_turn") }
-                            onVictory { navigate("extra_victory") }
+                            beforeAction { navigate(SceneRef("pre_action")) }
+                            afterTurn { navigate(SceneRef("post_turn")) }
+                            onVictory { navigate(SceneRef("extra_victory")) }
                         }
                     }
                     scene("pre_action") { enter {} }
                     scene("post_turn") { enter {} }
                     scene("extra_victory") { enter {} }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -138,13 +139,13 @@ class CombatHooksTest {
     @Test
     fun `all 7 hook points can be registered`() {
         val builder = CombatHookBuilder()
-        builder.beforeAction { navigate("a") }
-        builder.afterAction { navigate("b") }
-        builder.afterDamage { navigate("c") }
-        builder.beforeTurn { navigate("d") }
-        builder.afterTurn { navigate("e") }
-        builder.onVictory { navigate("f") }
-        builder.onDefeat { navigate("g") }
+        builder.beforeAction { navigate(SceneRef("a")) }
+        builder.afterAction { navigate(SceneRef("b")) }
+        builder.afterDamage { navigate(SceneRef("c")) }
+        builder.beforeTurn { navigate(SceneRef("d")) }
+        builder.afterTurn { navigate(SceneRef("e")) }
+        builder.onVictory { navigate(SceneRef("f")) }
+        builder.onDefeat { navigate(SceneRef("g")) }
 
         val hooks = builder.build()
         assertEquals(7, hooks.size, "All 7 CombatHookPoints must be registered")

@@ -33,6 +33,7 @@ data class MusicDef(
  * - [config]: cartridge hardware configuration
  * - [scenes]: all scene definitions
  * - [actors]: all actor definitions (sprites, entities)
+ * - [metasprites]: variable-length OAM descriptor sprites (GBDK metasprite model)
  * - [systems]: engine-level systems (dialog, sound, save, camera, exploration, combat)
  * - [variables]: global mutable variables
  * - [arrays]: global mutable array variables
@@ -66,6 +67,7 @@ data class GameIR(
     val config: CartridgeConfig = CartridgeConfig(),
     val scenes: List<SceneIR> = emptyList(),
     val actors: List<ActorIR> = emptyList(),
+    val metasprites: List<MetaspriteIR> = emptyList(), // variable-length OAM descriptor sprites
     val systems: List<SystemIR> = emptyList(),
     val variables: List<VariableDef> = emptyList(),
     val arrays: List<ArrayDef> = emptyList(), // global array variables

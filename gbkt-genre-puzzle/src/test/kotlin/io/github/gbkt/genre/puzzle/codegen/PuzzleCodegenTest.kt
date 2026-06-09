@@ -6,7 +6,8 @@
  */
 package io.github.gbkt.genre.puzzle.codegen
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.GenericSystem
@@ -27,7 +28,7 @@ import kotlin.test.assertTrue
 // =============================================================================
 // PUZZLE CODEGEN TESTS (Plan 06.8-11 Task 2 success criteria)
 //
-// 6 tests verifying PuzzleVisitor "puzzle_grid" branch via GBDKPipelineV2:
+// 6 tests verifying PuzzleVisitor "puzzle_grid" branch via GBDKPipeline:
 //   - Match mode: grid init, match check, gravity, chain functions generated
 //   - Block-push mode: push, undo, goal check functions generated
 //   - Undo stack array sized correctly to undoMaxDepth * gridSize
@@ -45,7 +46,7 @@ private fun buildPuzzleGameIR(
         GenericSystem(id = id, config = mapOf("type" to "puzzle_grid", "puzzleConfig" to config))
     return GameIR(
         name = "TestPuzzleGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY, romBanks = 2),
         scenes = listOf(SceneIR(id = "gameplay")),
         systems = listOf(system),
         startScene = "gameplay",
@@ -54,7 +55,7 @@ private fun buildPuzzleGameIR(
 
 class PuzzleCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: Match mode generates grid init, match check, gravity, chain functions

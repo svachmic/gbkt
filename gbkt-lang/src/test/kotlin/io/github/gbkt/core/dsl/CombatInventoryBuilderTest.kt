@@ -42,8 +42,8 @@ class CombatInventoryBuilderTest {
         val ir =
             game("test") {
                     combatEngine("main") { type(CombatType.TURN_BASED) }
-                    scene("battle") { enter {} }
-                    start = "battle"
+                    val battleScene = scene("battle") { enter {} }
+                    start = battleScene
                 }
                 .build()
 
@@ -57,8 +57,8 @@ class CombatInventoryBuilderTest {
         val ir =
             game("test") {
                     combatEngine("combat") {}
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -71,8 +71,8 @@ class CombatInventoryBuilderTest {
         val ir =
             game("test") {
                     combatEngine("action_combat") { type(CombatType.REAL_TIME) }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -88,8 +88,8 @@ class CombatInventoryBuilderTest {
                         combatant("hero", CombatantSide.PLAYER, canAct = true)
                         combatant("wall", CombatantSide.ENEMY, canAct = false)
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -107,9 +107,9 @@ class CombatInventoryBuilderTest {
     fun `combatEngine onVictory records action ops`() {
         val ir =
             game("test") {
-                    combatEngine("combat") { onVictory { navigate("victory") } }
-                    scene("main") { enter {} }
-                    start = "main"
+                    combatEngine("combat") { onVictory { navigate(SceneRef("victory")) } }
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -124,10 +124,10 @@ class CombatInventoryBuilderTest {
         val ir =
             game("test") {
                     combatEngine("combat") {
-                        onVictoryWhen { whenever(scoreVar isAbove 0) { navigate("win") } }
+                        onVictoryWhen { whenever(scoreVar isAbove 0) { navigate(SceneRef("win")) } }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -142,10 +142,10 @@ class CombatInventoryBuilderTest {
         val ir =
             game("test") {
                     combatEngine("combat") {
-                        onDefeatWhen { whenever(livesVar isEqualTo 0) { navigate("gameover") } }
+                        onDefeatWhen { whenever(livesVar isEqualTo 0) { navigate(SceneRef("gameover")) } }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -162,8 +162,8 @@ class CombatInventoryBuilderTest {
                         customState("NEGOTIATION")
                         customState("FLEE")
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -181,8 +181,8 @@ class CombatInventoryBuilderTest {
                         subState("PLAYER_TURN", "SELECTING_ACTION")
                         subState("PLAYER_TURN", "SELECTING_TARGET")
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -209,8 +209,8 @@ class CombatInventoryBuilderTest {
         val ir =
             game("test") {
                     combatEngine("combat") { type(CombatType.TURN_BASED) }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -231,8 +231,8 @@ class CombatInventoryBuilderTest {
                         item("potion") { name("Potion") }
                         item("elixir") { name("Elixir") }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -254,8 +254,8 @@ class CombatInventoryBuilderTest {
                             dropWeight(15)
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -279,8 +279,8 @@ class CombatInventoryBuilderTest {
         val ir =
             game("test") {
                     items { item("potion") { name("Potion") } }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -293,8 +293,8 @@ class CombatInventoryBuilderTest {
         val ir =
             game("test") {
                     items { category("consumable") { defaultMaxStack(10) } }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -316,8 +316,8 @@ class CombatInventoryBuilderTest {
                             // maxStack NOT called — should remain null
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -337,8 +337,8 @@ class CombatInventoryBuilderTest {
                             maxStack(99)
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -351,8 +351,8 @@ class CombatInventoryBuilderTest {
         val ir =
             game("test") {
                     container("bag") { slots(16) }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -372,8 +372,8 @@ class CombatInventoryBuilderTest {
         val ir =
             game("test") {
                     container("bag") { slots(16) }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -389,8 +389,8 @@ class CombatInventoryBuilderTest {
                         slots(5)
                         categoryFilter("KEY_ITEM")
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -407,8 +407,8 @@ class CombatInventoryBuilderTest {
                         drop("potion", weight = 60)
                         drop("potion", weight = 30, minCount = 1, maxCount = 3)
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -431,8 +431,8 @@ class CombatInventoryBuilderTest {
                             onUse { heal(50) }
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -449,11 +449,11 @@ class CombatInventoryBuilderTest {
                     items {
                         item("escape_rope") {
                             name("Escape Rope")
-                            onUse { script { navigate("dungeon_entrance") } }
+                            onUse { script { navigate(SceneRef("dungeon_entrance")) } }
                         }
                     }
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 

@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.rpg.dsl
 
+import io.github.gbkt.core.dsl.SceneRef
 import io.github.gbkt.core.dsl.game
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.CombatType
@@ -48,8 +49,8 @@ class RpgBuildersTest {
                             def(3)
                         }
                     }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -73,8 +74,8 @@ class RpgBuildersTest {
                             def(3)
                         }
                     }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -102,8 +103,8 @@ class RpgBuildersTest {
                         }
                         exp(5)
                     }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
 
@@ -142,16 +143,16 @@ class RpgBuildersTest {
                             exp(5)
                         }
 
+                    val gameplayScene = scene("gameplay") { enter {} }
+                    val gameoverScene = scene("gameover") { enter {} }
                     simpleBattle("combat") {
                         party(hero)
                         encounter { +goblin }
-                        onVictory { navigate("gameplay") }
-                        onDefeat { navigate("gameover") }
+                        onVictory { navigate(gameplayScene) }
+                        onDefeat { navigate(gameoverScene) }
                     }
 
-                    scene("gameplay") { enter {} }
-                    scene("gameover") { enter {} }
-                    start = "gameplay"
+                    start = gameplayScene
                 }
                 .build()
 
@@ -192,8 +193,8 @@ class RpgBuildersTest {
                         encounter { +goblin }
                     }
 
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -223,8 +224,8 @@ class RpgBuildersTest {
 
                     simpleBattle("combat") { party(hero) }
 
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -263,8 +264,8 @@ class RpgBuildersTest {
                         encounter { +goblin }
                     }
 
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -316,11 +317,11 @@ class RpgBuildersTest {
                         encounter { +goblin }
                     }
 
-                    scene("combat_scene") {
+                    val combat_sceneScene = scene("combat_scene") {
                         enter {}
                         frame { battleUpdate("combat") }
                     }
-                    start = "combat_scene"
+                    start = combat_sceneScene
                 }
                 .build()
 
@@ -352,8 +353,8 @@ class RpgBuildersTest {
                             }
                         }
                     simpleBattle("b") { party(hero) }
-                    scene("s") { enter {} }
-                    start = "s"
+                    val sScene = scene("s") { enter {} }
+                    start = sScene
                 }
                 .build()
 
@@ -380,15 +381,15 @@ class RpgBuildersTest {
                             }
                         }
 
+                    val gameplayScene = scene("gameplay") { enter {} }
+                    val gameoverScene = scene("gameover") { enter {} }
                     simpleBattle("combat") {
                         party(hero)
-                        onVictory { navigate("gameplay") }
-                        onDefeat { navigate("gameover") }
+                        onVictory { navigate(gameplayScene) }
+                        onDefeat { navigate(gameoverScene) }
                     }
 
-                    scene("gameplay") { enter {} }
-                    scene("gameover") { enter {} }
-                    start = "gameplay"
+                    start = gameplayScene
                 }
                 .build()
 

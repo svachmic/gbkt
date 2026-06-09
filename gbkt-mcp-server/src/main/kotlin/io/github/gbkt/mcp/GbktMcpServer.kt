@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
 
     val server =
         Server(
-            Implementation(name = "gbkt-emulator", version = "1.0.0"),
+            Implementation(name = "gbkt-emulator", version = "0.1.0"),
             ServerOptions(
                 capabilities =
                     ServerCapabilities(tools = ServerCapabilities.Tools(listChanged = false))

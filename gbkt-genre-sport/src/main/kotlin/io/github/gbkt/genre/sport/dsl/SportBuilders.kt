@@ -10,6 +10,17 @@
 
 package io.github.gbkt.genre.sport.dsl
 
+import io.github.gbkt.core.dsl.ActorRef
+import io.github.gbkt.core.dsl.GameBuilder
+import io.github.gbkt.core.dsl.GameBuilderContext
+import io.github.gbkt.core.ir.ActorPoolConfig
+import io.github.gbkt.core.ir.ActorPoolIR
+import io.github.gbkt.core.ir.CameraSystem
+import io.github.gbkt.core.ir.GenericSystem
+import io.github.gbkt.core.ir.PoolOverflowStrategy
+import io.github.gbkt.core.ir.ZoneIR
+import io.github.gbkt.genre.sport.codegen.TrackSynthesizer
+import io.github.gbkt.genre.sport.domain.AiVehicleSlot
 import io.github.gbkt.genre.sport.domain.BallPhysicsConfig
 import io.github.gbkt.genre.sport.domain.BallSportConfig
 import io.github.gbkt.genre.sport.domain.BracketType
@@ -25,10 +36,13 @@ import io.github.gbkt.genre.sport.domain.SportPickupType
 import io.github.gbkt.genre.sport.domain.StandingEntry
 import io.github.gbkt.genre.sport.domain.TournamentConfig
 import io.github.gbkt.genre.sport.domain.TrackDef
-import io.github.gbkt.genre.sport.domain.VehicleDef
+import io.github.gbkt.genre.sport.domain.Vehicle
+import io.github.gbkt.genre.sport.domain.VehicleRef
 import io.github.gbkt.genre.sport.domain.VehicleStats
 import io.github.gbkt.genre.sport.domain.WaypointDef
 import io.github.gbkt.genre.sport.domain.WinCondition
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 /** Shared factory for sport pickup definitions, used by both racing and ball-sport builders. */
 private fun buildSportPickup(
@@ -66,10 +80,16 @@ class WaypointBuilder {
         WaypointDef(tileX = tileX, tileY = tileY, isCheckpoint = isCheckpoint)
 }
 
-/** Builder for [TrackDef]. Associates a zone ID with an ordered list of waypoints. */
-class TrackBuilder(private val zoneId: String) {
-    private val waypoints: MutableList<WaypointDef> = mutableListOf()
-    private var lapCount: Int = 3
+/**
+ * Builder for the track section of a `racing { }` block.
+ *
+ * No `zoneId` constructor parameter (D-04): the [RacingDelegate] auto-derives the zone id from the
+ * racing property name during `provideDelegate`. The track block only collects waypoint geometry
+ * and the optional tileset asset reference.
+ */
+class TrackBuilder {
+    internal val waypoints: MutableList<WaypointDef> = mutableListOf()
+    internal var tilesetAsset: String? = null
 
     /** Adds a waypoint using coordinate sugar: `waypoint(x = 5, y = 10)`. */
     fun waypoint(x: Int, y: Int, checkpoint: Boolean = false) {
@@ -83,13 +103,10 @@ class TrackBuilder(private val zoneId: String) {
         waypoints += builder.build()
     }
 
-    /** Sets the number of laps to complete the race. */
-    fun laps(count: Int) {
-        lapCount = count
+    /** Sets the tileset asset path used to render the synthesized track tiles. */
+    fun tileset(asset: String) {
+        tilesetAsset = asset
     }
-
-    fun build(): TrackDef =
-        TrackDef(zoneId = zoneId, waypoints = waypoints.toList(), lapCount = lapCount)
 }
 
 /** Builder for [VehicleStats]. Collects speed, acceleration, and handling values. */
@@ -150,65 +167,195 @@ class RacingAIConfigBuilder {
 }
 
 /**
- * Builder for [RacingConfig]. Top-level builder for a racing game configuration.
+ * Builder for a [Vehicle] declared via `val carPlayer by vehicle { ... }` (D-04, D-05).
  *
+ * The vehicle wraps an existing [ActorRef] (declared earlier in the game block via `val car by
+ * actor { ... }`). The bound actor remains a separate, customizable entity — its movement style,
+ * sprite, and custom props all stay configurable on the actor itself; the vehicle adds only the
+ * racing-specific stats and the binding back to the actor.
+ *
+ * Required fluent shape per `07.4-CONTEXT.md` D-05:
  * ```kotlin
- * racing("grand_prix") {
- *     mode(RacingMode.AI_OPPONENT)
+ * val carPlayer by vehicle {
+ *     actor(car)
+ *     stats { speed(200); acceleration(160); handling(180) }
+ * }
+ * ```
+ */
+class VehicleBuilder {
+    private var actorRef: ActorRef? = null
+    private var stats: VehicleStats = VehicleStats(speed = 128, acceleration = 128, handling = 128)
+
+    /** Binds this vehicle to an existing actor (D-05: vehicle wraps an actor). */
+    fun actor(ref: ActorRef) {
+        actorRef = ref
+    }
+
+    /** Configures the vehicle's racing stats. */
+    fun stats(block: VehicleStatsBuilder.() -> Unit) {
+        val builder = VehicleStatsBuilder()
+        builder.block()
+        stats = builder.build()
+    }
+
+    /** Builds the runtime [Vehicle] value, requiring [actor] to have been called. */
+    internal fun build(id: String): Vehicle {
+        val ref =
+            actorRef
+                ?: error(
+                    "vehicle '$id' must call actor(actorRef) — every vehicle wraps an actor (D-05)"
+                )
+        return Vehicle(id = id, actorRef = ref, stats = stats)
+    }
+}
+
+/**
+ * Per-`GameBuilder` registry mapping each declared [Vehicle]'s id to its full [Vehicle] value.
+ *
+ * Used internally by [VehicleDelegate] (to register at declaration time) and [RacingDelegate] (to
+ * resolve `racing { player(carPlayer); aiOpponents(carAi) }` references back to their bound
+ * [ActorRef]s during the `provideDelegate` codegen-emission pass).
+ *
+ * Keyed by `System.identityHashCode(gameBuilder)` so multiple game builds in the same JVM (e.g.,
+ * back-to-back tests) don't bleed state across games. The registry is per-test-class scoped via
+ * `clear()`, but in practice each `game { }` block is a fresh builder identity.
+ */
+internal object VehicleRegistry {
+    private val perGame: MutableMap<Int, MutableMap<String, Vehicle>> = mutableMapOf()
+
+    fun register(gameBuilder: GameBuilder, vehicle: Vehicle) {
+        val key = System.identityHashCode(gameBuilder)
+        val perBuilder = perGame.getOrPut(key) { mutableMapOf() }
+        perBuilder[vehicle.id] = vehicle
+    }
+
+    fun resolve(gameBuilder: GameBuilder, vehicleId: String): Vehicle {
+        val key = System.identityHashCode(gameBuilder)
+        val perBuilder = perGame[key]
+        val vehicle = perBuilder?.get(vehicleId)
+        return vehicle
+            ?: error(
+                "Vehicle '$vehicleId' not registered — declare 'val $vehicleId by vehicle { ... }' " +
+                    "before referencing it in racing { player/aiOpponents }"
+            )
+    }
+
+    fun snapshot(gameBuilder: GameBuilder): Map<String, Vehicle> {
+        val key = System.identityHashCode(gameBuilder)
+        return perGame[key]?.toMap() ?: emptyMap()
+    }
+
+    fun clear(gameBuilder: GameBuilder) {
+        perGame.remove(System.identityHashCode(gameBuilder))
+    }
+}
+
+/**
+ * Property delegate for `val carPlayer by vehicle { ... }` (D-04).
+ *
+ * On `provideDelegate` (when Kotlin evaluates the `by` keyword), the delegate captures the property
+ * name as the vehicle's id, runs the user's [VehicleBuilder] block, registers the resulting
+ * [Vehicle] with the [VehicleRegistry] for the active game, and returns a [VehicleRef] for use in
+ * `racing { player(...) }` / `aiOpponents(...)` callsites.
+ *
+ * Mirrors `ActorDelegate.provideDelegate` (gbkt-lang/.../ActorBuilder.kt:1205–1228).
+ */
+class VehicleDelegate(private val block: VehicleBuilder.() -> Unit) {
+    private var ref: VehicleRef? = null
+
+    operator fun provideDelegate(
+        thisRef: Any?,
+        property: KProperty<*>,
+    ): ReadOnlyProperty<Any?, VehicleRef> {
+        val id = property.name
+        val gameBuilder =
+            GameBuilderContext.current ?: error("vehicle {} must be called inside a game {} block")
+        val builder = VehicleBuilder()
+        builder.block()
+        val vehicle = builder.build(id)
+        VehicleRegistry.register(gameBuilder, vehicle)
+        val resolved = VehicleRef(id = id, actorId = vehicle.actorRef.id)
+        ref = resolved
+        return ReadOnlyProperty { _, _ -> resolved }
+    }
+}
+
+/**
+ * Builder for the contents of a `racing { ... }` block (D-04 — no String id parameter).
+ *
+ * The id is captured from the property delegate (`val track1 by racing { ... }`); this builder only
+ * collects the configuration (laps, mode, player/AI bindings, AI tuning, track waypoints).
+ *
+ * Required fluent shape per `07.4-CONTEXT.md` D-05:
+ * ```kotlin
+ * val track1 by racing {
  *     laps(3)
- *     track("race_zone") {
+ *     player(carPlayer)
+ *     aiOpponents(carAi)
+ *     track {
  *         waypoint(x = 5, y = 5, checkpoint = true)
- *         waypoint(x = 10, y = 3)
- *     }
- *     vehicle("car_fast") {
- *         name("Speed Racer")
- *         stats { speed(220); acceleration(180); handling(160) }
- *     }
- *     ai {
- *         speedPercent(85)
- *         difficulty(7)
- *         rubberBanding(enabled = true, strength = 60)
+ *         waypoint(x = 15, y = 5)
+ *         waypoint(x = 15, y = 15, checkpoint = true)
+ *         waypoint(x = 5, y = 15)
  *     }
  * }
  * ```
  */
-class RacingBuilder(val id: String) {
-    private var mode: RacingMode = RacingMode.TIME_TRIAL
-    private var laps: Int = 3
-    private var track: TrackDef? = null
-    private val vehicles: MutableList<VehicleDef> = mutableListOf()
+class RacingBuilder {
+    private var mode: RacingMode = RacingMode.AI_OPPONENT
+    private var laps: Int = 1
     private var aiConfig: RacingAIConfig = RacingAIConfig()
     private val pickups: MutableList<SportPickupDef> = mutableListOf()
+    private var playerVehicleRef: VehicleRef? = null
+    private val aiSlots: MutableList<AiVehicleSlot> = mutableListOf()
+    private val waypoints: MutableList<WaypointDef> = mutableListOf()
+    private var tilesetAsset: String? = null
 
-    /** Sets the racing play mode. */
+    /** Sets the racing play mode. Default: [RacingMode.AI_OPPONENT]. */
     fun mode(racingMode: RacingMode) {
         mode = racingMode
     }
 
-    /** Sets the number of laps to complete the race. */
+    /** Sets the number of laps to complete the race. Default: 1. */
     fun laps(count: Int) {
         laps = count
     }
 
-    /** Defines the racing track with a zone reference and waypoint configuration. */
-    fun track(zoneId: String, block: TrackBuilder.() -> Unit = {}) {
-        val builder = TrackBuilder(zoneId)
-        builder.block()
-        track = builder.build()
-    }
-
-    /** Adds a vehicle definition to the available vehicle roster. */
-    fun vehicle(vehicleId: String, block: VehicleDefBuilder.() -> Unit) {
-        val builder = VehicleDefBuilder(vehicleId)
-        builder.block()
-        vehicles += builder.build()
-    }
-
     /** Configures AI opponent behavior. Only used when mode is [RacingMode.AI_OPPONENT]. */
-    fun ai(block: RacingAIConfigBuilder.() -> Unit) {
+    fun aiConfig(block: RacingAIConfigBuilder.() -> Unit) {
         val builder = RacingAIConfigBuilder()
         builder.block()
         aiConfig = builder.build()
+    }
+
+    /** Legacy alias for [aiConfig] — preserves the `ai { ... }` block shape. */
+    fun ai(block: RacingAIConfigBuilder.() -> Unit) = aiConfig(block)
+
+    /**
+     * Binds the player vehicle (D-05). The id is captured from the [VehicleRef], which itself
+     * carries the original `val foo by vehicle { ... }` property name.
+     */
+    fun player(vehicleRef: VehicleRef) {
+        playerVehicleRef = vehicleRef
+    }
+
+    /**
+     * Declares one or more AI opponent slots fed by the same vehicle template (D-13).
+     *
+     * `aiOpponents(carAi)` is one rival; `aiOpponents(carAi, count = 3)` is three. Each call
+     * appends an [AiVehicleSlot]; multiple calls let the user mix differently-tuned vehicles.
+     */
+    fun aiOpponents(vehicleRef: VehicleRef, count: Int = 1) {
+        aiSlots += AiVehicleSlot(vehicleId = vehicleRef.id, count = count)
+    }
+
+    /** Configures the racing track via a [TrackBuilder] block. */
+    fun track(block: TrackBuilder.() -> Unit) {
+        val builder = TrackBuilder()
+        builder.block()
+        waypoints.clear()
+        waypoints += builder.waypoints
+        tilesetAsset = builder.tilesetAsset
     }
 
     /** Adds a pickup/power-up to the racing game. */
@@ -216,37 +363,182 @@ class RacingBuilder(val id: String) {
         pickups += buildSportPickup(pickupId, type, durationFrames)
     }
 
-    fun build(): RacingConfig =
-        RacingConfig(
-            id = id,
+    /** Internal accessor for [RacingDelegate] — exposes the optional tileset asset. */
+    internal val tilesetAssetForBuilder: String?
+        get() = tilesetAsset
+
+    /** Builds the [RacingConfig]. The id flows in from [RacingDelegate.provideDelegate]. */
+    internal fun buildConfig(racingId: String): RacingConfig {
+        val player =
+            playerVehicleRef
+                ?: error(
+                    "racing '$racingId' must call player(vehicleRef) — every race needs a player " +
+                        "vehicle (D-05)"
+                )
+        val track = TrackDef(zoneId = racingId, waypoints = waypoints.toList(), lapCount = laps)
+        return RacingConfig(
+            id = racingId,
             mode = mode,
             laps = laps,
             track = track,
-            vehicles = vehicles.toList(),
+            vehicles = emptyList(),
             aiConfig = aiConfig,
             pickups = pickups.toList(),
+            playerVehicleId = player.id,
+            aiVehicles = aiSlots.toList(),
         )
+    }
 }
 
-/** Builder for [VehicleDef]. Associates a vehicle ID with its name and stats. */
-class VehicleDefBuilder(val id: String) {
-    private var vehicleName: String = id
-    private var vehicleStats: VehicleStats =
-        VehicleStats(speed = 128, acceleration = 128, handling = 128)
+/** Lightweight reference returned by the `racing { }` property delegate. */
+data class RacingConfigRef(val id: String)
 
-    /** Sets the vehicle display name. */
-    fun name(n: String) {
-        vehicleName = n
+/**
+ * Property delegate for `val track1 by racing { ... }` (D-04, D-06, D-12, D-13, D-14).
+ *
+ * On `provideDelegate`:
+ * 1. Captures the racing id from the property name.
+ * 2. Runs the user's [RacingBuilder] block.
+ * 3. Resolves the bound player vehicle from the [VehicleRegistry].
+ * 4. Synthesizes a track tilemap from the waypoint polygon (D-10) — UNLESS the user already
+ *    supplied a populated `ZoneIR` for `racingId` via the public `zone(id) { … }` factory; in that
+ *    case the user's tile data is preserved (D-12).
+ * 5. Auto-emits a [CameraSystem] following the player vehicle's actor IF the user did not declare a
+ *    camera themselves (D-06).
+ * 6. Synthesizes one [ActorPoolIR] per [AiVehicleSlot] (D-13, D-14) — pool id from the AI vehicle's
+ *    property name, template from its bound actor.
+ * 7. Registers the racing system as a [GenericSystem] of type `"sport_racing"` carrying the full
+ *    per-game config map that downstream plans (05 codegen, 06 validation) read from.
+ */
+class RacingDelegate(private val block: RacingBuilder.() -> Unit) {
+    @Suppress("LongMethod") // Single-purpose orchestration body — splitting hurts readability.
+    operator fun provideDelegate(
+        thisRef: Any?,
+        property: KProperty<*>,
+    ): ReadOnlyProperty<Any?, RacingConfigRef> {
+        val racingId = property.name
+        val gameBuilder =
+            GameBuilderContext.current ?: error("racing {} must be called inside a game {} block")
+
+        val rb = RacingBuilder()
+        rb.block()
+        val racingConfig = rb.buildConfig(racingId)
+        val playerVehicle = VehicleRegistry.resolve(gameBuilder, racingConfig.playerVehicleId!!)
+
+        val waypoints = racingConfig.track!!.waypoints
+        // D-12 user-supplied zone bypass: if the user already registered a ZoneIR with id ==
+        // racingId AND non-empty tileData, preserve their tilemap. Otherwise synthesize.
+        val userZone =
+            gameBuilder.currentZones().firstOrNull { it.id == racingId && it.tileData.isNotEmpty() }
+        val mapWidth: Int
+        val mapHeight: Int
+        if (userZone != null) {
+            // mapWidth/mapHeight are nullable sentinels (REQ-14); when a user zone has tileData
+            // but no explicit size, fall back to the bounding-box path below (mapWidth=0 sentinel
+            // would be wrong — use ?: 0 to trigger the else path via a 0 width).
+            mapWidth = userZone.mapWidth ?: 0
+            mapHeight = userZone.mapHeight ?: 0
+        } else {
+            // Compute a bounding box around the polygon plus a corridor margin so the track has
+            // wall tiles on every side (D-17 enclosure invariant; the synthesizer also forces a
+            // perimeter pass, but generous margins make the math defensive).
+            val maxTileX = waypoints.maxOf { it.tileX } + CORRIDOR_MARGIN
+            val maxTileY = waypoints.maxOf { it.tileY } + CORRIDOR_MARGIN
+            mapWidth = maxTileX
+            mapHeight = maxTileY
+            val synthesized =
+                TrackSynthesizer.synthesize(
+                    waypoints = waypoints,
+                    mapWidth = mapWidth,
+                    mapHeight = mapHeight,
+                    corridorWidth = DEFAULT_CORRIDOR_WIDTH,
+                )
+            val zoneIR =
+                ZoneIR(
+                    id = racingId,
+                    name = racingId,
+                    tilesetPath = rb.tilesetAssetForBuilder,
+                    mapWidth = mapWidth,
+                    mapHeight = mapHeight,
+                    tileData = synthesized.tileData,
+                    collisionData = synthesized.collisionData,
+                )
+            gameBuilder.registerZone(zoneIR)
+        }
+
+        // D-06 auto-camera: only emit if the user didn't declare their own camera.
+        val zoneWidthPx = mapWidth * TILE_SIZE_PX
+        val zoneHeightPx = mapHeight * TILE_SIZE_PX
+        val userHasCamera = gameBuilder.currentSystems().any { it is CameraSystem }
+        if (!userHasCamera) {
+            gameBuilder.registerSystem(
+                CameraSystem(
+                    id = "camera",
+                    followActorId = playerVehicle.actorRef.id,
+                    boundsWidth = zoneWidthPx,
+                    boundsHeight = zoneHeightPx,
+                    smoothing = 0.0f,
+                )
+            )
+        }
+
+        // D-13 / D-14: one ActorPoolIR per AI slot. Pool id from the VEHICLE property name (not
+        // the actor id); template from the vehicle's bound actor.
+        for (slot in racingConfig.aiVehicles) {
+            val aiVehicle = VehicleRegistry.resolve(gameBuilder, slot.vehicleId)
+            gameBuilder.registerActorPool(
+                ActorPoolIR(
+                    id = aiVehicle.id,
+                    actorTemplateId = aiVehicle.actorRef.id,
+                    config =
+                        ActorPoolConfig(
+                            maxSize = slot.count,
+                            overflowStrategy = PoolOverflowStrategy.SILENT_NOOP,
+                        ),
+                )
+            )
+        }
+
+        // Plan 03 is the SINGLE source of truth for the racing config map. Plans 05 and 06 read
+        // these keys read-only — none may be omitted.
+        val resolvedAiVehicles: List<Vehicle> =
+            racingConfig.aiVehicles.map { slot ->
+                VehicleRegistry.resolve(gameBuilder, slot.vehicleId)
+            }
+        val perGameVehicles: Map<String, Vehicle> =
+            (listOf(playerVehicle) + resolvedAiVehicles).associateBy { it.id }
+        gameBuilder.registerSystem(
+            GenericSystem(
+                id = racingId,
+                config =
+                    mapOf(
+                        "type" to "sport_racing",
+                        "config" to racingConfig,
+                        "registeredVehicles" to perGameVehicles,
+                        "playerVehicle" to playerVehicle,
+                        "aiVehicles_resolved" to resolvedAiVehicles,
+                    ),
+            )
+        )
+
+        val configRef = RacingConfigRef(id = racingId)
+        return ReadOnlyProperty { _, _ -> configRef }
     }
 
-    /** Configures the vehicle's performance stats. */
-    fun stats(block: VehicleStatsBuilder.() -> Unit) {
-        val builder = VehicleStatsBuilder()
-        builder.block()
-        vehicleStats = builder.build()
-    }
+    private companion object {
+        // Corridor margin (in tiles) added to the polygon bounding box on the bottom-right so
+        // the synthesized zone always has wall tiles framing the loop.
+        const val CORRIDOR_MARGIN = 4
 
-    fun build(): VehicleDef = VehicleDef(id = id, name = vehicleName, stats = vehicleStats)
+        // Default corridor width passed to TrackSynthesizer. Tuned in Plan 04 against the square /
+        // triangle / pentagon fixtures; can be overridden per-game in a future revision (D-11
+        // tactical knob).
+        const val DEFAULT_CORRIDOR_WIDTH = 4
+
+        // Game Boy tile is 8x8 px. Used to convert the synthesized tile map into pixel bounds for
+        // the auto-emitted CameraSystem.
+        const val TILE_SIZE_PX = 8
+    }
 }
 
 // =============================================================================

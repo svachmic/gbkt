@@ -13,7 +13,6 @@ import io.github.gbkt.analysis.PassResult
 import io.github.gbkt.analysis.Severity
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.ExplorationSystem
-import io.github.gbkt.core.ir.GBCColor
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.GbcTarget
 import io.github.gbkt.core.ir.GenericSystem
@@ -49,9 +48,6 @@ class SemanticValidationPass : AnalysisPass {
         checkDanglingActorRefs(game, actorIds, diagnostics)
         checkRawOpUsage(game, diagnostics)
         checkFadeWithoutAudioMixer(game, diagnostics)
-        if (context.config.paletteStrictMode) {
-            checkPalettePrecision(game, diagnostics)
-        }
         if (game.config.gbcTarget != GbcTarget.DMG) {
             checkGbcPaletteCount(game, diagnostics)
         }
@@ -87,7 +83,8 @@ class SemanticValidationPass : AnalysisPass {
                         id = "ANLZ-01",
                         severity = Severity.ERROR,
                         message =
-                            "Duplicate $entityKind $fieldKind '$name' — each $entityKind must have a unique $fieldKind.",
+                            "Duplicate $entityKind $fieldKind '$name' — each $entityKind " +
+                                "must have a unique $fieldKind.",
                         location = "$entityKind '$name'",
                         suggestion =
                             "Rename one of the ${entityKind}s with $fieldKind '$name' to a unique value.",
@@ -229,22 +226,6 @@ class SemanticValidationPass : AnalysisPass {
     }
 
     /**
-     * In strict mode, checks all declared palettes for GBCColor values that lose precision when
-     * quantized from RGB888 to RGB555.
-     *
-     * The GBCColor companion's [GBCColor.hasPrecisionLoss] method checks whether the original hex
-     * value (recovered from rgb555 round-trip) has non-zero low 3 bits per channel.
-     *
-     * Emits WARNING diagnostics listing each imprecise color and what it quantizes to.
-     */
-    private fun checkPalettePrecision(game: GameIR, diagnostics: MutableList<Diagnostic>) {
-        // Palette precision cannot be checked at analysis time -- GBCColor stores rgb555
-        // (already quantized). Precision loss detection happens at DSL construction time
-        // in gbcHex() which calls GBCColor.hasPrecisionLoss before fromRGB888 conversion.
-        // This function is intentionally a no-op to prevent false-positive warnings.
-    }
-
-    /**
      * Warns if any MusicPlay or MusicStop uses fade frames but no AudioMixer system is configured.
      *
      * Without `audioMixer { }`, the `fade_group()` C function won't exist — codegen falls back to
@@ -255,60 +236,7 @@ class SemanticValidationPass : AnalysisPass {
             game.systems.any { it is GenericSystem && it.config["type"] == "audio_mixer" }
         if (hasAudioMixer) return
 
-        val topLevelOps = buildList {
-            for (scene in game.scenes) {
-                addAll(scene.enterOps)
-                addAll(scene.frameOps)
-                addAll(scene.exitOps)
-            }
-            for (zone in game.zones) {
-                addAll(zone.onEnter)
-                addAll(zone.onExit)
-                for (obj in zone.objects) {
-                    addAll(obj.onInteract)
-                }
-            }
-            for (rule in game.collisionRules) {
-                addAll(rule.onCollide)
-            }
-            for (pool in game.actorPools) {
-                addAll(pool.deathCallback)
-            }
-            for (menu in game.menus) {
-                for (item in menu.items) {
-                    addAll(item.body)
-                }
-            }
-            for (puzzleObj in game.puzzleObjects) {
-                for (h in puzzleObj.handlers) {
-                    addAll(h.actions)
-                }
-            }
-            for (system in game.systems) {
-                when (system) {
-                    is ExplorationSystem -> {
-                        addAll(system.stepStatements)
-                        addAll(system.blockedStatements)
-                        addAll(system.interactStatements)
-                        for (g in system.gauges) {
-                            addAll(g.onLowStatements)
-                            addAll(g.onDepletedStatements)
-                        }
-                    }
-                    is CombatEngineSystem -> {
-                        addAll(system.onVictoryCondition)
-                        addAll(system.onDefeatCondition)
-                        addAll(system.onVictoryOps)
-                        addAll(system.onDefeatOps)
-                        for ((_, ops) in system.combatHooks) {
-                            addAll(ops)
-                        }
-                    }
-                    else -> Unit
-                }
-            }
-        }
-        val allOps = collectAllOps(topLevelOps)
+        val allOps = collectAllOps(collectAllTopLevelOps(game))
 
         for (op in allOps) {
             if (op is MusicPlay && op.fadeInFrames > 0) {
@@ -334,6 +262,66 @@ class SemanticValidationPass : AnalysisPass {
                         location = "scene ops",
                         suggestion = "Add audioMixer { } to your game {} block to enable fade.",
                     )
+            }
+        }
+    }
+
+    /**
+     * Walks every GameIR subsystem and returns the flat list of top-level [ScriptOp]s. Used by
+     * [checkFadeWithoutAudioMixer] (and a candidate caller for any future cross-subsystem op walk).
+     * Extracted from [checkFadeWithoutAudioMixer] to keep the host function under LongMethod /
+     * CyclomaticComplexMethod thresholds.
+     */
+    private fun collectAllTopLevelOps(game: GameIR): List<ScriptOp> = buildList {
+        for (scene in game.scenes) {
+            addAll(scene.enterOps)
+            addAll(scene.frameOps)
+            addAll(scene.exitOps)
+        }
+        for (zone in game.zones) {
+            addAll(zone.onEnter)
+            addAll(zone.onExit)
+            for (obj in zone.objects) {
+                addAll(obj.onInteract)
+            }
+        }
+        for (rule in game.collisionRules) {
+            addAll(rule.onCollide)
+        }
+        for (pool in game.actorPools) {
+            addAll(pool.deathCallback)
+        }
+        for (menu in game.menus) {
+            for (item in menu.items) {
+                addAll(item.body)
+            }
+        }
+        for (puzzleObj in game.puzzleObjects) {
+            for (h in puzzleObj.handlers) {
+                addAll(h.actions)
+            }
+        }
+        for (system in game.systems) {
+            when (system) {
+                is ExplorationSystem -> {
+                    addAll(system.stepStatements)
+                    addAll(system.blockedStatements)
+                    addAll(system.interactStatements)
+                    for (g in system.gauges) {
+                        addAll(g.onLowStatements)
+                        addAll(g.onDepletedStatements)
+                    }
+                }
+                is CombatEngineSystem -> {
+                    addAll(system.onVictoryCondition)
+                    addAll(system.onDefeatCondition)
+                    addAll(system.onVictoryOps)
+                    addAll(system.onDefeatOps)
+                    for ((_, ops) in system.combatHooks) {
+                        addAll(ops)
+                    }
+                }
+                else -> Unit
             }
         }
     }

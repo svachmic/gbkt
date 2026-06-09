@@ -144,7 +144,7 @@ class SimpleBattleBuilder(val id: String) {
      * Records the script operations to execute when the player wins the battle.
      *
      * ```kotlin
-     * onVictory { navigate("gameplay") }
+     * onVictory { navigate(gameplayScene) }
      * ```
      */
     fun onVictory(block: ScriptBuilder.() -> Unit) {
@@ -155,7 +155,7 @@ class SimpleBattleBuilder(val id: String) {
      * Records the script operations to execute when the player loses the battle.
      *
      * ```kotlin
-     * onDefeat { navigate("gameover") }
+     * onDefeat { navigate(gameoverScene) }
      * ```
      */
     fun onDefeat(block: ScriptBuilder.() -> Unit) {

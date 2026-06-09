@@ -253,6 +253,8 @@ private object ScriptOpDescriber : ScriptOpVisitorI<String> {
 
     override fun visitScreenFill(op: ScreenFill): String = "ScreenFill(${op.tile})"
 
+    override fun visitBindCurrentLevel(op: BindCurrentLevel): String = "BindCurrentLevel"
+
     override fun visitPrintOp(op: PrintOp): String = "PrintOp"
 
     override fun visitGotoXYOp(op: GotoXYOp): String = "GotoXYOp"
@@ -302,6 +304,10 @@ private object ScriptOpDescriber : ScriptOpVisitorI<String> {
     override fun visitWaypointStep(op: WaypointStep): String = "WaypointStep(${op.npcActorId})"
 
     override fun visitSetPalette(op: SetPalette): String = "SetPalette(${op.paletteName})"
+
+    // Plan 07 — MetaspriteVisitor will replace this stub
+    override fun visitMoveMetasprite(op: MoveMetasprite): String =
+        "MoveMetasprite(${op.metaspriteId})"
 
     override fun visitActivatePuzzleObject(op: ActivatePuzzleObject): String =
         "ActivatePuzzleObject(${op.objectId})"

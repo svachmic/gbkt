@@ -29,10 +29,13 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CUnaryExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CVar
 import io.github.gbkt.backend.gbdk.codegen.ast.CVarDecl
 import io.github.gbkt.backend.gbdk.codegen.ast.CWhile
+import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.AnimateOp
 import io.github.gbkt.core.ir.ArrayAssign
 import io.github.gbkt.core.ir.Assign
+import io.github.gbkt.core.ir.BindCurrentLevel
 import io.github.gbkt.core.ir.AssignOp
+import io.github.gbkt.core.ir.CallExpr
 import io.github.gbkt.core.ir.CallOp
 import io.github.gbkt.core.ir.CameraAction
 import io.github.gbkt.core.ir.CameraOp
@@ -46,6 +49,8 @@ import io.github.gbkt.core.ir.Expr
 import io.github.gbkt.core.ir.FadeOp
 import io.github.gbkt.core.ir.FontMode
 import io.github.gbkt.core.ir.ForOp
+import io.github.gbkt.core.ir.GameIR
+import io.github.gbkt.core.ir.GenericSystem
 import io.github.gbkt.core.ir.GotoXYOp
 import io.github.gbkt.core.ir.HudHide
 import io.github.gbkt.core.ir.HudShow
@@ -80,9 +85,37 @@ import io.github.gbkt.core.ir.SoundEffectDef
 import io.github.gbkt.core.ir.SpawnActor
 import io.github.gbkt.core.ir.TextAlignment
 import io.github.gbkt.core.ir.TriggerSystem
+import io.github.gbkt.core.ir.VarRef
 import io.github.gbkt.core.ir.WaitFrames
 import io.github.gbkt.core.ir.WaypointStep
 import io.github.gbkt.core.ir.WhileOp
+
+// =============================================================================
+// POOL CODEGEN CONTEXT
+// Thread-local context used by ScriptOpVisitor and ExprVisitor to redirect
+// template actor property accesses to per-instance arrays inside forEachActive bodies.
+// =============================================================================
+
+/**
+ * Context object injected into [ExprVisitor] while compiling the body of a [PoolForEachActive] op.
+ *
+ * When active, any actor property access on the [templateActorId] is redirected from the template
+ * actor's global variable (e.g. `_bullet_y`) to the corresponding per-instance array access (e.g.
+ * `_pool_bulletPool_y[_bi]`).
+ *
+ * @param poolId ID of the pool (e.g. `"bulletPool"`).
+ * @param templateActorId ID of the template actor that this pool instantiates (e.g. `"bullet"`).
+ * @param slotVarName The sanitized slot variable name used in the for-loop (e.g. `"_bi"`).
+ * @param tilesWide Number of 8x8 OAM tiles wide (sprite width / 8), for multi-tile display sync.
+ * @param tilesHigh Number of 8x8 OAM tiles tall (sprite height / 8), for multi-tile display sync.
+ */
+data class PoolCodegenContext(
+    val poolId: String,
+    val templateActorId: String,
+    val slotVarName: String,
+    val tilesWide: Int,
+    val tilesHigh: Int,
+)
 
 // =============================================================================
 // SCRIPT OP VISITOR
@@ -98,7 +131,7 @@ import io.github.gbkt.core.ir.WhileOp
  * [ScriptOp.accept] rather than a `when` expression. This allows external modules to define their
  * own [ScriptOp] subtypes without modifying this visitor.
  *
- * All 24 [ScriptOp] subtypes are handled with real C AST output:
+ * All 56 [ScriptOp] subtypes are handled with real C AST output:
  * - [Assign] — variable assignment with compound operators
  * - [ArrayAssign] — array element assignment
  * - [IfOp] — conditional branch with optional else
@@ -141,8 +174,9 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
      * before dispatching, so that `collides()` expressions inside [IfOp]/[WhileOp] conditions are
      * resolved against the game's actor list.
      */
-    private val exprVisitorContext: ThreadLocal<ExprVisitor> =
-        ThreadLocal.withInitial { ExprVisitor() }
+    private val exprVisitorContext: ThreadLocal<ExprVisitor> = ThreadLocal.withInitial {
+        ExprVisitor()
+    }
 
     /**
      * Thread-local flag indicating whether the current game has an AudioMixer configured.
@@ -158,17 +192,85 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
     }
 
     /**
+     * Thread-local [GameIR] providing access to pool definitions and template actor metadata.
+     *
+     * Set by [setGameIR] before any ScriptOpVisitor call that involves pool codegen. Used by
+     * [visitPoolForEachActive] to look up the pool's [templateActorId] and sprite dimensions for
+     * pool context injection. Also used by [visitIfOp] for pool-pool collision synthesis.
+     */
+    private val gameIRContext: ThreadLocal<GameIR?> = ThreadLocal.withInitial { null }
+
+    /** Sets the [GameIR] for the current codegen context (required for pool codegen). */
+    fun setGameIR(gameIR: GameIR) {
+        gameIRContext.set(gameIR)
+    }
+
+    /**
+     * Thread-local [PoolCodegenContext] active during [visitPoolForEachActive] body compilation.
+     *
+     * Set inside the body compilation try-block and cleared in the finally-block to guarantee
+     * thread-safety. [ExprVisitor] reads this to redirect template actor property accesses to
+     * per-instance pool arrays.
+     */
+    internal val activePoolContext: ThreadLocal<PoolCodegenContext?> = ThreadLocal.withInitial {
+        null
+    }
+
+    /**
      * Thread-local map of sound effect definitions keyed by ID.
      *
      * Set by the codegen pipeline before visiting script ops. Used by [visitPlaySound] to look up
      * the channel and priority for AudioMixer channel preemption.
      */
     private val soundEffectDefsContext: ThreadLocal<Map<String, SoundEffectDef>> =
-        ThreadLocal.withInitial { emptyMap() }
+        ThreadLocal.withInitial {
+            emptyMap()
+        }
 
     /** Sets the sound effect definitions for the current codegen context. */
     fun setSoundEffectDefs(defs: List<SoundEffectDef>) {
         soundEffectDefsContext.set(defs.associateBy { it.id })
+    }
+
+    /**
+     * Thread-local active scene id for scene-aware lowering (Plan 07.4-20).
+     *
+     * Set via [setSceneContext] from
+     * [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline.buildSceneFile] inside a
+     * try/finally around each scene's op lowering. Null means "no scene context" (e.g. while
+     * lowering init helpers, HOME-bank globals, etc.). When null, scene-aware lowering falls back
+     * to the back-compat shape (`cls()` for ScreenClear, `gotoxy + printf` for PrintOp).
+     *
+     * Concurrency: codegen is single-threaded today, but we use a [ThreadLocal] for safety in case
+     * a future change parallelizes scene processing.
+     */
+    private val currentSceneIdContext: ThreadLocal<String?> = ThreadLocal.withInitial { null }
+
+    /**
+     * Thread-local "current scene has a BG tilemap" flag for scene-aware lowering (Plan 07.4-20).
+     *
+     * Computed by [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline.sceneHasBgTilemap]
+     * once per scene and threaded through [setSceneContext]. When `true`, [visitScreenClear] emits
+     * a non-destructive screen clear (`HIDE_SPRITES;` + `_win_clear_region(0, 0, 20, 18)`) and
+     * [visitPrintOp] emits `_win_print_at(...)`. When `false` (or scene id null), both fall back to
+     * the back-compat shapes.
+     */
+    private val currentSceneHasBgTilemapContext: ThreadLocal<Boolean> = ThreadLocal.withInitial {
+        false
+    }
+
+    /**
+     * Set the active scene context for scene-aware lowering (Plan 07.4-20).
+     *
+     * Single-threaded codegen contract — singleton visitor uses thread-local scene context. Set via
+     * try/finally in [io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline.buildSceneFile].
+     * Null sceneId = no scene context (e.g. init ops, helpers); defaults to `hasBgTilemap = false`,
+     * so [visitScreenClear] lowers to `cls()` and [visitPrintOp] lowers to `gotoxy + printf`
+     * (existing back-compat behavior).
+     */
+    fun setSceneContext(sceneId: String?, hasBgTilemap: Boolean) {
+        currentSceneIdContext.set(sceneId)
+        currentSceneHasBgTilemapContext.set(hasBgTilemap)
     }
 
     /** Returns the [ExprVisitor] active in the current call context. */
@@ -206,9 +308,32 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
 
     override fun visitAssign(op: Assign): CStatement {
         val cOp = assignOpToC(op.op)
-        val target = CVar(ev().sanitizeVarName(op.target))
+        val target = resolveAssignTarget(op.target)
         val value = ev().visit(op.value)
         return CExprStatement(CBinaryExpr(target, cOp, value), sourceLocation = op.sourceLocation)
+    }
+
+    /**
+     * Resolve an assignment target variable name, applying pool context redirection if active.
+     *
+     * When a [PoolCodegenContext] is active and [targetName] matches the pattern
+     * `<templateActorId>.<property>` (e.g. `bullet.y`), the target is redirected to the
+     * per-instance pool array element: `_pool_<poolId>_<property>[<slotVarName>]`.
+     *
+     * When no pool context is active, falls back to normal sanitized var name.
+     */
+    private fun resolveAssignTarget(targetName: String): CExpr {
+        val ctx = activePoolContext.get()
+        if (ctx != null) {
+            // Check if target matches "<templateActorId>.<property>" pattern
+            val prefix = "${ctx.templateActorId}."
+            if (targetName.startsWith(prefix)) {
+                val property = targetName.removePrefix(prefix)
+                val arrayName = "_pool_${ctx.poolId}_$property"
+                return CArrayAccess(CVar(arrayName), CVar(ctx.slotVarName))
+            }
+        }
+        return CVar(ev().sanitizeVarName(targetName))
     }
 
     // -------------------------------------------------------------------------
@@ -230,10 +355,241 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
     // -------------------------------------------------------------------------
 
     override fun visitIfOp(op: IfOp): CStatement {
+        // Check for pool-template collision synthesis (Bug 7)
+        val synthResult = tryBuildPoolCollisionStatement(op)
+        if (synthResult != null) return synthResult
+
         val condition = ev().visit(op.condition)
         val thenBody = op.then.map { visit(it) }
         val elseBody = op.otherwise.map { visit(it) }
         return CIf(condition, thenBody, elseBody, sourceLocation = op.sourceLocation)
+    }
+
+    /**
+     * Detect pool-template collision patterns in [IfOp] conditions and synthesize nested
+     * forEachActive loops with per-instance AABB checks.
+     *
+     * Returns null if no pool-template collision detected (falls through to normal if codegen).
+     *
+     * **Case A — both actors are pool templates:** Generates nested for-loops with per-instance
+     * AABB check (`_pool_<A>_x[slot_a]` vs `_pool_<B>_x[slot_b]`).
+     *
+     * **Case B — one actor is a pool template:** Generates single for-loop for the pool template
+     * actor with per-instance AABB check against the scalar position of the non-pool actor.
+     *
+     * **Case C — neither actor is a pool template:** Returns null (normal single AABB check).
+     */
+    private fun tryBuildPoolCollisionStatement(op: IfOp): CStatement? {
+        val gameIR = gameIRContext.get() ?: return null
+        val condition = op.condition
+        // Only synthesize for collides(actorA, actorB) CallExpr with two VarRef args
+        if (condition !is CallExpr || condition.function != "collides" || condition.args.size != 2)
+            return null
+        val aId = (condition.args[0] as? VarRef)?.name ?: return null
+        val bId = (condition.args[1] as? VarRef)?.name ?: return null
+
+        val poolTemplateIds = gameIR.actorPools.map { it.actorTemplateId }.toSet()
+        val aIsPool = aId in poolTemplateIds
+        val bIsPool = bId in poolTemplateIds
+        if (!aIsPool && !bIsPool) return null // Case C — fall through
+
+        val actorA = gameIR.actors.find { it.id == aId } ?: return null
+        val actorB = gameIR.actors.find { it.id == bId } ?: return null
+        val hbA = actorA.sprite?.hitbox ?: return null
+        val hbB = actorB.sprite?.hitbox ?: return null
+
+        return if (aIsPool && bIsPool) {
+            // Case A — both pool templates: nested loops
+            buildBothPoolCollisionStatement(op, gameIR, aId, bId, hbA, hbB)
+        } else {
+            // Case B — one pool template
+            val parts =
+                if (aIsPool) {
+                    PoolCollisionParts(aId, bId, hbA, hbB, true)
+                } else {
+                    PoolCollisionParts(bId, aId, hbB, hbA, false)
+                }
+            buildOnePoolCollisionStatement(op, gameIR, parts)
+        }
+    }
+
+    private data class PoolCollisionParts(
+        val poolActorId: String,
+        val scalarActorId: String,
+        val hbPool: io.github.gbkt.core.ir.HitboxDef,
+        val hbScalar: io.github.gbkt.core.ir.HitboxDef,
+        val poolFirst: Boolean,
+    )
+
+    /**
+     * Build nested forEachActive loops for pool-pool collision (Case A).
+     *
+     * ```c
+     * {
+     *   UINT8 _pool_bi;
+     *   for (_pool_bi = 0u; _pool_bi < maxSizeA; _pool_bi++) {
+     *     if (_pool_aPool_active[_pool_bi]) {
+     *       UINT8 _pool_ei;
+     *       for (_pool_ei = 0u; _pool_ei < maxSizeB; _pool_ei++) {
+     *         if (_pool_bPool_active[_pool_ei]) {
+     *           if (/* AABB */) { body }
+     *         }
+     *       }
+     *     }
+     *   }
+     * }
+     * ```
+     */
+    private fun buildBothPoolCollisionStatement(
+        op: IfOp,
+        gameIR: GameIR,
+        aId: String,
+        bId: String,
+        hbA: io.github.gbkt.core.ir.HitboxDef,
+        hbB: io.github.gbkt.core.ir.HitboxDef,
+    ): CStatement {
+        val poolA = gameIR.actorPools.first { it.actorTemplateId == aId }
+        val poolB = gameIR.actorPools.first { it.actorTemplateId == bId }
+        val slotA = "_pool_${poolA.id.take(1)}i"
+        val slotB = "_pool_${poolB.id.take(1)}i"
+
+        // AABB using per-instance arrays
+        val axExpr = CArrayAccess(CVar("_pool_${poolA.id}_x"), CVar(slotA))
+        val ayExpr = CArrayAccess(CVar("_pool_${poolA.id}_y"), CVar(slotA))
+        val bxExpr = CArrayAccess(CVar("_pool_${poolB.id}_x"), CVar(slotB))
+        val byExpr = CArrayAccess(CVar("_pool_${poolB.id}_y"), CVar(slotB))
+        val aabbExpr = buildAABBFromExprs(axExpr, ayExpr, bxExpr, byExpr, hbA, hbB)
+
+        val bodyStmts = op.then.map { visit(it) }
+        val innerIf = CIf(condition = aabbExpr, thenBody = bodyStmts)
+        val innerLoop = buildActiveForLoop(poolB.id, slotB, poolB.config.maxSize, listOf(innerIf))
+        val outerIf =
+            CIf(
+                condition = CArrayAccess(CVar("_pool_${poolA.id}_active"), CVar(slotA)),
+                thenBody = listOf(CVarDecl(slotB, CU8, null), innerLoop),
+            )
+        val outerFor =
+            CFor(
+                init = CExprStatement(CBinaryExpr(CVar(slotA), "=", CLiteral(0))),
+                condition = CBinaryExpr(CVar(slotA), "<", CLiteral(poolA.config.maxSize)),
+                increment = CUnaryExpr("++", CVar(slotA)),
+                body = listOf(outerIf),
+            )
+        return CBlock(
+            listOf(CVarDecl(slotA, CU8, null), outerFor),
+            sourceLocation = op.sourceLocation,
+        )
+    }
+
+    /**
+     * Build a single forEachActive loop for one-pool-template collision (Case B).
+     *
+     * ```c
+     * {
+     *   UINT8 _pool_pi;
+     *   for (_pool_pi = 0u; _pool_pi < maxSizePool; _pool_pi++) {
+     *     if (_pool_aPool_active[_pool_pi]) {
+     *       if (/* AABB: pool instance vs scalar actor */) { body }
+     *     }
+     *   }
+     * }
+     * ```
+     */
+    private fun buildOnePoolCollisionStatement(
+        op: IfOp,
+        gameIR: GameIR,
+        parts: PoolCollisionParts,
+    ): CStatement {
+        val pool = gameIR.actorPools.first { it.actorTemplateId == parts.poolActorId }
+        val slotVar = "_pool_${pool.id.take(1)}i"
+
+        val poolXExpr = CArrayAccess(CVar("_pool_${pool.id}_x"), CVar(slotVar))
+        val poolYExpr = CArrayAccess(CVar("_pool_${pool.id}_y"), CVar(slotVar))
+        val scalarXExpr = CVar("_${parts.scalarActorId}_x")
+        val scalarYExpr = CVar("_${parts.scalarActorId}_y")
+
+        val aabbExpr =
+            if (parts.poolFirst) {
+                buildAABBFromExprs(
+                    poolXExpr,
+                    poolYExpr,
+                    scalarXExpr,
+                    scalarYExpr,
+                    parts.hbPool,
+                    parts.hbScalar,
+                )
+            } else {
+                buildAABBFromExprs(
+                    scalarXExpr,
+                    scalarYExpr,
+                    poolXExpr,
+                    poolYExpr,
+                    parts.hbScalar,
+                    parts.hbPool,
+                )
+            }
+
+        val bodyStmts = op.then.map { visit(it) }
+        val activeArr = CVar("_pool_${pool.id}_active")
+        val activeGuard =
+            CIf(
+                condition = CArrayAccess(activeArr, CVar(slotVar)),
+                thenBody = listOf(CIf(condition = aabbExpr, thenBody = bodyStmts)),
+            )
+        val forLoop =
+            CFor(
+                init = CExprStatement(CBinaryExpr(CVar(slotVar), "=", CLiteral(0))),
+                condition = CBinaryExpr(CVar(slotVar), "<", CLiteral(pool.config.maxSize)),
+                increment = CUnaryExpr("++", CVar(slotVar)),
+                body = listOf(activeGuard),
+            )
+        return CBlock(
+            listOf(CVarDecl(slotVar, CU8, null), forLoop),
+            sourceLocation = op.sourceLocation,
+        )
+    }
+
+    /** Build a for-loop that iterates active slots of a pool and runs [bodyStmts]. */
+    private fun buildActiveForLoop(
+        poolId: String,
+        slotVar: String,
+        maxSize: Int,
+        bodyStmts: List<CStatement>,
+    ): CStatement {
+        val activeArr = CVar("_pool_${poolId}_active")
+        return CFor(
+            init = CExprStatement(CBinaryExpr(CVar(slotVar), "=", CLiteral(0))),
+            condition = CBinaryExpr(CVar(slotVar), "<", CLiteral(maxSize)),
+            increment = CUnaryExpr("++", CVar(slotVar)),
+            body =
+                listOf(
+                    CIf(condition = CArrayAccess(activeArr, CVar(slotVar)), thenBody = bodyStmts)
+                ),
+        )
+    }
+
+    /**
+     * Build an inline AABB expression from pre-computed position [CExpr] nodes.
+     *
+     * Used for pool-collision synthesis where positions come from per-instance arrays instead of
+     * scalar variables. Mirrors [ExprVisitor.buildAABBExpr] but accepts arbitrary [CExpr] inputs.
+     */
+    private fun buildAABBFromExprs(
+        axExpr: CExpr,
+        ayExpr: CExpr,
+        bxExpr: CExpr,
+        byExpr: CExpr,
+        hbA: io.github.gbkt.core.ir.HitboxDef,
+        hbB: io.github.gbkt.core.ir.HitboxDef,
+    ): CExpr {
+        val xOverlapLeft = CBinaryExpr(axExpr, "<", CBinaryExpr(bxExpr, "+", CLiteral(hbB.width)))
+        val xOverlapRight = CBinaryExpr(CBinaryExpr(axExpr, "+", CLiteral(hbA.width)), ">", bxExpr)
+        val yOverlapTop = CBinaryExpr(ayExpr, "<", CBinaryExpr(byExpr, "+", CLiteral(hbB.height)))
+        val yOverlapBottom =
+            CBinaryExpr(CBinaryExpr(ayExpr, "+", CLiteral(hbA.height)), ">", byExpr)
+        val xOverlap = CBinaryExpr(xOverlapLeft, "&&", xOverlapRight)
+        val yOverlap = CBinaryExpr(yOverlapTop, "&&", yOverlapBottom)
+        return CBinaryExpr(xOverlap, "&&", yOverlap)
     }
 
     // -------------------------------------------------------------------------
@@ -288,14 +644,25 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
     // -------------------------------------------------------------------------
 
     override fun visitMoveBy(op: MoveBy): CStatement {
+        val ctx = activePoolContext.get()
         val statements = mutableListOf<CStatement>()
         if (!isZeroLiteral(op.dx)) {
-            val xVar = CVar("_${op.actorId}_x")
-            statements += CExprStatement(CBinaryExpr(xVar, "+=", ev().visit(op.dx)))
+            val xTarget =
+                if (ctx != null && op.actorId == ctx.templateActorId) {
+                    CArrayAccess(CVar("_pool_${ctx.poolId}_x"), CVar(ctx.slotVarName))
+                } else {
+                    CVar("_${op.actorId}_x")
+                }
+            statements += CExprStatement(CBinaryExpr(xTarget, "+=", ev().visit(op.dx)))
         }
         if (!isZeroLiteral(op.dy)) {
-            val yVar = CVar("_${op.actorId}_y")
-            statements += CExprStatement(CBinaryExpr(yVar, "+=", ev().visit(op.dy)))
+            val yTarget =
+                if (ctx != null && op.actorId == ctx.templateActorId) {
+                    CArrayAccess(CVar("_pool_${ctx.poolId}_y"), CVar(ctx.slotVarName))
+                } else {
+                    CVar("_${op.actorId}_y")
+                }
+            statements += CExprStatement(CBinaryExpr(yTarget, "+=", ev().visit(op.dy)))
         }
         return CBlock(statements, sourceLocation = op.sourceLocation)
     }
@@ -591,7 +958,30 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
         )
 
     override fun visitScreenClear(op: ScreenClear): CStatement =
-        CExprStatement(CCall("cls", emptyList()), sourceLocation = op.sourceLocation)
+        if (currentSceneHasBgTilemapContext.get()) {
+            // Scene has a loaded BG tilemap (Plan 07.4-20): bare cls() would wipe it. Emit the
+            // non-destructive equivalent: HIDE_SPRITES macro (OAM wipe) + _win_clear_region for
+            // window-layer HUD; the BG tile layer is intentionally left intact. The window-layer
+            // helpers come from DialogVisitor.buildWindowTextHelpers (always emitted in HOME).
+            CBlock(
+                listOf(
+                    // GBDK macro, NOT a function — must be emitted as raw C with a trailing
+                    // semicolon. CCall("hide_sprites", ...) would link-fail (no such symbol).
+                    CRawCode("HIDE_SPRITES;"),
+                    CExprStatement(
+                        CCall(
+                            "_win_clear_region",
+                            listOf(CLiteral(0), CLiteral(0), CLiteral(20), CLiteral(18)),
+                        )
+                    ),
+                ),
+                sourceLocation = op.sourceLocation,
+            )
+        } else {
+            // Back-compat: no BG tilemap to protect → existing cls() shape (title, results,
+            // gameover, etc.). Behavior preserved byte-for-byte for the 5 non-racer example games.
+            CExprStatement(CCall("cls", emptyList()), sourceLocation = op.sourceLocation)
+        }
 
     override fun visitScreenFill(op: ScreenFill): CStatement =
         CExprStatement(
@@ -604,6 +994,14 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
     // -------------------------------------------------------------------------
 
     override fun visitPrintOp(op: PrintOp): CStatement {
+        if (currentSceneHasBgTilemapContext.get()) {
+            // BG-scene path (Plan 07.4-20): route to window-layer per CLAUDE.md "Window-Layer UI"
+            // rule. gotoxy + printf would draw on the BG tile layer and corrupt the painted
+            // tilemap.
+            return buildWindowLayerPrint(op)
+        }
+        // Non-BG-scene path: preserve existing gotoxy + printf lowering byte-for-byte. Back-compat
+        // for title/results/gameover scenes across all 5 non-racer example games.
         val statements = mutableListOf<CStatement>()
         val position = op.position
         if (position != null) {
@@ -616,6 +1014,54 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
         }
         statements += CExprStatement(CCall("printf", printfArgs))
         return CBlock(statements, sourceLocation = op.sourceLocation)
+    }
+
+    /**
+     * Build the BG-scene window-layer print form for [PrintOp] (Plan 07.4-20).
+     *
+     * For literal text (no format args): emits `_win_print_at(x, y, "<text>", <len>)` directly.
+     *
+     * For formatted text (op.values non-empty): formats the string into a 20-byte stack buffer via
+     * `sprintf` (declared in GBDK-2020 `<stdio.h>`; verified at
+     * `/Users/michalsvacha/gbdk/include/stdio.h:55`) and then calls `_win_print_at` with the
+     * buffer. The buffer is 20 bytes — enough for one full GB screen line of text. No example game
+     * today exercises a BG-scene formatted print, but the path exists for forward-compat.
+     */
+    private fun buildWindowLayerPrint(op: PrintOp): CStatement {
+        val x = CLiteral(op.position?.x ?: 0)
+        val y = CLiteral(op.position?.y ?: 0)
+        if (op.values.isEmpty()) {
+            return CExprStatement(
+                CCall(
+                    "_win_print_at",
+                    listOf(x, y, CStringLiteral(op.text), CLiteral(op.text.length)),
+                ),
+                sourceLocation = op.sourceLocation,
+            )
+        }
+        // Formatted text: sprintf into stack buffer, then _win_print_at with computed length.
+        val sprintfArgs = mutableListOf<CExpr>(CVar("_print_buf"), CStringLiteral(op.text))
+        for (value in op.values) {
+            sprintfArgs += ev().visit(value)
+        }
+        return CBlock(
+            listOf(
+                CRawCode("char _print_buf[20];"),
+                CExprStatement(CCall("sprintf", sprintfArgs)),
+                CExprStatement(
+                    CCall(
+                        "_win_print_at",
+                        listOf(
+                            x,
+                            y,
+                            CVar("_print_buf"),
+                            CCall("strlen", listOf(CVar("_print_buf"))),
+                        ),
+                    )
+                ),
+            ),
+            sourceLocation = op.sourceLocation,
+        )
     }
 
     // =====================================================================
@@ -788,7 +1234,63 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
         val sanitizedSlotVar = ExprVisitor.sanitizeVarName(op.slotVarName)
         val slotVar = CVar(sanitizedSlotVar)
         val activeArr = CVar("_pool_${op.poolId}_active")
-        val bodyStmts = op.body.map { it.accept(this) }
+
+        // Resolve pool context (template actor ID + sprite dimensions) from GameIR if available
+        val gameIR = gameIRContext.get()
+        val pool = gameIR?.actorPools?.find { it.id == op.poolId }
+        val templateActor: ActorIR? = pool?.let { p ->
+            gameIR.actors.find { it.id == p.actorTemplateId }
+        }
+        val tilesWide = templateActor?.sprite?.size?.let { it.width / 8 } ?: 1
+        val tilesHigh = templateActor?.sprite?.size?.let { it.height / 8 } ?: 1
+
+        val poolCtx =
+            if (pool != null) {
+                PoolCodegenContext(
+                    poolId = op.poolId,
+                    templateActorId = pool.actorTemplateId,
+                    slotVarName = sanitizedSlotVar,
+                    tilesWide = tilesWide,
+                    tilesHigh = tilesHigh,
+                )
+            } else {
+                null
+            }
+
+        val bodyStmts: List<CStatement>
+        activePoolContext.set(poolCtx)
+        try {
+            bodyStmts = op.body.map { it.accept(this) }
+        } finally {
+            activePoolContext.set(null)
+        }
+
+        // Emit move_sprite display sync after body ops, guarded by a re-check of the active flag.
+        // The body may call pool_<id>_destroy(slot) which sets active[slot] = 0. If we then called
+        // move_sprite with oam[slot] (which destroy sets to 0xFF), GBDK would write to
+        // shadow_OAM[255]
+        // — 1020 bytes past the 40-entry array — corrupting GBDK internal variables at
+        // 0xC3FC-0xC3FD.
+        // The re-check ensures move_sprite is only called when the slot is still active.
+        // For single-tile (1x1): one move_sprite call with +8/+16 hardware offset
+        // For multi-tile (e.g. 2x2): one move_sprite per 8x8 OAM entry with tile offsets
+        val displaySyncStmts =
+            buildDisplaySyncStatements(op.poolId, sanitizedSlotVar, tilesWide, tilesHigh)
+        // Build the body: run user ops, then re-check active before syncing OAM position.
+        // This prevents move_sprite(0xFF, ...) when the body destroys the current slot.
+        val thenBodyWithSync =
+            if (displaySyncStmts.isEmpty()) {
+                bodyStmts
+            } else {
+                bodyStmts +
+                    listOf(
+                        CIf(
+                            condition = CArrayAccess(activeArr, slotVar),
+                            thenBody = displaySyncStmts,
+                        )
+                    )
+            }
+
         return CBlock(
             listOf(
                 CVarDecl(sanitizedSlotVar, CU8, initializer = null),
@@ -798,7 +1300,10 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
                     increment = CUnaryExpr("++", slotVar),
                     body =
                         listOf(
-                            CIf(condition = CArrayAccess(activeArr, slotVar), thenBody = bodyStmts)
+                            CIf(
+                                condition = CArrayAccess(activeArr, slotVar),
+                                thenBody = thenBodyWithSync,
+                            )
                         ),
                 ),
             ),
@@ -806,26 +1311,104 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
         )
     }
 
+    /**
+     * Build move_sprite() display synchronization statements for all OAM tiles of a pool entity.
+     *
+     * GBDK move_sprite offsets: x+8 and y+16 are the hardware viewport adjustments for the Game Boy
+     * LCD. For multi-tile sprites each additional OAM entry is offset by an additional 8px.
+     *
+     * @param poolId Pool ID (e.g. `"bulletPool"`).
+     * @param slotVar Sanitized slot variable name (e.g. `"_bi"`).
+     * @param tilesWide Number of tile columns (sprite width / 8).
+     * @param tilesHigh Number of tile rows (sprite height / 8).
+     */
+    private fun buildDisplaySyncStatements(
+        poolId: String,
+        slotVar: String,
+        tilesWide: Int,
+        tilesHigh: Int,
+    ): List<CStatement> {
+        val xArr = CVar("_pool_${poolId}_x")
+        val yArr = CVar("_pool_${poolId}_y")
+        val oamArr = CVar("_pool_${poolId}_oam")
+        val slot = CVar(slotVar)
+        val stmts = mutableListOf<CStatement>()
+        var tileIndex = 0
+        for (row in 0 until tilesHigh) {
+            for (col in 0 until tilesWide) {
+                // OAM slot: oam[slot] + tileIndex
+                val oamSlot: CExpr =
+                    if (tileIndex == 0) {
+                        CArrayAccess(oamArr, slot)
+                    } else {
+                        CBinaryExpr(CArrayAccess(oamArr, slot), "+", CLiteral(tileIndex))
+                    }
+                // x position: x[slot] + 8 + col*8
+                val xOffset = 8 + col * 8
+                val xPos: CExpr =
+                    CBinaryExpr(CArrayAccess(xArr, slot), "+", CRawExpr("${xOffset}u"))
+                // y position: y[slot] + 16 + row*8
+                val yOffset = 16 + row * 8
+                val yPos: CExpr =
+                    CBinaryExpr(CArrayAccess(yArr, slot), "+", CRawExpr("${yOffset}u"))
+                stmts += CExprStatement(CCall("move_sprite", listOf(oamSlot, xPos, yPos)))
+                tileIndex++
+            }
+        }
+        return stmts
+    }
+
     // -------------------------------------------------------------------------
     // PoolDestroyAll: bulk-destroy all active pool slots
     // -------------------------------------------------------------------------
 
     /**
-     * Generate a for-loop that clears all active pool slots and hides their sprites.
+     * Generate a for-loop that clears all active pool slots and hides their OAM sprites.
+     *
+     * Uses **static OAM assignment** — each entity's OAM slot is permanent (set in pool_init). This
+     * means we do NOT call destroy_actor() or reset oam[i] to 0xFF. Instead we call
+     * move_sprite(oam[i]+t, 0, 0) for each tile to hide the sprites off-screen.
+     *
+     * Tile dimensions are resolved from the pool's template actor via [gameIRContext] when
+     * available (multi-tile actors need move_sprite for each tile). Falls back to 1 tile when
+     * gameIR is not available (e.g., tests without setGameIR()).
      *
      * Emits:
      * ```c
      * UINT8 i;
      * for (i = 0; i < maxSize; i++) {
+     *     if (_pool_<id>_active[i]) {
+     *         move_sprite(_pool_<id>_oam[i], 0, 0);       // hide tile 0
+     *         move_sprite(_pool_<id>_oam[i] + 1, 0, 0);   // hide tile 1 (if multi-tile)
+     *         // ...
+     *     }
      *     _pool_<id>_active[i] = 0;
-     *     move_sprite(_pool_<id>_oam_base + i, 0, 0);
      * }
      * ```
      */
     override fun visitPoolDestroyAll(op: PoolDestroyAll): CStatement {
         val iVar = CVar("i")
         val activeArr = CVar("_pool_${op.poolId}_active")
-        val oamBase = CVar("_pool_${op.poolId}_oam_base")
+        val oamArr = CVar("_pool_${op.poolId}_oam")
+
+        // Resolve tile dimensions from pool template actor via gameIR (same as
+        // visitPoolForEachActive)
+        val gameIR = gameIRContext.get()
+        val pool = gameIR?.actorPools?.find { it.id == op.poolId }
+        val templateActor = pool?.let { p -> gameIR.actors.find { it.id == p.actorTemplateId } }
+        val tilesWide = templateActor?.sprite?.size?.let { it.width / 8 } ?: 1
+        val tilesHigh = templateActor?.sprite?.size?.let { it.height / 8 } ?: 1
+        val tilesPerEntity = tilesWide * tilesHigh
+
+        // Build move_sprite(oam[i]+t, 0, 0) calls for all tiles
+        val hideTileStmts =
+            (0 until tilesPerEntity).map { tileIndex ->
+                val oamSlotExpr: CExpr =
+                    if (tileIndex == 0) CArrayAccess(oamArr, iVar)
+                    else CBinaryExpr(CArrayAccess(oamArr, iVar), "+", CLiteral(tileIndex))
+                CExprStatement(CCall("move_sprite", listOf(oamSlotExpr, CLiteral(0), CLiteral(0))))
+            }
+
         return CBlock(
             listOf(
                 CVarDecl("i", CU8, initializer = null),
@@ -835,18 +1418,14 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
                     increment = CUnaryExpr("++", iVar),
                     body =
                         listOf(
-                            CExprStatement(
-                                CBinaryExpr(CArrayAccess(activeArr, iVar), "=", CLiteral(0))
+                            // Hide OAM sprites for active slots (oam[i] is a permanent static slot)
+                            CIf(
+                                condition =
+                                    CBinaryExpr(CArrayAccess(activeArr, iVar), "!=", CLiteral(0)),
+                                thenBody = hideTileStmts,
                             ),
                             CExprStatement(
-                                CCall(
-                                    "move_sprite",
-                                    listOf(
-                                        CBinaryExpr(oamBase, "+", iVar),
-                                        CLiteral(0),
-                                        CLiteral(0),
-                                    ),
-                                )
+                                CBinaryExpr(CArrayAccess(activeArr, iVar), "=", CLiteral(0))
                             ),
                         ),
                 ),
@@ -1025,6 +1604,13 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
             sourceLocation = op.sourceLocation,
         )
     }
+
+    // -------------------------------------------------------------------------
+    // BindCurrentLevel: typed setup_current_level() call (Req #17 — Phase 13.5)
+    // -------------------------------------------------------------------------
+
+    override fun visitBindCurrentLevel(op: BindCurrentLevel): CStatement =
+        CExprStatement(CCall("setup_current_level", emptyList()), sourceLocation = op.sourceLocation)
 
     // -------------------------------------------------------------------------
     // RawOp: pass-through to CRawCode
@@ -1299,6 +1885,144 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
             CCall("puzzle_hide_${op.objectId}", emptyList()),
             sourceLocation = op.sourceLocation,
         )
+
+    // -------------------------------------------------------------------------
+    // Metasprite render op
+    // -------------------------------------------------------------------------
+
+    /**
+     * Lower a [MoveMetasprite] op to the per-frame metasprite rendering block.
+     *
+     * Delegates to [MetaspriteVisitor.generateMetaspriteFrameSwitch] to emit the 4-case
+     * flip-variant switch with hiwater tracking and `hide_sprites_range` tail cleanup.
+     *
+     * **Variable name contract:** The emitted C references `_idx`, `_rot`, `_posX`, `_posY` as
+     * runtime variables — the port assembly (Plan 13) MUST declare these by convention.
+     *
+     * **MetaspriteIR lookup:** Resolves the [MetaspriteIR] from [gameIRContext] by
+     * [MoveMetasprite.metaspriteId]. If the metasprite is not found (e.g., tests that call [visit]
+     * without [setGameIR]), falls back to a synthetic stub [MetaspriteIR] with no frames —
+     * sufficient to emit the structural C block, which does not depend on frame content.
+     */
+    override fun visitMoveMetasprite(op: io.github.gbkt.core.ir.MoveMetasprite): CStatement {
+        val gameIR = gameIRContext.get()
+        val metaspriteIR =
+            gameIR?.metasprites?.find { it.id == op.metaspriteId }
+                ?: io.github.gbkt.core.ir.MetaspriteIR(id = op.metaspriteId, frames = emptyList())
+        // Phase 10.1 Plan 05 (WR-01 closure): pass the per-call var-ref names resolved from
+        // MoveMetasprite IR fields (set by the moveMetasprite() DSL helper at script-build time,
+        // mirrored from the MetaspriteIR registered by metasprite { posX(...)/posY(...)/idx(...)/
+        // rot(...) }). When the user does NOT bind any var-ref (Phase 10 Metasprites.kt path),
+        // the op fields are null and the Elvis fallback selects the canonical _posX/_posY/_idx/
+        // _rot globals — preserving Phase 10 emission shape (Pitfall 6 mitigation).
+        //
+        // Phase 10.1 Plan 12 (D-Seed005 binder-prefix fix): the binder fields carry the raw
+        // AssignableVar.name (e.g. "elephantPosX"), matching the IR-level convention for user
+        // variables. The C emission convention prefixes every user-declared global with `_`
+        // (see main.c: `INT16 _elephantPosX = 1280u;`). We apply that prefix HERE — at the
+        // visitor wiring boundary — so the IR field stays in user-name-space while the
+        // emitted C references resolve to the actual declared globals. The canonical
+        // fallback strings already carry the `_` prefix and are NOT re-prefixed.
+        //
+        // Phase 12.3 R4 / D-07 Option A (gap #3): derive a screen-relative X-coord camera
+        // offset string when the game uses tilemap-camera mode. Returns `"_camera_x"` when the
+        // reflection-based predicate fires; null otherwise (D-08 back-compat — non-platformer
+        // fixtures preserve byte-identical absolute-formula emission).
+        val cameraOffsetX: String? = gameIR?.let { derivePlatformerCameraOffsetX(it) }
+        return MetaspriteVisitor.generateMetaspriteFrameSwitch(
+            metaspriteIR,
+            posXVar = op.posXVar?.let { "_$it" } ?: "_posX",
+            posYVar = op.posYVar?.let { "_$it" } ?: "_posY",
+            idxVar = op.idxVar?.let { "_$it" } ?: "_idx",
+            rotVar = op.rotVar?.let { "_$it" } ?: "_rot",
+            cameraOffsetX = cameraOffsetX,
+        )
+    }
+
+    /**
+     * Phase 12.3 R4 / D-07 Option A — derive the metasprite X-coord camera offset string when
+     * the game uses tilemap-camera mode. Returns `"_camera_x"` when:
+     *
+     * 1. Game uses tilemap-collision (mirrors `GBDKPipeline.gameUsesTilemapCollision` reflection
+     *    pattern at GBDKPipeline.kt:2031-2082 — Path A `platformer_physics` reflective
+     *    `solidThreshold` non-null check, Path B per-zone `platformerPhysicsOverride` containsKey,
+     *    Path C explicit `tilemap_collision` GenericSystem present), AND
+     * 2. A `platformer_camera` GenericSystem exists whose `cameraConfig.mode.name` is
+     *    `"SMOOTH_FOLLOW"` AND whose `cameraConfig.scrollDirections.name` is `"HORIZONTAL"`.
+     *
+     * Returns `null` in every other case → MetaspriteVisitor emits the absolute X formula (D-08
+     * back-compat for non-platformer fixtures pong / breakout / banks / metasprites and for
+     * platformer fixtures not in tilemap-camera horizontal-smooth mode).
+     *
+     * **Layering invariant:** gbkt-backend-gbdk does NOT depend on gbkt-genre-platformer (per
+     * `gbkt-backend-gbdk/CLAUDE.md` §Dependencies — only `gbkt-genre-rpg` is a compile-time
+     * dep; the reverse dep `gbkt-genre-platformer` → `gbkt-backend-gbdk` would form a cycle if
+     * the forward dep were added). Genre config objects are opaque `Any` instances; we read
+     * their fields via Java reflection and match Enum constants by `.name` only. ZERO
+     * platformer-genre-package imports in this file (revision-1 BLOCKING #2 fix).
+     */
+    private fun derivePlatformerCameraOffsetX(gameIR: GameIR): String? {
+        // --- Step 1: tilemap-collision detection (mirrors GBDKPipeline Path A/B/C verbatim) ---
+        // Path C — explicit tilemap_collision GenericSystem (Phase 12.1 Plan 05 canonical home)
+        val tilemapCollisionSystem =
+            gameIR.systems.filterIsInstance<GenericSystem>().any { sys ->
+                (sys.config["type"] as? String) == "tilemap_collision"
+            }
+        // Path A — platformer_physics GenericSystem with reflective non-null solidThreshold
+        val tilemapViaPhysics =
+            gameIR.systems.filterIsInstance<GenericSystem>().any { sys ->
+                if ((sys.config["type"] as? String) != "platformer_physics") return@any false
+                val physicsConfig = sys.config["physicsConfig"] ?: return@any false
+                try {
+                    val field = physicsConfig.javaClass.getDeclaredField("solidThreshold")
+                    field.isAccessible = true
+                    field.get(physicsConfig) != null
+                } catch (_: NoSuchFieldException) {
+                    false
+                } catch (_: SecurityException) {
+                    false
+                }
+            }
+        // Path B — per-zone platformerPhysicsOverride with solidThreshold key
+        val tilemapViaZoneOverride =
+            gameIR.zones.any { zone ->
+                zone.platformerPhysicsOverride?.containsKey("solidThreshold") == true
+            }
+        val tilemapActive =
+            tilemapCollisionSystem || tilemapViaPhysics || tilemapViaZoneOverride
+        if (!tilemapActive) return null
+
+        // --- Step 2: platformer_camera detection — horizontal smooth-follow mode ---
+        val cameraSystem =
+            gameIR.systems.filterIsInstance<GenericSystem>().firstOrNull { sys ->
+                (sys.config["type"] as? String) == "platformer_camera"
+            } ?: return null
+        val cameraConfig = cameraSystem.config["cameraConfig"] ?: return null
+
+        val modeName: String? =
+            try {
+                val field = cameraConfig.javaClass.getDeclaredField("mode")
+                field.isAccessible = true
+                (field.get(cameraConfig) as? Enum<*>)?.name
+            } catch (_: NoSuchFieldException) {
+                null
+            } catch (_: SecurityException) {
+                null
+            }
+
+        val dirName: String? =
+            try {
+                val field = cameraConfig.javaClass.getDeclaredField("scrollDirections")
+                field.isAccessible = true
+                (field.get(cameraConfig) as? Enum<*>)?.name
+            } catch (_: NoSuchFieldException) {
+                null
+            } catch (_: SecurityException) {
+                null
+            }
+
+        return if (modeName == "SMOOTH_FOLLOW" && dirName == "HORIZONTAL") "_camera_x" else null
+    }
 
     // -------------------------------------------------------------------------
     // AssignOp mapping

@@ -6,7 +6,8 @@
  */
 package io.github.gbkt.genre.platformer.codegen
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.GenericSystem
@@ -27,7 +28,7 @@ import kotlin.test.assertTrue
 // =============================================================================
 // PLATFORMER CODEGEN TESTS (Plan 06.8-10 Task 2 success criteria)
 //
-// 10 tests verifying PlatformerVisitor via GBDKPipelineV2 ServiceLoader discovery:
+// 10 tests verifying PlatformerVisitor via GBDKPipeline ServiceLoader discovery:
 //   - Physics update generated with gravity application
 //   - Variable-height jump body contains jump force and cut
 //   - Coyote time timer decrement in physics update
@@ -51,7 +52,7 @@ private fun buildPlatformerGameIR(
         GenericSystem(id = id, config = mapOf("type" to systemType, configKey to configValue))
     return GameIR(
         name = "TestPlatformerGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY, romBanks = 2),
         scenes = listOf(SceneIR(id = "gameplay")),
         systems = listOf(system),
         startScene = "gameplay",
@@ -60,7 +61,7 @@ private fun buildPlatformerGameIR(
 
 class PlatformerCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: Physics update function generated with gravity application

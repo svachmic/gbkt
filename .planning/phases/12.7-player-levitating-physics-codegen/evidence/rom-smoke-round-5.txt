@@ -1,0 +1,163 @@
+# Phase 12.7 Round-5 ROM Smoke (Plan 12.7-23)
+
+Date: 2026-05-26T19:58:48Z
+HEAD commit at capture time: 4f3a51e7cb1cb550c0f8e55aaaba229726cdc7a7
+Plan: 12.7-23 — R-06 closure under Round 5 (W17)
+Codegen state: Plan 12.7-19 pivot_adjust correction in PlatformerVisitor.buildVerticalFootProbe
+
+Branch: A (per Plan 12.7-17 Round-5 diagnostic verdict @ line 272: "H1 + H2 (compound)").
+Plan 12.7-19 landed the H1 codegen fix; this plan's smoke confirms it lands cleanly
+through the GBDK lcc pipeline at HEAD.
+
+## Pre-flight Confirmation
+
+Plan 12.7-19 fix is in tree:
+
+    $ grep -c "pivot_adjust" gbkt-genre-platformer/src/main/kotlin/io/github/gbkt/genre/platformer/codegen/PlatformerVisitor.kt
+    11
+
+(One CVarDecl emission, one IR-derivation block, two companion-object constants,
+several KDoc / comment references. Per Plan 12.7-19 SUMMARY.md line 130.)
+
+## Command
+
+    ./gradlew :gbkt-examples:platformer-template:clean \
+              :gbkt-examples:platformer-template:buildRom
+
+(Clean rebuild — `clean` is required per CLAUDE.md project memory
+`feedback_rom_build_smoke_test_for_codegen_phases.md`. JVM tests cannot see staleness
+in `build/gbkt/generated/`, so a clean :buildRom is the binding compile-through-lcc
+check.)
+
+## Build Verdict
+
+Exit code: 0
+BUILD SUCCESSFUL in 7s
+43 actionable tasks: 43 executed
+0 lcc errors, 0 BUILD FAILED markers in /tmp/12.7-23-buildrom.log.
+
+## ROM Artifact
+
+Path: gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb
+Size: 65536 bytes (64 KB — matches Plan 12.7-14 W8 smoke ROM size; identical
+                   bank layout: 4 banks, MBC 0x01)
+SHA-256: 02db5032ac7df74a19af6719ef84d80f5a071537ca6d76b9c98d761f84ea7880
+
+## Generated-C Confirmation (`pivot_adjust` lands in main.c)
+
+Per Plan 12.7-19 SUMMARY.md (lines 82-84 + 99-101), the post-fix emission must
+contain `pivot_adjust = 2u;` in the snap block of `platformer_physics_update`
+inside the generated main.c. Verified at HEAD:
+
+    $ grep -n "pivot_adjust" gbkt-examples/platformer-template/build/gbkt/generated/main.c
+    548:            // Snap to tile-top: ... Plan 12.7-19 — Round-5 H1 fix adds `pivot_adjust` ...
+    551:            UINT16 pivot_adjust = 2u;
+    552:            UINT16 foot_pixel_anchor = foot_pixel_top - 24u - pivot_adjust;
+    554:            // Each line has at most one binary-op class ... Round-trip verified ...
+
+Line 551 contains the pivot_adjust CVarDecl with literal `2u` (the IR-driven path
+computes `frameHeight − pivotY − hitbox.height = 32 − 6 − 24 = 2` for the
+platformer-template's player metasprite — per Plan 12.7-17 diagnostic Section 2 and
+Plan 12.7-19 SUMMARY decision-2 + decision-3). Line 552 shows the new
+`foot_pixel_anchor` formula incorporating pivot_adjust under same-class
+left-associative `-` ops (precedence-immune per C11 §6.5.6).
+
+This re-affirms Plan 12.7-19 SUMMARY's claim "Generated `main.c:548-553`
+confirms `pivot_adjust = 2u` lands in the platformer-template's actual game
+emission via the IR-driven path" (Plan 12.7-19 SUMMARY @ line 15 + 82).
+The line range is 548-554 at this base (one extra line of leading comment
+text vs the SUMMARY's 548-553 reference window — the pivot_adjust CVarDecl
+itself is at 551 in both cases).
+
+## Cross-Match to W16 (Plan 12.7-22)
+
+Plan 12.7-22's regression-sweep-round-5.md platformer-template hash:
+**PENDING — W16 has not yet shipped at this base.**
+
+W16 (Plan 12.7-22 — 8-target regression sweep, R-04 closure under Round 5) and
+W17 (Plan 12.7-23 — this plan, R-06 closure under Round 5) ship in parallel from
+the same base commit `4f3a51e7` (post-Plan-12.7-19 GREEN). At this worktree's
+spawn point, Plan 12.7-22 had not yet committed; `.planning/phases/12.7-.../
+evidence/regression-sweep-round-5.md` does not exist; `12.7-22-SUMMARY.md`
+does not exist. The cross-match referenced in Plan 12.7-23 Step 4 cannot be
+performed against a non-existent W16 artifact.
+
+This plan's hash: `02db5032ac7df74a19af6719ef84d80f5a071537ca6d76b9c98d761f84ea7880`
+
+Cross-match resolution: deferred to W18+ orchestration. When Plan 12.7-22 merges,
+its regression-sweep-round-5.md platformer-template row MUST equal the SHA-256
+above. If it differs, the discrepancy is owned by W16/W17 reconciliation, not
+this smoke evidence. The smoke artifact this file represents (clean :buildRom
+under Plan 12.7-19 codegen) is independently valid.
+
+Match: PENDING (W16 not yet shipped at HEAD).
+
+## Hash Drift History (platformer-template ROM)
+
+| Phase / Plan                              | SHA-256                                                              | Notes                                                  |
+| ----------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------ |
+| 12.6 baseline (pre-snap)                  | `318775aa086dc345f5e18fbc43869b5d8c6163e66434996bcb8aee7bba02c7c7`   | Phase 12.6 reference ROM, pre-W3 snap                  |
+| 12.7-06 (post-snap, pre-12.7-11)          | `a7fc51f277a992402f1b9a87324bda7f39920a32845cac692cec917246243317`   | W3 snap + grounded-guard landed; snap-emission broken  |
+| 12.7-14 (post-12.7-11, pre-12.7-19)       | `b9f4665ed758f13203c10e983d987478738af419e362da7fc1d414f9151cfa62`   | Plan 12.7-11 intermediate-vars fix applied             |
+| **12.7-23 (THIS, post-12.7-19)**          | **`02db5032ac7df74a19af6719ef84d80f5a071537ca6d76b9c98d761f84ea7880`** | **Plan 12.7-19 pivot_adjust correction applied (Round-5 H1)** |
+
+This drift is INTENTIONAL: Plan 12.7-19 added a 5th `CVarDecl` (`pivot_adjust = 2u`)
+to `buildVerticalFootProbe.thenBody` and changed `foot_pixel_anchor`'s initializer
+from `foot_pixel_top - height` to `(foot_pixel_top - height) - pivot_adjust`. The
+emission shape change is expected; the new ROM hash reflects the new emission.
+The fix lands `pivot_adjust = 2 px` of correction so the RENDERED
+metasprite-bottom (32 px tall, pivot 6) aligns with the underlying solid
+tile-row top edge instead of the hitbox foot — fixing the user-visible
+1–2 px overshoot symptom that Plan 12.7-15 BLOCKED at the W8 binding gate.
+
+## Project Memory Compliance
+
+`feedback_rom_build_smoke_test_for_codegen_phases.md`: SATISFIED.
+
+> "when a phase touches GBDKPipelineV2/BankingAnalysisPass/GenerateCTask/etc.,
+>  the verifier MUST run a clean `:gbkt-examples:<game>:buildRom` before declaring
+>  complete; JVM tests cannot see staleness in build/gbkt/generated/"
+
+Plan 12.7-19 modified PlatformerVisitor (genre-platformer codegen). This plan's
+clean `:gbkt-examples:platformer-template:buildRom` invocation proves the new
+emission shape (pivot_adjust + updated foot_pixel_anchor) compiles cleanly through
+the GBDK lcc pipeline. The runtime visual correctness gate is owned by W21/W24
+(UAT re-capture + binding gate), not this smoke.
+
+## Build Log Tail (last 22 lines of /tmp/12.7-23-buildrom.log)
+
+    > Task :gbkt-examples:platformer-template:copyResources
+
+    > Task :gbkt-examples:platformer-template:compileRom
+    Banking: 4 banks (highest bank: 2), MBC: 0x01
+    Compiling ROM: 17 source files -> platformer-template.gb
+    ROM created: platformer-template.gb (64 KB)
+
+    > Task :gbkt-examples:platformer-template:buildRom
+
+    ==================================================
+    ROM built successfully!
+    Output: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a078edf5d114d6d9b/gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb
+    ==================================================
+
+    BUILD SUCCESSFUL in 7s
+    43 actionable tasks: 43 executed
+    Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.0.0/userguide/configuration_cache_enabling.html
+
+## Provenance
+
+- Plan 12.7-23 — THIS smoke (R-06 closure under Round 5, W17)
+- Plan 12.7-22 — W16 sweep (R-04 closure under Round 5) — PENDING at this base
+- Plan 12.7-21 — W15 evidence re-capture (R-02 + R-03) — PENDING at this base
+- Plan 12.7-19 — W13 pivot_adjust codegen (R-01 + R-05) — SHIPPED at base `4f3a51e7`
+- Plan 12.7-18 — W12 RED assertion for pivot_adjust — SHIPPED
+- Plan 12.7-17 — Round-5 diagnostic (H1+H2 verdict) — SHIPPED
+- Plan 12.7-14 — W8 smoke under Plan 12.7-11 intermediate-vars (now superseded)
+- Plan 12.7-11 — original intermediate-vars precedence-fix (now extended by 12.7-19)
+
+## Verdict
+
+BUILD SUCCESSFUL — platformer-template.gb = 65536 bytes
+SHA-256 = 02db5032ac7df74a19af6719ef84d80f5a071537ca6d76b9c98d761f84ea7880
+pivot_adjust = 2u confirmed at main.c:551
+R-06 closed under Round 5: post-Plan-12.7-19 ROM compiles cleanly through GBDK lcc.

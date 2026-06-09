@@ -1,0 +1,7 @@
+# Round-7 IE/IF/STAT trace at race_enter+1 and race_enter+30
+# Plan 07.4-28 Task 2 — H-F hypothesis evidence (VBLANK interrupt enable)
+# Addresses: IE=0xFFFF IF=0xFF0F STAT=0xFF41
+# Format: marker=race_enter+N IE=0xXX IF=0xXX STAT=0xXX
+
+marker=race_enter+1 IE=0x01 IF=0xF1 STAT=0x81 LY=0x90
+marker=race_enter+31 IE=0x01 IF=0xF1 STAT=0x81 LY=0x90

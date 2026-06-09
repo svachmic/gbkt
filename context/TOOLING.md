@@ -31,6 +31,99 @@ AssetPipeline.HIGH_CONTRAST_PALETTE // [200, 140, 80]
 AssetPipeline.INVERTED_PALETTE     // [64, 128, 192]
 ```
 
+## Sprite Asset Pipeline
+
+> Phase 12.4 contract: every metasprite declares its source PNG explicitly via the
+> `sprite(asset("..."))` DSL binder; the pipeline routes the path through `game_metadata.json` to
+> png2asset deterministically.
+
+### DSL
+
+```kotlin
+val player by metasprite {
+    sprite(asset("graphics/player-sheet.png"))    // required since Phase 12.4
+    posX(playerX); posY(playerY)
+    idx(walkFrameIdx); rot(facingRot)
+    frame {
+        tile(0, 0, 0); tile(8, 0, 1); tile(16, 0, 2)
+        tile(0, 16, 3); tile(8, 16, 4); tile(16, 16, 5)
+    }
+    // ... additional frames
+}
+```
+
+The `sprite(asset(path))` binder is mandatory. `GenerateCTask` throws a `GradleException` with the
+failing metasprite's id if it is omitted (validation gate — see "What changed in Phase 12.4" below).
+
+### Asset path resolution
+
+`asset("relative/path.png")` resolves to `{assetDirectory}/relative/path.png` where `assetDirectory` is
+configured in the project's `build.gradle.kts`:
+
+```kotlin
+gbkt {
+    // assetDirectory defaults to "res" — override with:
+    // assetDirectory.set(file("res"))
+}
+```
+
+So `sprite(asset("graphics/player-sheet.png"))` looks at `<projectDir>/res/graphics/player-sheet.png`.
+
+### Pipeline flow
+
+```
+DSL: sprite(asset(...))
+  ↓
+MetaspriteBuilder.sprite(AssetRef)        (gbkt-lang)
+  ↓
+MetaspriteIR.spritePath                   (gbkt-ir — additive nullable field)
+  ↓
+GBDKPipeline.buildMetadataFile()
+emits game_metadata.json sprites[] entry  (gbkt-backend-gbdk)
+  ↓
+ConvertSpritesTask reads the sidecar       (gbkt-gradle-plugin)
+  ↓
+png2asset <assetDir>/<spritePath>          (GBDK toolchain)
+  ↓
+build/gbkt/generated/sprites/<id>.c        (lcc compiles this)
+```
+
+The `game_metadata.json` sidecar carries the sprites array:
+
+```json
+{
+  "sprites": [
+    { "id": "player",   "spritePath": "graphics/player-character-gbapduck-sprites.png", "mirrorDedup": false },
+    { "id": "elephant", "spritePath": "sprites/elephant.png", "mirrorDedup": false }
+  ]
+}
+```
+
+This is the same cross-task sidecar pattern used by `ConvertZoneTilesetsTask` for zone tilesets
+(Phase 12.2 D-A2 sidecar pattern).
+
+### Mirror-dedup opt-in
+
+`metasprite { mirrorDedup() }` omits png2asset's `-noflip` flag for that metasprite, allowing
+png2asset to detect mirror-pair tiles and emit a smaller `_tiles[]` array with `S_FLIPX`/`S_FLIPY`
+OAM attrs. Use ONLY for from-scratch authored metasprites that take advantage of the dedup; do
+NOT use for metasprites transcribed from a reference's `-noflip` id space.
+
+### What changed in Phase 12.4
+
+**Pre-12.4:** PNG path was implicit — `ConvertSpritesTask` parsed `main.c` for
+`#include "sprites/<stem>.h"` directives and looked for `<assetDirectory>/sprites/<stem>.png`. This
+silently failed (emitting a 64-byte checkerboard placeholder) when the include stem didn't match the
+asset filename or the asset lived outside `sprites/`.
+
+**Post-12.4:** PNG path is explicit via `sprite(asset(...))`; the implicit convention is **REMOVED**. All
+4 silent-stub fallback paths in `ConvertSpritesTask` now throw `GradleException` (fail-fast). This
+follows the "explicit > implicit" principle — future authors and artists can `grep` for the actual
+PNG path in the DSL without knowing any `_<id>` → file convention.
+
+See `.planning/phases/12.4-sprite-pipeline-png2asset-integration-wire-png2asset-binary-/12.4-SPEC.md`
+for the full requirement set and acceptance criteria.
+
 ## GBC Color Palette Support
 
 gbkt supports Game Boy Color with full 15-bit RGB555 color palettes (8 sprite palettes + 8 background palettes, 4 colors each).

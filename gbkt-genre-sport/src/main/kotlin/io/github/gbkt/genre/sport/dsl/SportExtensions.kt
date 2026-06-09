@@ -25,53 +25,66 @@ import io.github.gbkt.core.ir.GenericSystem
 // Config map key conventions:
 //   "type" → "sport_racing" | "sport_ball" | "sport_tournament"
 //   "config" → the domain config data class
+//
+// D-04 (Project Rule #1 — no magic strings):
+//   `racing { ... }` and `vehicle { ... }` are property-delegate factories. The id
+//   flows in via `KProperty.name` during `provideDelegate` — the user never types
+//   the id as a String parameter.
 // =============================================================================
 
 /**
- * Defines and registers a racing game system.
+ * Declares a racing system. The id is captured from the property delegate (D-04).
  *
- * Produces a [GenericSystem] with config type `"sport_racing"`. The backend discovers this system
- * via ServiceLoader when it processes [GenericSystem] nodes.
- *
+ * Usage:
  * ```kotlin
- * racing("grand_prix") {
- *     mode(RacingMode.AI_OPPONENT)
+ * val track1 by racing {
  *     laps(3)
- *     track("race_zone") {
- *         waypoint(x = 5, y = 5, checkpoint = true)
- *         waypoint(x = 15, y = 3)
- *     }
- *     vehicle("car_1") {
- *         name("Speed Racer")
- *         stats { speed(220); acceleration(180); handling(160) }
- *     }
- *     vehicle("car_2") {
- *         name("Steady Rider")
- *         stats { speed(180); acceleration(200); handling(200) }
- *     }
- *     ai {
- *         speedPercent(85)
- *         difficulty(7)
- *         rubberBanding(enabled = true, strength = 60)
+ *     player(carPlayer)
+ *     aiOpponents(carAi, count = 1)
+ *     track {
+ *         waypoint(x = 5,  y = 5,  checkpoint = true)
+ *         waypoint(x = 15, y = 5)
+ *         waypoint(x = 15, y = 15, checkpoint = true)
+ *         waypoint(x = 5,  y = 15)
  *     }
  * }
  * ```
  *
+ * The [RacingDelegate] returned here registers the racing system, auto-emits a
+ * [io.github.gbkt.core.ir.CameraSystem] following the player vehicle's actor (unless the user
+ * declared a camera themselves), synthesizes one [io.github.gbkt.core.ir.ActorPoolIR] per AI
+ * vehicle slot, and writes the rasterized track tile data into a [io.github.gbkt.core.ir.ZoneIR]
+ * keyed on the property name (D-12: skipped if the user already supplied populated zone tile data
+ * for the same id).
+ *
  * **Design constraint:** NO new sealed IR subtypes are created.
  *
- * @param id Unique system identifier.
  * @param block Configuration block executed against a [RacingBuilder].
- * @return The registered [GenericSystem].
+ * @return A [RacingDelegate] for the `by` keyword to evaluate.
  */
-fun GameBuilder.racing(id: String, block: RacingBuilder.() -> Unit): GenericSystem {
-    val builder = RacingBuilder(id)
-    builder.block()
-    val config = builder.build()
-    val system =
-        GenericSystem(id = id, config = mapOf("type" to "sport_racing", "config" to config))
-    registerSystem(system)
-    return system
-}
+fun GameBuilder.racing(block: RacingBuilder.() -> Unit): RacingDelegate = RacingDelegate(block)
+
+/**
+ * Declares a vehicle bound to an existing actor. The id is captured from the property delegate
+ * (D-04).
+ *
+ * Usage:
+ * ```kotlin
+ * val car by actor { … }
+ * val carPlayer by vehicle {
+ *     actor(car)
+ *     stats { speed(200); acceleration(160); handling(180) }
+ * }
+ * ```
+ *
+ * The vehicle wraps an [io.github.gbkt.core.dsl.ActorRef] (D-05): the on-screen sprite, movement
+ * controller, and per-actor properties remain configurable on the actor itself; the vehicle only
+ * adds racing stats and the binding back to that actor.
+ *
+ * @param block Configuration block executed against a [VehicleBuilder].
+ * @return A [VehicleDelegate] for the `by` keyword to evaluate.
+ */
+fun GameBuilder.vehicle(block: VehicleBuilder.() -> Unit): VehicleDelegate = VehicleDelegate(block)
 
 /**
  * Defines and registers a ball sport game system.

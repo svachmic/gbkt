@@ -6,10 +6,11 @@
  */
 package io.github.gbkt.backend.gbdk.codegen
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.AnimationStateDef
 import io.github.gbkt.core.ir.CameraSystem
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.ExplorationSystem
 import io.github.gbkt.core.ir.GameIR
@@ -104,7 +105,7 @@ private fun buildFullFeatureGameIR(): GameIR {
     // Systems: camera (follows hero), exploration, save (3 slots + checksum), pathfinding
     return GameIR(
         name = "IntegrationTest",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = listOf(gameScene),
         actors = listOf(player, enemy),
         variables =
@@ -143,7 +144,7 @@ private fun buildFullFeatureGameIR(): GameIR {
 
 class IntegrationCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: Full feature pipeline generates output without exceptions

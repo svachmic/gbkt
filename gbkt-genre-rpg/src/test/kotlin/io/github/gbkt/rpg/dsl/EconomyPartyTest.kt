@@ -51,8 +51,8 @@ class EconomyPartyTest {
                         item("iron_shield") { price(150) }
                         sellRatio(40)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -90,8 +90,8 @@ class EconomyPartyTest {
                             }
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -130,8 +130,8 @@ class EconomyPartyTest {
                         member("hero")
                         guestMember("npc_ally")
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -171,8 +171,8 @@ class EconomyPartyTest {
                         newGamePlus { carryOver("inventory", "gold", "abilities") }
                         previewFields("name", "level", "time", "location")
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -230,8 +230,8 @@ class EconomyPartyTest {
                             evolves("fire_ball", into = "mega_fire")
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -302,8 +302,8 @@ class EconomyPartyTest {
                         }
                         guaranteed("goblin_fang")
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 

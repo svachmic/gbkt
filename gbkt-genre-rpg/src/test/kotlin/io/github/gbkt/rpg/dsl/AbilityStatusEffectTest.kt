@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.rpg.dsl
 
+import io.github.gbkt.core.dsl.SceneRef
 import io.github.gbkt.core.dsl.game
 import io.github.gbkt.core.ir.GenericSystem
 import io.github.gbkt.core.ir.NavigateTo
@@ -44,8 +45,8 @@ class AbilityStatusEffectTest {
         val ir =
             game("AbilityTest") {
                     val fireball by ability { name("Fireball") }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -70,8 +71,8 @@ class AbilityStatusEffectTest {
                         power(50)
                         accuracy(95)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -92,11 +93,11 @@ class AbilityStatusEffectTest {
             game("AbilityTest") {
                     val strike by ability {
                         name("Strike")
-                        execute { navigate("battle_result") }
+                        execute { navigate(SceneRef("battle_result")) }
                     }
                     scene("battle_result") { enter {} }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -118,8 +119,8 @@ class AbilityStatusEffectTest {
                         chargeTurns(2)
                         appliesEffect("burn", chance = 60)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -139,8 +140,8 @@ class AbilityStatusEffectTest {
                         range(min = 1, max = 4)
                         aoeShape(AoeShape.LINE)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -156,8 +157,8 @@ class AbilityStatusEffectTest {
         val ir =
             game("AbilityTest") {
                     val fireball by ability { name("Fireball") }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -173,8 +174,8 @@ class AbilityStatusEffectTest {
         val ir =
             game("StatusTest") {
                     val poison by statusEffect { name("Poison") }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -196,8 +197,8 @@ class AbilityStatusEffectTest {
                         stackMode(StackMode.INTENSITY)
                         maxStacks(5)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -221,8 +222,8 @@ class AbilityStatusEffectTest {
                         buff()
                         duration(3)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -239,11 +240,11 @@ class AbilityStatusEffectTest {
                     val thorns by statusEffect {
                         name("Thorns")
                         buff()
-                        onTrigger(EffectTrigger.ON_DAMAGE_TAKEN) { navigate("battle_result") }
+                        onTrigger(EffectTrigger.ON_DAMAGE_TAKEN) { navigate(SceneRef("battle_result")) }
                     }
                     scene("battle_result") { enter {} }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -268,8 +269,8 @@ class AbilityStatusEffectTest {
                         interacts("burn", "cancels")
                         interacts("wet", "converts_to")
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -288,13 +289,13 @@ class AbilityStatusEffectTest {
                         debuff()
                         stackMode(StackMode.INTENSITY)
                         maxStacks(5)
-                        onStackApplied { navigate("burst_result") }
-                        onStackRemoved { navigate("stack_fade") }
+                        onStackApplied { navigate(SceneRef("burst_result")) }
+                        onStackRemoved { navigate(SceneRef("stack_fade")) }
                     }
                     scene("burst_result") { enter {} }
                     scene("stack_fade") { enter {} }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -315,8 +316,8 @@ class AbilityStatusEffectTest {
                         resistType(ResistType.STAT_CONTEST)
                         resistStat("mdef")
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -337,8 +338,8 @@ class AbilityStatusEffectTest {
                         immuneToEffect("poison")
                         immuneToEffect("burn")
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -359,8 +360,8 @@ class AbilityStatusEffectTest {
                         damagePerTurn(3)
                         perStackScaling()
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -374,8 +375,8 @@ class AbilityStatusEffectTest {
         val ir =
             game("StatusTest") {
                     val poison by statusEffect { name("Poison") }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -390,8 +391,8 @@ class AbilityStatusEffectTest {
                     val heal by ability { name("Heal") }
                     val poison by statusEffect { name("Poison") }
                     val haste by statusEffect { buff() }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -415,8 +416,8 @@ class AbilityStatusEffectTest {
         val ir =
             game("AbilityTest") {
                     val basic by ability {}
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -442,8 +443,8 @@ class AbilityStatusEffectTest {
                         buff()
                         immuneTo(EffectCategory.DEBUFF, EffectCategory.DOT)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 

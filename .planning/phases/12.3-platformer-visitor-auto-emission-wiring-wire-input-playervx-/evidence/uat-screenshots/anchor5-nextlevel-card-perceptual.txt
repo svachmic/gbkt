@@ -1,0 +1,6 @@
+file: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a94053c95b4cf610f/.planning/phases/12.3-platformer-visitor-auto-emission-wiring-wire-input-playervx-/evidence/uat-screenshots/anchor-5/02-nextlevel-card.png
+dimensions: 160x144
+distinct_colours: 4
+dominant_ratio: 0.4885
+dominant_count: 11254
+total_pixels: 23040

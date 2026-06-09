@@ -1,0 +1,21 @@
+=== race_enter scope ===
+cls()        = 0
+gotoxy(      = 0
+printf(      = 0
+SHOW_BKG     = 0
+HIDE_BKG     = 0
+SHOW_SPRITES = 1
+HIDE_SPRITES = 1
+set_bkg_data = 1
+set_bkg_tiles= 1
+SWITCH_ROM   = 1
+pool_carAi_spawn = 1
+_win_print_at= 1
+_win_clear_region = 1
+
+=== main scope ===
+DISPLAY_ON   = 1
+SHOW_BKG     = 0
+SHOW_SPRITES = 1
+set_bkg_data = 0
+BGP_REG      = 0

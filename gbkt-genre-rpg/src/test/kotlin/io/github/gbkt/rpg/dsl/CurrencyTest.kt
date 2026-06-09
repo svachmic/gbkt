@@ -43,8 +43,8 @@ class CurrencyTest {
         val ir =
             game("CurrencyNameTest") {
                     val gold by currency { max(9999) }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -71,8 +71,8 @@ class CurrencyTest {
                     val gold by currency { max(9999) }
                     val gems by currency { max(99) }
                     val tokens by currency { max(255) }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -110,8 +110,8 @@ class CurrencyTest {
                         max(99)
                         exchange(to = gold, rate = 100) // 1 gem = 100 gold
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -163,8 +163,8 @@ class CurrencyTest {
                             dropCurrency(gold, amount = 50, chance = 100)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -208,8 +208,8 @@ class CurrencyTest {
                             currency(gems)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -244,8 +244,8 @@ class CurrencyTest {
                         item("iron_sword") { price(200) }
                         item("iron_shield") { price(150) }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -276,8 +276,8 @@ class CurrencyTest {
         val ir =
             game("CurrencyDefaultMaxTest") {
                     val gold by currency {} // no max() call — should default to 9999
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 

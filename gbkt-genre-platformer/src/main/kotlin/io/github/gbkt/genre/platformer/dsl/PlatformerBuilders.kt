@@ -6,6 +6,8 @@
  */
 package io.github.gbkt.genre.platformer.dsl
 
+import io.github.gbkt.core.dsl.AssignableVar
+import io.github.gbkt.core.dsl.GbktDsl
 import io.github.gbkt.core.ir.GenericSystem
 import io.github.gbkt.genre.platformer.domain.CameraScrollMode
 import io.github.gbkt.genre.platformer.domain.CollectibleDef
@@ -89,7 +91,7 @@ class WallJumpConfigBuilder {
  *
  * @param id Unique system identifier (default "physics").
  */
-class PlatformerPhysicsBuilder(val id: String = "physics") {
+open class PlatformerPhysicsBuilder(val id: String = "physics") {
     private var gravity: Int = 2
     private var jumpForce: Int = 8
     private var terminalVelocity: Int = 12
@@ -98,19 +100,21 @@ class PlatformerPhysicsBuilder(val id: String = "physics") {
     private var airControlFactor: Int = 75
     private var variableHeightJump: Boolean = true
     private var wallJumpConfig: WallJumpConfig? = null
+    private var solidThreshold: Int? = null
+    private var jumpHoldMaxFrames: Int = 0
 
     /** Sets the downward acceleration applied every frame (fixed-point units). */
-    fun gravity(value: Int) {
+    open fun gravity(value: Int) {
         gravity = value
     }
 
     /** Sets the initial upward velocity when jump is pressed (fixed-point units). */
-    fun jumpForce(value: Int) {
+    open fun jumpForce(value: Int) {
         jumpForce = value
     }
 
     /** Sets the maximum downward velocity cap (fixed-point units). */
-    fun terminalVelocity(value: Int) {
+    open fun terminalVelocity(value: Int) {
         terminalVelocity = value
     }
 
@@ -155,6 +159,43 @@ class PlatformerPhysicsBuilder(val id: String = "physics") {
     }
 
     /**
+     * Sets the tilemap solid-tile threshold. Tiles with index `< value` are treated as solid by
+     * the tilemap-collision codegen path (Plan 12-08 / 12-11). Default `null` = no tilemap
+     * collision (the abstract platform-collision path is used instead).
+     */
+    open fun solidThreshold(value: Int) {
+        solidThreshold = value
+    }
+
+    /**
+     * Enables variable-height jump via a frame-counted hold window. While the jump button is
+     * held, gravity is suppressed for up to `maxFrames` frames before the normal arc resumes
+     * (Plan 12-13 lowers the codegen). Default `0` = disabled (the existing [variableHeightJump]
+     * flag governs the abstract path).
+     */
+    open fun jumpHold(maxFrames: Int) {
+        jumpHoldMaxFrames = maxFrames
+    }
+
+    /**
+     * Builds the underlying [PlatformerPhysicsConfig]. Exposed for testing and for codegen
+     * branches that need the raw config without the [GenericSystem] wrapper.
+     */
+    fun buildConfig(): PlatformerPhysicsConfig =
+        PlatformerPhysicsConfig(
+            gravity = gravity,
+            jumpForce = jumpForce,
+            terminalVelocity = terminalVelocity,
+            coyoteFrames = coyoteFrames,
+            jumpBufferFrames = jumpBufferFrames,
+            airControlFactor = airControlFactor,
+            variableHeightJump = variableHeightJump,
+            wallJump = wallJumpConfig,
+            solidThreshold = solidThreshold,
+            jumpHoldMaxFrames = jumpHoldMaxFrames,
+        )
+
+    /**
      * Builds a [GenericSystem] with type `"platformer_physics"`.
      *
      * The config map contains:
@@ -162,21 +203,159 @@ class PlatformerPhysicsBuilder(val id: String = "physics") {
      * - `"physicsConfig"` → [PlatformerPhysicsConfig]
      */
     fun build(): GenericSystem {
-        val config =
-            PlatformerPhysicsConfig(
-                gravity = gravity,
-                jumpForce = jumpForce,
-                terminalVelocity = terminalVelocity,
-                coyoteFrames = coyoteFrames,
-                jumpBufferFrames = jumpBufferFrames,
-                airControlFactor = airControlFactor,
-                variableHeightJump = variableHeightJump,
-                wallJump = wallJumpConfig,
-            )
+        val config = buildConfig()
         return GenericSystem(
             id = id,
             config = mapOf("type" to "platformer_physics", "physicsConfig" to config),
         )
+    }
+}
+
+// =============================================================================
+// PLATFORMER INPUT BUILDER
+// =============================================================================
+
+/**
+ * Builder for the platformer input + walk-cycle system (Phase 12.3 R1).
+ *
+ * Produces a [GenericSystem] with type `"platformer_input"` carrying numeric configuration plus
+ * captured `AssignableVar.name` references for the walk-cycle index and frame counter.
+ *
+ * Mirrors [PlatformerPhysicsBuilder] for numeric setters (open, returning Unit) plus the
+ * [io.github.gbkt.genre.platformer.dsl.TilemapCollisionBuilder] AssignableVar binder pattern
+ * (Plan 12.1-05) for the two walk-cycle vars — per `feedback_no_magic_strings.md` the binder
+ * captures `AssignableVar.name` inferred from the Kotlin property delegate.
+ *
+ * The 5 numeric setters are `open fun` so [OverrideTrackingInputBuilder] (zone-level overrides)
+ * can subclass and record explicit field sets. The 2 AssignableVar binders are intentionally NOT
+ * `open` — per-zone shadowing of binder names is not semantically meaningful (binders are
+ * game-level only per D-03 / L-2.2).
+ *
+ * ```kotlin
+ * platformerInput {
+ *     walkSpeed(128)
+ *     friction(8)
+ *     airFriction(0)
+ *     walkFrameCount(3)
+ *     cyclePeriod(6)
+ *     walkFrameIdx(walkFrameIdx)        // AssignableVar binder
+ *     threeFrameCounter(threeFrameCounter)
+ * }
+ * ```
+ *
+ * PlatformerVisitor (Wave 2 plans 02/04/06/08) reads the resulting `GenericSystem.config` map:
+ * - Numeric keys (`walkSpeed`, `friction`, `airFriction`, `walkFrameCount`, `cyclePeriod`) are
+ *   ALWAYS present (defaults baked in).
+ * - Binder keys (`walkFrameIdxVar`, `threeFrameCounterVar`) appear only when the binder was
+ *   called (skip-on-null per [TilemapCollisionBuilder] precedent — the visitor SKIPS walk-cycle
+ *   emission entirely when either is absent, per D-03 no-magic-strings fallback).
+ *
+ * @param id Unique system identifier (default "input"; the type-tag in config is the
+ *   discriminator, not the id).
+ */
+@GbktDsl
+open class PlatformerInputBuilder(val id: String = "input") {
+    private var walkSpeed: Int = 128
+    private var friction: Int = 8
+    private var airFriction: Int = 0
+    private var walkFrameCount: Int = 3
+    private var cyclePeriod: Int = 6
+    private var walkFrameIdxVar: String? = null
+    private var threeFrameCounterVar: String? = null
+
+    /**
+     * Sets the horizontal velocity (signed INT16, fixed-point sub-pixel units) applied to the
+     * bound `_playerVx` symbol while D-pad LEFT/RIGHT is held.
+     *
+     * Default 128 = reference `player.c` walk speed. L-1.2: requires `playerVx by i16Var(0)` —
+     * INT8 cap at 127 was the velocity-bug Plan 12-21 papered over.
+     */
+    open fun walkSpeed(value: Int) {
+        walkSpeed = value
+    }
+
+    /**
+     * Sets the per-frame velocity decay applied when no horizontal input is held AND
+     * `_grounded` is true (D-04 ground-friction path).
+     */
+    open fun friction(value: Int) {
+        friction = value
+    }
+
+    /**
+     * Sets the per-frame velocity decay applied when no horizontal input is held AND
+     * `_grounded` is false (D-04 air-vs-ground split). Default 0 matches reference
+     * `player.c` ground-only friction behaviour.
+     */
+    open fun airFriction(value: Int) {
+        airFriction = value
+    }
+
+    /**
+     * Sets the number of frames in the walk-cycle animation. Default 3 (frames 0/1/2). The
+     * visitor's emitted body rolls `_walkFrameIdx` modulo this count.
+     */
+    open fun walkFrameCount(value: Int) {
+        walkFrameCount = value
+    }
+
+    /**
+     * Sets the number of game frames per walk-cycle advance. Default 6. The visitor's emitted
+     * body increments `_walkFrameIdx` only when `_threeFrameCounter >= cyclePeriod`.
+     */
+    open fun cyclePeriod(value: Int) {
+        cyclePeriod = value
+    }
+
+    /**
+     * Binds the walk-frame index variable to a user-DSL [AssignableVar]. The variable name
+     * (`AssignableVar.name`, inferred from the Kotlin property delegate) is captured into
+     * `walkFrameIdxVar` and flows through to PlatformerVisitor's walk-cycle emission as
+     * `_<propertyName>` symbol references.
+     *
+     * Per `feedback_no_magic_strings.md`: this binder takes [AssignableVar] (not `String`).
+     * Per D-03 / L-2.2: NOT `open` — per-zone shadowing of binder names is not semantically
+     * meaningful (binders live at game level only).
+     *
+     * Fallback shape (when this binder is unset): the visitor SKIPS walk-cycle emission entirely
+     * (no magic-string `_walkFrameIdx` fallback).
+     */
+    fun walkFrameIdx(v: AssignableVar) {
+        walkFrameIdxVar = v.name
+    }
+
+    /**
+     * Binds the three-frame-counter variable to a user-DSL [AssignableVar]. Captures
+     * `AssignableVar.name` for PlatformerVisitor's cycle-period accumulator. NOT `open` —
+     * binders are game-level only (D-03 / L-2.2). Fallback when unset: visitor SKIPS emission.
+     */
+    fun threeFrameCounter(v: AssignableVar) {
+        threeFrameCounterVar = v.name
+    }
+
+    /**
+     * Builds a [GenericSystem] with type `"platformer_input"`.
+     *
+     * Config map shape:
+     * - `"type"` → `"platformer_input"` (discriminator; PlatformerVisitor uses this as the lookup
+     *   key, not the system id).
+     * - Numeric keys (`walkSpeed`, `friction`, `airFriction`, `walkFrameCount`, `cyclePeriod`) →
+     *   always present.
+     * - Binder keys (`walkFrameIdxVar`, `threeFrameCounterVar`) → present iff binder was called
+     *   (skip-on-null mirrors [TilemapCollisionBuilder.build] precedent).
+     */
+    fun build(): GenericSystem {
+        val cfg = mutableMapOf<String, Any>(
+            "type" to "platformer_input",
+            "walkSpeed" to walkSpeed,
+            "friction" to friction,
+            "airFriction" to airFriction,
+            "walkFrameCount" to walkFrameCount,
+            "cyclePeriod" to cyclePeriod,
+        )
+        walkFrameIdxVar?.let { cfg["walkFrameIdxVar"] = it }
+        threeFrameCounterVar?.let { cfg["threeFrameCounterVar"] = it }
+        return GenericSystem(id = id, config = cfg.toMap())
     }
 }
 

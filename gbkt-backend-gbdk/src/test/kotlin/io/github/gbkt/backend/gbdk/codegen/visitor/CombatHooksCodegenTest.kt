@@ -6,7 +6,8 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.CombatHookPoint
@@ -35,7 +36,7 @@ import kotlin.test.assertTrue
 private fun buildHooksGameIR(system: CombatEngineSystem, startScene: String = "gameplay"): GameIR =
     GameIR(
         name = "TestHooksGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = listOf(SceneIR(id = startScene)),
         systems = listOf(system),
         startScene = startScene,
@@ -46,7 +47,7 @@ private const val HOOKS_COMBAT_ID = "combat"
 
 class CombatHooksCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: BEFORE_ACTION hook emits hook function and call site before action dispatch

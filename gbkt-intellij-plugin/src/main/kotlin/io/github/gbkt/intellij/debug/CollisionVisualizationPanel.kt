@@ -392,10 +392,9 @@ class CollisionVisualizationPanel : JPanel(BorderLayout()) {
             val h = box.height * zoom
 
             // Check if in active collision
-            val isColliding =
-                collisionPairs.any { pair ->
-                    pair.isColliding && (pair.entityA == box.name || pair.entityB == box.name)
-                }
+            val isColliding = collisionPairs.any { pair ->
+                pair.isColliding && (pair.entityA == box.name || pair.entityB == box.name)
+            }
 
             // Fill
             val fillColor =

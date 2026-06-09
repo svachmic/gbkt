@@ -308,16 +308,15 @@ class PuzzleAdvancedTest {
                 TriggerObjectIR(id = "trigger", x = 2, y = 2),
             )
         // This function compiles only if all cases are handled — no else needed
-        val descriptions =
-            objects.map { obj ->
-                when (obj) {
-                    is SwitchObjectIR -> "Switch(${obj.id})"
-                    is DoorObjectIR -> "Door(${obj.id})"
-                    is PressurePlateObjectIR -> "Plate(${obj.id})"
-                    is TimedBlockObjectIR -> "Block(${obj.id})"
-                    is TriggerObjectIR -> "Trigger(${obj.id})"
-                }
+        val descriptions = objects.map { obj ->
+            when (obj) {
+                is SwitchObjectIR -> "Switch(${obj.id})"
+                is DoorObjectIR -> "Door(${obj.id})"
+                is PressurePlateObjectIR -> "Plate(${obj.id})"
+                is TimedBlockObjectIR -> "Block(${obj.id})"
+                is TriggerObjectIR -> "Trigger(${obj.id})"
             }
+        }
         assertEquals(
             listOf("Switch(sw)", "Door(door)", "Plate(plate)", "Block(block)", "Trigger(trigger)"),
             descriptions,
@@ -551,6 +550,8 @@ private object TriggerTestDescriber : ScriptOpVisitorI<String> {
 
     override fun visitScreenFill(op: ScreenFill): String = "ScreenFill"
 
+    override fun visitBindCurrentLevel(op: BindCurrentLevel): String = "BindCurrentLevel"
+
     override fun visitPrintOp(op: PrintOp): String = "PrintOp"
 
     override fun visitFadeOp(op: FadeOp): String = "FadeOp"
@@ -594,6 +595,10 @@ private object TriggerTestDescriber : ScriptOpVisitorI<String> {
     override fun visitPathfindStep(op: PathfindStep): String = "PathfindStep"
 
     override fun visitWaypointStep(op: WaypointStep): String = "WaypointStep"
+
+    // Plan 07 — MetaspriteVisitor will replace this stub
+    override fun visitMoveMetasprite(op: MoveMetasprite): String =
+        "MoveMetasprite(${op.metaspriteId})"
 
     override fun visitActivatePuzzleObject(op: ActivatePuzzleObject): String =
         "ActivatePuzzleObject(${op.objectId})"

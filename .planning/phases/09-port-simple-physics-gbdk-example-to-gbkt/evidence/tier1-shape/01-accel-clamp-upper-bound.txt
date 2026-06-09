@@ -1,0 +1,47 @@
+void play_frame(void) BANKED {
+    if (dpad_held(J_UP)) {
+        _spdY -= 2u;
+        if (_spdY < -64) {
+            _spdY = -64;
+        }
+    }
+    if (dpad_held(J_DOWN)) {
+        _spdY += 2u;
+        if (_spdY > 64) {
+            _spdY = 64u;
+        }
+    }
+    if (dpad_held(J_LEFT)) {
+        _spdX -= 2u;
+        if (_spdX < -64) {
+            _spdX = -64;
+        }
+    }
+    if (dpad_held(J_RIGHT)) {
+        _spdX += 2u;
+        if (_spdX > 64) {
+            _spdX = 64u;
+        }
+    }
+    if (button_pressed(J_A)) {
+        _spdY = -32;
+    }
+    _posX += _spdX;
+    _posY += _spdY;
+    {
+        _ball_x = _posX >> 4u;
+        _ball_y = _posY >> 4u;
+    }
+    if (_spdY < 0) {
+        _spdY += 1u;
+    }
+    if (_spdY > 0) {
+        _spdY -= 1u;
+    }
+    if (_spdX < 0) {
+        _spdX += 1u;
+    }
+    if (_spdX > 0) {
+        _spdX -= 1u;
+    }
+}

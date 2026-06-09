@@ -44,7 +44,7 @@ import kotlin.reflect.KProperty
  * `u8Var`/`i8Var` etc. declaration. SaveDataBuilder.build() reads this set to exclude transient
  * variables from save/load SRAM layout.
  */
-internal object GameBuilderContext {
+object GameBuilderContext {
     private val holder = ThreadLocal<GameBuilder?>()
     private val transientHolder = ThreadLocal<MutableSet<String>>()
 
@@ -87,7 +87,7 @@ internal object GameBuilderContext {
  * Note: Cannot implement [Expr] directly because [Expr] is a sealed interface defined in the `ir`
  * package (Kotlin seals prevent cross-package subclasses).
  */
-data class AssignableVar(val name: String) {
+data class AssignableVar(val name: String, val wrapAt: Int? = null, val fractionalBits: Int? = null) {
     /** Returns this variable as a [VarRef] expression for use in script ops. */
     fun toExpr(): Expr = VarRef(name)
 
@@ -124,10 +124,41 @@ infix fun AssignableVar.set(other: AssignableVar) = set(other.toExpr())
  */
 infix fun AssignableVar.set(value: Boolean) = set(Literal(if (value) 1 else 0))
 
+// =============================================================================
+// WRAP-GUARD HELPERS (D-14 / D-15 / D-16)
+// =============================================================================
+
+/**
+ * Returns true iff [n] is a positive power of two (e.g. 2, 4, 8, 16, 32, …).
+ * Runs at DSL/JVM time during script recording — never emitted to GB C output.
+ */
+private fun isPowerOfTwo(n: Int): Boolean = n > 0 && (n and (n - 1)) == 0
+
+/**
+ * Emits a post-mutation wrap guard into [sb] for variable [varName] with wrap-boundary [n].
+ *
+ * - Power-of-two [n]: emits `varName = varName & (n-1)` (bitmask path, D-15).
+ * - Non-power-of-two [n]: emits `if (varName >= n) { varName = 0 }` (compare-reset path, D-15).
+ *
+ * Per D-16, this must be called AFTER the primary mutation assign so the guard is adjacent.
+ */
+private fun emitWrapGuard(sb: ScriptBuilder, varName: String, n: Int) {
+    if (isPowerOfTwo(n)) {
+        // Bitmask: varName = varName & (n-1)
+        sb.assign(varName, BinaryExpr(VarRef(varName), BinaryOp.AND, Literal(n - 1)), AssignOp.SET)
+    } else {
+        // Compare-reset: if (varName >= n) { varName = 0 }
+        sb.whenever(BinaryExpr(VarRef(varName), BinaryOp.GTE, Literal(n))) {
+            assign(varName, Literal(0), AssignOp.SET)
+        }
+    }
+}
+
 /** Adds [value] to [this] variable (compound assignment). */
 operator fun AssignableVar.plusAssign(value: Expr) {
-    ScriptBuilderContext.current?.assign(name, value, AssignOp.ADD)
-        ?: error("+=  called outside a ScriptBuilder block")
+    val sb = ScriptBuilderContext.current ?: error("+=  called outside a ScriptBuilder block")
+    sb.assign(name, value, AssignOp.ADD)
+    wrapAt?.let { n -> emitWrapGuard(sb, name, n) }
 }
 
 /** Adds [value] (Int) to [this] variable. */
@@ -138,8 +169,9 @@ operator fun AssignableVar.plusAssign(other: AssignableVar) = plusAssign(other.t
 
 /** Subtracts [value] from [this] variable (compound assignment). */
 operator fun AssignableVar.minusAssign(value: Expr) {
-    ScriptBuilderContext.current?.assign(name, value, AssignOp.SUB)
-        ?: error("-= called outside a ScriptBuilder block")
+    val sb = ScriptBuilderContext.current ?: error("-= called outside a ScriptBuilder block")
+    sb.assign(name, value, AssignOp.SUB)
+    wrapAt?.let { n -> emitWrapGuard(sb, name, n) }
 }
 
 /** Subtracts [value] (Int) from [this] variable. */
@@ -191,11 +223,13 @@ operator fun AssignableVar.remAssign(other: AssignableVar) = remAssign(other.toE
  * (which is a no-op). The side effect — emitting an Assign op — happens here.
  */
 operator fun AssignableVar.inc(): AssignableVar {
-    ScriptBuilderContext.current?.assign(
+    val sb = ScriptBuilderContext.current ?: error("++ called outside a ScriptBuilder block")
+    sb.assign(
         name,
         BinaryExpr(VarRef(name), BinaryOp.ADD, Literal(1)),
         AssignOp.SET,
-    ) ?: error("++ called outside a ScriptBuilder block")
+    )
+    wrapAt?.let { n -> emitWrapGuard(sb, name, n) }
     return this
 }
 
@@ -205,11 +239,13 @@ operator fun AssignableVar.inc(): AssignableVar {
  * Works with `var` delegates. See [inc] for semantics.
  */
 operator fun AssignableVar.dec(): AssignableVar {
-    ScriptBuilderContext.current?.assign(
+    val sb = ScriptBuilderContext.current ?: error("-- called outside a ScriptBuilder block")
+    sb.assign(
         name,
         BinaryExpr(VarRef(name), BinaryOp.SUB, Literal(1)),
         AssignOp.SET,
-    ) ?: error("-- called outside a ScriptBuilder block")
+    )
+    wrapAt?.let { n -> emitWrapGuard(sb, name, n) }
     return this
 }
 
@@ -348,12 +384,24 @@ abstract class VarDelegate(
     private val initialValue: Int,
     private val transient: Boolean = false,
 ) : ReadWriteProperty<Any?, AssignableVar> {
-    private var resolvedName: String? = null
+    protected var resolvedName: String? = null
+
+    /**
+     * Single-use guard. Each `by <factory>(...)` binding must use its own delegate instance.
+     * Reusing one instance across two `by` bindings throws [IllegalStateException] at build time.
+     */
+    private var delegateUsed: Boolean = false
 
     operator fun provideDelegate(
         thisRef: Any?,
         property: KProperty<*>,
     ): ReadWriteProperty<Any?, AssignableVar> {
+        check(!delegateUsed) {
+            "Delegate instance reused: provideDelegate was already called" +
+                (resolvedName?.let { " for property '$it'" } ?: "") +
+                ". Create a new delegate instance for each property binding."
+        }
+        delegateUsed = true
         val name = property.name
         resolvedName = name
         // Register with the current GameBuilder via thread-local context
@@ -388,9 +436,19 @@ abstract class VarDelegate(
     }
 }
 
-/** Delegate for `var x by u8Var(0)` — UINT8 variable (0–255). */
-class U8VarDelegate(initialValue: Int, transient: Boolean = false) :
-    VarDelegate(VarType.U8, initialValue, transient)
+/**
+ * Delegate for `var x by u8Var(0)` — UINT8 variable (0–255).
+ *
+ * Optional [wrapAt] parameter: when set, every mutation (++, --, +=, -=) emits a wrap guard
+ * immediately after the mutation op (D-14 / D-15 / D-16). Power-of-two [wrapAt] emits a
+ * bitmask (`& (N-1)`); non-power-of-two emits a compare-reset (`if v >= N { v = 0 }`).
+ */
+class U8VarDelegate(initialValue: Int, val wrapAt: Int? = null, transient: Boolean = false) :
+    VarDelegate(VarType.U8, initialValue, transient) {
+    override fun getValue(thisRef: Any?, property: KProperty<*>): AssignableVar {
+        return AssignableVar(resolvedName ?: property.name, wrapAt = wrapAt)
+    }
+}
 
 /** Delegate for `var x by u16Var(0)` — UINT16 variable (0–65535). */
 class U16VarDelegate(initialValue: Int, transient: Boolean = false) :
@@ -404,6 +462,25 @@ class I8VarDelegate(initialValue: Int, transient: Boolean = false) :
 class I16VarDelegate(initialValue: Int, transient: Boolean = false) :
     VarDelegate(VarType.I16, initialValue, transient)
 
+/**
+ * Delegate for `var posX by i16FixedVar(64)` — 12.4 fixed-point INT16 position variable.
+ *
+ * Stores the initial value as [initialPixels] × (2^[fractionalBits]).  Default fractional
+ * bits = 4 (12.4 fixed-point: high 12 bits = pixel coordinate, low 4 bits = sub-pixel).
+ * Use `.toPixel()` on the returned [AssignableVar] to extract the pixel coordinate for
+ * rendering.  For velocity / speed variables use [i16Var] directly.
+ *
+ * Single-use: each `by i16FixedVar(...)` binding must have its own delegate instance.
+ */
+class I16FixedVarDelegate(
+    initialPixels: Int,
+    val fractionalBits: Int = 4,
+    transient: Boolean = false,
+) : VarDelegate(VarType.I16, initialPixels shl fractionalBits, transient) {
+    override fun getValue(thisRef: Any?, property: KProperty<*>): AssignableVar =
+        AssignableVar(resolvedName ?: property.name, fractionalBits = fractionalBits)
+}
+
 // =============================================================================
 // TOP-LEVEL FACTORY FUNCTIONS
 // =============================================================================
@@ -412,10 +489,14 @@ class I16VarDelegate(initialValue: Int, transient: Boolean = false) :
  * Creates a u8 (UINT8) variable delegate with the given initial value.
  *
  * @param initial Initial value (0–255).
+ * @param wrapAt When set, every mutation (++, --, +=, -=) auto-emits a wrap guard after the op
+ *   (D-14 / D-15 / D-16). Power-of-two N → bitmask `& (N-1)`; non-power-of-two N → compare-reset
+ *   `if v >= N { v = 0 }`. Default null → no wrap guard (no behavior change for existing vars).
  * @param transient When true, this variable is excluded from save/load SRAM layout. Use for
  *   temporary state that should not persist between game sessions (e.g. animation counters).
  */
-fun u8Var(initial: Int = 0, transient: Boolean = false) = U8VarDelegate(initial, transient)
+fun u8Var(initial: Int = 0, wrapAt: Int? = null, transient: Boolean = false) =
+    U8VarDelegate(initial, wrapAt, transient)
 
 /**
  * Creates a u16 (UINT16) variable delegate with the given initial value.
@@ -440,6 +521,34 @@ fun i8Var(initial: Int = 0, transient: Boolean = false) = I8VarDelegate(initial,
  * @param transient When true, this variable is excluded from save/load SRAM layout.
  */
 fun i16Var(initial: Int = 0, transient: Boolean = false) = I16VarDelegate(initial, transient)
+
+/**
+ * Creates a 12.4 fixed-point INT16 position-variable delegate.
+ *
+ * Use for pixel-coordinate position variables (posX, posY, playerX, playerY).
+ * For velocity / speed variables that store raw sub-pixel counts, use [i16Var].
+ *
+ * @param initialPixels Initial position in whole pixels (stored as pixels × 2^[fractionalBits]).
+ * @param fractionalBits Number of fractional bits; default 4 → 12.4 fixed-point (1 pixel = 16).
+ *   D-10: fractionalBits is configurable with default 4 (the 12.4 path all examples migrate to).
+ * @param transient When true, excluded from save/load SRAM layout.
+ */
+fun i16FixedVar(
+    initialPixels: Int,
+    fractionalBits: Int = 4,
+    transient: Boolean = false,
+) = I16FixedVarDelegate(initialPixels, fractionalBits, transient)
+
+/**
+ * Documentation-scope block for grouping fixed-point variable declarations.
+ *
+ * This is NOT a type-enforcement boundary — it does not change the IR or generated C.
+ * It exists purely as a readable grouping construct so related fixed-point variables
+ * are visually clustered at the declaration site.
+ *
+ * D-09 / Pitfall 6: [subpixel] is a no-op scope; it does not change lowering behavior.
+ */
+fun GameBuilder.subpixel(fractionalBits: Int = 4, block: GameBuilder.() -> Unit) = block()
 
 // =============================================================================
 // ARRAY VARIABLE WRAPPER
@@ -700,10 +809,22 @@ class ArrayDelegate(
 ) : ReadWriteProperty<Any?, ArrayVar> {
     private var resolvedName: String? = null
 
+    /**
+     * Single-use guard. Each `by u8Array(...)` binding must use its own delegate instance.
+     * Reusing one instance across two `by` bindings throws [IllegalStateException] at build time.
+     */
+    private var delegateUsed: Boolean = false
+
     operator fun provideDelegate(
         thisRef: Any?,
         property: KProperty<*>,
     ): ReadWriteProperty<Any?, ArrayVar> {
+        check(!delegateUsed) {
+            "Delegate instance reused: provideDelegate was already called" +
+                (resolvedName?.let { " for array '$it'" } ?: "") +
+                ". Create a new delegate instance for each property binding."
+        }
+        delegateUsed = true
         val name = nameOverride ?: property.name
         resolvedName = name
         val context =

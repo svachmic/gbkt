@@ -16,6 +16,7 @@ import kotlin.test.assertTrue
 // =============================================================================
 // PALETTE BUILDER TESTS
 // Verifies PaletteBuilder, PaletteDelegate, and GbcPresets
+// Migrated from legacy color API to Color.rgb555/Color.* (Plan 13.3-07)
 // =============================================================================
 
 class PaletteBuilderTest {
@@ -27,28 +28,28 @@ class PaletteBuilderTest {
     @Test
     fun `builder with all 4 colors produces valid GBCPalette`() {
         val builder = PaletteBuilder("test")
-        builder.color0(GbcColor.WHITE)
-        builder.color1(gbc(20, 20, 20))
-        builder.color2(gbc(10, 10, 10))
-        builder.color3(GbcColor.BLACK)
+        builder.color0(Color.WHITE)
+        builder.color1(Color.rgb555(20, 20, 20))
+        builder.color2(Color.rgb555(10, 10, 10))
+        builder.color3(Color.BLACK)
 
         val palette = builder.build()
 
         assertEquals("test", palette.name)
         assertEquals(4, palette.colors.size)
-        assertEquals(GbcColor.WHITE, palette.colors[0])
-        assertEquals(gbc(20, 20, 20), palette.colors[1])
-        assertEquals(gbc(10, 10, 10), palette.colors[2])
-        assertEquals(GbcColor.BLACK, palette.colors[3])
+        assertEquals(Color.WHITE, palette.colors[0])
+        assertEquals(Color.rgb555(20, 20, 20), palette.colors[1])
+        assertEquals(Color.rgb555(10, 10, 10), palette.colors[2])
+        assertEquals(Color.BLACK, palette.colors[3])
         assertEquals(PaletteType.BACKGROUND, palette.type) // default type
     }
 
     @Test
     fun `builder missing color0 throws error on build`() {
         val builder = PaletteBuilder("incomplete")
-        builder.color1(GbcColor.WHITE)
-        builder.color2(gbc(10, 10, 10))
-        builder.color3(GbcColor.BLACK)
+        builder.color1(Color.WHITE)
+        builder.color2(Color.rgb555(10, 10, 10))
+        builder.color3(Color.BLACK)
 
         assertFailsWith<IllegalStateException> { builder.build() }
     }
@@ -56,9 +57,9 @@ class PaletteBuilderTest {
     @Test
     fun `builder missing color2 throws error on build`() {
         val builder = PaletteBuilder("incomplete")
-        builder.color0(GbcColor.WHITE)
-        builder.color1(gbc(20, 20, 20))
-        builder.color3(GbcColor.BLACK)
+        builder.color0(Color.WHITE)
+        builder.color1(Color.rgb555(20, 20, 20))
+        builder.color3(Color.BLACK)
 
         assertFailsWith<IllegalStateException> { builder.build() }
     }
@@ -66,10 +67,10 @@ class PaletteBuilderTest {
     @Test
     fun `builder with sprite type produces SPRITE palette`() {
         val builder = PaletteBuilder("sprite_pal")
-        builder.color0(GbcColor.WHITE)
-        builder.color1(gbc(20, 20, 20))
-        builder.color2(gbc(10, 10, 10))
-        builder.color3(GbcColor.BLACK)
+        builder.color0(Color.WHITE)
+        builder.color1(Color.rgb555(20, 20, 20))
+        builder.color2(Color.rgb555(10, 10, 10))
+        builder.color3(Color.BLACK)
 
         val palette = builder.build(PaletteType.SPRITE)
         assertEquals(PaletteType.SPRITE, palette.type)
@@ -92,11 +93,11 @@ class PaletteBuilderTest {
     fun `copy then override one color works`() {
         val builder = PaletteBuilder("modified")
         builder.copy(GbcPresets.DUNGEON)
-        builder.color0(GbcColor.WHITE) // override the first color
+        builder.color0(Color.WHITE) // override the first color
 
         val palette = builder.build()
 
-        assertEquals(GbcColor.WHITE, palette.colors[0])
+        assertEquals(Color.WHITE, palette.colors[0])
         // rest from DUNGEON preset
         assertEquals(GbcPresets.DUNGEON.colors[1], palette.colors[1])
         assertEquals(GbcPresets.DUNGEON.colors[2], palette.colors[2])
@@ -112,16 +113,16 @@ class PaletteBuilderTest {
         val ir =
             game("TestGame") {
                     val forest by palette {
-                        color0(GbcColor.WHITE)
-                        color1(gbc(16, 24, 8))
-                        color2(gbc(8, 16, 4))
-                        color3(GbcColor.BLACK)
+                        color0(Color.WHITE)
+                        color1(Color.rgb555(16, 24, 8))
+                        color2(Color.rgb555(8, 16, 4))
+                        color3(Color.BLACK)
                     }
                     // Need to suppress unused warning — forest is used by delegate registration
                     @Suppress("UNUSED_VARIABLE") val _unused = forest
 
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -135,18 +136,18 @@ class PaletteBuilderTest {
         val ir =
             game("TestGame") {
                     val bg by palette {
-                        color0(GbcColor.WHITE)
-                        color1(gbc(20, 20, 20))
-                        color2(gbc(10, 10, 10))
-                        color3(GbcColor.BLACK)
+                        color0(Color.WHITE)
+                        color1(Color.rgb555(20, 20, 20))
+                        color2(Color.rgb555(10, 10, 10))
+                        color3(Color.BLACK)
                     }
                     val sprite by palette { copy(GbcPresets.FIRE) }
                     // Suppress unused variable warnings
                     @Suppress("UNUSED_VARIABLE") val _bg = bg
                     @Suppress("UNUSED_VARIABLE") val _sprite = sprite
 
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -157,10 +158,10 @@ class PaletteBuilderTest {
     fun `palette delegate called outside game block throws error`() {
         assertFailsWith<IllegalStateException> {
             val pal by palette {
-                color0(GbcColor.WHITE)
-                color1(gbc(20, 20, 20))
-                color2(gbc(10, 10, 10))
-                color3(GbcColor.BLACK)
+                color0(Color.WHITE)
+                color1(Color.rgb555(20, 20, 20))
+                color2(Color.rgb555(10, 10, 10))
+                color3(Color.BLACK)
             }
             // accessing pal triggers provideDelegate
             @Suppress("UNUSED_VARIABLE") val unused = pal
@@ -291,8 +292,8 @@ class PaletteBuilderTest {
                     }
                     @Suppress("UNUSED_VARIABLE") val unused = hero
 
-                    scene("main") {}
-                    start = "main"
+                    val mainScene = scene("main") {}
+                    start = mainScene
                 }
                 .build()
 
@@ -312,8 +313,8 @@ class PaletteBuilderTest {
                     }
                     @Suppress("UNUSED_VARIABLE") val unused = hero
 
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 

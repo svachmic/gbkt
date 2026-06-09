@@ -6,7 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import io.github.gbkt.core.ir.Anchor
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.GameIR
@@ -73,7 +73,7 @@ class HudCodegenTest {
                         VariableDef(name = "score", type = VarType.U8, initialValue = 0),
                     ),
             )
-        val pipeline = GBDKPipelineV2()
+        val pipeline = GBDKPipeline()
         return pipeline.generate(gameIR).files["main.c"]
             ?: error("main.c not found in pipeline output")
     }
@@ -318,8 +318,9 @@ class HudCodegenTest {
         val output =
             generateForHud(
                 makeHudDef(
+                    anchor = Anchor.BOTTOM_LEFT,
                     elements =
-                        listOf(HudBar(id = "hp_bar", variable = "hp", maxValue = 100, width = 8))
+                        listOf(HudBar(id = "hp_bar", variable = "hp", maxValue = 100, width = 8)),
                 )
             )
 
@@ -353,7 +354,7 @@ class HudCodegenTest {
             hideHudSection.contains("_hud_status_visible"),
             "hide_hud should reference visibility flag",
         )
-        // hide_hud clears the HUD region
+        // hide_hud clears the HUD region (uses win clear since renderOnWindow=true in IR)
         assertTrue(
             hideHudSection.contains("_win_clear_region"),
             "hide_hud should clear the HUD region",
@@ -361,7 +362,7 @@ class HudCodegenTest {
     }
 
     // =========================================================================
-    // TEST 12: HUD on window layer generates set_win_tiles calls
+    // TEST 12: HUD on window layer generates set_win_tiles calls (bottom-anchored)
     // =========================================================================
     @Test
     fun `hud on window layer generates set_win_tiles calls`() {
@@ -374,7 +375,7 @@ class HudCodegenTest {
                 )
             )
 
-        // Window layer: set_win_tiles (not set_bkg_tiles)
+        // Window layer: set_win_tiles in update function (IR says renderOnWindow=true)
         val updateHudSection =
             output.substringAfter("update_hud_status").substringBefore("show_hud_status")
         assertTrue(
@@ -520,7 +521,7 @@ class HudCodegenTest {
                     ),
                 variables = listOf(VariableDef(name = "hp", type = VarType.U8, initialValue = 100)),
             )
-        val pipeline = GBDKPipelineV2()
+        val pipeline = GBDKPipeline()
         val bank1 =
             pipeline.generate(gameIR).files["bank1.c"]
                 ?: error("bank1.c not found in pipeline output")
@@ -555,21 +556,51 @@ class HudCodegenTest {
     }
 
     // =========================================================================
-    // TEST 20: HUD show function emits SHOW_WIN for window-layer HUD
+    // TEST 20: Bottom-anchored HUD show function emits move_win + SHOW_WIN
     // =========================================================================
     @Test
-    fun `hud show function emits SHOW_WIN for window layer HUD`() {
+    fun `bottom-anchored hud show function emits move_win and SHOW_WIN`() {
         val output =
             generateForHud(
                 makeHudDef(
+                    anchor = Anchor.BOTTOM_LEFT,
                     renderOnWindow = true,
                     elements =
                         listOf(HudNumber(id = "score_num", variable = "score", label = "SC:")),
                 )
             )
 
-        // show_hud should call SHOW_WIN for window-layer HUDs
+        // show_hud should call move_win then SHOW_WIN for bottom-anchored window-layer HUDs
         val showSection = output.substringAfter("show_hud_status")
-        assertTrue(showSection.contains("SHOW_WIN"), "Window-layer show_hud should emit SHOW_WIN")
+        assertTrue(
+            showSection.contains("move_win"),
+            "Bottom-anchored show_hud should emit move_win",
+        )
+        assertTrue(
+            showSection.contains("SHOW_WIN"),
+            "Bottom-anchored show_hud should emit SHOW_WIN",
+        )
+    }
+
+    // =========================================================================
+    // TEST 21: Top-anchored window HUD is suppressed (empty show function)
+    // =========================================================================
+    @Test
+    fun `top-anchored window hud is suppressed`() {
+        val output =
+            generateForHud(
+                makeHudDef(
+                    anchor = Anchor.TOP_LEFT,
+                    renderOnWindow = true,
+                    elements =
+                        listOf(HudNumber(id = "score_num", variable = "score", label = "SC:")),
+                )
+            )
+
+        // Top-anchored window HUDs are suppressed — show_hud is a no-op (no visible=1, no SHOW_WIN)
+        val showSection =
+            output.substringAfter("show_hud_status").substringBefore("hide_hud_status")
+        assertFalse(showSection.contains("SHOW_WIN"), "Suppressed HUD should not emit SHOW_WIN")
+        assertFalse(showSection.contains("_visible"), "Suppressed HUD should not set visible flag")
     }
 }

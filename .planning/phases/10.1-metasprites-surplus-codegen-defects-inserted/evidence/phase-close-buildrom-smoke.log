@@ -1,0 +1,236 @@
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins
+> Task :buildSrc:generateScriptPluginAdapters
+> Task :buildSrc:pluginDescriptors
+> Task :buildSrc:processResources
+> Task :buildSrc:compilePluginsBlocks
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors
+> Task :buildSrc:compileKotlin
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:classes
+> Task :buildSrc:jar
+> Task :gbkt-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-gradle-plugin:pluginDescriptors
+> Task :gbkt-gradle-plugin:processResources
+
+> Task :gbkt-gradle-plugin:compileKotlin
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a4d0edbfbc00dfb57/gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/GenerateCTask.kt:564:21 Type argument for reified type parameter 'T' was inferred to the intersection of ['Comparable<*>' & 'Serializable']. Reification of an intersection type results in the common supertype being used. This may lead to subtle issues and an explicit type argument is encouraged. This will become an error in a future release.
+
+> Task :gbkt-gradle-plugin:compileJava NO-SOURCE
+> Task :gbkt-gradle-plugin:classes
+> Task :gbkt-gradle-plugin:jar
+> Task :gbkt-examples:metasprites:clean
+> Task :gbkt-analysis:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-backend-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-engine:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:processResources NO-SOURCE
+> Task :gbkt-lang:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-lang:processResources NO-SOURCE
+> Task :gbkt-engine:processResources NO-SOURCE
+> Task :gbkt-world:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-world:processResources NO-SOURCE
+> Task :gbkt-core:processResources NO-SOURCE
+> Task :gbkt-backend-api:processResources NO-SOURCE
+> Task :gbkt-analysis:processResources NO-SOURCE
+> Task :gbkt-backend-gbdk:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:processResources NO-SOURCE
+> Task :gbkt-backend-gbdk:processResources
+> Task :gbkt-examples:metasprites:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-examples:metasprites:processResources NO-SOURCE
+
+> Task :gbkt-examples:metasprites:processAssets
+Full asset processing...
+  Processing: elephant.png
+    elephant.png: 240 tiles → 49 unique tiles
+  Manifest written: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a4d0edbfbc00dfb57/gbkt-examples/metasprites/build/generated/assets/asset-manifest.json (1 assets)
+
+> Task :gbkt-examples:metasprites-stress:checkKotlinGradlePluginConfigurationErrors SKIPPED
+
+> Task :gbkt-ir:compileKotlin
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a4d0edbfbc00dfb57/gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/GameIRSerializer.kt:1140:13 'when' is exhaustive so 'else' is redundant here.
+
+> Task :gbkt-ir:compileJava NO-SOURCE
+> Task :gbkt-ir:classes UP-TO-DATE
+> Task :gbkt-ir:jar
+> Task :gbkt-lang:compileKotlin
+> Task :gbkt-lang:compileJava NO-SOURCE
+> Task :gbkt-lang:classes UP-TO-DATE
+> Task :gbkt-lang:jar
+> Task :gbkt-world:compileKotlin
+> Task :gbkt-world:compileJava NO-SOURCE
+> Task :gbkt-world:classes UP-TO-DATE
+> Task :gbkt-world:jar
+> Task :gbkt-engine:compileKotlin
+> Task :gbkt-engine:compileJava NO-SOURCE
+> Task :gbkt-engine:classes UP-TO-DATE
+> Task :gbkt-engine:jar
+> Task :gbkt-core:compileKotlin
+> Task :gbkt-core:compileJava NO-SOURCE
+> Task :gbkt-core:classes UP-TO-DATE
+> Task :gbkt-core:jar
+> Task :gbkt-backend-api:compileKotlin
+> Task :gbkt-backend-api:compileJava NO-SOURCE
+> Task :gbkt-backend-api:classes UP-TO-DATE
+> Task :gbkt-backend-api:jar
+> Task :gbkt-genre-rpg:compileKotlin
+> Task :gbkt-genre-rpg:compileJava NO-SOURCE
+> Task :gbkt-genre-rpg:classes UP-TO-DATE
+> Task :gbkt-genre-rpg:jar
+
+> Task :gbkt-analysis:compileKotlin
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a4d0edbfbc00dfb57/gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/BitwiseOptimizationPass.kt:104:54 No cast needed.
+
+> Task :gbkt-analysis:compileJava NO-SOURCE
+> Task :gbkt-analysis:classes UP-TO-DATE
+> Task :gbkt-analysis:jar
+> Task :gbkt-backend-gbdk:compileKotlin
+> Task :gbkt-backend-gbdk:compileJava NO-SOURCE
+> Task :gbkt-backend-gbdk:classes
+> Task :gbkt-backend-gbdk:jar
+> Task :gbkt-examples:metasprites:compileKotlin
+> Task :gbkt-examples:metasprites:compileJava NO-SOURCE
+> Task :gbkt-examples:metasprites:classes UP-TO-DATE
+
+> Task :gbkt-examples:metasprites:generateC
+Using backend: GBDK-2020 for Nintendo Game Boy Color
+========================================================
+ gbkt Budget Report                         Metasprites
+ Overall ROM: ~0.6 KB estimated
+========================================================
+
+ ROM Banks (1 / 2 max, ROM_ONLY)
+
+ Per-scene breakdown
+ Scene | Bank | Est. Size | Bank Fill
+ ------|------|-----------|----------
+ play  |    0 |    0.6 KB | [32m3%[0m
+
+ VRAM Tile Budget (per scene)
+ Scene | Sprite | BG Avail | BG Used
+ ------|--------|----------|--------
+ play  |      0 |      384 |       0
+
+ OAM Sprites: [32m0 / 40 (0%)[0m
+ WRAM: [32m20 / 32768 bytes (0%)[0m
+ HRAM: [32m0 / 127 bytes (0%)[0m
+
+ 0 errors, 1 warnings
+========================================================
+Generated: main.c (345 lines)
+Generated source map: main.c.gbkt.map
+Generated: game.h (93 lines)
+Generated: game_metadata.json (69 lines)
+Build metadata: gbcTarget=GBC_COMPATIBLE, gbcMode=COMPATIBLE
+Build metadata: cartridge=ROM_ONLY, mbcType=0x00
+Generated 3 C files (507 total lines)
+Output directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a4d0edbfbc00dfb57/gbkt-examples/metasprites/build/gbkt/generated
+Removed stale: optimization-report.json
+
+> Task :gbkt-examples:metasprites:convertSprites
+ConvertSpritesTask: Found 1 sprite include(s)
+  Converting: elephant.png → elephant.c
+    → elephant.h (alias: sprites_elephant_tiles)
+
+> Task :gbkt-examples:metasprites:copyResources
+
+> Task :gbkt-examples:metasprites:compileRom
+Compiling ROM: 2 source files -> metasprites.gb
+ROM created: metasprites.gb (32 KB)
+
+> Task :gbkt-examples:metasprites:buildRom
+
+==================================================
+ROM built successfully!
+Output: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a4d0edbfbc00dfb57/gbkt-examples/metasprites/build/gbkt/output/metasprites.gb
+==================================================
+
+> Task :gbkt-examples:metasprites-stress:clean
+> Task :gbkt-examples:metasprites-stress:processResources NO-SOURCE
+
+> Task :gbkt-examples:metasprites-stress:processAssets
+Full asset processing...
+  Processing: elephant.png
+    elephant.png: 240 tiles → 49 unique tiles
+  Processing: tiger.png
+    tiger.png: 240 tiles → 49 unique tiles
+  Processing: player.png
+    player.png: 2 tiles → 2 unique tiles
+  Manifest written: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a4d0edbfbc00dfb57/gbkt-examples/metasprites-stress/build/generated/assets/asset-manifest.json (3 assets)
+
+> Task :gbkt-examples:metasprites-stress:compileKotlin
+> Task :gbkt-examples:metasprites-stress:compileJava NO-SOURCE
+> Task :gbkt-examples:metasprites-stress:classes UP-TO-DATE
+
+> Task :gbkt-examples:metasprites-stress:generateC
+Using backend: GBDK-2020 for Nintendo Game Boy Color
+========================================================
+ gbkt Budget Report                   MetaspritesStress
+ Overall ROM: ~1.2 KB estimated
+========================================================
+
+ ROM Banks (1 / 2 max, ROM_ONLY)
+ Bank 1: [32m[=---------------][0m [32m7%[0m  1.2 KB / 16 KB
+
+ Per-scene breakdown
+ Scene | Bank | Est. Size | Bank Fill
+ ------|------|-----------|----------
+ play  |    1 |    0.6 KB | [32m3%[0m
+ title |    1 |    0.6 KB | [32m3%[0m
+
+ VRAM Tile Budget (per scene)
+ Scene | Sprite | BG Avail | BG Used
+ ------|--------|----------|--------
+ play  |      0 |      384 |       0
+ title |      0 |      384 |       0
+
+ OAM Sprites: [32m1 / 40 (2%)[0m
+ WRAM: [32m27 / 32768 bytes (0%)[0m
+ HRAM: [32m0 / 127 bytes (0%)[0m
+
+ 0 errors, 1 warnings
+========================================================
+Generated: main.c (260 lines)
+Generated source map: main.c.gbkt.map
+Generated: bank1.c (85 lines)
+Generated source map: bank1.c.gbkt.map
+Generated: game.h (112 lines)
+Generated: game_metadata.json (73 lines)
+Build metadata: gbcTarget=GBC_COMPATIBLE, gbcMode=COMPATIBLE
+Build metadata: cartridge=ROM_ONLY, mbcType=0x00
+Generated 4 C files (530 total lines)
+Output directory: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a4d0edbfbc00dfb57/gbkt-examples/metasprites-stress/build/gbkt/generated
+Removed stale: optimization-report.json
+
+> Task :gbkt-examples:metasprites-stress:convertSprites
+ConvertSpritesTask: Found 3 sprite include(s)
+  Converting: player.png → player.c
+    → player.h (alias: sprites_player_tiles)
+  Converting: elephant.png → elephant.c
+    → elephant.h (alias: sprites_elephant_tiles)
+  Converting: tiger.png → tiger.c
+    → tiger.h (alias: sprites_tiger_tiles)
+
+> Task :gbkt-examples:metasprites-stress:copyResources
+
+> Task :gbkt-examples:metasprites-stress:compileRom
+Cartridge upgraded from ROM_ONLY to MBC5 (banking detected)
+  Suggestion: set `config { cartridge = "MBC5" }` to silence this upgrade.
+Banking: 2 banks (highest bank: 1), MBC: 0x19
+Compiling ROM: 5 source files -> metasprites-stress.gb
+ROM created: metasprites-stress.gb (32 KB)
+
+> Task :gbkt-examples:metasprites-stress:buildRom
+
+==================================================
+ROM built successfully!
+Output: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a4d0edbfbc00dfb57/gbkt-examples/metasprites-stress/build/gbkt/output/metasprites-stress.gb
+==================================================
+
+BUILD SUCCESSFUL in 8s
+46 actionable tasks: 46 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.0.0/userguide/configuration_cache_enabling.html

@@ -120,14 +120,17 @@ class GbktTestExtension(
             val frame = agent.frameCount
             val label = "failure_${testClass}_${testName}_frame${frame}"
 
-            // Capture screenshot
+            // Capture screenshot — broad catch is intentional: failure-reporting code must not
+            // throw new exceptions that would mask the original test failure.
+            @Suppress("TooGenericExceptionCaught")
             try {
                 agent.captureScreenshot(label)
             } catch (e: Exception) {
                 logger.warning("Failed to capture screenshot: ${e.message}")
             }
 
-            // Dump variables to JSON sidecar
+            // Dump variables to JSON sidecar — same rationale as the screenshot catch above.
+            @Suppress("TooGenericExceptionCaught")
             try {
                 screenshotDir.mkdirs()
                 val jsonFile = File(screenshotDir, "${label}.json")
@@ -153,6 +156,18 @@ class GbktTestExtension(
     /** @see StepAgent.writeVariable */
     fun writeVariable(name: String, value: Int): Boolean = agent.writeVariable(name, value)
 
+    /** @see StepAgent.readMemory */
+    fun readMemory(address: Int): Int = agent.readMemory(address)
+
+    /**
+     * Reads a raw byte from the emulator's address space. Alias for [readMemory] that matches the
+     * [io.github.gbkt.emulator.MemoryAccess] naming convention.
+     *
+     * @param address Hardware address in the range 0x0000–0xFFFF.
+     * @return Byte value in range 0–255.
+     */
+    fun readByte(address: Int): Int = agent.readMemory(address)
+
     /** @see StepAgent.waitForScene */
     fun waitForScene(name: String, maxFrames: Int = 600): Observation =
         agent.waitForScene(name, maxFrames)
@@ -173,6 +188,7 @@ class GbktTestExtension(
         return if (gbcMode) base.copy(gbcMode = true) else base
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun buildFailureJson(frame: Int): String {
         val sb = StringBuilder()
         sb.append("{\n")
@@ -188,6 +204,9 @@ class GbktTestExtension(
             sb.append(varEntries.joinToString(",\n"))
             if (varEntries.isNotEmpty()) sb.append("\n")
         } catch (e: Exception) {
+            // Broad catch is intentional: variable-dump code embeds error into the JSON sidecar
+            // rather than throwing — preserves the dump as evidence even on partial failure.
+            // (@Suppress on the enclosing function handles the detekt rule.)
             sb.append("    \"_error\": \"${e.message?.replace("\"", "'")}\"")
             sb.append("\n")
         }

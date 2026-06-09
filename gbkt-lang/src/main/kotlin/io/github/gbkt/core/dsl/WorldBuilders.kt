@@ -23,6 +23,8 @@ import io.github.gbkt.core.ir.TransitionStyle
 import io.github.gbkt.core.ir.ZoneIR
 import io.github.gbkt.core.ir.ZoneObjectIR
 import io.github.gbkt.core.ir.ZoneTransitionIR
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 // =============================================================================
 // ZONE REFERENCE
@@ -65,8 +67,10 @@ data class ZoneRef(val id: String) {
 class ZoneBuilder(private val id: String) {
     private var zoneName: String = id
     private var tilesetPath: String? = null
-    private var mapWidth: Int = 32
-    private var mapHeight: Int = 32
+    private var tilemapPath: String? = null
+    private var mapWidth: Int? = null
+    private var mapHeight: Int? = null
+    private var explicitSizeSet: Boolean = false
     private var tileData: List<Int> = emptyList()
     private var collisionData: List<Int> = emptyList()
     private var encounterBuilder: EncounterBuilder? = null
@@ -76,6 +80,10 @@ class ZoneBuilder(private val id: String) {
     private var onEnterCallback: (ScriptBuilder.() -> Unit)? = null
     private var onExitCallback: (ScriptBuilder.() -> Unit)? = null
     private var bankOverride: Int? = null
+    private var platformerPhysicsOverride: Map<String, Any>? = null
+    private var platformerInputOverride: Map<String, Any>? = null
+    private var spawnX: UByte? = null
+    private var spawnY: UByte? = null
     private val zoneObjects = mutableListOf<ZoneObjectIR>()
 
     /** Sets the human-readable zone name (used in save data labels and debug output). */
@@ -88,10 +96,38 @@ class ZoneBuilder(private val id: String) {
         tilesetPath = path
     }
 
-    /** Sets the map dimensions in tiles. */
+    /**
+     * Sets the tileset via a typed [AssetRef] (e.g. `tileset(asset("tiles/checker.png"))`).
+     *
+     * Convenience overload that keeps the idiomatic `asset()` factory consistent with sprite
+     * references on actors. Stores only the underlying path so downstream codegen treats the two
+     * forms identically.
+     */
+    fun tileset(ref: io.github.gbkt.core.ir.AssetRef) {
+        tilesetPath = ref.path
+    }
+
+    /**
+     * Sets the tilemap PNG via a typed [AssetRef] (e.g.
+     * `tilemap(asset("graphics/world1-area1.png"))`).
+     *
+     * When set, ConvertZoneTilesetsTask runs a second png2asset invocation with `-noflip -map
+     * -maps_only -source_tileset <tileset.png>` to extract real tilemap bytes. When absent, the
+     * tileset PNG doubles as the tilemap source (Phase 12.2 D-01 Path A single-invocation form).
+     *
+     * Phase 12.2 D-03: AssetRef-only signature (no String overload) — enforces no-magic-strings
+     * rule.
+     */
+    fun tilemap(ref: io.github.gbkt.core.ir.AssetRef) {
+        tilemapPath = ref.path
+    }
+
+    /** Sets the map dimensions in tiles. When omitted, dimensions are derived from the tilemap PNG
+     * (if present) or fall back to 20×18 — see [resolveZoneSize]. */
     fun size(w: Int, h: Int) {
         mapWidth = w
         mapHeight = h
+        explicitSizeSet = true
     }
 
     /** Provides raw tile index data (one Int per tile, row-major). */
@@ -171,13 +207,54 @@ class ZoneBuilder(private val id: String) {
         zoneObjects += ZoneObjectsBuilder().apply(block).build()
     }
 
+    /**
+     * Sets per-level platformer-physics overrides (D-12). Called by the genre-platformer extension
+     * `fun ZoneBuilder.platformerPhysics(block)` — end-users SHOULD prefer the typed builder block
+     * over direct calls to this setter.
+     *
+     * **Visibility:** Public (was `internal` after Plan 12-06; widened in Plan 12-07 per the
+     * known-follow-up documented in 12-06-SUMMARY.md). Kotlin's `internal` is Gradle-module-scoped,
+     * which would prevent the genre-platformer extension in a sibling module from reaching this
+     * setter. The opaque `Map<String, Any>` payload type means widening to `public` does NOT leak
+     * any gbkt-genre-platformer type into gbkt-lang — the leaf-module invariant is preserved.
+     */
+    fun setPlatformerPhysicsOverride(overrides: Map<String, Any>) {
+        platformerPhysicsOverride = overrides
+    }
+
+    /**
+     * Sets per-level platformer-input overrides (Phase 12.3 R1). Called by the genre-platformer
+     * extension `fun ZoneBuilder.platformerInput(block)` — end-users SHOULD prefer the typed
+     * builder block over direct calls to this setter.
+     *
+     * **Visibility:** Public — mirrors [setPlatformerPhysicsOverride]. Kotlin's `internal` is
+     * Gradle-module-scoped, which would prevent the genre-platformer extension in a sibling module
+     * from reaching this setter. The opaque `Map<String, Any>` payload type means `public` does NOT
+     * leak any gbkt-genre-platformer type into gbkt-lang — the leaf-module invariant is preserved.
+     */
+    fun setPlatformerInputOverride(overrides: Map<String, Any>) {
+        platformerInputOverride = overrides
+    }
+
+    /**
+     * Sets the per-zone player spawn position written by `setup_current_level()` when this zone
+     * becomes active. Coordinates are in PIXELS (codegen applies `<<4` shift to convert to
+     * subpixel form). If omitted, the framework emits a build-time WARNING and defaults to
+     * (16, 120). Phase 12.6 D-07 — closes DEFECT-2.
+     */
+    fun spawn(x: UByte, y: UByte) {
+        spawnX = x
+        spawnY = y
+    }
+
     internal fun build(): ZoneIR =
         ZoneIR(
             id = id,
             name = zoneName,
             tilesetPath = tilesetPath,
-            mapWidth = mapWidth,
-            mapHeight = mapHeight,
+            tilemapPath = tilemapPath,
+            mapWidth = if (explicitSizeSet) mapWidth else null,
+            mapHeight = if (explicitSizeSet) mapHeight else null,
             tileData = tileData,
             collisionData = collisionData,
             encounterTable = encounterBuilder?.build(),
@@ -187,6 +264,10 @@ class ZoneBuilder(private val id: String) {
             onEnter = onEnterCallback?.let { recordStatements(it) } ?: emptyList(),
             onExit = onExitCallback?.let { recordStatements(it) } ?: emptyList(),
             bankOverride = bankOverride,
+            platformerPhysicsOverride = platformerPhysicsOverride,
+            platformerInputOverride = platformerInputOverride,
+            spawnX = spawnX,
+            spawnY = spawnY,
             objects = zoneObjects.toList(),
         )
 }
@@ -858,3 +939,108 @@ internal fun recordStatements(block: ScriptBuilder.() -> Unit): List<ScriptOp> {
     ScriptBuilderContext.with(builder) { builder.block() }
     return builder.build()
 }
+
+// =============================================================================
+// ZONE SIZE RESOLUTION — REQ-14 / D-02 / D-03
+// =============================================================================
+
+/**
+ * Pure function implementing the REQ-14 zone-size derivation chain (D-03):
+ *
+ * 1. If [explicit] is non-null → return it (author-supplied `size(w, h)` always wins).
+ * 2. If [derivedPngTileDims] is non-null → return it (derived from the tilemap PNG pixel dims / 8).
+ * 3. Otherwise → return 20×18 (the standard Game Boy screen in tiles; tileset-only fallback).
+ *
+ * This function is pure (no file I/O, no ImageIO, no File) — gbkt-lang remains filesystem-free
+ * (D-01). The PNG read that produces [derivedPngTileDims] lives exclusively in
+ * `ConvertZoneTilesetsTask` (Gradle build-tool layer).
+ *
+ * **Invariant:** No input combination returns `(32, 32)`. The old magic `= 32` default is gone.
+ *
+ * @param explicit Author-supplied tile dims from `size(w, h)`, or null if `size()` was omitted.
+ * @param derivedPngTileDims Tile dims derived from the tilemap PNG (`pixelW/8 to pixelH/8`),
+ *   or null when no tilemap PNG is present (tileset-only zones).
+ * @return The resolved (width, height) tile dims for this zone.
+ */
+fun resolveZoneSize(
+    explicit: Pair<Int, Int>?,
+    derivedPngTileDims: Pair<Int, Int>?,
+): Pair<Int, Int> =
+    explicit ?: derivedPngTileDims ?: (20 to 18)
+
+// =============================================================================
+// ZONE DELEGATE
+// =============================================================================
+
+/**
+ * Property delegate that infers a zone's ID from the Kotlin property name.
+ *
+ * Usage:
+ * ```kotlin
+ * val playZone by zone { tileset(asset("tiles/checker.png")) }
+ * ```
+ *
+ * The zone ID is set to the property name (`"playZone"` above), eliminating the need for a
+ * duplicated magic-string argument. This mirrors [MetaspriteDelegate] exactly.
+ *
+ * Single-use: each `val x by zone { }` binding must use its own delegate instance.
+ * Reusing one instance across two `by` bindings throws [IllegalStateException] at build time.
+ */
+class ZoneDelegate(private val block: ZoneBuilder.() -> Unit) : ReadOnlyProperty<Any?, ZoneRef> {
+    private var ref: ZoneRef? = null
+
+    /**
+     * Single-use guard. Prevents silent double-registration when the same delegate instance
+     * is accidentally bound to two `val` properties.
+     */
+    private var delegateUsed: Boolean = false
+
+    /**
+     * Called by Kotlin when `val x by zone { ... }` is evaluated.
+     *
+     * Captures the property name, builds the [ZoneIR], registers it with the current
+     * [GameBuilder], and stores the resulting [ZoneRef] for retrieval by [getValue].
+     *
+     * @throws IllegalStateException if called outside a `game { }` block or if the delegate
+     *   instance is reused across two `val` bindings.
+     */
+    operator fun provideDelegate(
+        thisRef: Any?,
+        property: KProperty<*>,
+    ): ReadOnlyProperty<Any?, ZoneRef> {
+        check(!delegateUsed) {
+            "ZoneDelegate instance reused: was already bound to '${ref?.id ?: "<unknown>"}'. " +
+                "Each 'val x by zone { }' must use its own delegate instance."
+        }
+        delegateUsed = true
+        val name = property.name
+        val gameBuilder =
+            GameBuilderContext.current
+                ?: error("zone {} must be called inside a game {} block")
+        val ir = ZoneBuilder(name).apply(block).build()
+        gameBuilder.registerZone(ir)
+        ref = ZoneRef(name)
+        return this
+    }
+
+    override fun getValue(thisRef: Any?, property: KProperty<*>): ZoneRef =
+        ref ?: error("ZoneDelegate not initialized — was provideDelegate called?")
+}
+
+// =============================================================================
+// TOP-LEVEL FACTORY FUNCTION
+// =============================================================================
+
+/**
+ * Creates a [ZoneDelegate] for use with the `by` keyword inside a `game { }` block.
+ *
+ * The zone ID is inferred from the Kotlin property name via [ZoneDelegate.provideDelegate].
+ *
+ * Usage:
+ * ```kotlin
+ * val playZone by zone { tileset(asset("tiles/checker.png")) }
+ * ```
+ *
+ * @throws IllegalStateException if the property delegation occurs outside a `game { }` block.
+ */
+fun zone(block: ZoneBuilder.() -> Unit): ZoneDelegate = ZoneDelegate(block)

@@ -54,7 +54,7 @@ data class GeneratedFile(
     val description: String? = null,
 
     /**
-     * v2 source map JSON for this file — populated by [GBDKPipelineV2] when running the v2
+     * v2 source map JSON for this file — populated by [GBDKPipeline] when running the v2
      * pipeline. Null for v1 games and for header files (game.h) which carry no DSL statements.
      */
     val sourceMapJson: String? = null,

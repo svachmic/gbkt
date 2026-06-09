@@ -7,6 +7,7 @@
 package io.github.gbkt.backend.gbdk.codegen.pipeline
 
 import io.github.gbkt.core.ir.ActorIR
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.CollisionGroupIR
 import io.github.gbkt.core.ir.CollisionResponse
@@ -21,7 +22,7 @@ import kotlin.test.assertTrue
 
 // =============================================================================
 // NPC COLLISION CODEGEN TESTS (Plan 06.7-03)
-// Verifies that GBDKPipelineV2 generates correct C code for NPC-to-NPC collision:
+// Verifies that GBDKPipeline generates correct C code for NPC-to-NPC collision:
 //  - AABB pair-check function generated for each collision rule
 //  - PUSH response generates mass-proportional displacement
 //  - Interval > 1 generates static counter with modulo check
@@ -44,7 +45,7 @@ private fun buildNpcGame(
 ): GameIR =
     GameIR(
         name = "NpcCollisionTestGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = listOf(SceneIR(id = "gameplay")),
         actors = actors,
         startScene = "gameplay",
@@ -72,7 +73,7 @@ private fun npcActor(
 
 class NpcCollisionCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: Two groups, one rule → check function with AABB

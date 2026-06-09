@@ -519,6 +519,13 @@ data class MathOp(
     override fun <T> accept(visitor: ScriptOpVisitorI<T>): T = visitor.visitMathOp(this)
 }
 
+// --- Level binding -----------------------------------------------------------
+
+/** Bind the current level's tileset+tilemap into VRAM (lowers to setup_current_level()). */
+data class BindCurrentLevel(override val sourceLocation: SourceLocation? = null) : ScriptOp {
+    override fun <T> accept(visitor: ScriptOpVisitorI<T>): T = visitor.visitBindCurrentLevel(this)
+}
+
 // --- Escape hatch ------------------------------------------------------------
 
 /** Inject raw C code directly into the output. Use sparingly. */
@@ -608,6 +615,42 @@ data class HidePuzzleObject(
 }
 
 // --- Animation state machine -------------------------------------------------
+
+// --- Metasprites -------------------------------------------------------------
+
+/**
+ * Render a metasprite at its current position each frame.
+ *
+ * Emitted by `moveMetasprite(ref)` in [ScriptBuilder] frame blocks. The visitor (Plan 07) lowers
+ * this to a `move_metasprite()` GBDK call with the flip and sub-palette attributes looked up from
+ * the metasprite's runtime state variables (`_<id>_flipX`, `_<id>_flipY`, `_<id>_subPalette`).
+ *
+ * Resolution approach (b) from RESEARCH Open Question 3: the user explicitly emits this op in the
+ * frame loop rather than having the runtime always call it, giving explicit control over render
+ * ordering relative to physics/collision ops.
+ *
+ * @param metaspriteId The ID of the declared metasprite (matches [MetaspriteIR.id]).
+ */
+data class MoveMetasprite(
+    val metaspriteId: String,
+    /**
+     * Optional name of the user-declared variable bound as this metasprite's X position (mirrored
+     * from [MetaspriteIR.posXVarName] by the `moveMetasprite()` DSL helper). When `null`, the
+     * visitor (Plan 05) falls back to the canonical `_posX` global for back-compat with the Phase
+     * 10 port — substrate for CR-03 (per-metasprite namespacing) and WR-01 (no hardcoded
+     * `_posX`/`_posY`/`_idx`/`_rot` literals in the visitor).
+     */
+    val posXVar: String? = null,
+    /** Optional bound Y-position variable name. Same null-fallback semantics as [posXVar]. */
+    val posYVar: String? = null,
+    /** Optional bound frame-index variable name. Same null-fallback semantics as [posXVar]. */
+    val idxVar: String? = null,
+    /** Optional bound rotation-state variable name. Same null-fallback semantics as [posXVar]. */
+    val rotVar: String? = null,
+    override val sourceLocation: SourceLocation? = null,
+) : ScriptOp {
+    override fun <R> accept(visitor: ScriptOpVisitorI<R>): R = visitor.visitMoveMetasprite(this)
+}
 
 // --- Physics -----------------------------------------------------------------
 

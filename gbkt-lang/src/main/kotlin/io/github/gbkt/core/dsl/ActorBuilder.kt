@@ -334,6 +334,19 @@ fun ActorRef.moveTo(x: Int, y: Int) {
 }
 
 /**
+ * Teleports [this] actor to an absolute position computed from expressions.
+ *
+ * Emits a [io.github.gbkt.core.ir.SetPosition] op. Requires a ScriptBuilder context. Unlike
+ * [moveTo(Int, Int)], this overload accepts [Expr] arguments directly — no [Literal] wrapping is
+ * applied. Use this when the position is derived from a runtime expression (e.g.,
+ * `smiley.moveTo(posX shr 4, posY shr 4)`).
+ */
+fun ActorRef.moveTo(x: Expr, y: Expr) {
+    ScriptBuilderContext.current?.setPosition(id, x, y)
+        ?: error("moveTo() called outside a ScriptBuilder block")
+}
+
+/**
  * Returns an expression that is true when [this] actor collides with [other].
  *
  * Emits a `CallExpr("collides", [VarRef(this.id), VarRef(other.id)])` for use in `whenever()`
@@ -1202,20 +1215,37 @@ class ActorPropDelegate(
  * @param nameOverride When non-null, overrides property-name inference (reserved for future use).
  * @param block The actor configuration block.
  */
+/**
+ * Single-use: each `val x by actor { }` binding must use its own delegate instance.
+ * Reusing one instance across two `by` bindings throws [IllegalStateException] at build time.
+ */
 class ActorDelegate(private val nameOverride: String?, private val block: ActorBuilder.() -> Unit) :
     ReadOnlyProperty<Any?, ActorRef> {
     private var ref: ActorRef? = null
+
+    /**
+     * Single-use guard. Prevents silent double-registration when the same delegate instance
+     * is accidentally bound to two `val` properties.
+     */
+    private var delegateUsed: Boolean = false
 
     /**
      * Called by Kotlin when `val x by actor { ... }` is evaluated.
      *
      * Captures the property name, registers the actor with the current [GameBuilder], and stores
      * the resulting [ActorRef] for retrieval by [getValue].
+     *
+     * @throws IllegalStateException if the delegate instance is reused across two `val` bindings.
      */
     operator fun provideDelegate(
         thisRef: Any?,
         property: KProperty<*>,
     ): ReadOnlyProperty<Any?, ActorRef> {
+        check(!delegateUsed) {
+            "ActorDelegate instance reused: was already bound to '${ref?.id ?: "<unknown>"}'. " +
+                "Each 'val x by actor { }' must use its own delegate instance."
+        }
+        delegateUsed = true
         val name = nameOverride ?: property.name
         val gameBuilder =
             GameBuilderContext.current ?: error("actor {} must be called inside a game {} block")

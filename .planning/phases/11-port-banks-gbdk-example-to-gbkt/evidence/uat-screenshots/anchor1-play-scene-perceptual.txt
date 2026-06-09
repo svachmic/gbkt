@@ -1,0 +1,6 @@
+file: /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/banks/../../.planning/phases/11-port-banks-gbdk-example-to-gbkt/evidence/uat-screenshots/anchor1-play-scene.png
+dimensions: 160x144
+distinct_colours: 2
+dominant_ratio: 0.5000
+dominant_count: 11520
+total_pixels: 23040

@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.emulator
 
+import io.github.gbkt.emulator.agent.EmulatorFrameHangException
 import io.github.gbkt.emulator.debug.DebugLogEntry
 import java.io.File
 import java.nio.file.Path
@@ -411,6 +412,107 @@ class CoffeeGbEmulatorTest {
 
         assertThrows<IllegalStateException> { emu.stepFrame() }
 
+        emu.stop()
+    }
+
+    // ── 6. Hung-ROM watchdog + cancellation tests ─────────────────────────────
+
+    /**
+     * Sanity check: the watchdog ceiling does NOT fire on a normal frame (~17 480 ticks). A regular
+     * stepFrame against the minimal ROM must complete cleanly with the default 100 000-tick
+     * ceiling.
+     */
+    @Test
+    fun `stepFrame completes a normal frame well under the watchdog ceiling`() {
+        val romFile = createMinimalRomFile()
+        val emu = CoffeeGbEmulator(EmulatorConfig(romFile, headless = true))
+        emulator = emu
+
+        emu.start()
+        emu.pause()
+        Thread.sleep(50L)
+
+        // No throw expected — a normal frame is ~17 480 ticks, far below the default 100 000.
+        emu.stepFrame()
+
+        emu.stop()
+    }
+
+    /**
+     * Watchdog fires when `maxTicksPerFrame` is exceeded. We force the ceiling absurdly low (10
+     * ticks) so the very first stepFrame triggers the throw — the production ceiling is still 100k.
+     *
+     * This regression-locks the MCP-server hang mode discovered when the racer ROM was rebuilt with
+     * `SHOW_BKG;` added: `gb.tick()` returned false forever, no `EmulatorFrameHangException`
+     * existed, and the MCP held its mutex until the JVM was killed externally.
+     */
+    @Test
+    fun `stepFrame throws EmulatorFrameHangException when maxTicksPerFrame exceeded`() {
+        val romFile = createMinimalRomFile()
+        val emu = CoffeeGbEmulator(EmulatorConfig(romFile, headless = true))
+        emulator = emu
+
+        emu.start()
+        emu.pause()
+        Thread.sleep(50L)
+
+        // Force the ceiling tiny so the watchdog fires immediately. `maxTicksPerFrame` is
+        // module-internal — only test code in the same module can mutate it.
+        emu.maxTicksPerFrame = 10
+
+        val ex = assertThrows<EmulatorFrameHangException> { emu.stepFrame() }
+        assertTrue(
+            ex.message!!.contains("10 t-cycles"),
+            "Hang message should name the ceiling, got: ${ex.message}",
+        )
+
+        emu.stop()
+    }
+
+    /**
+     * Cancellation flag preempts a running stepFrame within one tick. We seed
+     * `cancellationRequested` indirectly via [GbEmulator.requestCancellation] right before the call
+     * — the loop must throw on its very first iteration (well before the 100 000-tick watchdog).
+     */
+    @Test
+    fun `stepFrame honours requestCancellation before consuming a full frame`() {
+        val romFile = createMinimalRomFile()
+        val emu = CoffeeGbEmulator(EmulatorConfig(romFile, headless = true))
+        emulator = emu
+
+        emu.start()
+        emu.pause()
+        Thread.sleep(50L)
+
+        emu.requestCancellation()
+        val ex = assertThrows<EmulatorFrameHangException> { emu.stepFrame() }
+        assertTrue(
+            ex.message!!.contains("cancellation"),
+            "Cancellation message should be distinct from watchdog message, got: ${ex.message}",
+        )
+
+        emu.stop()
+    }
+
+    /**
+     * Cancellation must NOT leak across `start()` calls — a fresh session inherits no stale request
+     * flag from the previous one.
+     */
+    @Test
+    fun `start clears stale cancellation flag from previous session`() {
+        val romFile = createMinimalRomFile()
+        val emu = CoffeeGbEmulator(EmulatorConfig(romFile, headless = true))
+        emulator = emu
+
+        emu.start()
+        emu.requestCancellation()
+        emu.stop()
+
+        // New session — flag must be cleared so stepFrame proceeds normally.
+        emu.start()
+        emu.pause()
+        Thread.sleep(50L)
+        emu.stepFrame() // expected: no throw
         emu.stop()
     }
 }

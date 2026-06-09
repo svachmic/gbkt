@@ -90,6 +90,7 @@ object GameIRSerializer {
         json.put("sourceLocation", serializeSourceLocation(game.sourceLocation))
         json.put("scenes", serializeList(game.scenes, ::serializeScene))
         json.put("actors", serializeList(game.actors, ::serializeActor))
+        json.put("metasprites", serializeList(game.metasprites, ::serializeMetaspriteIR))
         json.put("variables", serializeList(game.variables, ::serializeVariableDef))
         json.put("arrays", serializeList(game.arrays, ::serializeArrayDef))
         json.put("assets", serializeList(game.assets, ::serializeAssetRef))
@@ -107,7 +108,7 @@ object GameIRSerializer {
         json.put("actorPools", serializeList(game.actorPools, ::serializeActorPoolIR))
         // Simplified domain-specific types — structure preserved, nested detail may be incomplete
         json.put("systems", serializeList(game.systems) { serializeSystemIR(it) })
-        json.put("zones", serializeList(game.zones) { serializeSimple("ZoneIR", it.id) })
+        json.put("zones", serializeList(game.zones) { serializeZoneIR(it) })
         json.put("flags", serializeList(game.flags) { serializeSimple("GlobalFlagsIR", it.id) })
         json.put(
             "itemCategories",
@@ -148,6 +149,8 @@ object GameIRSerializer {
                 json.optJSONObject("sourceLocation")?.let { deserializeSourceLocation(it) },
             scenes = deserializeList(json.optJSONArray("scenes")) { deserializeScene(it) },
             actors = deserializeList(json.optJSONArray("actors")) { deserializeActor(it) },
+            metasprites =
+                deserializeList(json.optJSONArray("metasprites")) { deserializeMetaspriteIR(it) },
             variables =
                 deserializeList(json.optJSONArray("variables")) { deserializeVariableDef(it) },
             arrays = deserializeList(json.optJSONArray("arrays")) { deserializeArrayDef(it) },
@@ -183,6 +186,32 @@ object GameIRSerializer {
             collisionGroups = emptyList(), // TODO: CollisionGroupIR full deserialization
             collisionRules = emptyList(), // TODO: CollisionRuleIR full deserialization
         )
+    }
+
+    // =========================================================================
+    // ZoneIR serialization (serialize-only; deserialization returns emptyList())
+    // =========================================================================
+
+    /**
+     * Serialize a [ZoneIR] to a JSON object.
+     *
+     * Only the minimal fields required for external-tool consumption are emitted.
+     * The [ZoneIR.screenMode] flag is serialized here so tools can distinguish
+     * synthetic `screen()` zones from user-authored `zone { }` zones.
+     * Deserialization of ZoneIR is not supported (emptyList() in [deserializeGameIR]);
+     * the `optBoolean("screenMode", false)` read style is documented here for
+     * future full-deserialization support — default false preserves backward-compat
+     * for serialized IR produced before this field existed (Assumption A3).
+     */
+    private fun serializeZoneIR(zone: ZoneIR): JSONObject {
+        val json = JSONObject()
+        json.put("type", "ZoneIR")
+        json.put("id", zone.id)
+        json.put("tilesetPath", zone.tilesetPath ?: JSONObject.NULL)
+        // screenMode: default false → optBoolean("screenMode", false) round-trips correctly
+        // for IR produced before this field was added (A3 backward-compat).
+        json.put("screenMode", zone.screenMode)
+        return json
     }
 
     // =========================================================================
@@ -297,6 +326,58 @@ object GameIRSerializer {
             followTargetId =
                 json.optString("followTargetId", null).takeIf { it != "null" && it != "" },
             palette = json.optJSONObject("palette")?.let { deserializeGBCPalette(it) },
+        )
+    }
+
+    // =========================================================================
+    // MetaspriteIR serialization
+    // =========================================================================
+
+    private fun serializeMetaspriteIR(ms: MetaspriteIR): JSONObject {
+        val obj = JSONObject()
+            .put("id", ms.id)
+            .put("frames", serializeList(ms.frames, ::serializeMetaspriteFrame))
+            .put("sourceLocation", serializeSourceLocation(ms.sourceLocation))
+        // Req 5 (12.9 WR-05): compile-time OBJ palette slot — additive, omit when null for backward compat
+        ms.initialSubPaletteSlot?.let { obj.put("initialSubPaletteSlot", it) }
+        // Req 4 (13.7 WR-05): owning scene ID for scene-scoped suppression — additive, omit when null
+        ms.sceneId?.let { obj.put("sceneId", it) }
+        return obj
+    }
+
+    private fun deserializeMetaspriteIR(json: JSONObject): MetaspriteIR {
+        return MetaspriteIR(
+            id = json.getString("id"),
+            frames =
+                deserializeList(json.optJSONArray("frames")) { deserializeMetaspriteFrame(it) },
+            sourceLocation =
+                json.optJSONObject("sourceLocation")?.let { deserializeSourceLocation(it) },
+            // Req 5: optional compile-time OBJ slot — default null on older serialized JSON
+            initialSubPaletteSlot = if (json.has("initialSubPaletteSlot")) json.getInt("initialSubPaletteSlot") else null,
+            // Req 4: optional owning scene ID — default null on older serialized JSON
+            sceneId = json.optString("sceneId", null),
+        )
+    }
+
+    private fun serializeMetaspriteFrame(frame: MetaspriteFrame): JSONObject {
+        return JSONObject().put("tiles", serializeList(frame.tiles, ::serializeMetaspriteTile))
+    }
+
+    private fun deserializeMetaspriteFrame(json: JSONObject): MetaspriteFrame {
+        return MetaspriteFrame(
+            tiles = deserializeList(json.optJSONArray("tiles")) { deserializeMetaspriteTile(it) }
+        )
+    }
+
+    private fun serializeMetaspriteTile(tile: MetaspriteTile): JSONObject {
+        return JSONObject().put("relX", tile.relX).put("relY", tile.relY).put("tileId", tile.tileId)
+    }
+
+    private fun deserializeMetaspriteTile(json: JSONObject): MetaspriteTile {
+        return MetaspriteTile(
+            relX = json.getInt("relX"),
+            relY = json.getInt("relY"),
+            tileId = json.getInt("tileId"),
         )
     }
 
@@ -509,16 +590,22 @@ object GameIRSerializer {
 
     private fun serializeCartridgeConfig(config: CartridgeConfig): JSONObject {
         return JSONObject()
-            .put("cartridge", config.cartridge)
-            .put("romBanks", config.romBanks)
+            .put("cartridge", config.cartridge.name)
+            .apply { config.romBanks?.let { put("romBanks", it) } }
             .put("ramBanks", config.ramBanks)
             .put("gbcTarget", config.gbcTarget.name)
     }
 
     private fun deserializeCartridgeConfig(json: JSONObject): CartridgeConfig {
+        val cartridgeName = json.optString("cartridge", "ROM_ONLY")
+        val cartridge = Cartridge.entries.firstOrNull { it.name == cartridgeName }
+            ?: run {
+                System.err.println("WARNING: Unknown cartridge '$cartridgeName'; defaulting to ROM_ONLY")
+                Cartridge.ROM_ONLY
+            }
         return CartridgeConfig(
-            cartridge = json.optString("cartridge", "ROM_ONLY"),
-            romBanks = json.optInt("romBanks", 2),
+            cartridge = cartridge,
+            romBanks = if (json.has("romBanks") && !json.isNull("romBanks")) json.getInt("romBanks") else null,
             ramBanks = json.optInt("ramBanks", 0),
             gbcTarget =
                 json.optString("gbcTarget", GbcTarget.DMG.name).let { GbcTarget.valueOf(it) },
@@ -1509,6 +1596,10 @@ object GameIRSerializer {
                 json.put("stateName", op.stateName)
                 json.put("sourceLocation", serializeSourceLocation(op.sourceLocation))
             }
+            is BindCurrentLevel -> {
+                json.put("type", "BindCurrentLevel")
+                json.put("sourceLocation", serializeSourceLocation(op.sourceLocation))
+            }
             else -> {
                 // Unknown / genre-specific op — preserve type discriminator and class name
                 json.put("type", "Unknown")
@@ -1915,6 +2006,11 @@ object GameIRSerializer {
                 SetAnimationState(
                     actorId = json.getString("actorId"),
                     stateName = json.getString("stateName"),
+                    sourceLocation =
+                        json.optJSONObject("sourceLocation")?.let { deserializeSourceLocation(it) },
+                )
+            "BindCurrentLevel" ->
+                BindCurrentLevel(
                     sourceLocation =
                         json.optJSONObject("sourceLocation")?.let { deserializeSourceLocation(it) },
                 )

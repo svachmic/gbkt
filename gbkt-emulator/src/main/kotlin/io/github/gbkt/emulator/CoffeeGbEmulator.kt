@@ -13,6 +13,7 @@ import eu.rekawek.coffeegb.core.events.EventBusImpl
 import eu.rekawek.coffeegb.core.gpu.Display
 import eu.rekawek.coffeegb.core.memory.cart.Rom
 import eu.rekawek.coffeegb.core.serial.SerialEndpoint
+import io.github.gbkt.emulator.agent.EmulatorFrameHangException
 import io.github.gbkt.emulator.debug.DebugLogEntry
 import io.github.gbkt.emulator.debug.DebugLogWriter
 import io.github.gbkt.emulator.debug.EmuPrintfInterceptor
@@ -48,6 +49,25 @@ class CoffeeGbEmulator(private val config: EmulatorConfig) : GbEmulator {
     @Volatile private var paused = false
     @Volatile private var speedMultiplier: Float = 1.0f
     private var startTimeMs = 0L
+
+    /**
+     * Cooperative cancellation flag for [stepFrame]. Cleared on [start], set by
+     * [requestCancellation] and [stop]. The tick loop in [stepFrame] checks this each iteration so
+     * an in-flight runaway frame can be preempted without waiting for the watchdog ceiling.
+     */
+    @Volatile private var cancellationRequested = false
+
+    /**
+     * Hung-ROM watchdog ceiling: max t-cycles the [stepFrame] loop is allowed before declaring the
+     * ROM hung and throwing [EmulatorFrameHangException]. A normal Game Boy video frame is 70 224
+     * t-cycles (4.194 MHz × 16.74 ms); this default is ~14x that, comfortably above any legitimate
+     * single-frame workload — including ROM init phases where the LCD is briefly disabled, which
+     * legitimately stall the "frame complete" signal for tens of thousands of ticks.
+     *
+     * Exposed as a module-internal setter only for the watchdog unit test in [CoffeeGbEmulatorTest]
+     * — production paths must use the default.
+     */
+    @Volatile internal var maxTicksPerFrame: Int = 1_000_000
 
     // ── Coffee-GB internals ───────────────────────────────────────────────────
 
@@ -121,6 +141,10 @@ class CoffeeGbEmulator(private val config: EmulatorConfig) : GbEmulator {
     override fun start() {
         if (!running.compareAndSet(false, true)) return
 
+        // Clear cancellation flag from any prior session — fresh starts must not inherit a stale
+        // request that would immediately preempt the first stepFrame.
+        cancellationRequested = false
+
         var success = false
         try {
             val rom = Rom(config.romFile)
@@ -131,9 +155,11 @@ class CoffeeGbEmulator(private val config: EmulatorConfig) : GbEmulator {
 
             val gb = gbConfig.build()
 
-            // Use a real EventBus to receive DmgFrameReadyEvent with pixel data.
-            // The Display fires this event after each completed frame with the raw
-            // pixel buffer that we convert to RGB for the display panel.
+            // Use a real EventBus to receive frame-ready events with pixel data.
+            // The Display fires DmgFrameReadyEvent in DMG mode and GbcFrameReadyEvent in CGB mode.
+            // Both are registered here so that GBC-mode ROMs (gbcMode=true) produce a non-black
+            // frame buffer. Previously only DmgFrameReadyEvent was wired, causing GBC screenshots
+            // to remain all-black (frame buffer never updated in CGB mode).
             val eventBus = EventBusImpl()
             this.eventBus = eventBus
             eventBus.register(
@@ -144,6 +170,15 @@ class CoffeeGbEmulator(private val config: EmulatorConfig) : GbEmulator {
                     }
                 },
                 Display.DmgFrameReadyEvent::class.java,
+            )
+            eventBus.register(
+                { event ->
+                    event.toRgb(internalFrameBuffer)
+                    synchronized(frameBufferLock) {
+                        publicFrameBuffer = internalFrameBuffer.copyOf()
+                    }
+                },
+                Display.GbcFrameReadyEvent::class.java,
             )
 
             // Create the EMU_printf interceptor. Fires each time GBDK EMU_printf() is called
@@ -191,6 +226,9 @@ class CoffeeGbEmulator(private val config: EmulatorConfig) : GbEmulator {
     }
 
     override fun stop() {
+        // Preempt any in-flight stepFrame BEFORE acquiring any lock. The tick-loop reads this on
+        // its next iteration and throws, releasing tickLock so this stop() can proceed.
+        cancellationRequested = true
         running.set(false)
         emulatorThread?.join(2_000L)
         emulatorThread = null
@@ -227,13 +265,48 @@ class CoffeeGbEmulator(private val config: EmulatorConfig) : GbEmulator {
         val gb = checkNotNull(gameboy) { "Emulator not started" }
         tickLock.withLock {
             var frameDone: Boolean
+            var ticks = 0
             do {
+                // Cooperative cancellation: stop() (or any code that sets cancellationRequested)
+                // can preempt a runaway frame without waiting for the watchdog ceiling.
+                if (cancellationRequested) {
+                    throw EmulatorFrameHangException(
+                        "stepFrame cancelled after $ticks ticks (cancellation requested)"
+                    )
+                }
                 frameDone = gb.tick()
                 // onTick is already fired inside gb.tick() via the registered tick listener
+                ticks++
+                // Hung-ROM watchdog. A normal Game Boy frame is ~17 480 ticks; MAX_TICKS_PER_FRAME
+                // is well past any legitimate workload. Without this guard, a CPU loop that never
+                // reaches VBlank (e.g. LCD disabled + tight wait_vbl, or a corrupted scene init)
+                // makes stepFrame() spin forever and locks the MCP server (CoffeeGbEmulatorTest +
+                // gbkt-mcp-server CLAUDE.md document the hang mode).
+                if (ticks >= maxTicksPerFrame) {
+                    throw EmulatorFrameHangException(
+                        "ROM did not complete a frame within $maxTicksPerFrame t-cycles " +
+                            "(one Game Boy frame is 70 224 t-cycles) — likely an infinite CPU " +
+                            "loop with no VBlank. Check LCDC (is BG/LCD enabled?), BGP, and the " +
+                            "most recent scene-enter."
+                    )
+                }
             } while (!frameDone)
         }
         interceptor?.resetDedup()
         onFrameReady?.invoke(getFrameBuffer())
+    }
+
+    /**
+     * Requests cancellation of a running [stepFrame] call. Safe to call from any thread without
+     * holding any lock — sets a `@Volatile` flag that the next iteration of the tick loop checks.
+     *
+     * Used by `McpEmulatorSession.stop` to preempt a runaway frame so `emulator_stop` can recover
+     * the session within one tick rather than waiting for the watchdog ceiling.
+     *
+     * Auto-cleared on the next [start].
+     */
+    override fun requestCancellation() {
+        cancellationRequested = true
     }
 
     override fun setSpeed(multiplier: Float) {

@@ -342,8 +342,9 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
             )
 
         /** Pre-compiled regex patterns for fallback text-based builder detection */
-        private val BUILDER_PATTERNS: Map<String, Regex> =
-            BUILDER_NAMES.associateWith { name -> Regex("\\b$name\\s*\\{") }
+        private val BUILDER_PATTERNS: Map<String, Regex> = BUILDER_NAMES.associateWith { name ->
+            Regex("\\b$name\\s*\\{")
+        }
 
         private val DEFAULT_SUGGESTIONS =
             listOf(

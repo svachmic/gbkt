@@ -27,7 +27,7 @@ import kotlin.test.assertTrue
  */
 class PongIRTest {
 
-    private val ir = pongV2.build()
+    private val ir = pong.build()
 
     @Test
     fun `has 3 scenes`() {
@@ -91,7 +91,7 @@ class PongIRTest {
 
     @Test
     fun `paddle1 actor has correct initial position`() {
-        assertEquals(PositionDef(16, 64), ir.actors.first { it.id == "paddle1" }.position)
+        assertEquals(PositionDef(0, 64), ir.actors.first { it.id == "paddle1" }.position)
     }
 
     @Test

@@ -2,9 +2,9 @@
 
 Orchestrates the conversion of annotated `GameIR` into C AST files and tracks source mappings.
 
-## GBDKPipelineV2
+## GBDKPipeline
 
-The main pipeline class. Its `generate(GameIR)` method returns `PipelineV2Output` containing a map of filenames to C source text and a map of filenames to source map JSON.
+The main pipeline class. Its `generate(GameIR)` method returns `PipelineOutput` containing a map of filenames to C source text and a map of filenames to source map JSON.
 
 ### File Generation Flow
 

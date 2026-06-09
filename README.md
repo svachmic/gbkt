@@ -159,16 +159,21 @@ The `gbkt-examples/` directory contains complete games demonstrating the framewo
 |------|-----------|-------------|
 | **Pong** | Beginner | Entities, input, collision, scenes |
 | **Breakout** | Intermediate | Sound effects, entity pools, status bars, 4 scenes |
-| **Explorer** | Advanced | Zones, camera follow, exploration system, save/load |
+| **Simple Physics** | Intermediate | Physics variables, gravity, collision detection |
+| **Metasprites** | Intermediate | GBC color palettes, multi-tile sprites |
+| **Metasprites Stress** | Intermediate | Multiple metasprites, palette variants |
+| **Banks** | Intermediate | Multi-bank ROM layout, tileset data |
+| **Platformer Template** | Advanced | Platformer physics, zones, GBC palettes, camera |
 
 ```bash
 # Generate C and build any example
 ./gradlew :gbkt-examples:pong:generateC
 ./gradlew :gbkt-examples:pong:buildRom
 
-# Or try breakout / explorer
+# Or try any other example
 ./gradlew :gbkt-examples:breakout:buildRom
-./gradlew :gbkt-examples:explorer:buildRom
+./gradlew :gbkt-examples:simple-physics:buildRom
+./gradlew :gbkt-examples:platformer-template:buildRom
 ```
 
 ## Why gbkt?

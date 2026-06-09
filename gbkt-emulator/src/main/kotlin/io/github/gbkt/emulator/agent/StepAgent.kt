@@ -190,6 +190,67 @@ class StepAgent(
     fun captureScreenshot(label: String): File = session.captureScreenshot(label)
 
     /**
+     * Advances frames until the LCD frame buffer stabilizes, then returns the stabilized buffer.
+     *
+     * Immediately after a scene transition the PPU/VRAM has not latched the new scene, so reading
+     * the frame buffer (via [captureFrameBuffer] or [captureScreenshot]) yields a stale or blank
+     * frame. [settle] eliminates that by stepping frames until two consecutive
+     * [AgentDebugSession.getFrameBuffer] snapshots are pixel-identical (proof the PPU did not update
+     * the frame buffer between them — [io.github.gbkt.emulator.CoffeeGbEmulator.getFrameBuffer]
+     * returns a fresh copy on each call, so content equality is a true stability signal).
+     *
+     * Contract:
+     * - **Stability rule:** capture once **2 consecutive** frame buffers are pixel-identical.
+     * - **Cap:** at most **30** frames (~0.5s) are advanced. On reaching the cap without two
+     *   identical frames, the **last** frame is returned (best-effort) — [settle] **never throws**.
+     * - **Held buttons preserved:** the settle loop advances frames via
+     *   [AgentDebugSession.runFrames] (NOT [step]), so it never re-dispatches input. Whatever
+     *   buttons the caller currently holds (set by the prior [step]/[stepN] call) remain physically
+     *   pressed in the emulator throughout settling — a held-input scene settles to the real
+     *   mid-hold pose the player sees, not an idle pose. [heldButtons] is neither read nor mutated.
+     *
+     * @return The stabilized 23040-element frame buffer (or the last frame on cap).
+     */
+    fun settle(): IntArray {
+        var prev = session.getFrameBuffer()
+        var consecutiveMatch = 0
+        repeat(SETTLE_FRAME_CAP) {
+            // Advance ONE frame without re-dispatching input — held buttons remain pressed in the
+            // emulator's input state. Must NOT use step()/stepN(): they would release held buttons.
+            session.runFrames(1)
+            val current = session.getFrameBuffer()
+            if (prev.contentEquals(current)) {
+                consecutiveMatch++
+                if (consecutiveMatch >= SETTLE_STABLE_FRAMES) return current
+            } else {
+                consecutiveMatch = 0
+            }
+            prev = current
+        }
+        // Cap reached without stabilizing — best-effort capture, never throws.
+        return prev
+    }
+
+    /**
+     * Settles the frame buffer (see [settle]) then captures a PNG screenshot with the JSON metadata
+     * sidecar via the existing [captureScreenshot] path.
+     *
+     * Use this instead of [captureScreenshot] for any capture taken immediately after a scene
+     * transition or other VRAM-mutating event, so the written PNG reflects the rendered frame
+     * rather than a stale/blank one. The variable-snapshot JSON sidecar is preserved because this
+     * delegates to [AgentDebugSession.captureScreenshot] (it does NOT hand-roll a PNG encode).
+     *
+     * Held-button state is preserved across the settle (see [settle]).
+     *
+     * @param label Human-readable label for the file name prefix.
+     * @return The PNG [File] that was written.
+     */
+    fun captureScreenshotSettled(label: String): File {
+        settle()
+        return session.captureScreenshot(label)
+    }
+
+    /**
      * Reads a single DSL variable by name.
      *
      * @param name Variable name (without C underscore prefix).
@@ -205,6 +266,30 @@ class StepAgent(
      * @return `true` if the symbol was found and written.
      */
     fun writeVariable(name: String, value: Int): Boolean = session.writeVariable(name, value)
+
+    /**
+     * Reads a raw byte from the emulator's address space (0x0000..0xFFFF).
+     *
+     * Useful for reading hardware I/O registers (e.g., LCDC at 0xFF40, STAT at 0xFF41, IE at
+     * 0xFFFF) that are not exposed through the symbol table.
+     *
+     * @param address Hardware address in the range 0x0000–0xFFFF.
+     * @return Byte value in range 0–255.
+     */
+    fun readMemory(address: Int): Int = session.getMemory().readByte(address)
+
+    /**
+     * Writes a single byte to the emulator's address space (0x0000..0xFFFF).
+     *
+     * Required for driving hardware index registers (e.g., BCPS at 0xFF68 / OCPS at 0xFF6A) before
+     * reading their data-port counterparts (BCPD/OCPD) via [readMemory]. The value is masked to a
+     * byte; higher bits are discarded.
+     *
+     * @param address Hardware address in the range 0x0000–0xFFFF.
+     * @param value Byte value (only the low 8 bits are written).
+     */
+    fun writeMemory(address: Int, value: Int): Unit =
+        session.getMemory().writeByte(address, value and 0xFF)
 
     /**
      * Steps up to [maxFrames] frames, returning the first [Observation] where [predicate] is true.
@@ -288,6 +373,15 @@ class StepAgent(
     }
 
     /**
+     * Requests cooperative cancellation of an in-flight [step]/[stepN]/[waitUntil] call. Safe to
+     * invoke from any thread without holding any lock. See `AgentDebugSession.requestCancellation`
+     * for the mechanism.
+     */
+    fun requestCancellation() {
+        session.requestCancellation()
+    }
+
+    /**
      * Re-reads tilemap text from VRAM with optional scroll-aware offsets.
      *
      * Unlike the pre-decoded text in [Observation], this performs a fresh VRAM read that can apply
@@ -310,6 +404,20 @@ class StepAgent(
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────
+
+    companion object {
+        /**
+         * Number of consecutive pixel-identical frame buffers that proves the PPU latched a new
+         * frame. The [settle] contract (see KDoc) locks this at 2.
+         */
+        const val SETTLE_STABLE_FRAMES = 2
+
+        /**
+         * Maximum frames [settle] advances before giving up and returning the last frame
+         * (best-effort). ~0.5s at 60fps. The [settle] contract (see KDoc) locks this at 30.
+         */
+        const val SETTLE_FRAME_CAP = 30
+    }
 
     private fun buildObservation(): Observation {
         try {
@@ -417,20 +525,18 @@ fun Observation.toSummary(): String = buildString {
     }
     appendLine("Sprites: ${sprites.size} visible")
     // BG text
-    val bgRows =
-        bgText.mapIndexedNotNull { i, row ->
-            if (row.any { it != '.' && it != ' ' }) "[row $i] \"$row\"" else null
-        }
+    val bgRows = bgText.mapIndexedNotNull { i, row ->
+        if (row.any { it != '.' && it != ' ' }) "[row $i] \"$row\"" else null
+    }
     if (bgRows.isEmpty()) {
         appendLine("BG: (empty)")
     } else {
         bgRows.forEach { appendLine("BG: $it") }
     }
     // WIN text
-    val winRows =
-        winText.mapIndexedNotNull { i, row ->
-            if (row.any { it != '.' && it != ' ' }) "[row $i] \"$row\"" else null
-        }
+    val winRows = winText.mapIndexedNotNull { i, row ->
+        if (row.any { it != '.' && it != ' ' }) "[row $i] \"$row\"" else null
+    }
     if (winRows.isEmpty()) {
         appendLine("WIN: (empty)")
     } else {

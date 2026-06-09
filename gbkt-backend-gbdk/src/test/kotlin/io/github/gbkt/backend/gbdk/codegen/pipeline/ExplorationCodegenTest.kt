@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.pipeline
 
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.EncounterEntryIR
 import io.github.gbkt.core.ir.EncounterTableIR
@@ -21,7 +22,7 @@ import kotlin.test.assertTrue
 
 // =============================================================================
 // EXPLORATION CODEGEN TESTS (Plan 06.3-02)
-// Verifies that GBDKPipelineV2 generates correct C code for ExplorationSystem:
+// Verifies that GBDKPipeline generates correct C code for ExplorationSystem:
 //  - exploration_move, exploration_step, exploration_encounter_check, exploration_interact
 //  - zone_load, zone_transition (Gap 7+8)
 //  - buildSystemGlobalVars expansion (gauges, keys, step counter, encounter globals)
@@ -36,7 +37,7 @@ private fun buildExplorationGame(
 ): GameIR =
     GameIR(
         name = "TestGame",
-        config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+        config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
         scenes = scenes,
         systems = listOf(system),
         zones = zones,
@@ -45,7 +46,7 @@ private fun buildExplorationGame(
 
 class ExplorationCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: Exploration move function generated

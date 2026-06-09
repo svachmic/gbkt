@@ -79,8 +79,8 @@ class MusicBuilderTest {
                     val theme by music(asset("music/theme.uge"))
                     // Use theme to verify it resolves correctly
                     assertEquals("theme", theme.id, "MusicRef id should match property name")
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -97,8 +97,8 @@ class MusicBuilderTest {
                     val battle by music(asset("music/battle.uge"))
                     assertEquals("theme", theme.id)
                     assertEquals("battle", battle.id)
-                    scene("main") { enter {} }
-                    start = "main"
+                    val mainScene = scene("main") { enter {} }
+                    start = mainScene
                 }
                 .build()
 
@@ -117,11 +117,11 @@ class MusicBuilderTest {
         val ir =
             game("TestGame") {
                     val theme by music(asset("music/theme.uge"))
-                    scene("dungeon") {
+                    val dungeonScene = scene("dungeon") {
                         music(theme)
                         // No explicit enter block — music() should still produce enter ops
                     }
-                    start = "dungeon"
+                    start = dungeonScene
                 }
                 .build()
 
@@ -137,8 +137,8 @@ class MusicBuilderTest {
         val ir =
             game("TestGame") {
                     val theme by music(asset("music/theme.uge"))
-                    scene("dungeon") { music(theme) }
-                    start = "dungeon"
+                    val dungeonScene = scene("dungeon") { music(theme) }
+                    start = dungeonScene
                 }
                 .build()
 
@@ -153,14 +153,14 @@ class MusicBuilderTest {
         val ir =
             game("TestGame") {
                     val theme by music(asset("music/theme.uge"))
-                    scene("dungeon") {
+                    val dungeonScene = scene("dungeon") {
                         music(theme)
                         enter {
                             // Some enter logic
                             playSound(SoundRef("door_open"))
                         }
                     }
-                    start = "dungeon"
+                    start = dungeonScene
                 }
                 .build()
 
@@ -178,11 +178,11 @@ class MusicBuilderTest {
         val ir =
             game("TestGame") {
                     val theme by music(asset("music/theme.uge"))
-                    scene("dungeon") {
+                    val dungeonScene = scene("dungeon") {
                         music(theme)
                         exit { playSound(SoundRef("door_close")) }
                     }
-                    start = "dungeon"
+                    start = dungeonScene
                 }
                 .build()
 
@@ -204,8 +204,8 @@ class MusicBuilderTest {
         val ir =
             game("TestGame") {
                     val theme by music(asset("music/theme.uge"))
-                    scene("main") { enter { play(theme) } }
-                    start = "main"
+                    val mainScene = scene("main") { enter { play(theme) } }
+                    start = mainScene
                 }
                 .build()
 
@@ -222,8 +222,8 @@ class MusicBuilderTest {
         val ir =
             game("TestGame") {
                     val theme by music(asset("music/theme.uge"))
-                    scene("main") { enter { play(theme, fadeIn = 30) } }
-                    start = "main"
+                    val mainScene = scene("main") { enter { play(theme, fadeIn = 30) } }
+                    start = mainScene
                 }
                 .build()
 
@@ -238,8 +238,8 @@ class MusicBuilderTest {
         val ir =
             game("TestGame") {
                     val theme by music(asset("music/theme.uge"))
-                    scene("main") { enter { play(theme, resume = true) } }
-                    start = "main"
+                    val mainScene = scene("main") { enter { play(theme, resume = true) } }
+                    start = mainScene
                 }
                 .build()
 
@@ -253,8 +253,8 @@ class MusicBuilderTest {
     fun `stopMusic() emits MusicStop with default parameters`() {
         val ir =
             game("TestGame") {
-                    scene("main") { exit { stopMusic() } }
-                    start = "main"
+                    val mainScene = scene("main") { exit { stopMusic() } }
+                    start = mainScene
                 }
                 .build()
 
@@ -268,8 +268,8 @@ class MusicBuilderTest {
     fun `stopMusic() with fadeOut emits MusicStop with fadeOutFrames`() {
         val ir =
             game("TestGame") {
-                    scene("main") { exit { stopMusic(fadeOut = 15) } }
-                    start = "main"
+                    val mainScene = scene("main") { exit { stopMusic(fadeOut = 15) } }
+                    start = mainScene
                 }
                 .build()
 

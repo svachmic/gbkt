@@ -232,6 +232,8 @@ class ActorPoolIRTest {
 
                 override fun visitScreenFill(op: ScreenFill) = Unit
 
+                override fun visitBindCurrentLevel(op: BindCurrentLevel) = Unit
+
                 override fun visitPrintOp(op: PrintOp) = Unit
 
                 override fun visitGotoXYOp(op: GotoXYOp) = Unit
@@ -281,6 +283,9 @@ class ActorPoolIRTest {
                 override fun visitPoolForEachActive(op: PoolForEachActive) = Unit
 
                 override fun visitPoolDestroyAll(op: PoolDestroyAll) = Unit
+
+                // Plan 07 — MetaspriteVisitor will replace this stub
+                override fun visitMoveMetasprite(op: MoveMetasprite) = Unit
             }
         op.accept(visitor)
         assertTrue(visited, "visitPoolSpawnActor should have been called")
@@ -364,6 +369,8 @@ class ActorPoolIRTest {
 
                 override fun visitScreenFill(op: ScreenFill) = Unit
 
+                override fun visitBindCurrentLevel(op: BindCurrentLevel) = Unit
+
                 override fun visitPrintOp(op: PrintOp) = Unit
 
                 override fun visitGotoXYOp(op: GotoXYOp) = Unit
@@ -413,6 +420,9 @@ class ActorPoolIRTest {
                 override fun visitPoolForEachActive(op: PoolForEachActive) = Unit
 
                 override fun visitPoolDestroyAll(op: PoolDestroyAll) = Unit
+
+                // Plan 07 — MetaspriteVisitor will replace this stub
+                override fun visitMoveMetasprite(op: MoveMetasprite) = Unit
             }
         op.accept(visitor)
         assertTrue(visited, "visitPoolDestroyActor should have been called")

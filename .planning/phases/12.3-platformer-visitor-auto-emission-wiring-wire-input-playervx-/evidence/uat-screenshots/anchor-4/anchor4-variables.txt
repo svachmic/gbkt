@@ -1,0 +1,4 @@
+walkFrameIdx_at_01: 1
+walkFrameIdx_at_02: 2
+walkFrameIdx_at_03: 0
+facingRot_at_04: 3

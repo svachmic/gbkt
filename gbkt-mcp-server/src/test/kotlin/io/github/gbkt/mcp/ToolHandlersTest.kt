@@ -380,6 +380,125 @@ class ToolHandlersTest {
         session.stop()
     }
 
+    // ── handleReadMemory / handleWriteMemory tests (SEED-012 EXTENDED) ───────
+
+    private fun hexByteToInt(hex: String): Int =
+        if (hex.startsWith("0x") || hex.startsWith("0X")) hex.substring(2).toInt(16)
+        else hex.toInt()
+
+    @Test
+    fun `handleReadMemory returns hex bytes for valid hex address and count`() = runTest {
+        val memory = mockMemory(0xFF40 to 0x91, 0xFF41 to 0x80, 0xFF42 to 0x00)
+        val session = makeSession(memory)
+        startSession(session)
+
+        val args = buildJsonObject {
+            put("address", "0xFF40")
+            put("count", 3)
+        }
+        val result = ToolHandlerLogic.handleReadMemory(session, args)
+
+        assertFalse(result.isError == true)
+        val json = resultJson(result)
+        assertEquals("0xFF40", json["address"]?.jsonPrimitive?.content)
+        assertEquals(3, json["count"]?.jsonPrimitive?.int)
+        val bytes = json["bytes"]?.jsonArray
+        assertNotNull(bytes)
+        assertEquals(3, bytes!!.size)
+        assertEquals("0x91", bytes[0].jsonPrimitive.content)
+        assertEquals("0x80", bytes[1].jsonPrimitive.content)
+        assertEquals("0x00", bytes[2].jsonPrimitive.content)
+
+        session.stop()
+    }
+
+    @Test
+    fun `handleReadMemory observes LCDC bit 7 transition across DISPLAY_ON simulation`() = runTest {
+        // Phase 1 — LCD off at boot (LCDC bit 7 clear).
+        val memoryOff = mockMemory(0xFF40 to 0x00)
+        val sessionOff = makeSession(memoryOff)
+        startSession(sessionOff)
+
+        val argsLcdc = buildJsonObject {
+            put("address", "0xFF40")
+            put("count", 1)
+        }
+        val resultOff = ToolHandlerLogic.handleReadMemory(sessionOff, argsLcdc)
+        assertFalse(resultOff.isError == true)
+        val byteOffHex = resultJson(resultOff)["bytes"]?.jsonArray?.get(0)?.jsonPrimitive?.content
+        assertEquals("0x00", byteOffHex)
+        val byteOff = hexByteToInt(byteOffHex!!)
+        assertEquals(
+            0,
+            byteOff and 0x80,
+            "LCDC bit 7 should be 0 at boot (LCD off), got 0x%02X".format(byteOff),
+        )
+        sessionOff.stop()
+
+        // Phase 2 — LCD on after DISPLAY_ON simulation (LCDC = 0x91 = standard GBDK active).
+        val memoryOn = mockMemory(0xFF40 to 0x91)
+        val sessionOn = makeSession(memoryOn)
+        startSession(sessionOn)
+
+        val resultOn = ToolHandlerLogic.handleReadMemory(sessionOn, argsLcdc)
+        assertFalse(resultOn.isError == true)
+        val byteOnHex = resultJson(resultOn)["bytes"]?.jsonArray?.get(0)?.jsonPrimitive?.content
+        val byteOn = hexByteToInt(byteOnHex!!)
+        assertEquals(
+            0x80,
+            byteOn and 0x80,
+            "LCDC bit 7 should be 1 after DISPLAY_ON, got 0x%02X".format(byteOn),
+        )
+        sessionOn.stop()
+    }
+
+    @Test
+    fun `handleWriteMemory writes byte and read-back via handleReadMemory matches`() = runTest {
+        val memory = mockMemory(0xC100 to 0x00)
+        val session = makeSession(memory)
+        startSession(session)
+
+        // Write phase: 0xAB at 0xC100.
+        val writeArgs = buildJsonObject {
+            put("address", "0xC100")
+            put("value", 0xAB)
+        }
+        val writeResult = ToolHandlerLogic.handleWriteMemory(session, writeArgs)
+        assertFalse(writeResult.isError == true)
+        val writeJson = resultJson(writeResult)
+        assertEquals(true, writeJson["success"]?.jsonPrimitive?.boolean)
+        assertEquals("0xC100", writeJson["address"]?.jsonPrimitive?.content)
+        assertEquals("0xAB", writeJson["value"]?.jsonPrimitive?.content)
+
+        // Read-back: prove the write mutated mockMemory's IntArray.
+        val readArgs = buildJsonObject {
+            put("address", "0xC100")
+            put("count", 1)
+        }
+        val readResult = ToolHandlerLogic.handleReadMemory(session, readArgs)
+        assertFalse(readResult.isError == true)
+        val readBytes = resultJson(readResult)["bytes"]?.jsonArray
+        assertEquals(
+            "0xAB",
+            readBytes?.get(0)?.jsonPrimitive?.content,
+            "expected write of 0xAB at 0xC100 to round-trip via mockMemory IntArray; got: $readBytes",
+        )
+
+        // Out-of-range rejection: value=0x1FF (511) must now return an error (WR-01 fix).
+        val maskArgs = buildJsonObject {
+            put("address", "0xC101")
+            put("value", 0x1FF)
+        }
+        val maskResult = ToolHandlerLogic.handleWriteMemory(session, maskArgs)
+        assertTrue(maskResult.isError == true)
+        assertTrue(
+            resultText(maskResult).contains("out of range"),
+            "Expected 'out of range' in error for value=511, got: ${resultText(maskResult)}",
+        )
+
+        session.stop()
+    }
+
     // ── handleWaitForScene test ──────────────────────────────────────────────
 
     @Test
@@ -1360,6 +1479,25 @@ class ToolHandlersTest {
             "Default frames=1 should result in frame=2",
         )
 
+        session.stop()
+    }
+
+    // ── CR-01 regression guard: address+count overflow boundary ─────────────
+
+    @Test
+    fun `handleReadMemory rejects address plus count exceeding 0xFFFF`() = runTest {
+        val session = makeSession()
+        startSession(session)
+        val args = buildJsonObject {
+            put("address", "0xFF01")
+            put("count", 256) // end = 0xFF01 + 255 = 0x10000, which exceeds 0xFFFF
+        }
+        val result = ToolHandlerLogic.handleReadMemory(session, args)
+        assertTrue(result.isError == true)
+        assertTrue(
+            resultText(result).contains("exceeds 0xFFFF"),
+            "Error must mention 'exceeds 0xFFFF' for overflow boundary, got: ${resultText(result)}",
+        )
         session.stop()
     }
 }

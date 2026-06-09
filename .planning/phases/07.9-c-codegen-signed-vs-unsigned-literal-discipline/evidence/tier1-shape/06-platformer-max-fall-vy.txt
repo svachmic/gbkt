@@ -1,0 +1,20 @@
+if (dpad_held(J_LEFT)) {
+    _player_vx -= ACCEL_X_PLAYER;
+}
+if (dpad_held(J_RIGHT)) {
+    _player_vx += ACCEL_X_PLAYER;
+}
+if (joypad() & J_A) {
+    _player_jump_held = 1u;
+} else {
+    if (_player_jump_held != 0u && _player_vy < 0) {
+        _player_vy /= JUMP_CUT_PLAYER;
+    }
+    _player_jump_held = 0u;
+}
+_player_vy += GRAVITY_PLAYER;
+if (_player_vy > MAX_FALL_PLAYER) {
+    _player_vy = MAX_FALL_PLAYER;
+}
+_player_x += (UINT8)_player_vx;
+_player_y += (UINT8)_player_vy;

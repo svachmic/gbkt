@@ -1,0 +1,4 @@
+initial_camera_x: 0
+initial_map_pos_x: 0
+scrolled_camera_x: 34
+scrolled_map_pos_x: 4

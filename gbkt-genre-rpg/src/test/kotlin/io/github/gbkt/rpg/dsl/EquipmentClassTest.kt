@@ -40,8 +40,8 @@ class EquipmentClassTest {
         val ir =
             game("EquipTest") {
                     equipmentSystem { slot(EquipSlot.WEAPON) }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -70,8 +70,8 @@ class EquipmentClassTest {
                             }
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -101,8 +101,8 @@ class EquipmentClassTest {
                             def(1)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -132,8 +132,8 @@ class EquipmentClassTest {
                         learns("blizzard", atLevel = 7)
                         jobChangeMode(JobChangeMode.SWITCHABLE_FRESH)
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 
@@ -169,8 +169,8 @@ class EquipmentClassTest {
                             def(3)
                         }
                     }
-                    scene("start") { enter {} }
-                    start = "start"
+                    val startSceneRef = scene("start") { enter {} }
+                    start = startSceneRef
                 }
                 .build()
 

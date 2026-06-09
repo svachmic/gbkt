@@ -37,6 +37,12 @@ data class WallJumpConfig(
  * @property airControlFactor Horizontal control factor while airborne (0–100, percentage).
  * @property variableHeightJump If true, releasing jump early reduces jump height.
  * @property wallJump Optional wall-jump configuration; null disables wall mechanics.
+ * @property solidThreshold Max tile index that counts as PASSABLE. Tiles `< solidThreshold` are
+ *   solid (per reference convention). `null` = no tilemap collision (use the abstract physics
+ *   path). Wired by Plan 12-08 / 12-11.
+ * @property jumpHoldMaxFrames Max frames the jump button can be held to extend jump height.
+ *   `0` = disabled (the existing [variableHeightJump] flag governs the abstract path). Wired by
+ *   Plan 12-13.
  */
 data class PlatformerPhysicsConfig(
     val gravity: Int = 2,
@@ -47,6 +53,40 @@ data class PlatformerPhysicsConfig(
     val airControlFactor: Int = 75,
     val variableHeightJump: Boolean = true,
     val wallJump: WallJumpConfig? = null,
+    val solidThreshold: Int? = null,
+    val jumpHoldMaxFrames: Int = 0,
+)
+
+/**
+ * Configuration for input → playerVx wiring and walk-frame cycling (Phase 12.3 D-01a).
+ *
+ * Defaults are LOCKED per SPEC + CONTEXT D-01a; matches reference `player.c` values so future
+ * platformer ports inherit known-good behaviour and tune via per-zone overrides only.
+ *
+ * Note: this is the typed companion record. The AssignableVar binders for `walkFrameIdx` /
+ * `threeFrameCounter` are NOT fields here — they're captured directly into the
+ * `GenericSystem.config` map by `PlatformerInputBuilder` (L-1.1 / D-03 — no-magic-strings binder
+ * pattern, mirrors `TilemapCollisionBuilder.position/velocity/grounded`).
+ *
+ * @property walkSpeed Horizontal velocity applied to `_playerVx` while D-pad LEFT/RIGHT is held
+ *   (signed INT16 — requires `playerVx by i16Var(0)` per L-1.2 / SPEC R6). Default 128 = reference
+ *   ≈ 0.5 px/frame walking speed.
+ * @property friction Per-frame velocity decay applied when no horizontal input AND `_grounded` is
+ *   true (D-04 ground-friction path). Default 8 — decelerates over ~16 frames.
+ * @property airFriction Per-frame velocity decay applied when no horizontal input AND `_grounded`
+ *   is false (D-04 air-vs-ground split). Default 0 — matches reference `player.c` ground-only
+ *   friction behaviour.
+ * @property walkFrameCount Number of frames in the walk-cycle animation (default 3 — frames
+ *   0/1/2). PlatformerVisitor's walk-cycle emission rolls `_walkFrameIdx` modulo this count.
+ * @property cyclePeriod Number of game frames per walk-cycle advance (default 6). The visitor
+ *   emits `if (_threeFrameCounter >= cyclePeriod) { reset; _walkFrameIdx++ }`.
+ */
+data class PlatformerInputConfig(
+    val walkSpeed: Int = 128,
+    val friction: Int = 8,
+    val airFriction: Int = 0,
+    val walkFrameCount: Int = 3,
+    val cyclePeriod: Int = 6,
 )
 
 // =============================================================================

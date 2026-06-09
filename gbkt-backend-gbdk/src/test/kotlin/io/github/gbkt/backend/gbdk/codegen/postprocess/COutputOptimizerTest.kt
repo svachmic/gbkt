@@ -524,4 +524,231 @@ class COutputOptimizerTest {
         assertContains(optimizedFiles["main.c"]!!, "#define sprite_b sprite_a")
         assertContains(optimizedFiles["bank1.c"]!!, "#define map_y map_x")
     }
+
+    // =========================================================================
+    // Cross-file rewriter regex over-match guards (CR-02 / Plan 11.1-13)
+    // These sentinels lock the COutputOptimizer cross-file rewriter regex shape
+    // `\b<name>\s*\(` against future drift. The shape is aligned with
+    // FunctionDeduplicationPass.kt:130 (intra-file rewriter). Each test uses
+    // a two-file setup: main.c carries two identical function bodies (to trigger
+    // dedup and produce a cross-file redirect), bank1.c carries the probe
+    // pattern under test.
+    // =========================================================================
+
+    /**
+     * CR-02 / Plan 11.1-13 — sentinel 1.
+     *
+     * An actual call site `foo(` in bank1.c IS rewritten to `bar(` by the cross-file pass. This is
+     * the primary contract: the regex shape `\b<name>\s*\(` must match and rewrite genuine C call
+     * sites.
+     */
+    @Test
+    fun `cross-file rewriter rewrites actual call site`() {
+        // Two identical functions in main.c trigger FunctionDeduplicationPass to dedup foo into bar
+        // and produce a cross-file redirect {foo -> bar}.
+        val mainC =
+            """
+            void bar() {
+                do_the_work();
+                finish_up();
+            }
+
+            void foo() {
+                do_the_work();
+                finish_up();
+            }
+            """
+                .trimIndent()
+        // bank1.c has a genuine call site: foo();
+        val bank1C = "foo();\n"
+        val optimizer =
+            COutputOptimizer(
+                sharedConstantTablesEnabled = false,
+                functionDeduplicationEnabled = true,
+            )
+        val (result, _) = optimizer.optimize(mapOf("main.c" to mainC, "bank1.c" to bank1C))
+        // The call site must be rewritten to the canonical name
+        assertContains(result["bank1.c"]!!, "bar();")
+        assertFalse(
+            result["bank1.c"]!!.contains("foo()"),
+            "Call site foo() must be rewritten to bar()",
+        )
+    }
+
+    /**
+     * CR-02 / Plan 11.1-13 — sentinel 2.
+     *
+     * Observed-behaviour lock: string literal containing `foo(x)` — does the cross-file rewriter
+     * change it?
+     *
+     * The regex shape `\b<name>\s*\(` matches `foo(` inside a C string literal because the `(`
+     * after `foo` in `"foo(x) called"` satisfies the `\s*\(` trailer. The line-prefix comment-skip
+     * filter does NOT protect string literals (it only skips lines starting with `//`,
+     * block-comment-start, or `*`). Therefore the cross-file rewriter WILL rewrite `foo(` inside
+     * the string literal, producing `"bar(x) called"`. This is documented observed behaviour at
+     * parity with FunctionDeduplicationPass intra-file rewriter, NOT a guarantee of string-literal
+     * safety. Full string-literal hardening is tracked as WR-01/02/03 (out of scope for CR-02).
+     */
+    @Test
+    fun `cross-file rewriter rewrites identifier inside string literal observed behaviour lock`() {
+        val mainC =
+            """
+            void bar() {
+                do_the_work();
+                finish_up();
+            }
+
+            void foo() {
+                do_the_work();
+                finish_up();
+            }
+            """
+                .trimIndent()
+        // bank1.c contains a printf whose format string includes "foo(x)"
+        val bank1C = "printf(\"foo(x) called\");\n"
+        val optimizer =
+            COutputOptimizer(
+                sharedConstantTablesEnabled = false,
+                functionDeduplicationEnabled = true,
+            )
+        val (result, _) = optimizer.optimize(mapOf("main.c" to mainC, "bank1.c" to bank1C))
+        val bank1Out = result["bank1.c"]!!
+        // OBSERVED BEHAVIOUR: the regex \bfoo\s*\( matches foo( inside the string literal.
+        // The string literal IS rewritten. Assert the current (post-CR-02) behaviour.
+        // If string-literal safety is added in a future plan, this assertion will change.
+        assertTrue(
+            bank1Out.contains("bar(x) called"),
+            "Observed behaviour: string literal foo(x) is rewritten to bar(x) by the cross-file pass",
+        )
+    }
+
+    /**
+     * CR-02 / Plan 11.1-13 — sentinel 3.
+     *
+     * Observed-behaviour lock: inline block comment containing foo(y) — does the cross-file
+     * rewriter change it?
+     *
+     * The line `int x = 5; [block-comment] foo(y) note [end-block-comment] stuff;` does NOT start
+     * with `//`, block-comment-start, or `*`, so the line-prefix comment-skip filter does not
+     * protect it. The regex `\bfoo\s*\(` matches `foo(` inside the inline block comment. The
+     * cross-file rewriter WILL rewrite the comment content. This is documented observed behaviour
+     * at parity with FunctionDeduplicationPass, NOT a guarantee of inline-comment safety. Full
+     * comment-token hardening is tracked as WR-01/02/03 (out of scope for CR-02).
+     */
+    @Test
+    fun `cross-file rewriter rewrites identifier inside inline block comment observed behaviour lock`() {
+        val mainC =
+            """
+            void bar() {
+                do_the_work();
+                finish_up();
+            }
+
+            void foo() {
+                do_the_work();
+                finish_up();
+            }
+            """
+                .trimIndent()
+        // bank1.c contains an inline block comment with foo(y) inside it
+        val bank1C = "int x = 5; /* foo(y) note */ stuff;\n"
+        val optimizer =
+            COutputOptimizer(
+                sharedConstantTablesEnabled = false,
+                functionDeduplicationEnabled = true,
+            )
+        val (result, _) = optimizer.optimize(mapOf("main.c" to mainC, "bank1.c" to bank1C))
+        val bank1Out = result["bank1.c"]!!
+        // OBSERVED BEHAVIOUR: the regex \bfoo\s*\( matches foo( inside the inline block comment.
+        // The comment content IS rewritten. Assert the current (post-CR-02) behaviour.
+        // If inline-comment safety is added in a future plan, this assertion will change.
+        assertTrue(
+            bank1Out.contains("bar(y) note"),
+            "Observed behaviour: inline block comment foo(y) is rewritten to bar(y) by the cross-file pass",
+        )
+    }
+
+    /**
+     * CR-02 / Plan 11.1-13 — sentinel 4.
+     *
+     * Identifier SUBSTRING overlap is NOT rewritten as a call. `foo_helper()` contains `foo` as a
+     * prefix, but the `\b` word-boundary at the start of the regex requires `foo` to be at a word
+     * boundary on BOTH sides. Since `_` is a word character, `foo` in `foo_helper` is NOT followed
+     * by a word boundary — the pattern `\bfoo\s*\(` does not match `foo_helper(`. The call site
+     * `foo_helper();` is preserved verbatim, and only bare `foo()` call sites are rewritten.
+     */
+    @Test
+    fun `cross-file rewriter identifier substring overlap is NOT rewritten as a call`() {
+        val mainC =
+            """
+            void bar() {
+                do_the_work();
+                finish_up();
+            }
+
+            void foo() {
+                do_the_work();
+                finish_up();
+            }
+            """
+                .trimIndent()
+        // bank1.c has foo_helper() — substring of redirect name — plus a real foo() call
+        val bank1C = "foo_helper();\nfoo();\n"
+        val optimizer =
+            COutputOptimizer(
+                sharedConstantTablesEnabled = false,
+                functionDeduplicationEnabled = true,
+            )
+        val (result, _) = optimizer.optimize(mapOf("main.c" to mainC, "bank1.c" to bank1C))
+        val bank1Out = result["bank1.c"]!!
+        // foo_helper must NOT be rewritten — it is not a call site for foo
+        assertTrue(
+            bank1Out.contains("foo_helper();"),
+            "foo_helper() must be preserved verbatim — word-boundary guard",
+        )
+        // The real foo() call site must be rewritten
+        assertTrue(bank1Out.contains("bar();"), "foo() call site must be rewritten to bar()")
+    }
+
+    /**
+     * CR-02 / Plan 11.1-13 — sentinel 5.
+     *
+     * Leading-comment-prefix line skip (SEED-015 defense-in-depth preserved after CR-02 regex
+     * change). A line that starts with `//` is skipped by the line-prefix filter at
+     * COutputOptimizer lines 102-108. This filter was introduced as the SEED-015 fix to prevent
+     * comment text like `// Trampoline: foo (bank 1)` from being rewritten. After the CR-02 regex
+     * change (from `\b<name>\b` to `\b<name>\s*\(`), the line-prefix filter remains in place and
+     * continues to protect `//`-prefixed lines. This sentinel asserts that the SEED-015 fix path is
+     * NOT broken by the CR-02 regex change.
+     */
+    @Test
+    fun `cross-file rewriter leading-comment-prefix line is skipped SEED-015 defense-in-depth`() {
+        val mainC =
+            """
+            void bar() {
+                do_the_work();
+                finish_up();
+            }
+
+            void foo() {
+                do_the_work();
+                finish_up();
+            }
+            """
+                .trimIndent()
+        // bank1.c has a // comment line that mentions foo — must NOT be rewritten
+        val bank1C = "// Trampoline: foo (bank 1)\nbar();\n"
+        val optimizer =
+            COutputOptimizer(
+                sharedConstantTablesEnabled = false,
+                functionDeduplicationEnabled = true,
+            )
+        val (result, _) = optimizer.optimize(mapOf("main.c" to mainC, "bank1.c" to bank1C))
+        val bank1Out = result["bank1.c"]!!
+        // The comment line must be preserved verbatim — line-prefix filter skips it
+        assertTrue(
+            bank1Out.contains("// Trampoline: foo (bank 1)"),
+            "Comment line must be preserved verbatim (SEED-015 guard)",
+        )
+    }
 }

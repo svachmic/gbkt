@@ -34,8 +34,8 @@ class ScriptBuilderTest {
         val ir =
             game("T") {
                     varSetup()
-                    scene("s") { enter { block() } }
-                    start = "s"
+                    val sScene = scene("s") { enter { block() } }
+                    start = sScene
                 }
                 .build()
         return ir.scenes.first { it.id == "s" }.enterOps
@@ -112,7 +112,7 @@ class ScriptBuilderTest {
 
     @Test
     fun `navigate produces NavigateTo ScriptOp`() {
-        val ops = buildScript { navigate("gameplay") }
+        val ops = buildScript { navigate(SceneRef("gameplay")) }
 
         assertEquals(1, ops.size)
         val op = assertIs<NavigateTo>(ops[0])
@@ -152,7 +152,7 @@ class ScriptBuilderTest {
 
     @Test
     fun `whenever produces IfOp with condition and body`() {
-        val ops = buildScript { whenever(buttons.start.pressed) { navigate("gameplay") } }
+        val ops = buildScript { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
 
         assertEquals(1, ops.size)
         val op = assertIs<IfOp>(ops[0])
@@ -187,11 +187,11 @@ class ScriptBuilderTest {
     fun `whenever inside frame block records to correct ops list`() {
         val ir =
             game("TestGame") {
-                    scene("game") {
+                    val gameScene = scene("game") {
                         enter { hideSprites() }
-                        frame { whenever(buttons.start.pressed) { navigate("game") } }
+                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("game")) } }
                     }
-                    start = "game"
+                    start = gameScene
                 }
                 .build()
 

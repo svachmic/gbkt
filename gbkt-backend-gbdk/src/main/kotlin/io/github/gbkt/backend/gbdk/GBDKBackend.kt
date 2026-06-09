@@ -17,12 +17,13 @@ import io.github.gbkt.backend.api.GeneratedFile
 import io.github.gbkt.backend.api.GenerationOptions
 import io.github.gbkt.backend.api.GenerationResult
 import io.github.gbkt.backend.api.ValidationResult
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import io.github.gbkt.backend.gbdk.codegen.postprocess.COutputOptimizer
 import io.github.gbkt.backend.gbdk.profiles.GameBoyColorProfile
 import io.github.gbkt.core.AssetManifest
 import io.github.gbkt.core.constraints.TargetProfile
 import io.github.gbkt.core.ir.GameIR
+import io.github.gbkt.core.ir.nextPowerOfTwo
 
 /**
  * GBDK-2020 backend for Game Boy / Game Boy Color.
@@ -41,6 +42,10 @@ class GBDKBackend(override val profile: TargetProfile = GameBoyColorProfile) : C
         return ValidationResult.SUCCESS
     }
 
+    /** Satisfies the [CodegenBackend] interface; delegates to the full-signature overload. */
+    override fun generate(game: GameIR, options: GenerationOptions): GenerationResult =
+        generate(gameIR = game, assetManifest = null, outputDirectory = null, assetRoot = null)
+
     /**
      * Generate C source files from a [GameIR] using the typed C AST pipeline.
      *
@@ -48,20 +53,7 @@ class GBDKBackend(override val profile: TargetProfile = GameBoyColorProfile) : C
      * 1. Analysis pipeline validates IR, allocates resources, and generates the budget report.
      * 2. Budget report is printed to stdout per the locked developer UX decision.
      * 3. Bank/VRAM/OAM annotations are applied to the GameIR copy.
-     * 4. Annotated IR is passed to [GBDKPipelineV2] for C code generation.
-     *
-     * @return [GenerationResult] containing main.c, bank1.c, and game.h
-     */
-    @Suppress("TooGenericExceptionCaught")
-    override fun generate(game: GameIR, options: GenerationOptions): GenerationResult {
-        return generateV2(game)
-    }
-
-    /**
-     * Generate C source files from a [GameIR] using the typed C AST pipeline.
-     *
-     * This method is kept for backward compatibility with code that calls generateV2 directly via
-     * reflection (e.g., the Gradle plugin).
+     * 4. Annotated IR is passed to [GBDKPipeline] for C code generation.
      *
      * @param gameIR The game IR to compile.
      * @param assetManifest Optional asset manifest produced by the asset pipeline. When provided,
@@ -69,24 +61,70 @@ class GBDKBackend(override val profile: TargetProfile = GameBoyColorProfile) : C
      *   estimates. Wired to [PassContext.assetManifest].
      * @param outputDirectory Optional build output directory. When provided, [BudgetAuditPass]
      *   writes `optimization-report.json` here. Wired to [PassContext.outputDirectory].
+     * @param assetRoot Optional project asset root directory. When provided,
+     *   [io.github.gbkt.analysis.passes.BankingAnalysisPass] enables the cumulative tilemap-bank
+     *   overflow guard (Phase 12.2 REQ-5 / D-claude-2). Wired to [PassContext.assetRoot]. When null
+     *   (the current Gradle-plugin default), the overflow guard is skipped silently and the
+     *   existing build behavior is unchanged.
      */
+    @JvmOverloads
     @Suppress("TooGenericExceptionCaught")
-    fun generateV2(
+    fun generate(
         gameIR: GameIR,
         assetManifest: AssetManifest? = null,
         outputDirectory: java.io.File? = null,
+        assetRoot: java.io.File? = null,
     ): GenerationResult {
         return try {
+            // D-05/D-06: derive romBanks when omitted, or validate an explicit value.
+            // This block runs before AnalysisConfig construction so the effective bank count
+            // is known before the real pipeline pass.
+            val effectiveRomBanks: Int = when (val declared = gameIR.config.romBanks) {
+                null -> {
+                    // D-05: romBanks omitted → derive from BankingAnalysisPass probe.
+                    // The probe uses an unconstrained maxBanks (type max) so every scene can be
+                    // assigned; the highest assigned bank determines the minimum needed.
+                    // Pitfall 1: pass outputDirectory=null to suppress BudgetAuditPass file writes.
+                    val probeConfig = AnalysisConfig.fromCartridgeConfig(
+                        gameIR.config.copy(romBanks = null)
+                            .let { cfg ->
+                                // Derive typeMax from the cartridge type (unconstrained ceiling).
+                                // fromCartridgeConfig with romBanks=null gives maxBanks=typeMax.
+                                val typeMaxConfig = AnalysisConfig.fromCartridgeConfig(cfg)
+                                cfg.copy(romBanks = typeMaxConfig.maxBanks)
+                            }
+                    )
+                    val probeContext = PassContext(
+                        game = gameIR,
+                        profile = profile,
+                        config = probeConfig,
+                        assetManifest = assetManifest,
+                        outputDirectory = null,  // Pitfall 1: suppress BudgetAuditPass file writes
+                        assetRoot = assetRoot,
+                    )
+                    val probeResult = DefaultPipeline.create().execute(probeContext)
+                    val maxBank = if (probeResult is PassResult.Success)
+                        probeResult.context.bankAssignments.values.maxOfOrNull { it.bank } ?: 0
+                    else 0
+                    val cartridgeCap = gameIR.config.cartridge.maxRomBanks
+                    minOf(maxOf(2, nextPowerOfTwo(maxBank + 1)), cartridgeCap)
+                }
+                else -> declared  // Explicit value: use as-is; D-06 validation runs inside BankingAnalysisPass
+            }
+
             // 1. Run analysis pipeline
-            val analysisConfig = AnalysisConfig.fromCartridgeConfig(gameIR.config)
+            val analysisConfig = AnalysisConfig.fromCartridgeConfig(
+                gameIR.config.copy(romBanks = effectiveRomBanks)
+            )
             val pipeline = DefaultPipeline.create()
             val initialContext =
                 PassContext(
-                    game = gameIR,
+                    game = gameIR.copy(config = gameIR.config.copy(romBanks = effectiveRomBanks)),
                     profile = profile,
                     config = analysisConfig,
                     assetManifest = assetManifest,
                     outputDirectory = outputDirectory,
+                    assetRoot = assetRoot,
                 )
             val analysisResult = pipeline.execute(initialContext)
 
@@ -109,8 +147,8 @@ class GBDKBackend(override val profile: TargetProfile = GameBoyColorProfile) : C
             val annotatedGame = applyAnnotations(annotatedContext.game, annotatedContext)
 
             // 3. Generate C code from annotated IR
-            val pipelineV2 = GBDKPipelineV2()
-            val output = pipelineV2.generate(annotatedGame)
+            val codegenPipeline = GBDKPipeline()
+            val output = codegenPipeline.generate(annotatedGame)
 
             // 4. Apply C-output optimizations (shared constant tables + function deduplication)
             val optimizer =
@@ -153,18 +191,17 @@ class GBDKBackend(override val profile: TargetProfile = GameBoyColorProfile) : C
                 reportFile.writeText(report.toJson())
             }
 
-            val generatedFiles =
-                optimizedFiles.mapValues { (path, content) ->
-                    GeneratedFile(
-                        path = path,
-                        content = content,
-                        description = "Generated by GBDKPipelineV2",
-                        sourceMapJson = output.sourceMaps[path],
-                    )
-                }
+            val generatedFiles = optimizedFiles.mapValues { (path, content) ->
+                GeneratedFile(
+                    path = path,
+                    content = content,
+                    description = "Generated by GBDKPipeline",
+                    sourceMapJson = output.sourceMaps[path],
+                )
+            }
             GenerationResult(success = true, files = generatedFiles)
         } catch (e: Exception) {
-            GenerationResult.failed(e.message ?: "V2 code generation failed")
+            GenerationResult.failed(e.message ?: "code generation failed")
         }
     }
 

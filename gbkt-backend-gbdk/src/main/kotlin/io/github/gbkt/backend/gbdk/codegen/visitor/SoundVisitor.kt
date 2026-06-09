@@ -301,21 +301,20 @@ class SoundVisitor(private val gameIR: GameIR) {
     }
 
     /** Recursively scan [ops] for any music ScriptOp. */
-    private fun containsMusicOp(ops: List<ScriptOp>): Boolean =
-        ops.any { op ->
-            when (op) {
-                is MusicPlay,
-                is MusicStop,
-                is MusicPause,
-                is MusicResume -> true
-                is IfOp -> containsMusicOp(op.then) || containsMusicOp(op.otherwise)
-                is WhileOp -> containsMusicOp(op.body)
-                is ForOp -> containsMusicOp(op.body)
-                is FadeOp -> containsMusicOp(op.after)
-                is DialogChoice -> op.options.any { containsMusicOp(it.body) }
-                else -> false
-            }
+    private fun containsMusicOp(ops: List<ScriptOp>): Boolean = ops.any { op ->
+        when (op) {
+            is MusicPlay,
+            is MusicStop,
+            is MusicPause,
+            is MusicResume -> true
+            is IfOp -> containsMusicOp(op.then) || containsMusicOp(op.otherwise)
+            is WhileOp -> containsMusicOp(op.body)
+            is ForOp -> containsMusicOp(op.body)
+            is FadeOp -> containsMusicOp(op.after)
+            is DialogChoice -> op.options.any { containsMusicOp(it.body) }
+            else -> false
         }
+    }
 
     /**
      * Build a `play_sound_<id>()` wrapper for the given sound ID.

@@ -14,12 +14,13 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CRawCode
 import io.github.gbkt.backend.gbdk.codegen.ast.CStatement
 import io.github.gbkt.backend.gbdk.codegen.ast.CSwitch
 import io.github.gbkt.backend.gbdk.codegen.ast.CWhile
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import io.github.gbkt.backend.gbdk.codegen.visitor.ActorVisitor
 import io.github.gbkt.backend.gbdk.codegen.visitor.GBDKSystemVisitor
 import io.github.gbkt.backend.gbdk.codegen.visitor.ScriptOpVisitor
 import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.CameraSystem
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.DestroyActor
 import io.github.gbkt.core.ir.ExplorationSystem
@@ -41,8 +42,10 @@ import kotlin.test.assertFalse
 //
 // The only acceptable CRawCode after Phase 06.1-06:
 // 1. GBDK macros: ENABLE_RAM, DISABLE_RAM, SCX_REG, SCY_REG camera writes
-// 2. GBDK macros: SHOW_WIN, HIDE_WIN, DISPLAY_ON, SHOW_SPRITES in GBDKPipelineV2
+// 2. GBDK macros: SHOW_WIN, HIDE_WIN, DISPLAY_ON, SHOW_SPRITES in GBDKPipeline
 // 3. RawOp pass-through (visitRawOp) — user DSL escape hatch
+// 4. SDCC warning suppression casts: (void)from; (void)to; in show_sprites_range
+//    (Phase 09.1 plan 02, D-08 — silences warning 85 unused parameter)
 //
 // This test suite counts CRawCode nodes recursively across the typed C AST
 // and asserts the total is zero (or equals the documented exception count).
@@ -58,18 +61,17 @@ import kotlin.test.assertFalse
  * Traverses all compound statement containers: [CIf] (then+else), [CFor] (body), [CWhile] (body),
  * [CSwitch] (all case bodies), [CBlock] (statements). All other statement types contribute 0.
  */
-fun countRawCode(stmts: List<CStatement>): Int =
-    stmts.sumOf { stmt ->
-        when (stmt) {
-            is CRawCode -> 1
-            is CBlock -> countRawCode(stmt.statements)
-            is CIf -> countRawCode(stmt.thenBody) + countRawCode(stmt.elseBody)
-            is CFor -> countRawCode(stmt.body)
-            is CWhile -> countRawCode(stmt.body)
-            is CSwitch -> stmt.cases.sumOf { countRawCode(it.body) }
-            else -> 0
-        }
+fun countRawCode(stmts: List<CStatement>): Int = stmts.sumOf { stmt ->
+    when (stmt) {
+        is CRawCode -> 1
+        is CBlock -> countRawCode(stmt.statements)
+        is CIf -> countRawCode(stmt.thenBody) + countRawCode(stmt.elseBody)
+        is CFor -> countRawCode(stmt.body)
+        is CWhile -> countRawCode(stmt.body)
+        is CSwitch -> stmt.cases.sumOf { countRawCode(it.body) }
+        else -> 0
     }
+}
 
 /** Recursively count [CRawCode] in a [CFunction]'s body. */
 fun countRawCodeInFunction(fn: CFunction): Int = countRawCode(fn.body)
@@ -80,18 +82,17 @@ fun countRawCodeInFunction(fn: CFunction): Int = countRawCode(fn.body)
  * Returns a flat list of all raw code nodes found at any depth. Traverses the same containers as
  * [countRawCode].
  */
-fun collectAllRawCode(stmts: List<CStatement>): List<CRawCode> =
-    stmts.flatMap { stmt ->
-        when (stmt) {
-            is CRawCode -> listOf(stmt)
-            is CBlock -> collectAllRawCode(stmt.statements)
-            is CIf -> collectAllRawCode(stmt.thenBody) + collectAllRawCode(stmt.elseBody)
-            is CFor -> collectAllRawCode(stmt.body)
-            is CWhile -> collectAllRawCode(stmt.body)
-            is CSwitch -> stmt.cases.flatMap { collectAllRawCode(it.body) }
-            else -> emptyList()
-        }
+fun collectAllRawCode(stmts: List<CStatement>): List<CRawCode> = stmts.flatMap { stmt ->
+    when (stmt) {
+        is CRawCode -> listOf(stmt)
+        is CBlock -> collectAllRawCode(stmt.statements)
+        is CIf -> collectAllRawCode(stmt.thenBody) + collectAllRawCode(stmt.elseBody)
+        is CFor -> collectAllRawCode(stmt.body)
+        is CWhile -> collectAllRawCode(stmt.body)
+        is CSwitch -> stmt.cases.flatMap { collectAllRawCode(it.body) }
+        else -> emptyList()
     }
+}
 
 class CRawCodeEliminationTest {
 
@@ -111,12 +112,11 @@ class CRawCodeEliminationTest {
         // CameraSystem uses CRawCode only for SCX_REG/SCY_REG hardware register writes
         // (GBDK macros — acceptable). All structural logic (bounds clamping) must be typed AST.
         // Count CRawCode nodes that are NOT register writes.
-        val nonRegisterRaw =
-            functions.flatMap { fn ->
-                collectAllRawCode(fn.body).filter { raw ->
-                    !raw.code.contains("SCX_REG") && !raw.code.contains("SCY_REG")
-                }
+        val nonRegisterRaw = functions.flatMap { fn ->
+            collectAllRawCode(fn.body).filter { raw ->
+                !raw.code.contains("SCX_REG") && !raw.code.contains("SCY_REG")
             }
+        }
         assertEquals(
             0,
             nonRegisterRaw.size,
@@ -227,14 +227,16 @@ class CRawCodeEliminationTest {
     }
 
     @Test
-    fun `ActorVisitor show_sprites_range has zero CRawCode`() {
+    fun `ActorVisitor show_sprites_range has exactly 2 CRawCode (SDCC warning 85 suppression)`() {
         val fn = ActorVisitor.generateShowSpritesRange()
 
         val raw = countRawCodeInFunction(fn)
         assertEquals(
-            0,
+            2,
             raw,
-            "show_sprites_range should have zero CRawCode — uses CComment for no-op body",
+            "show_sprites_range must have exactly 2 CRawCode: '(void)from;' and '(void)to;' " +
+                "to suppress SDCC warning 85 (unused parameter). " +
+                "These are intentional exceptions per Phase 09.1 plan 02 D-08.",
         )
     }
 
@@ -262,18 +264,18 @@ class CRawCodeEliminationTest {
     // =========================================================================
 
     @Test
-    fun `GBDKPipelineV2 full pipeline has zero CRawCode in generated AST functions`() {
+    fun `GBDKPipeline full pipeline has zero CRawCode in generated AST functions`() {
         val gameIR =
             GameIR(
                 name = "TestGame",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes = listOf(SceneIR(id = "main")),
                 actors = listOf(ActorIR(id = "player", position = PositionDef(80, 72))),
                 systems = listOf(CameraSystem(id = "cam"), ExplorationSystem(id = "explore")),
                 startScene = "main",
             )
 
-        val output = GBDKPipelineV2().generate(gameIR)
+        val output = GBDKPipeline().generate(gameIR)
 
         // Generated C must not contain hashCode() artifacts (old stub pattern).
         val mainC = output.files["main.c"] ?: error("main.c not generated")

@@ -1,0 +1,98 @@
+# Plan 07.4-35 Task 4 — runtime GREEN evidence for GAP-TRACK-NOT-RENDERED-AS-CIRCUIT
+# Probe: Round8TrackTilemapShapeProbe.`zone track1 tiles runtime matches expected corridor`
+# Surface: VRAM BG tile-map at 0x9800 + y * 32 + x
+# Boot: 120-frame title settle -> START -> release -> 30-frame race settle
+# Captured: 2026-05-21 (post-fix, against commit 8d4c56e2)
+#
+# CONTRACT (Plan 07.4-35 must_haves):
+#   - Probe PASSES against post-fix ROM (Plan 33's RED flips to GREEN)
+#   - mismatch_count <= 18 (Plan 33's MAX_MISMATCH_FOR_PASS); achieved: 0
+#   - Per-cell structural assertion (D-N-12) — no pixel-count thresholds
+#
+# Note: the inline "CONTRACT" comment lines below were emitted by the
+# Round8TrackTilemapShapeProbe writer which is shared between the RED probe
+# (file 05) and this GREEN snapshot. They describe the RED contract Plan 33
+# locked, not the GREEN contract Plan 35 closes. The actual GREEN evidence is
+# the `mismatch_count=0` line + the matching `actual` vs `expected` grids
+# below — both grids are identical byte-for-byte.
+
+mismatch_count=0
+
+===== first up to 10 mismatches (x, y, actual, expected) =====
+
+===== actual VRAM BG tilemap =====
+    0123456789012345678
+   +-------------------
+ 0 |...................
+ 1 |...................
+ 2 |...................
+ 3 |...................
+ 4 |....#############..
+ 5 |....#############..
+ 6 |....#############..
+ 7 |....###,,,,,,,###..
+ 8 |....###,,,,,,,###..
+ 9 |....###,,,,,,,###..
+10 |....###,,,,,,,###..
+11 |....###,,,,,,,###..
+12 |....###,,,,,,,###..
+13 |....###,,,,,,,###..
+14 |....#############..
+15 |....#############..
+16 |....#############..
+17 |...................
+18 |...................
+
+===== expected corridor (07-expected-...) =====
+    0123456789012345678
+   +-------------------
+ 0 |...................
+ 1 |...................
+ 2 |...................
+ 3 |...................
+ 4 |....#############..
+ 5 |....#############..
+ 6 |....#############..
+ 7 |....###,,,,,,,###..
+ 8 |....###,,,,,,,###..
+ 9 |....###,,,,,,,###..
+10 |....###,,,,,,,###..
+11 |....###,,,,,,,###..
+12 |....###,,,,,,,###..
+13 |....###,,,,,,,###..
+14 |....#############..
+15 |....#############..
+16 |....#############..
+17 |...................
+18 |...................
+
+===== legend =====
+# . = wall (tile 0); # = drivable (tile 1); , = grass (tile 2); ? = other tile id
+
+===== contract summary =====
+contract: mismatch_count=0 (target >= 30 for RED)
+contract: probe FAILED against HEAD (assertion below trips)
+contract: per-cell assertion compared 361 individual VRAM bytes (D-N-12)
+
+===== diagnostic re-capture (test 2) =====
+    0123456789012345678
+   +-------------------
+ 0 |...................
+ 1 |...................
+ 2 |...................
+ 3 |...................
+ 4 |....#############..
+ 5 |....#############..
+ 6 |....#############..
+ 7 |....###,,,,,,,###..
+ 8 |....###,,,,,,,###..
+ 9 |....###,,,,,,,###..
+10 |....###,,,,,,,###..
+11 |....###,,,,,,,###..
+12 |....###,,,,,,,###..
+13 |....###,,,,,,,###..
+14 |....#############..
+15 |....#############..
+16 |....#############..
+17 |...................
+18 |...................

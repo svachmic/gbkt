@@ -156,8 +156,8 @@ class HudVisitor(private val gameIR: GameIR) {
         // _hud_print_u8 helper — decimal digit extraction for UINT8 values
         functions += buildHudPrintU8Helper()
 
-        // Background layer helpers if any HUD uses renderOnWindow=false
-        val hasBackgroundHuds = gameIR.huds.any { !it.renderOnWindow }
+        // Background layer helpers if any HUD explicitly uses BG rendering (not suppressed ones)
+        val hasBackgroundHuds = gameIR.huds.any { !it.renderOnWindow && !isHudSuppressed(it) }
         if (hasBackgroundHuds) {
             functions += buildBkgPrintAtHelper()
             functions += buildBkgClearRegionHelper()
@@ -227,6 +227,40 @@ class HudVisitor(private val gameIR: GameIR) {
             Anchor.RIGHT -> (20 - width) to 9
             Anchor.CENTER -> center to 8
         }
+    }
+
+    /**
+     * Determine whether a HUD should effectively render on the window layer.
+     *
+     * Game Boy hardware limitation: the window layer always extends from its Y position to the
+     * bottom of the screen. A top-positioned window-layer HUD (tileY < 9) would cover all BG
+     * content below it (bricks, text, etc.). Only bottom-half HUDs can safely use the window layer.
+     *
+     * The [HudDef.renderOnWindow] flag represents the user's intent. This method overrides it based
+     * on anchor position because the hardware can't support top-positioned window overlays without
+     * scanline interrupts.
+     */
+    private fun effectiveRenderOnWindow(hud: HudDef): Boolean {
+        if (!hud.renderOnWindow) return false
+        val (_, tileY) = resolveHudPosition(hud)
+        return tileY >= 9
+    }
+
+    /**
+     * Whether a HUD should be suppressed entirely.
+     *
+     * A top-anchored window HUD (tileY < 9, renderOnWindow = true) cannot render on the window
+     * layer (would cover the entire BG) and cannot render on the BG layer either (its tile-based
+     * elements like icons use custom tile indices that produce garbled output on the BG font).
+     * These HUDs are suppressed — show/update/hide become no-ops.
+     *
+     * Games with top-anchored HUDs should use `renderOnBackground()` in the DSL (which uses
+     * BG-compatible text rendering) or use `print()` calls for BG-layer score display.
+     */
+    private fun isHudSuppressed(hud: HudDef): Boolean {
+        if (!hud.renderOnWindow) return false
+        val (_, tileY) = resolveHudPosition(hud)
+        return tileY < 9
     }
 
     /**
@@ -784,6 +818,15 @@ class HudVisitor(private val gameIR: GameIR) {
      */
     private fun buildHudShowFunction(hud: HudDef): CFunction {
         val hudId = hud.id.replace('-', '_').replace(' ', '_')
+        // Suppressed HUDs get an empty show function (visible stays 0 → update is a no-op)
+        if (isHudSuppressed(hud)) {
+            return CFunction(
+                name = "show_hud_$hudId",
+                returnType = CVoid,
+                body = emptyList(),
+                bank = 0,
+            )
+        }
         val body =
             buildList<CStatement> {
                 // Set visible flag
@@ -797,8 +840,10 @@ class HudVisitor(private val gameIR: GameIR) {
                         )
                     )
                 }
-                // Show window layer if applicable
-                if (hud.renderOnWindow) {
+                // Position and show window layer if applicable (bottom-anchored HUDs only)
+                if (effectiveRenderOnWindow(hud)) {
+                    val (_, baseY) = resolveHudPosition(hud)
+                    add(CExprStatement(CCall("move_win", listOf(CLiteral(7), CLiteral(baseY * 8)))))
                     add(CRawCode("SHOW_WIN;"))
                 }
             }

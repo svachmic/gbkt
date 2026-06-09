@@ -7,6 +7,7 @@
 package io.github.gbkt.backend.gbdk.codegen.pipeline
 
 import io.github.gbkt.core.ir.CallExpr
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.FadeOp
 import io.github.gbkt.core.ir.ForOp
@@ -27,7 +28,7 @@ import org.json.JSONObject
 
 // =============================================================================
 // METADATA ENRICHMENT TESTS
-// Verifies that GBDKPipelineV2.buildMetadataFile() emits the new sections:
+// Verifies that GBDKPipeline.buildMetadataFile() emits the new sections:
 //   - controls: per-scene input mappings extracted from IfOp conditions
 //   - transitions: scene navigation graph extracted from NavigateTo ops
 //   - variables with "semantic" field
@@ -35,7 +36,7 @@ import org.json.JSONObject
 
 class MetadataEnrichmentTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Controls extraction tests
@@ -46,7 +47,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "ControlsTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -78,7 +79,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "ButtonTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -111,7 +112,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "NestedTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -154,7 +155,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "NoInputTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(SceneIR(id = "game", enterOps = emptyList(), frameOps = emptyList())),
                 startScene = "game",
@@ -188,7 +189,7 @@ class MetadataEnrichmentTest {
             val game =
                 GameIR(
                     name = "ButtonMappingTest",
-                    config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                    config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                     scenes =
                         listOf(
                             SceneIR(
@@ -226,7 +227,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "EnterExitControlsTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -267,7 +268,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "EnterTransitionTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -295,7 +296,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "TransitionTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -320,7 +321,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "NestedNavTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -352,7 +353,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "DedupTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -378,7 +379,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "MultiTransitionTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -514,7 +515,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "WhileOpControlsTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -554,7 +555,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "ForOpControlsTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -596,7 +597,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "FadeOpControlsTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -637,7 +638,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "PoolDestroyControlsTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -682,7 +683,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "PoolForEachControlsTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -728,7 +729,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "DedupControlsTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(
@@ -760,7 +761,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "SemanticTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 variables =
                     listOf(
                         io.github.gbkt.core.ir.VariableDef(
@@ -821,7 +822,7 @@ class MetadataEnrichmentTest {
         val game =
             GameIR(
                 name = "MultiSceneMetadataTest",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes =
                     listOf(
                         SceneIR(id = "title", enterOps = emptyList(), frameOps = emptyList()),

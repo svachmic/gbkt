@@ -259,6 +259,7 @@ class ScriptOpInterpreter(private val game: GameIR) {
             is PrintCentered,
             is PrintAligned,
             is ClearRegion,
+            is BindCurrentLevel,   // Phase 13.5: hardware-dependent level binding; no-op in sim
             is ScreenClear,
             is ScreenFill,
             is SetPalette,

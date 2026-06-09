@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.pipeline
 
+import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.ExplorationSystem
 import io.github.gbkt.core.ir.GameIR
@@ -19,7 +20,7 @@ import kotlin.test.assertTrue
 
 // =============================================================================
 // ZONE TILEMAP BANKING TESTS (Plan 06.7-09)
-// Verifies that GBDKPipelineV2 correctly:
+// Verifies that GBDKPipeline correctly:
 //  - Auto-allocates zone tilemap data across ROM banks (first-fit bin-packing)
 //  - Generates CFile objects with correct bank field for each tilemap bank
 //  - Emits SWITCH_ROM(N) in zone_load functions for banked tilemap data
@@ -44,7 +45,7 @@ private fun buildBankingGame(
 ): GameIR =
     GameIR(
         name = "BankingTestGame",
-        config = CartridgeConfig(cartridge = "ROM_MBC5", romBanks = 16),
+        config = CartridgeConfig(cartridge = Cartridge.MBC5, romBanks = 16),
         scenes = scenes,
         systems = listOf(ExplorationSystem(id = "dungeon")),
         zones = zones,
@@ -53,7 +54,7 @@ private fun buildBankingGame(
 
 class ZoneTilemapBankingTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // Test 1: Single zone — auto-allocated to bank 2
@@ -229,7 +230,7 @@ class ZoneTilemapBankingTest {
         val gameIR =
             GameIR(
                 name = "NoBankGame",
-                config = CartridgeConfig(cartridge = "ROM_ONLY", romBanks = 2),
+                config = CartridgeConfig(cartridge = Cartridge.ROM_ONLY),
                 scenes = listOf(SceneIR(id = "gameplay")),
                 // No ExplorationSystem — zone_load function not generated
                 zones = listOf(zone),

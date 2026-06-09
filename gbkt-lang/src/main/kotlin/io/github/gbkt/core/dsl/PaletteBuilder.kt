@@ -25,10 +25,10 @@ import kotlin.reflect.KProperty
  * Usage:
  * ```kotlin
  * val forest by palette {
- *     color0(GbcColor.WHITE)
- *     color1(gbc(16, 24, 8))
- *     color2(gbc(8, 16, 4))
- *     color3(GbcColor.BLACK)
+ *     color0(Color.WHITE)
+ *     color1(Color.rgb555(16, 24, 8))
+ *     color2(Color.rgb555(8, 16, 4))
+ *     color3(Color.BLACK)
  * }
  * ```
  *
@@ -70,7 +70,7 @@ class PaletteBuilder(private val name: String) {
      * ```kotlin
      * val myPalette by palette {
      *     copy(GbcPresets.NATURE)
-     *     color3(GbcColor.BLACK)  // override just the darkest shade
+     *     color3(Color.BLACK)  // override just the darkest shade
      * }
      * ```
      */
@@ -87,13 +87,9 @@ class PaletteBuilder(private val name: String) {
      *   [PaletteType.BACKGROUND].
      */
     internal fun build(type: PaletteType = PaletteType.BACKGROUND): GBCPalette {
-        val colorList =
-            colors.mapIndexed { i, c ->
-                c
-                    ?: error(
-                        "Palette '$name' missing color$i — call color$i(GBCColor) before build()"
-                    )
-            }
+        val colorList = colors.mapIndexed { i, c ->
+            c ?: error("Palette '$name' missing color$i — call color$i(GBCColor) before build()")
+        }
         return GBCPalette(name, colorList, type = type)
     }
 }
@@ -112,10 +108,10 @@ class PaletteBuilder(private val name: String) {
  * ```kotlin
  * game("MyGame") {
  *     val forest by palette {
- *         color0(GbcColor.WHITE)
- *         color1(gbc(16, 24, 8))
- *         color2(gbc(8, 16, 4))
- *         color3(GbcColor.BLACK)
+ *         color0(Color.WHITE)
+ *         color1(Color.rgb555(16, 24, 8))
+ *         color2(Color.rgb555(8, 16, 4))
+ *         color3(Color.BLACK)
  *     }
  * }
  * ```
@@ -152,11 +148,81 @@ class PaletteDelegate(private val block: PaletteBuilder.() -> Unit) {
  * Usage:
  * ```kotlin
  * val dungeon by palette {
- *     color0(GbcColor.LIGHT_GRAY)
- *     color1(gbc(16, 14, 12))
- *     color2(gbc(10, 8, 8))
- *     color3(GbcColor.BLACK)
+ *     color0(Color.LIGHT_GRAY)
+ *     color1(Color.rgb555(16, 14, 12))
+ *     color2(Color.rgb555(10, 8, 8))
+ *     color3(Color.BLACK)
  * }
  * ```
  */
 fun palette(block: PaletteBuilder.() -> Unit): PaletteDelegate = PaletteDelegate(block)
+
+// =============================================================================
+// SPRITE PALETTE PROPERTY DELEGATE
+// =============================================================================
+
+/**
+ * Property delegate that registers a [GBCPalette] with [PaletteType.SPRITE] in the active
+ * [GameBuilder] context.
+ *
+ * Mirrors [PaletteDelegate] exactly, but passes [PaletteType.SPRITE] to [PaletteBuilder.build].
+ * This means the generated C code will call `set_sprite_palette()` instead of `set_bkg_palette()`
+ * when the palette is applied via a [SetPalette] script op.
+ *
+ * Usage:
+ * ```kotlin
+ * game("MyGame") {
+ *     val gray by spritePalette {
+ *         color0(Color.WHITE)
+ *         color1(Color.rgb555(20, 20, 20))
+ *         color2(Color.rgb555(10, 10, 10))
+ *         color3(Color.BLACK)
+ *     }
+ * }
+ * ```
+ */
+class SpritePaletteDelegate(private val block: PaletteBuilder.() -> Unit) {
+    /**
+     * Called by Kotlin at the `by` keyword. Captures [property].name as the palette name, runs the
+     * builder block, and registers the resulting [GBCPalette] (type=SPRITE) in the active
+     * [GameBuilder].
+     */
+    operator fun provideDelegate(
+        thisRef: Any?,
+        property: KProperty<*>,
+    ): ReadOnlyProperty<Any?, GBCPalette> {
+        val name = property.name
+        val builder = PaletteBuilder(name)
+        builder.block()
+        val palette = builder.build(PaletteType.SPRITE)
+        // Register palette in GameBuilder context — same pattern as PaletteDelegate
+        GameBuilderContext.current?.registerPalette(palette)
+            ?: error("spritePalette { } called outside a game { } block")
+        return ReadOnlyProperty { _, _ -> palette }
+    }
+}
+
+// =============================================================================
+// SPRITE PALETTE TOP-LEVEL DSL FACTORY FUNCTION
+// =============================================================================
+
+/**
+ * Creates a [SpritePaletteDelegate] for declaring a GBC sprite palette via property delegation.
+ *
+ * The palette name is inferred from the Kotlin property name at the `by` keyword. Unlike [palette],
+ * which defaults to [PaletteType.BACKGROUND], this factory produces a [GBCPalette] with
+ * [PaletteType.SPRITE]. The GBDK backend will emit `set_sprite_palette()` calls for sprite
+ * palettes.
+ *
+ * Usage:
+ * ```kotlin
+ * val playerColors by spritePalette {
+ *     color0(Color.WHITE)
+ *     color1(Color.rgb555(20, 18, 8))
+ *     color2(Color.rgb555(14, 12, 4))
+ *     color3(Color.BLACK)
+ * }
+ * ```
+ */
+fun spritePalette(block: PaletteBuilder.() -> Unit): SpritePaletteDelegate =
+    SpritePaletteDelegate(block)

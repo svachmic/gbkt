@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.rpg.dsl
 
+import io.github.gbkt.core.dsl.SceneRef
 import io.github.gbkt.core.dsl.game
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.GenericSystem
@@ -125,12 +126,16 @@ class RpgIntegrationTest {
                         }
                     }
 
+                    // ---- Scenes ----
+                    val gameplayScene = scene("gameplay") { frame {} }
+                    val gameoverScene = scene("gameover") { enter {} }
+
                     // ---- Combat via simpleBattle (now uses CombatEngineSystem internally) ----
                     simpleBattle("combat") {
                         party(hero)
                         encounter { +goblin }
-                        onVictory { navigate("gameplay") }
-                        onDefeat { navigate("gameover") }
+                        onVictory { navigate(gameplayScene) }
+                        onDefeat { navigate(gameoverScene) }
                     }
 
                     // ---- Party system ----
@@ -139,10 +144,7 @@ class RpgIntegrationTest {
                     // ---- RPG save ----
                     rpgSave { slots(3) }
 
-                    // ---- Scenes ----
-                    scene("gameplay") { frame {} }
-                    scene("gameover") { enter {} }
-                    start = "gameplay"
+                    start = gameplayScene
                 }
                 .build()
 
@@ -253,8 +255,8 @@ class RpgIntegrationTest {
                         party("hero") // String overload
                         party("warrior") // String overload
                     }
-                    scene("gameplay") { enter {} }
-                    start = "gameplay"
+                    val gameplayScene = scene("gameplay") { enter {} }
+                    start = gameplayScene
                 }
                 .build()
 

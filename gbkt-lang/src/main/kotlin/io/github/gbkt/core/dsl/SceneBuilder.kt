@@ -13,6 +13,7 @@ import io.github.gbkt.core.ir.MusicPlay
 import io.github.gbkt.core.ir.MusicStop
 import io.github.gbkt.core.ir.SceneIR
 import io.github.gbkt.core.ir.SetPalette
+import io.github.gbkt.core.ir.ZoneIR
 
 /**
  * Lightweight typed reference to a scene.
@@ -45,6 +46,8 @@ class SceneBuilder(val id: String, private val refs: RefRegistry) {
     private var musicExitOp: io.github.gbkt.core.ir.ScriptOp? = null
     // Palette ops injected at the start of enter (set by palette())
     private val paletteOps = mutableListOf<io.github.gbkt.core.ir.ScriptOp>()
+    // Zone IDs to load on scene-enter (SEED-014; set by zone(), flushed to SceneIR at build() time)
+    private val zoneRefs = mutableListOf<String>()
 
     /** Registers the scene enter handler. Runs once when the game transitions into this scene. */
     fun enter(block: ScriptBuilder.() -> Unit) {
@@ -100,7 +103,7 @@ class SceneBuilder(val id: String, private val refs: RefRegistry) {
      * ```
      *
      * The collision data is stored in [SceneIR.collisionData] and used by
-     * [GBDKPipelineV2][io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2] to generate
+     * [GBDKPipeline][io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline] to generate
      * `_map_collision()` lookup functions.
      */
     fun collisionData(data: ByteArray, mapWidth: Int) {
@@ -137,6 +140,71 @@ class SceneBuilder(val id: String, private val refs: RefRegistry) {
     }
 
     /**
+     * Binds a zone's tileset to load on scene-enter. Backend emits a HOME-bank
+     * `_bkg_tiles_load_banked(bank, x, y, w, h, tiles)` call prepended to the enter body.
+     *
+     * 11.1 limits to 1 zone per scene — multi-zone-per-scene is deferred to Phase 13 (CONTEXT
+     * <deferred>).
+     *
+     * @param zoneRef Typed reference to a declared zone (from `val playZone by zone { ... }`).
+     */
+    fun zone(zoneRef: ZoneRef) {
+        require(zoneRefs.isEmpty()) {
+            "scene '$id' already binds a zone; multi-zone-per-scene deferred to Phase 13 (CONTEXT <deferred>)"
+        }
+        zoneRefs += zoneRef.id
+    }
+
+    /**
+     * Binds a full-screen static image to this scene (Req #18 / D-03/D-04/D-05/D-06).
+     *
+     * Synthesizes an internal `_screen_<sceneId>` [ZoneIR] with [ZoneIR.screenMode] = true,
+     * registers it with the enclosing [GameBuilder] (via [GameBuilderContext.current]), and
+     * adds its ID to [zoneRefs] so SceneVisitor emits the screenMode superset on scene-enter:
+     * hide_sprites_range + move_bkg(0,0) + fill_bkg_rect(full-plane clear) + centered
+     * _bkg_tiles_load_banked placement (auto-derived from PNG IHDR via ConvertZoneTilesetsTask).
+     *
+     * **Must be called at scene scope** (parallel to `zone()`), NOT inside `enter { }`.
+     * ScriptBuilder cannot add to [SceneIR.zoneRefs] nor register a [ZoneIR] with GameBuilder.
+     *
+     * **One `screen()` or `zone()` per scene** — multi-zone-per-scene is deferred (Phase 13 CONTEXT).
+     *
+     * Usage:
+     * ```kotlin
+     * scene("title") {
+     *     screen(asset("graphics/title-screen.png"))
+     *     frame { whenever(buttons.start.pressed) { navigate("gameplay") } }
+     * }
+     * ```
+     *
+     * The synthetic zone id `_screen_<sceneId>` (e.g. `_screen_title`) is automatically
+     * excluded from the `setup_current_level()` switch by the title/nextlevel filter in
+     * GBDKPipeline (Assumption A2 — the lower-cased id contains the scene id which
+     * contains "title" or "nextlevel" for the typical use cases).
+     *
+     * @param assetRef Typed reference to the full-screen PNG image (from `asset("...")`).
+     */
+    fun screen(assetRef: AssetRef) {
+        val syntheticId = "_screen_${id}"
+        // WR-01 fix: validate BEFORE registering the zone so a double screen() call does not
+        // leave an orphaned ZoneIR entry in GameIR.zones before the require exception fires.
+        require(zoneRefs.isEmpty()) {
+            "scene '$id' already binds a zone or screen; " +
+                "multi-zone/screen-per-scene deferred to Phase 13 (CONTEXT <deferred>)"
+        }
+        val syntheticZone =
+            ZoneIR(
+                id = syntheticId,
+                name = syntheticId,
+                tilesetPath = assetRef.path,
+                screenMode = true,
+            )
+        GameBuilderContext.current?.registerZone(syntheticZone)
+            ?: error("screen() must be called inside a game { } block")
+        zoneRefs += syntheticId
+    }
+
+    /**
      * Assigns a GBC palette to this scene's enter handler.
      *
      * Emits a [SetPalette] op at the beginning of enter, loading the palette data into the
@@ -151,12 +219,45 @@ class SceneBuilder(val id: String, private val refs: RefRegistry) {
      * ```
      */
     fun palette(palette: GBCPalette) {
-        val slot = if (palette.slot >= 0) palette.slot else 0
+        // When slot == -1 (auto-assign), use the current paletteOps count as the next sequential
+        // slot index. This ensures that palette(gray); palette(pink); palette(cyan); palette(green)
+        // emits set_sprite_palette(0u,…), set_sprite_palette(1u,…), etc. — not all slot 0.
+        val slot = if (palette.slot >= 0) palette.slot else paletteOps.size
+        paletteOps += SetPalette(palette.name, slot, palette.type)
+    }
+
+    /**
+     * Assigns a GBC palette to this scene's enter handler with an explicit hardware slot override.
+     *
+     * The [slot] value (0..7) is used directly — the palette's own [GBCPalette.slot] declaration
+     * is ignored. This gives authors precise control ("always load the enemy palette into slot 3")
+     * independent of the palette's default slot assignment.
+     *
+     * Throws [IllegalArgumentException] at build site (call time) if [slot] is outside 0..7
+     * (D-11 range guard). A duplicate-slot check within the same scene runs at [build] time.
+     *
+     * Usage:
+     * ```kotlin
+     * scene("battle") {
+     *     palette(enemyPalette, slot = 3)
+     *     enter { /* ... */ }
+     * }
+     * ```
+     */
+    fun palette(palette: GBCPalette, slot: Int) {
+        require(slot in 0..7) { "Palette slot must be in 0..7 for scene '$id', got $slot" }
         paletteOps += SetPalette(palette.name, slot, palette.type)
     }
 
     /** Builds the [SceneIR] node. */
     internal fun build(): SceneIR {
+        // D-11: duplicate-slot guard — no two palettes may claim the same slot within this scene
+        val slotGroups = paletteOps.filterIsInstance<SetPalette>().groupBy { it.slot }
+        val duplicateSlot = slotGroups.entries.firstOrNull { (_, ops) -> ops.size > 1 }?.key
+        require(duplicateSlot == null) {
+            "Scene '$id' has two palettes mapped to slot $duplicateSlot — each OBP slot must be unique within a scene"
+        }
+
         // Merge palette, music, and user ops: palette first, then music, then user enter ops
         val musicPrefix = if (musicEnterOp != null) listOf(musicEnterOp!!) else emptyList()
         val finalEnterOps = paletteOps + musicPrefix + enterOps
@@ -169,6 +270,7 @@ class SceneBuilder(val id: String, private val refs: RefRegistry) {
             tilesetRef = tilesetRef,
             collisionData = collisionBytes,
             mapWidth = collisionMapWidth,
+            zoneRefs = zoneRefs.toList(),
             sourceLocation = captureV2Location(),
         )
     }

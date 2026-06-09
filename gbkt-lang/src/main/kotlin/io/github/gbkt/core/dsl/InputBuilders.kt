@@ -175,7 +175,7 @@ object dpad {
  * Usage:
  * ```kotlin
  * whenever(buttons.a.pressed) { jump() }
- * whenever(buttons.start.pressed) { navigate("pause") }
+ * whenever(buttons.start.pressed) { navigate(pauseScene) }
  * whenever(buttons.b.held) { sprint() }
  * whenever(buttons.b.released) { cancelSprint() }
  * ```

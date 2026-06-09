@@ -22,7 +22,7 @@ import io.github.gbkt.core.ir.ScriptOp
 //   combatEngine("combat") {
 //       hooks {
 //           beforeAction { /* record stats */ }
-//           afterDamage { navigate("flash_effect") }
+//           afterDamage { navigate(flashEffectScene) }
 //           onVictory { /* extra effects */ }
 //       }
 //   }
@@ -45,7 +45,7 @@ import io.github.gbkt.core.ir.ScriptOp
  * combatEngine("combat") {
  *     hooks {
  *         beforeAction { /* ScriptBuilder DSL here */ }
- *         afterDamage { navigate("damage_flash") }
+ *         afterDamage { navigate(damageFlashScene) }
  *         onVictory { /* extra victory effects */ }
  *         onDefeat { /* extra defeat effects */ }
  *     }

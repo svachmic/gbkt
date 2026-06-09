@@ -303,12 +303,9 @@ internal fun transformExprsInOp(
 internal fun transformExprsInOps(
     ops: List<ScriptOp>,
     transformExpr: (Expr) -> Expr,
-): List<ScriptOp> =
-    ops.map {
-        transformExprsInOp(it, transformExpr) { nested ->
-            transformExprsInOps(nested, transformExpr)
-        }
-    }
+): List<ScriptOp> = ops.map {
+    transformExprsInOp(it, transformExpr) { nested -> transformExprsInOps(nested, transformExpr) }
+}
 
 /**
  * Applies [transformExpr] to all expression fields in scenes, systems, zones, collision rules,
@@ -424,7 +421,9 @@ internal fun transformExprsInPuzzleObject(
     transformExpr: (Expr) -> Expr,
 ): PuzzleObjectIR {
     fun transformHandlers(handlers: List<PuzzleEventHandler>): List<PuzzleEventHandler> =
-        handlers.map { it.copy(actions = transformExprsInOps(it.actions, transformExpr)) }
+        handlers.map {
+            it.copy(actions = transformExprsInOps(it.actions, transformExpr))
+        }
 
     return when (puzzleObj) {
         is SwitchObjectIR ->

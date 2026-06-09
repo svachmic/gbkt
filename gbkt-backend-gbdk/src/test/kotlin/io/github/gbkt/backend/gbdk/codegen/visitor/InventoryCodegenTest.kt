@@ -6,7 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
-import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipelineV2
+import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
 import io.github.gbkt.core.ir.CartridgeConfig
 import io.github.gbkt.core.ir.ContainerIR
 import io.github.gbkt.core.ir.DropEntryIR
@@ -72,9 +72,9 @@ private fun buildDropTableGameIR(
         dropTables = dropTables,
     )
 
-/** Helper to generate main.c from a GameIR via GBDKPipelineV2. */
+/** Helper to generate main.c from a GameIR via GBDKPipeline. */
 private fun generateMainC(gameIR: GameIR): String {
-    val pipeline = GBDKPipelineV2()
+    val pipeline = GBDKPipeline()
     val output = pipeline.generate(gameIR)
     return output.files["main.c"] ?: error("main.c not generated")
 }

@@ -38,4 +38,20 @@ dependencies {
     // Test dependencies
     testImplementation(kotlin("test"))
     testImplementation(project(":gbkt-emulator"))
+
+    // Plan 07.4-19 (TDD-RED, scene-aware codegen tests):
+    // ScreenClearSceneAwareTest and PrintOpSceneAwareTest exercise the racer's exact code
+    // path (SportVisitor's enterOps splice into race_enter), so the genre plugin must be on
+    // the test classpath for the ServiceLoader to discover it. Test-scoped only — production
+    // code never depends on a genre module. Same pattern used in gbkt-analysis (see
+    // gbkt-analysis/build.gradle.kts:35).
+    testImplementation(project(":gbkt-genre-sport"))
+
+    // Plan 12-09b (D-16 invariant #1 + #5 — JVM-tier shape-lock tests):
+    // TitleSceneEmissionTest + LevelSwitchEmissionTest exercise platformerPhysics-gated
+    // pipeline emission paths (buildSetupCurrentLevelFunctionIfNeeded /
+    // buildMainLoopLevelSwitchGuardIfNeeded), which require PlatformerPhysicsConfig +
+    // the `platformerPhysics { ... }` DSL extension. Test-scoped only — production code
+    // remains genre-agnostic. Mirrors the gbkt-genre-sport precedent above.
+    testImplementation(project(":gbkt-genre-platformer"))
 }

@@ -1,15 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 07.1.2-03-PLAN.md
-last_updated: "2026-03-22T21:16:37.638Z"
+milestone: v0.1.0
+milestone_name: MVP — Compiler Pipeline Rebuild
+status: Awaiting next milestone
+stopped_at: v0.1.0 milestone shipped and archived
+last_updated: "2026-06-09T15:52:30.144Z"
+last_activity: 2026-06-09 — Milestone v0.1.0 completed and archived
 progress:
-  total_phases: 30
-  completed_phases: 27
-  total_plans: 201
-  completed_plans: 196
+  total_phases: 71
+  completed_phases: 56
+  total_plans: 654
+  completed_plans: 639
+  percent: 79
 ---
 
 # Project State
@@ -19,18 +21,67 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** The framework automatically manages Game Boy hardware resources (VRAM, banking, OAM, RAM) so the developer writes only declarative Kotlin DSL — like Jetpack Compose for Game Boy.
-**Current focus:** Phase 07.1.2 — hardening-bug-fixes
+**Current focus:** Planning next milestone (v0.1.0 shipped 2026-06-09)
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-06-09 (v0.1.0). All triaged as out-of-v0.1.0-scope; none block the full-green release gate. Full detail lives in the archived `milestones/v0.1.0-ROADMAP.md` and the source artifacts under `.planning/`.
+
+| Category | Count | Disposition |
+|----------|-------|-------------|
+| Backlog seeds | 35 | 34 dormant + 1 active (SEED-013 GBC palette D-V3, Phase 10.2 driver) — future-milestone backlog |
+| Verification gaps | 9 | Historical `human_needed`/`gaps_found` from shipped/superseded phases (05, 05.05, 05.05.1, 06, 06.11, 06.12, 07.4, 11, 12.4) |
+| UAT gaps | 4 | Status flags only — all report 0 pending scenarios (07.4, 09, 09.1, 12) |
+| Codegen todos | 5 | Advisory/low-medium; 3 are DSL-primitive correctness smells unreached by shipping examples |
+| Debug sessions | 2 | `knowledge-base` is the resolved-sessions KB (false-positive); `racer-bg-tilemap-not-rendered` targets the retired racer example |
+| Quick task | 1 | `260605-eqr-fix-three-test-infra-issues` (test-infra cleanup) |
+| **Total** | **56** | Recorded as deferred tech debt; review via `/gsd-review-backlog` next milestone |
+
+Known Gaps (4 pending requirements + deferred genre/cleanup phases) are recorded in `MILESTONES.md` under the v0.1.0 entry.
+
+Phase 12.1 SHIPPED 2026-05-22 (14/14) — codegen contract reconciliation pitstop. Defects 2/3/4/5 closed by Plans 12.1-01..09; Defect 6 (BANK macro vs data-array #pragma bank mismatch) surfaced during 12.1-10 terminal smoke and closed by gap-closure Plans 12.1-11/12/13/14 via option (c-prime) literal bank substitution. 6-ROM regression sweep GREEN; full JVM suite GREEN with 9 emission-invariant tests. Code review: 0 critical / 4 warning / 3 info (committed at 12.1-REVIEW.md — WR-01 fallback-comment claim is load-bearing follow-up).
+
+Phase 12 Wave 11 (Plan 12-18 preflight buildRom): RE-CONFIRMED GREEN 2026-05-22 — Phase 12.1's Defect-2..6 closures hold; clean :buildRom produces 64 KB ROM, 4 banks, 0 errors. Resume signal from 12.1 was satisfied.
+
+Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22 — visual UAT exposed Defect 7 in the upstream substrate (ConvertZoneTilesetsTask). Plan 12-19 lands three commits on `feat/d_and_d_gaps`:
+
+  - `733770d6` feat(12-19): implement anchor1 UAT test (also inline-fixes 3 codegen contract bugs: sceneHasEnterContent for zone-only scenes, fill_bkg_rect-after-zone-substrate ordering in title/nextLevel enter, level-switch startup sentinel — latter reverted by e7e1bd48)
+  - `e7e1bd48` fix(12-19): wire gameplay zone tileset+tilemap load via gameplay_enter cEmit + `_next_level=0` init (gameplay screenshot now visually distinct from title screenshot)
+  - `29c6fa1a` docs(12-19): catalog ConvertZoneTilesetsTask synthetic-tilemap defect; escalate to Phase 12.2
+  These commits are KEPT (net-positive). Plan 12-19 stays incomplete (no SUMMARY.md); 12.2 must ship before 12-19 can re-shoot screenshots and close.
+
+  - Defect 7: `ConvertZoneTilesetsTask.synthesizeScreenTilemap()` (Plan 11.1-17 origin) emits a 32×32 modulo-tiled ramp of the png2asset `_tileset_map` dedup table instead of extracting the source PNG's real tile layout via png2asset's `-map -maps_only -source_tileset <tileset>` mode. Reference World1Area1_map[1920] (60×32, sky/platforms/ground rows) vs our `_zone_world1Area1Zone_tilemap[32*32]` (1024 bytes of `[0,1,2,3,4,5,6,7, 0,1,...]` repeat). Also explains title-screen "GBDK-2020 PLATFORMER TEMPLATE" doubling — title-screen.png is 20×18 tiles loaded as 32×32 with vertical wrap. Affects 5 zones in Phase 12 + retroactive Phase 11 Banks (checkerboard tilemap happened to coincide with the synthetic shape, masking the defect for 3 phases). Full evidence: `.planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/anchor-1-blocked-converttilesets-synthetic-tilemap.md`. Source: `gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/ConvertZoneTilesetsTask.kt:432-439`.
 
 ## Current Position
 
-Phase: 07.2
-Plan: Not started
+Phase: Milestone v0.1.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-09 — Milestone v0.1.0 completed and archived
+
+### Bisect state as of Plan 06d complete
+
+- **scratch/bisect HEAD:** 2767fab7 (probe-A baseline; C-4 commits a7aacaa2 + 636c9ddf dropped after evidence capture)
+- **Probe A verdict:** REGRESSION-NAMED: no — CYAN=YES, CHECKER=YES, OCPD slot 2=0x7FFF
+- **Sub-probe C-1 verdict:** CYAN PRESERVED — constant declaration alone does NOT break cyan; Emission #1 CLEARED
+- **Sub-probe C-2 verdict:** CYAN PRESERVED — constant + set_bkg_palette call do NOT break cyan; Emission #2 CLEARED (individually)
+- **Sub-probe C-3 verdict:** CYAN PRESERVED — bgFillCheckerboard hoist alone does NOT break cyan; Emission #3 CLEARED (individually)
+- **Sub-probe C-4 verdict:** CYAN PRESERVED — constant + bgFillCheckerboard (no set_bkg_palette) do NOT break cyan; pair #1+#3 CLEARED
+- **MINIMAL BREAKING PAIR CONFIRMED:** Emissions #2 + #3 = (set_bkg_palette + bgFillCheckerboard hoist); constant is compile-time required but interaction-inert
+- **Plan 07 framing:** Scope-shift — defect is in OAM attribute / VRAM init sequence interaction, not the palette write path (which is CORRECT in all probes); fix-target = buildMainFunction() emission ordering in GBDKPipelineV2.kt
+- **Drift hygiene:** CLEAN — C-4 sub-probe commits (a7aacaa2, 636c9ddf) isolated to worktrees/bisect/HEAD reflog only
+
+Verified: Phase 07.9 (c-codegen-signed-vs-unsigned-literal-discipline) — Option C architectural fix; SignedComparisonLiteralEmissionTest 8/8 GREEN; PlatformerJumpCancelAndFrictionProbe 2/2 GREEN; Round8CameraMonotonicityProbe GREEN (Plan 07.4-32 RED gate closed); CLiteralAuditScanTest GREEN; 6/9 example ROMs build clean (3 pre-existing RPG const/extern SDCC errors not caused by 07.9); surgical-diff captured under evidence/surgical-diffs/. Full test suite: 158 tests; the 2 Plan 07.4-33 RED tests (TrackSynthesizerCircuitShapeTest) are now GREEN — closed by Plan 07.4-35 (commit `8d4c56e2`, 2026-05-21). See evidence/d-09-1-test-suite-status.md.
+Verified: Phase 07.3 (entity-pool-codegen-fix-inserted) — fix commit `191c8f4c` resolves the deterministic frame-188 RAM corruption regression. Static OAM layout replaces dynamic free list; forEachActive re-checks active flag before display sync. Shmup UAT task 2 PASS. Debug session: `.planning/debug/shmup-073-ram-corruption.md` (resolved).
+Paused: Phase 07.2 (interactive-game-uat) — plan 07.2-02 blocked on Racer fix. Plans 07.2-03 / 07.2-04 / 07.2-05 untouched.
+Paused: Phase 07.4 (sport-genre-codegen-fix-inserted) — Plan 07.4-35 (TrackSynthesizer GREEN) CLOSED 2026-05-21 (commit `8d4c56e2` production + `docs(07.4-35)` evidence). JVM + codegen + runtime tiers all GREEN; mismatch_count vs expected = 0 (was 55). Plan 07.4-36 (round-8 visual UAT aggregator) is now the only outstanding work — ready for /gsd-execute-phase 07.4 --gaps-only.
+Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hit (F-A); destroyAll leaves stale OAM positions for 1 frame on scene re-entry (F-B). Documented in UAT-shmup.md.
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 7
+- Total plans completed: 363
 - Average duration: 6.4 min
 - Total execution time: 0.71 hours
 
@@ -40,6 +91,36 @@ Plan: Not started
 |-------|-------|-------|----------|
 | 01-ir-foundation-and-dsl | 5 | 33 min | 6.6 min |
 | 02-structured-codegen-and-migration-cut | 1 | 6 min | 6 min |
+| 07.9 | 6 | - | - |
+| 09 | 7 | - | - |
+| 09.1 | 6 | - | - |
+| 09.2 | 5 | - | - |
+| 09.3 | 4 | - | - |
+| 09.4 | 4 | - | - |
+| 10 | 20 | - | - |
+| 10.1 | 22 | - | - |
+| 10.2 | 15 | - | - |
+| 11 | 13 | - | - |
+| 11.2 | 12 | - | - |
+| 11.1 | 17 | - | - |
+| 12.1 | 14 | - | - |
+| 12.2 | 13 | - | - |
+| 12.3 | 15 | - | - |
+| 12.5 | 14 | - | - |
+| 12.6 | 8 | - | - |
+| 12.7 | 29 | - | - |
+| 12 | 28 | - | - |
+| 12.10 | 4 | - | - |
+| 12.11 | 4 | - | - |
+| 13.1 | 10 | - | - |
+| 13.2 | 7 | - | - |
+| 13.3 | 22 | - | - |
+| 13.4 | 11 | - | - |
+| 13.5 | 8 | - | - |
+| 13.6 | 7 | - | - |
+| 13.7 | 7 | - | - |
+| 13.8 | 7 | - | - |
+| 15 | 6 | - | - |
 
 **Recent Trend:**
 
@@ -228,6 +309,78 @@ Plan: Not started
 | Phase 07.1.2 P01 | 15 | 2 tasks | 4 files |
 | Phase 07.1.2 P02 | 9 | 4 tasks | 4 files |
 | Phase 07.1.2 P03 | 4 | 2 tasks | 0 files |
+| Phase 07.3-entity-pool-codegen-fix-inserted P01 | 25 | 2 tasks | 7 files |
+| Phase 07.3-entity-pool-codegen-fix-inserted P02 | 7 | 2 tasks | 4 files |
+| Phase 07.3-entity-pool-codegen-fix-inserted P03 | 524064min | 1 tasks | 2 files |
+| Phase 07.4 P18 | 90 | 3 tasks | 4 files |
+| Phase 10.2 P04 | 60 | 4 tasks | 7 files |
+| Phase 10.2 P05 | 90min | 4 tasks | 8 files |
+| Phase 10.2 P06a | 30min | 2 tasks | 6 files |
+| Phase 10.2 P06c | 22min | 2 tasks | 8 files |
+| Phase 10.2 P06d | 15min | 2 tasks | 7 files |
+| Phase 10.2 P08 | 15m | 1 tasks | 2 files |
+| Phase 10.2 P09 | 20min | 3 tasks | 7 files |
+| Phase 11.3 P06 | 6 | 2 tasks | 1 files |
+| Phase 11.3 P11.3-07 | 4 | 2 tasks | 1 files |
+| Phase 11.3 P08 | 1 | 2 tasks | 1 files |
+| Phase 11.3 P09 | 10 min | 2 tasks | 1 files |
+| Phase 12.2 P11 | 15 | 2 tasks | 4 files |
+| Phase 12.9 P02 | 8 | 1 tasks | 2 files |
+| Phase 12.9 P06 | 4 | 3 tasks | 2 files |
+| Phase 12.9 P04 | 15m | 3 tasks | 1 files |
+| Phase 12.9 P08f | 15 | 6 tasks | 12 files |
+| Phase 12.10 P01 | 12 | 2 tasks | 2 files |
+| Phase 12.10 P03 | 18 | 2 tasks | 1 files |
+| Phase 12.10 P04 | 6min | 2 tasks | 1 files |
+| Phase 12.11 P02 | 2 | 1 tasks | 1 files |
+| Phase 12.11 P04 | 9 min | 2 tasks | 3 files |
+| Phase 13.1 P01 | 5 | 3 tasks | 3 files |
+| Phase 13.1 P02 | 5 | 3 tasks | 3 files |
+| Phase 13.1 P03 | 3 | 2 tasks | 5 files |
+| Phase 13.1 P05 | 3 | 1 tasks | 0 files |
+| Phase 13.1 P07 | 25 | 3 tasks | 49 files |
+| Phase 13.1 P06 | 8 | 1 tasks | 2 files |
+| Phase 13.1 P08 | 6 | 3 tasks | 10 files |
+| Phase 13.1 P09 | 8 | 1 tasks | 1 files |
+| Phase 13.1 P10 | 15 | 2 tasks | 2 files |
+| Phase 13.2 P01 | 3 | 2 tasks | 6 files |
+| Phase 13.2 P02 | 4 | 2 tasks | 6 files |
+| Phase 13.2 P03 | 1 | 1 tasks | 1 files |
+| Phase 13.2 P04 | 8 | 2 tasks | 2 files |
+| Phase 13.2-framework-primitives-delegate-ergonomics-variable-control-fl P05 | 8 | 1 tasks | 1 files |
+| Phase 13.2 P06 | 6 | 3 tasks | 4 files |
+| Phase 13.2 P07 | 8 | 2 tasks | 2 files |
+| Phase 13.3 P18 | 100 | 2 tasks | 1 files |
+| Phase 13.4 P01 | 3 | 2 tasks | 2 files |
+| Phase 13.4 P02 | 22 | 2 tasks | 9 files |
+| Phase 13.4 P03 | 11 | 2 tasks | 2 files |
+| Phase 13.4 P04 | 12 | 2 tasks | 9 files |
+| Phase 13.4 P05 | 9 | 2 tasks | 15 files |
+| Phase 13.4 P07 | 15 | 2 tasks | 7 files |
+| Phase 13.4 P08 | 6 | 2 tasks | 2 files |
+| Phase 13.4 P09 | 25 min | 2 tasks | 98 files |
+| Phase 13.6 P02 | 96 | 1 tasks | 1 files |
+| Phase 13.6 P04 | 22min | 2 tasks | 4 files |
+| Phase 13.6 P07 | 25 minutes | 3 tasks | 8 files |
+| Phase 13.7 P02 | 10min | 1 tasks | 2 files |
+| Phase 13.7 P03 | 20m | 1 tasks | 3 files |
+| Phase 13.7 P04 | 5m | 1 tasks | 1 files |
+| Phase 13.8 P01 | 503 | 2 tasks | 5 files |
+| Phase 13.8 P02 | 8 | 2 tasks | 5 files |
+| Phase 13.8 P05 | 4m | 2 tasks | 5 files |
+| Phase 13.8 P03 | 15 | 2 tasks | 3 files |
+| Phase 13.8 P07 | 15 | 2 tasks | 3 files |
+| Phase 14 P03 | 5min | 2 tasks | 7 files |
+| Phase 14 P04 | 26 | 3 tasks | 2 files |
+| Phase 14 P05 | 90 | 3 tasks | 135 files |
+| Phase 14 P06 | 45m | 3 tasks | 20 files |
+| Phase 14-cleanup-for-v0-1-0-release-retire-dead-examples-drop-v2-suff P07 | 6 | 2 tasks | 9 files |
+| Phase 15 P01 | 16 min | 2 tasks | 2 files |
+| Phase 15 P02 | 12 min | 2 tasks | 3 files |
+| Phase 15 P04 | 8 min | 2 tasks | 2 files |
+| Phase 15 P03 | 18 min | 2 tasks | 4 files |
+| Phase 15 P05 | 34 min | 3 tasks | 6 files |
+| Phase 15 P06 | 14 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -236,6 +389,7 @@ Plan: Not started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- Plan 10.2-07: Fix shape Option B (Order-Tweaked) chosen for DEF-10.1-13-C 5th layer — swap addAll(hoistedBgFillCheckerboardStatements) before addAll(allSpriteDataLoads) in GBDKPipelineV2.kt mainBody buildList; mechanism = LCDC.4=1 shared $8000-$97FF VRAM, last-write wins, Plan 22 emit order corrupted sprite tile 0; all 5 locked tests preserved; RED test at commit 20691a7d
 - UAT_GUIDE.md created with 3 real Phase 07 debugging walkthroughs; emulator_press documented with frames+1 semantics; variable type range table added; UAT-02 requirement satisfied
 - scrollAware defaults to false on all VramTextVerifier methods to preserve backward compatibility; WINDOW layer is always unaffected by scroll registers (GB hardware behavior)
 - StepAgent.buildObservation() passes metadata-driven decoders to readAllRows(); null decoders fall back to per-layer defaults automatically inside VramTextVerifier
@@ -662,6 +816,57 @@ Recent decisions affecting current work:
 - [Phase 07.1.2]: Audit: all 4 genre modules clean for bug classes 1-4; no additional fixes required.
 - [Phase 07.1.2]: All 9 examples passed generateC and buildRom without source changes — Plans 01-02 fixes were complete and correct
 - [Phase 07.1.2]: Task 3 (emulator boot verification) deferred — requires active Claude Code session with MCP emulator server; all ROMs exist at correct paths
+- [Phase 07.3-entity-pool-codegen-fix-inserted]: D-03: Dynamic OAM allocation — pool entities grab OAM slots at spawn time via spawn_actor(), release on destroy via destroy_actor(). Per-instance _pool_oam[N] array stores slot mapping.
+- [Phase 07.3-entity-pool-codegen-fix-inserted]: Pool template actors excluded from update_sprites() and static OAM init; VRAM tile data still loaded for pool instance use.
+- [Phase 07.3]: D-06: Pool context via ThreadLocal — ExprVisitor reads ScriptOpVisitor.activePoolContext directly (same package, internal visibility)
+- [Phase 07.3]: D-07: Slot variable naming for nested collision loops uses _pool_<poolId.take(1)>i to avoid variable name collisions in nested loops
+- [Phase 07.3]: D-08: Display sync offset constants +8 X, +16 Y are Game Boy hardware viewport offsets; multi-tile uses +8 per column/row
+- [Phase 07.3-entity-pool-codegen-fix-inserted]: ScriptOpVisitor.setGameIR must be called in buildSceneFile before scene iteration to enable pool context redirection
+- [Phase 07.3-entity-pool-codegen-fix-inserted]: OAM free list infrastructure (globals + 3 functions) generated only when actorPools is non-empty
+- [Phase 07.3-entity-pool-codegen-fix-inserted]: init_oam_free_list() must precede pool init calls in main() so slots are populated before pool inits set oam entries to 0xFF
+- [Phase ?]: Plan 22 (commit 0976e08b) is the named regression cluster for D-V3
+- [Phase ?]: Scope-shift: palette WRITE path is NOT broken (OCPD slot 2 = cyan_pal correct); regression is in sprite tile/OAM subpal path — Emission #3 most likely culprit
+- [Phase ?]: User chose sub-narrow + scope-shift: Plans 06a/06b/06c sub-probes then Plan 07 finding doc
+- [Phase ?]: 10.2-06c
+- [Phase ?]: MINIMAL BREAKING PAIR = set_bkg_palette (Emission #2) + bgFillCheckerboard hoist (Emission #3); constant declaration is compile-time required but interaction-inert; fix-target is buildMainFunction() emission ordering in GBDKPipelineV2.kt
+- [Phase ?]: D-V3 closure verdict: PASS; scope-shift acknowledged: VRAM collision (LCDC.4=1), not palette write path; DMG non-regression confirmed (behavior1 byte-identical, behavior2 pixel-match)
+- [Phase ?]: ROM-smoke gate D-16 PASS: clean metasprites + metasprites-stress buildRom both GREEN (32 KB each); Plan 08 codegen confirmed non-stale
+- [Phase ?]: 1,053 JVM tests GREEN (gbkt-backend-gbdk + gbkt-mcp-server), 0 failures; DV3VisualV3DiagnosticTest confirmed GREEN
+- [Phase ?]: AC-1 healed 2026-05-21 (11.3-06): gbkt-examples/.archive/ restored from 85d1c974^ + 6 empty shells removed; gitignored local stash now matches D-03 promise
+- [Phase ?]: Plan 11.3-07: scrubbed gbkt-examples/CLAUDE.md Module Structure tree to drop 6 archived dirs + remove non-existent gbkt-examples/settings.gradle.kts reference; companion fix at line 44 under ## Adding a New Example applied per D-08 Claude's Discretion (WR-01 closed)
+- [Phase ?]: Plan 11.3-08: replaced root README.md Explorer references with Racer to heal WR-02; out-of-scope IN-01..IN-04 deferred to 11.4-docs-sweep
+- [Phase ?]: Phase 11.3 gap-closure 09/09: 3/3 gaps (AC-1, WR-01, WR-02) CLOSED via plans 06/07/08; 7-game ROM smoke green; AC-6 deferred to 11.4-quality-gate-clearance; out-of-scope gbkt-analysis:detekt+spotlessCheck drift verified pre-existing (commit 7ed229de baseline) and subsumed by AC-6
+- [Phase ?]: SceneVisitor NEW-path (tilesetPath != null) branches to emit CVar macro refs for _zone_<id>_tilemap_WIDTH/_HEIGHT; LEGACY-path keeps CLiteral fallback — width/height are now sourced from ConvertZoneTilesetsTask macros (PNG IHDR), not ZoneIR defaults
+- [Phase ?]: Avoids symbol-table noise for one-time call site per CONTEXT Claude's Discretion
+- [Phase ?]: 12.10-01: StepAgent.settle() = 2-consecutive-identical / cap=30 / best-effort (never throws); advances via runFrames(1) to preserve held buttons
+- [Phase ?]: 12.10-03: anchor4 hflip gated over OAM box (HIGH>=18%/LOW<=5%, calibrated 28.26%/0.00%); consumes captureScreenshotSettled on real ROM
+- [Phase 12.10]: Phase 12.10 closed (test-harness-only): zero codegen drift proven via codegen-guard 27dab3f5..HEAD + base-commit byte-identical ROM rebuild; 6 strict targets byte-identical, pong PASS*
+- [Phase ?]: Cartridge enum in Types.kt mirrors GbcTarget shape with mbcByte param; romBanks: Int? = null is the D-05 derive sentinel; absent-key JSON sentinel preserves backward compat for old JSON with explicit romBanks values
+- [Phase ?]: Plan 13.1-04 Rule 3 auto-fix (d642d0d7) pre-satisfied Plan 13.1-05 — fromCartridgeConfig exhaustive Cartridge when expression already in place
+- [Phase ?]: getMbcByte() reflective call on live Cartridge enum replaces CARTRIDGE_MBC_MAP — enum owns its byte per D-03
+- [Phase ?]: CompileRomTask reads ramBanks from gbkt-build.properties first, extension as fallback (Pitfall 2 read-order guard)
+- [Phase ?]: romBanks omitted from 7/8 examples (D-05 auto-derive); metasprites-stress keeps romBanks=4 defensive override
+- [Phase ?]: DSL_REFERENCE.md documents cartridge(Cartridge.X), auto-sized romBanks, saveData delegate, triggerSystem typed ref for Phase 13.1 documentation gate
+- [Phase ?]: Six Wave 0 RED test files authored (13.2-01): VarDelegateGuardTest, SaveDataDelegateSingleUseTest, I16FixedVarTest, RunIfAliasTest, EaseToZeroTest, WrapAtTest — all RED
+- [Phase ?]: delegateUsed guard added to all five DSL delegate types; per-site @Suppress ceremony removed in PlatformerTemplate.kt and Banks.kt
+- [Phase ?]: ZoneIR.mapWidth/mapHeight changed from Int=32 to Int?=null — mirrors bankOverride nullable sentinel pattern
+- [Phase ?]: resolveZoneSize pure fn implements D-03 chain (explicit > PNG-derived > 20x18 fallback); no input combination returns 32x32
+- [Phase ?]: Explicit zone import required in pipeline tests
+- [Phase ?]: Circular-navigate SceneRef? var pattern for mutual scene references in embedded Kotlin fixtures
+- [Phase ?]: LabyrinthOfTheDragon-port excluded, zone(String)/navigate(String)/start-String hard-deleted, public var start: SceneRef? established, no @Deprecated shims
+- [Phase ?]: abstract class @Inject, newInstance, fun sprites(action: Action<SpritesExtension>) — no magic strings (Project Rule #1)
+- [Phase ?]: strict fires before overflow, both before auto-correct permute, both gated on transparentIdx > 0 (Pitfall 6)
+- [Phase ?]: countUsedVisibleColors > 3 with non-zero-pixel entries only; elephant (3 used) passes REQ-5
+- [Phase ?]: ImageIO round-trip resets transparentPixel to 0 for synthetic indexed PNGs; use real elephant.png for Tests 13/15
+- [Phase ?]: 13.7-02
+- [Phase ?]: Per-sub-palette Spearman ranking (4-entry groups) revives dead flat-ranking BG polarity guard (Req 1, WR-01)
+- [Phase ?]: Req 3 RGB555 quantization on source side deferred to 13.8-02 with @Disabled test citation
+- [Phase ?]: @kotlin.test.Ignore used in backend-gbdk tests (kotlin-test only module, not JUnit5)
+- [Phase ?]: Option B (MetaspriteIR.sceneId) for scene-scoped OBJ suppression — keeps blast radius inside MetaspriteIR layer
+- [Phase ?]: initialSubPaletteSlot: Int? = null + sceneId: String? = null both null-default — zero ripple, preserves byte-identity (D-03) for shipped games
+- [Phase ?]: W1: IOException-only catch in countUsedVisibleColors — scan-loop logic errors propagate, protecting REQ-5 OBJ-palette overflow guard from silent bypass
+- [Phase ?]: W2+W3: stemName-keyed prePermuteIndexedPng temp name + temporaryDir relocation — collision-free naming for same-basename sprites, and temp files outside @OutputDirectory fingerprint
+- [Phase ?]: Ran all 7 generateC tasks in single chained Gradle invocation (CLAUDE.md no-parallel-clean rule)
 
 ### Pending Todos
 
@@ -669,6 +874,8 @@ None yet.
 
 ### Roadmap Evolution
 
+- Phase 15 added (2026-06-08): Full-green test suite for v0.1.0 release — RELEASE-BLOCKING. User declined the Phase 14 release sign-off because a cleanup phase must leave a working tree; the `:buildRom`+byte-identity-only acceptance carve-out is overruled for release. Scope = drive the ENTIRE JVM suite GREEN (all 7 pre-existing failures: gradle-plugin IntegrationTest, banks/pong/platformer UAT + geometry), diagnose-first, no assertion-weakening. Depends on Phase 14; BLOCKS Phase 14 sign-off + milestone v1.0/v0.1.0 completion. NEXT: /gsd-spec-phase 15 → /gsd-discuss-phase 15 → /gsd-plan-phase 15 WITH research.
+- Phase 14 added (2026-06-06): cleanup for v0.1.0 release — TERMINAL cleanup-only phase. Retire LabyrinthOfTheDragon-port + all non-functioning examples (racer confirmed; dungeon/explorer/shmup suspect), drop migration-era `V2` suffixes (GBDKPipelineV2, SimulationContextV2, etc.), remove genuinely-dead pre-AST codegen code; end state = lean buildable tree ready to tag + publish the v0.1.0 GitHub release (project is honestly pre-1.0; internal "v1.0" milestone label was a working name). Depends on Phase 13. NEXT: /gsd-spec-phase 14.
 - Phase 3.1 inserted after Phase 3: Collection Abstractions — first-class IR nodes for static collection patterns (IRHashTable, IRPool, IRRingBuffer, IRFixedSlots) with hybrid backend traits (INSERTED, 2026-02-18)
 - Phase 4 dependency updated: now depends on Phase 3.1 (RAM planning needs collection size data)
 - Phase 05.05.1 inserted after Phase 5.05: V2 Codegen Runtime Completion — sprite rendering, OAM management, sound effects, and critical ScriptOp handlers. Closes gap where v2 pipeline compiles valid ROMs but produces invisible gameplay (16/24 ScriptOps stubbed, no move_sprite/set_sprite_data calls). Blocks 5.06 UAT. (URGENT, 2026-02-20)
@@ -684,6 +891,20 @@ None yet.
 - Phase 07.2 dependency updated: now depends on Phase 07.1.1 (critical agent testing gaps must be closed before interactive UAT)
 - Phase 07.1.2 inserted after Phase 07.1.1: Hardening Bug Fixes — fix 5 functional codegen bugs producing broken C output: F-033 tournament sort swaps wins not losses, F-034 match-3 never clears matched cells, F-035 puzzle gravity single-pass only, F-075 bank allocator overflow silently exceeds bank size, F-077 palette precision check after quantization is fundamentally wrong. Must land before UAT play-testing. (URGENT, 2026-03-22)
 - Phase 07.2 dependency updated: now depends on Phase 07.1.2 (hardening bug fixes must land before play-testing)
+- Phase 07.9 inserted after Phase 07: C-codegen signed-vs-unsigned literal discipline (URGENT)
+- Phase 09.2 inserted after Phase 09.1: Fix generateC stale-output sync — GenerateCTask must clear stale files; add ROM-build smoke test to verifier (URGENT)
+- Phase 09.4 inserted after Phase 9: resolve simple-physics smiley-vs-ball naming inconsistency surfaced at 09.3 UAT (URGENT)
+- Phase 11.2 inserted after Phase 11: tileset-pipeline-set-bkg-data-emission — closes SEED-014 visual gap surfaced by Phase 11.1 plan 08 (set_bkg_data not emitted; PNGs blank). Sibling of 11.1; must ship GREEN before resuming /gsd-execute-phase 11.1 wave 5 Task 2 + wave 6. (URGENT)
+- Phase 11.1 edited: Phase 11.1 PAUSED mid-wave-5 at plan 7/9 — Plan 11.1-08 Task 2 (anchor 1+2 PNG human-verify) blocked by SEED-014 set_bkg_data gap surfaced by 11.1-08 Task 1. Resumes after /gsd-execute-phase 11.2 ships GREEN: re-shoot PNGs (now non-blank), run wave 6 (11.1-09 regression sweep + handoff), code-review + verifier + roadmap close. Resume path tracked in TaskList #9.
+- Phase 12.1 inserted after Phase 12: Resolve 4 wide-blast-radius codegen-symbol-contract defects surfaced by Plan 12-18 first :buildRom (BANK macro on HOME-bank tilemap; tilemap WIDTH/HEIGHT emission; _player_* naming + actor declaration; _posX/_posY metasprite render). Terminal subphase per feedback_many_small_plans_terminal_subphase — no 12.1.1. (URGENT)
+- Phase 12.2 inserted after Phase 12: ConvertZoneTilesetsTask real-tilemap extraction via png2asset -map mode (close Defect 7) (URGENT)
+- Phase 12.3 inserted after Phase 12: PlatformerVisitor auto-emission wiring — 4 framework gaps surfaced in Phase 12 Wave 13 (input→playerVx, camera_update call, metasprite camera-offset, walkFrameIdx cycle). Phase 12 Wave 13 blocked until 12.3 ships (SHIPPED 2026-05-24 via Plans 12.3-01..15; anchor 4 closed via Phase 12.5 + debug session)
+- Phase 12.4 inserted after Phase 12: sprite-pipeline png2asset integration — unblocks Phase 12.3 anchor 4 visual closure (URGENT)
+- Phase 12.5 inserted after Phase 12: png2asset metasprite layout fix + Phase 12.3 closure (continuation of 12.4 PARTIAL) (SHIPPED 2026-05-24 Plans 12.5-01..13 complete; Plan 12.5-14 code review remaining)
+- Phase 12.11 inserted after Phase 12: platformer level-2 gameplay-zone near-blank render in UAT harness — codegen/render defect routed out of Phase 12.10 (settle primitive provably does not fix it; pre-existing, ROM byte-identical to pre-12.10) (URGENT)
+- Phase 13.6 inserted after Phase 13: sprite-pipeline transparency — route non-zero PNG tRNS color to GB OBJ index 0 in ConvertSpritesTask (SEED-PHASE-13-SPRITE-OUTLINE-LOST-NONZERO-TRNS-INDEX) (URGENT)
+- Phase 13.7 inserted after Phase 13: platformer color polarity — inverted BG (ConvertZoneTilesetsTask) + OBJ (ConvertSpritesTask) palettes; regressed since 12.9 (likely 13.3 Color refactor); diagnose-first. See SEED-PHASE-13-PLATFORMER-INVERTED-PALETTE-BG-AND-OBJ.md (URGENT)
+- Phase 13.8 inserted after Phase 13: palette/sprite codegen hardening — close deferred WR debt from 12.9 (WR-04/05) + 13.7 (WR-01/02/03/05) (URGENT)
 
 ### Blockers/Concerns
 
@@ -726,8 +947,23 @@ None yet.
 - [Phase 06.4-02]: buildConditionCheck() extracts first IfOp condition from onVictoryCondition/onDefeatCondition list — DSL's whenever() always produces IfOp; fallback path included defensively
 - [Phase 06.4-02]: CLiteral(0xFF) emits as 255u in CEmitter — combat codegen test assertions must check for 255u not 0xFF
 - [Phase 06.4-02]: combat_parent_state() returns state itself for top-level states via switch default case — safe parent queries without caller tracking state type
+- AC-1 healed 2026-05-21 — Phase 11.3 GAP-1 closed. `gbkt-examples/.archive/` local stash restored from commit `85d1c974^` (parent of the archive commit; = `2eaa6e7b`); 6 empty shell dirs at `gbkt-examples/{explorer,rpg-lite,dungeon,platformer,platformer-gbc,shmup}/` removed. Gitignored per D-03 / D-04 (`.gitignore:55` `gbkt-examples/.archive/`). Gap-closure plan: 11.3-06.
+- AC-6 detekt half closed 2026-05-21 — Phase 11.3 AC-6 spotless half closed earlier (commit `612ed65e`); detekt half closed via quick task [`20260521-detekt-gbkt-analysis-cleanup`](quick/20260521-detekt-gbkt-analysis-cleanup/SUMMARY.md). 12 atomic commits across 6 library modules + 2 example subprojects. Smart balance: 11 surgical refactors / per-site `@Suppress` + 9 justified config extensions (each paralleling an existing exemption in detekt.yml). `./gradlew detekt` now EXIT 0 globally.
+- AC-6 TrackSynthesizer RED stubs cleared 2026-05-21 — Plan 07.4-35 GREEN (commit `8d4c56e2` production + `docs(07.4-35)` evidence). `TrackSynthesizerCircuitShapeTest` 2 RED stubs (`racer_waypoints_synthesize_to_corridor_not_arena`, `racer_corridor_interior_is_non_drivable`) now GREEN; mismatch_count vs expected corridor = 0 (was 55). Three-tier verification: JVM (full :gbkt-genre-sport:test 159 GREEN) + codegen (regenerated `_zone_track1_tiles[361]` matches `07-expected-circuit-tilemap-ascii-art.txt` byte-for-byte) + runtime (Round8TrackTilemapShapeProbe VRAM probe mismatch_count=0). Racer ROM rebuilds clean. Phase 11.3 AC-6 `./gradlew clean build` exit 0 no longer blocked by this gap; remaining red on `./gradlew build` is the pre-existing `:gbkt-examples:metasprites-stress:test` "no tests discovered" failure (Gradle-9 strictness, unrelated, requires separate routing).
+
+## Quick Tasks Completed
+
+| Date | Slug | Outcome |
+|------|------|---------|
+| 2026-05-21 | [detekt-gbkt-analysis-cleanup](quick/20260521-detekt-gbkt-analysis-cleanup/SUMMARY.md) | AC-6 detekt half closed. 12 atomic commits across 6 modules + 2 examples. Global detekt EXIT 0. |
+| 2026-05-21 | [07.4-35-track-synthesizer-circuit-shape](phases/07.4-sport-genre-codegen-fix-inserted/07.4-35-SUMMARY.md) | GAP-TRACK-NOT-RENDERED-AS-CIRCUIT closed inline (user override of route-to-phase rule). TrackSynthesizer Bresenham + Chebyshev thickening. JVM + codegen + runtime all GREEN; mismatch_count 55→0. Commit `8d4c56e2` + evidence files 14-18. |
+| 2026-06-05 | [260605-eqr-fix-three-test-infra-issues](quick/260605-eqr-fix-three-test-infra-issues-convertzonet/260605-eqr-SUMMARY.md) | Test-suite triage follow-up: 13/15 failures were stale-mavenLocal noise, not bugs. Item 1: hoisted zone-scoped tilemap-PNG guard in ConvertZoneTilesetsTask (real 13.4 regression, 11/11 green). Item 2: new `pluginTest` root task republishes 7 consumed SNAPSHOT modules before plugin tests (local-dev durable fix; CI already publishes). Item 3: generateC `whenever{}` failure was a fixture forward-reference NPE, not a `syncOutputDir` bug. Full plugin suite 138/138; `pluginTest` BUILD SUCCESSFUL. Commits `0c9a5679`, `c512064b`, `5378fdea`. |
 
 ## Session Continuity
 
-Last session: 2026-03-22T21:07:26.951Z
-Stopped at: Completed 07.1.2-03-PLAN.md
+Last session: 2026-06-09T08:02:17.065Z
+Stopped at: Phase 15 context gathered
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

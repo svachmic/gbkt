@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 
 class TileCollisionCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     // =========================================================================
     // G1 — SceneIR collisionData field

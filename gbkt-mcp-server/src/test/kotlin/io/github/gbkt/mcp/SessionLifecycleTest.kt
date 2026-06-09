@@ -47,43 +47,55 @@ class SessionLifecycleTest {
         }
     }
 
-    private fun stubEmulator(memory: MemoryAccess = mockMemory()): GbEmulator =
-        object : GbEmulator {
-            private var _paused = true
-            private var _running = false
+    /**
+     * Test stub. Exposes [cancellationCount] so tests can assert that [McpEmulatorSession.stop]
+     * propagates a cancellation request down through StepAgent → AgentDebugSession → GbEmulator
+     * BEFORE acquiring the mutex.
+     */
+    private class StubEmulator(private val memory: MemoryAccess) : GbEmulator {
+        private var _paused = true
+        private var _running = false
+        var cancellationCount = 0
+            private set
 
-            override fun start() {
-                _running = true
-            }
-
-            override fun stop() {
-                _running = false
-            }
-
-            override fun pause() {
-                _paused = true
-            }
-
-            override fun resume() {
-                _paused = false
-            }
-
-            override fun stepFrame() = Unit
-
-            override fun setSpeed(multiplier: Float) = Unit
-
-            override fun getFrameBuffer(): IntArray = IntArray(160 * 144) { 0x00FF00 }
-
-            override fun getMemory(): MemoryAccess = memory
-
-            override fun getDebugLog(): List<DebugLogEntry> = emptyList()
-
-            override fun isRunning(): Boolean = _running
-
-            override fun isPaused(): Boolean = _paused
-
-            override val isHeadless: Boolean = true
+        override fun start() {
+            _running = true
         }
+
+        override fun stop() {
+            _running = false
+        }
+
+        override fun pause() {
+            _paused = true
+        }
+
+        override fun resume() {
+            _paused = false
+        }
+
+        override fun stepFrame() = Unit
+
+        override fun setSpeed(multiplier: Float) = Unit
+
+        override fun getFrameBuffer(): IntArray = IntArray(160 * 144) { 0x00FF00 }
+
+        override fun getMemory(): MemoryAccess = memory
+
+        override fun getDebugLog(): List<DebugLogEntry> = emptyList()
+
+        override fun isRunning(): Boolean = _running
+
+        override fun isPaused(): Boolean = _paused
+
+        override val isHeadless: Boolean = true
+
+        override fun requestCancellation() {
+            cancellationCount++
+        }
+    }
+
+    private fun stubEmulator(memory: MemoryAccess = mockMemory()): GbEmulator = StubEmulator(memory)
 
     private fun makeSession(memory: MemoryAccess = mockMemory()): McpEmulatorSession =
         McpEmulatorSession(stubEmulatorFactory = { stubEmulator(memory) })
@@ -185,4 +197,28 @@ class SessionLifecycleTest {
         val session = makeSession()
         assertNull(session.describeGame())
     }
+
+    /**
+     * Regression test for the MCP hang mode: when a step is in-flight (CoffeeGbEmulator.stepFrame
+     * spinning on `gb.tick()` for a ROM that never raises VBlank), `stop()` must propagate a
+     * cancellation request to the emulator BEFORE waiting on the mutex. The stub records each call
+     * to `requestCancellation()`.
+     */
+    @Test
+    fun `stop propagates requestCancellation down to the emulator before taking the mutex`() =
+        runTest {
+            val stub = StubEmulator(mockMemory())
+            val session = McpEmulatorSession(stubEmulatorFactory = { stub })
+            session.start(fakeRom(), writeSymFile())
+            assertEquals(0, stub.cancellationCount, "no cancellation before stop")
+
+            session.stop()
+
+            assertEquals(
+                1,
+                stub.cancellationCount,
+                "stop() must call requestCancellation exactly once before releasing the session",
+            )
+            assertFalse(session.isActive())
+        }
 }

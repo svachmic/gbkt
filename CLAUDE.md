@@ -24,6 +24,13 @@ gbkt (Game Boy Kotlin) is a DSL framework that compiles Kotlin code to GBDK-comp
 ./gradlew :gbkt-backend-gbdk:test
 ./gradlew :gbkt-analysis:test
 ./gradlew :gbkt-genre-rpg:test
+
+# Gradle-plugin tests: use pluginTest, NOT :gbkt-gradle-plugin:test
+# Its IntegrationTest TestKit sandbox resolves gbkt-core/backend-api/backend-gbdk
+# (+ transitive ir/lang/engine/world) as 0.1.0-SNAPSHOT from mavenLocal(). Running
+# :gbkt-gradle-plugin:test directly against a stale ~/.m2 fails to compile fixtures
+# written for the current DSL. pluginTest republishes those 7 modules first.
+./gradlew pluginTest
 ```
 
 ## Tech Stack
@@ -84,7 +91,7 @@ All UI text (dialogs, menus, battle UI, status bars) renders on the GBDK window 
 Use `battle()` for v1 combat. `battleEngine()` is experimental and will be revised in a future release.
 
 ### Examples
-The three example projects (`gbkt-examples/pong`, `gbkt-examples/breakout`, `gbkt-examples/explorer`) use the Gradle plugin directly -- no duplicated build logic.
+The seven example projects (`gbkt-examples/pong`, `gbkt-examples/breakout`, `gbkt-examples/simple-physics`, `gbkt-examples/metasprites`, `gbkt-examples/metasprites-stress`, `gbkt-examples/banks`, `gbkt-examples/platformer-template`) use the Gradle plugin directly -- no duplicated build logic.
 
 ## Documentation Index
 
@@ -99,6 +106,58 @@ The three example projects (`gbkt-examples/pong`, `gbkt-examples/breakout`, `gbk
 | [context/TESTING.md](context/TESTING.md) | Understand test tiers, GbktTestExtension, test recipes, GameConstants, playbook format, MCP tools |
 | [context/UAT_GUIDE.md](context/UAT_GUIDE.md) | Debug and play-test ROMs with MCP agent tools |
 | [context/CI_CD.md](context/CI_CD.md) | Understand CI/CD workflows, release pipeline, dependency pinning policy |
+
+## Verification Methodology — Visual Evidence Rule
+
+For verification truths shaped **"X is visible on screen"** (e.g., "track tilemap is
+visible", "HUD shows lap count", "menu cursor is highlighted"), evidence MUST include a
+runtime screenshot, NOT just a variable-state assertion.
+
+Variable assertions like `assertVariable("_current_tileset_id", 1)` prove that the
+codegen wrote a value at one point in scene-enter — they do NOT prove the value is
+visually reflected by the time the player sees the screen. A subsequent op (e.g., a
+user-authored `clear()` lowering to `cls()`) can wipe the visual outcome while leaving
+the variable intact.
+
+### When this rule applies
+
+- GSD verifier runs against truths/SCs whose phrasing is visual ("is visible", "renders
+  on screen", "is shown to the player").
+- MCP play-throughs that verify SCs at runtime.
+- UAT verdicts that flip a phase to `passed`.
+
+### When variable evidence is sufficient
+
+- Internal state truths ("AI active", "lap counter incremented", "save written") where
+  the visual surface is downstream of (and inferred from) the state.
+- JVM-tier codegen tests that lock the GENERATED C SHAPE (which is upstream of runtime
+  visual outcomes) — a generated-C grep is acceptable evidence here because it locks the
+  contract one level below the visual.
+
+### How to satisfy the rule
+
+The MCP `gbkt-emulator` provides `emulator_screenshot(path)`. Capture a PNG to the
+phase's `evidence/` directory at every visual SC checkpoint. The screenshot becomes the
+evidence artifact in `*-VERIFICATION.md`.
+
+### Scope-level grep gates (corollary)
+
+A file-level `grep -c cls() bank1.c` cannot distinguish race_enter from title_enter —
+if title_enter has back-compat `cls()`, the count masks a regression in race_enter.
+For per-function invariants, extract the function body via brace-walk (awk) and grep
+WITHIN scope. Plan 07.4-23 Task 1 step 3 demonstrates the awk pattern.
+
+### History
+
+This rule was codified after Phase 07.4 round-2 verified SC-4 (track visible) via
+`_current_tileset_id=1` variable evidence; the runtime ROM never actually rendered the
+track. The bug took 5 plans (15-18) to surface and was caught only by user UAT in round
+4. Plan 07.4-19 added JVM-tier RED tests; Plan 07.4-20 fixed the codegen; this section
+fixes the methodology so the class of bug is structurally guarded against in future
+phases.
+
+See: `.planning/phases/07.4-sport-genre-codegen-fix-inserted/07.4-UAT.md`,
+`.planning/phases/07.4-sport-genre-codegen-fix-inserted/07.4-19-PLAN.md`.
 
 ## Common Tasks Routing
 
@@ -152,7 +211,7 @@ See [context/TESTING.md](context/TESTING.md) for the complete testing guide cove
 
 ### How it works
 
-- `GBDKPipelineV2.buildMetadataFile()` emits `game_metadata.json` alongside generated C code
+- `GBDKPipeline.buildMetadataFile()` emits `game_metadata.json` alongside generated C code
 - `AgentSessionConfig.discoverFiles(romFile)` auto-discovers sym/metadata/source maps from standard layout
 - `GbktTestExtension` auto-loads metadata and provides fluent assertions (`assertScene`, `assertVariable`, `assertActorVisible`, `assertTextOnScreen`) and composable recipes (`verifyTitleScreen`, `bootToScene`, etc.)
 - `StepAgent` and `UatRunner` auto-load metadata from `config.metadataFile`
@@ -615,7 +674,7 @@ gbkt {
 | CLI tool | `gbkt-cli/` |
 | IntelliJ plugin | `gbkt-intellij-plugin/` |
 | **Example Games** | |
-| Pong, Breakout, Explorer, RPG-Lite, Dungeon, Platformer, Shmup, Racer | `gbkt-examples/{name}/` |
+| Pong, Breakout, Simple-Physics, Metasprites, Metasprites-Stress, Banks, Platformer-Template | `gbkt-examples/{name}/` |
 
 See [context/DSL_REFERENCE.md](context/DSL_REFERENCE.md) for complete syntax reference.
 
@@ -636,7 +695,7 @@ Each module has a CLAUDE.md with detailed documentation:
 | GBDK Backend | `gbkt-backend-gbdk/CLAUDE.md` | C AST, visitor codegen, pipeline, post-processing |
 | ↳ Visitors | `gbkt-backend-gbdk/.../codegen/visitor/CLAUDE.md` | 13 visitors (ScriptOp, Actor, Scene, RPG, etc.) |
 | ↳ C AST | `gbkt-backend-gbdk/.../codegen/ast/CLAUDE.md` | CFile, CFunction, CStatement, CExpr |
-| ↳ Pipeline | `gbkt-backend-gbdk/.../codegen/pipeline/CLAUDE.md` | GBDKPipelineV2, SourceMapCollector |
+| ↳ Pipeline | `gbkt-backend-gbdk/.../codegen/pipeline/CLAUDE.md` | GBDKPipeline, SourceMapCollector |
 | ↳ Post-process | `gbkt-backend-gbdk/.../codegen/postprocess/CLAUDE.md` | Optimizer, dedup, shared constants |
 | Analysis | `gbkt-analysis/CLAUDE.md` | 11 analysis passes (validation, optimization, resources) |
 | **Genre Plugins** | | |
@@ -655,7 +714,7 @@ Each module has a CLAUDE.md with detailed documentation:
 | Assets | `gbkt-core/.../assets/CLAUDE.md` | Type-safe asset references |
 | Constraints | `gbkt-core/.../constraints/CLAUDE.md` | TargetProfile, ScreenSpec, SpriteSpec, MemorySpec |
 | Optimization | `gbkt-core/.../optimization/CLAUDE.md` | Asset analysis, suggestions, reporting |
-| Test | `gbkt-core/.../test/CLAUDE.md` | SimulationContextV2, ScriptOpInterpreter |
+| Test | `gbkt-core/.../test/CLAUDE.md` | SimulationContext, ScriptOpInterpreter |
 
 ## Architectural Decisions
 

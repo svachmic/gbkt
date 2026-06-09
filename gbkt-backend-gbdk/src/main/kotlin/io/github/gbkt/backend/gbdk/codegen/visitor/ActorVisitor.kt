@@ -20,8 +20,10 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CFunction
 import io.github.gbkt.backend.gbdk.codegen.ast.CI16
 import io.github.gbkt.backend.gbdk.codegen.ast.CI8
 import io.github.gbkt.backend.gbdk.codegen.ast.CIf
+import io.github.gbkt.backend.gbdk.codegen.ast.CIntLiteral
 import io.github.gbkt.backend.gbdk.codegen.ast.CLiteral
 import io.github.gbkt.backend.gbdk.codegen.ast.CParam
+import io.github.gbkt.backend.gbdk.codegen.ast.CRawCode
 import io.github.gbkt.backend.gbdk.codegen.ast.CRawExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CStatement
 import io.github.gbkt.backend.gbdk.codegen.ast.CSwitch
@@ -171,11 +173,17 @@ object ActorVisitor {
      *
      * OAM slot numbers are assigned sequentially: first actor gets slots starting from 0 (or from
      * [ActorIR.oamSlot] if set by analysis pass), next actor starts where the previous ended.
+     * Actors in [excludeIds] are skipped — they do not get `move_sprite` calls and do not consume
+     * static OAM slots (used to exclude pool template actors which use dynamic OAM allocation).
      *
      * @param actors All actors in the game. Only actors with sprites generate move_sprite calls.
+     * @param excludeIds Actor IDs to skip (pool template actors with dynamic OAM allocation).
      * @return A [CFunction] named `update_sprites` with all per-frame OAM sync calls.
      */
-    fun generateUpdateSprites(actors: List<ActorIR>): CFunction {
+    fun generateUpdateSprites(
+        actors: List<ActorIR>,
+        excludeIds: Set<String> = emptySet(),
+    ): CFunction {
         val statements = mutableListOf<CStatement>()
         var nextSlot = 0
         for (actor in actors) {
@@ -183,6 +191,11 @@ object ActorVisitor {
             val tilesWide = (sprite.size.width + 7) / 8
             val tilesHigh = (sprite.size.height + 7) / 8
             val baseSlot = actor.oamSlot?.slot ?: nextSlot
+            // Skip pool template actors — they use dynamic OAM allocation, not static slots
+            if (sanitizeId(actor.id) in excludeIds) {
+                nextSlot = baseSlot + tilesWide * tilesHigh
+                continue
+            }
             val prefix = "_${sanitizeId(actor.id)}"
             for (row in 0 until tilesHigh) {
                 for (col in 0 until tilesWide) {
@@ -240,8 +253,11 @@ object ActorVisitor {
     /**
      * Generate show_sprites_range(from, to) body.
      *
-     * This is a no-op stub: sprites become visible by moving them to valid on-screen positions
-     * (which update_sprites does every frame). The function is kept for DSL compatibility.
+     * Semantically a no-op: sprites become visible by moving them to valid on-screen positions
+     * (which update_sprites does every frame). The function body emits `(void)from;` and
+     * `(void)to;` casts to silence SDCC warning 85 (unused parameter) — see Phase 09.1 plan 02 D-08
+     * and the matching exception in `CRawCodeEliminationTest.kt:232-243`. The function is kept for
+     * DSL compatibility.
      */
     fun generateShowSpritesRange(): CFunction {
         return CFunction(
@@ -249,7 +265,11 @@ object ActorVisitor {
             returnType = CVoid,
             params = listOf(CParam("from", CU8), CParam("to", CU8)),
             body =
-                listOf(CComment("Sprites shown by moving to valid positions via update_sprites()")),
+                listOf(
+                    CRawCode("(void)from;"),
+                    CRawCode("(void)to;"),
+                    CComment("Sprites shown by moving to valid positions via update_sprites()"),
+                ),
         )
     }
 
@@ -563,7 +583,7 @@ object ActorVisitor {
                                             CBinaryExpr(
                                                 CBinaryExpr(jumpHeldVar, "!=", CLiteral(0)),
                                                 "&&",
-                                                CBinaryExpr(vyVar, "<", CLiteral(0)),
+                                                CBinaryExpr(vyVar, "<", CIntLiteral(0)),
                                             ),
                                         thenBody =
                                             listOf(
@@ -1239,24 +1259,26 @@ object ActorVisitor {
     private fun buildFrictionStatements(vVar: CVar, frictionDef: CVar): List<CStatement> =
         listOf(
             CIf(
-                condition = CBinaryExpr(vVar, ">", CLiteral(0)),
+                condition = CBinaryExpr(vVar, ">", CIntLiteral(0)),
                 thenBody =
                     listOf(
                         CExprStatement(CBinaryExpr(vVar, "-=", frictionDef)),
                         CIf(
-                            condition = CBinaryExpr(vVar, "<", CLiteral(0)),
-                            thenBody = listOf(CExprStatement(CBinaryExpr(vVar, "=", CLiteral(0)))),
+                            condition = CBinaryExpr(vVar, "<", CIntLiteral(0)),
+                            thenBody =
+                                listOf(CExprStatement(CBinaryExpr(vVar, "=", CIntLiteral(0)))),
                         ),
                     ),
             ),
             CIf(
-                condition = CBinaryExpr(vVar, "<", CLiteral(0)),
+                condition = CBinaryExpr(vVar, "<", CIntLiteral(0)),
                 thenBody =
                     listOf(
                         CExprStatement(CBinaryExpr(vVar, "+=", frictionDef)),
                         CIf(
-                            condition = CBinaryExpr(vVar, ">", CLiteral(0)),
-                            thenBody = listOf(CExprStatement(CBinaryExpr(vVar, "=", CLiteral(0)))),
+                            condition = CBinaryExpr(vVar, ">", CIntLiteral(0)),
+                            thenBody =
+                                listOf(CExprStatement(CBinaryExpr(vVar, "=", CIntLiteral(0)))),
                         ),
                     ),
             ),

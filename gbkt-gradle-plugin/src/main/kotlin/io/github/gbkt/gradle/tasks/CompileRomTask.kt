@@ -131,7 +131,9 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
         }
 
         // Add RAM bank flag if configured
-        val ramBankCount = ramBanks.getOrElse(0)
+        // D-07: read ramBanks from gbkt-build.properties first; extension as fallback (Pitfall 2)
+        val propsRamBanks = readRamBanksFromMetadata(sourceDir)
+        val ramBankCount = propsRamBanks ?: ramBanks.getOrElse(0)
         if (ramBankCount > 0) {
             args.add("-Wl-ya$ramBankCount")
             logger.lifecycle("RAM banks: $ramBankCount")
@@ -265,9 +267,16 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
             if (mbcType != null) {
                 // Banking requires at least MBC5 — upgrade ROM_ONLY automatically
                 if (mbcType == "0x00") {
-                    val hasRam = ramBanks.getOrElse(0) > 0
+                    // D-07: read ramBanks from gbkt-build.properties first (Pitfall 2 read-order)
+                    val propsRamBanks = props.getProperty("ramBanks")?.toIntOrNull()
+                    val hasRam = (propsRamBanks ?: ramBanks.getOrElse(0)) > 0
                     val upgraded = if (hasRam) "0x1B" else "0x19"
+                    val suggestionCartridge = if (hasRam) "MBC5_RAM_BATTERY" else "MBC5"
                     logger.lifecycle("Cartridge upgraded from ROM_ONLY to MBC5 (banking detected)")
+                    logger.lifecycle(
+                        // D-13: typed DSL form replaces old String-form suggestion
+                        "  Suggestion: set `config { cartridge(Cartridge.$suggestionCartridge) }` to silence this upgrade."
+                    )
                     return upgraded
                 }
                 return mbcType
@@ -296,6 +305,23 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
         val props = java.util.Properties()
         propsFile.inputStream().use { props.load(it) }
         return props.getProperty("gbcMode")
+    }
+
+    /**
+     * Read `ramBanks` from `gbkt-build.properties` written by GenerateCTask.
+     *
+     * D-07: DSL `config { ramBanks = N }` flows through gbkt-build.properties and takes
+     * precedence over the Gradle extension `gbkt { ramBanks.set(N) }`. This helper mirrors
+     * the [readGbcModeFromMetadata] pattern.
+     *
+     * Returns null if the metadata file does not exist or does not contain a `ramBanks` entry.
+     */
+    private fun readRamBanksFromMetadata(sourceDir: File): Int? {
+        val propsFile = File(sourceDir, "gbkt-build.properties")
+        if (!propsFile.exists()) return null
+        val props = java.util.Properties()
+        propsFile.inputStream().use { props.load(it) }
+        return props.getProperty("ramBanks")?.toIntOrNull()
     }
 
     /** Scan source files for `#pragma bank N` to find the highest bank number used. */

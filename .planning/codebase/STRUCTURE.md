@@ -1,269 +1,401 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-02-17
+**Analysis Date:** 2026-05-27
 
 ## Directory Layout
 
 ```
 gbkt/
-├── gbkt-core/                      # Platform-agnostic DSL, IR, game constructs (231 .kt files)
-│   ├── src/main/kotlin/io/github/gbkt/core/
-│   │   ├── ir/                     # Intermediate Representation nodes (35 files)
-│   │   ├── dsl/                    # Recording context, builders, conditionals, loops (8 files)
-│   │   ├── builder/                # GameBuilder and DSL entry points (3 files)
-│   │   ├── scene/                  # Scene lifecycle, transitions, timing (4 files)
-│   │   ├── entity/                 # Entity system, components, pools (10+ files)
-│   │   ├── graphics/               # Sprites, animations, camera, tilemaps (15+ files)
-│   │   ├── rpg/                    # Character, item, ability, combat, leveling (20+ files)
-│   │   ├── world/                  # Floors, encounters, zones, flags, exploration (10+ files)
-│   │   ├── input/                  # D-pad, buttons, input buffering (5 files)
-│   │   ├── ui/                     # Menus, dialogs, status bars, windows (8 files)
-│   │   ├── collision/              # Collision detection system (5 files)
-│   │   ├── combat/                 # Battle engine, turn order, state machines (8 files)
-│   │   ├── flow/                   # Game flow, pause, save, navigation (4 files)
-│   │   ├── movement/               # Movement controller, physics (4 files)
-│   │   ├── exploration/            # Dungeon crawling, gauges, keys (6 files)
-│   │   ├── assets/                 # Type-safe asset references (3 files)
-│   │   ├── constraints/            # Validation rules for target platforms (4 files)
-│   │   ├── services/               # Dependency injection containers (3 files)
-│   │   ├── validation/             # Game validation, array bounds checking (3 files)
-│   │   ├── optimization/           # Asset analysis, optimization suggestions (2 files)
-│   │   ├── test/                   # Test utilities, simulation context (4 files)
-│   │   ├── types/                  # Type system and domain types (8 files)
-│   │   ├── model/                  # Model layer (Game, Scene, Entity data classes)
-│   │   └── Game.kt                 # Entry point: fun gbGame()
-│   │
-│   └── src/test/kotlin/            # Unit tests (35+ test files)
-│
-├── gbkt-backend-api/               # Backend interface contract
-│   ├── src/main/kotlin/io/github/gbkt/backend/api/
-│   │   └── CodegenBackend.kt       # Interface: validate() and generate()
-│
-├── gbkt-backend-gbdk/              # GBDK (Game Boy/GBC) code generator (78 .kt files)
-│   ├── src/main/kotlin/io/github/gbkt/backend/gbdk/
-│   │   ├── GBDKBackend.kt          # Backend implementation
-│   │   ├── profiles/               # Target profiles (Game Boy, GBC hardware specs)
-│   │   └── codegen/                # Code generation extension functions
-│   │       ├── core/               # Variables, scenes, pools, expressions, statements (7 files)
-│   │       ├── graphics/           # Sprites, animations, camera, transitions (6 files)
-│   │       ├── rpg/                # Character, abilities, items, combat systems (15+ files)
-│   │       ├── world/              # Zones, encounters, exploration, flags, map objects (10+ files)
-│   │       ├── ui/                 # Dialogs, menus, status bars, cutscenes, windows (5 files)
-│   │       ├── combat/             # Battle engine, turn order (1 file)
-│   │       ├── features/           # Tweens, movement, physics, save, mixer, links (8 files)
-│   │       └── data/               # String table, balance tables, easing lookups (3 files)
-│
-├── gbkt-gradle-plugin/             # Gradle build integration
-│   ├── src/main/kotlin/io/github/gbkt/gradle/
-│   │   ├── GbktPlugin.kt           # Main plugin class
-│   │   ├── GbktExtension.kt        # build.gradle.kts config: gbkt { ... }
-│   │   ├── tasks/                  # Gradle task implementations
-│   │   └── ...                     # Compiler integration, GBDK detection
-│
-├── gbkt-cli/                       # Command-line tool (alternative to Gradle plugin)
-│
-├── gbkt-intellij-plugin/           # IDE support for .gbkt files and DSL
-│
-├── gbkt-examples/                  # Example games
-│   ├── pong/                       # Minimal example (~ 200 lines Kotlin)
-│   ├── breakout/                   # Intermediate example with paddle, bricks
-│   ├── explorer/                   # Advanced exploration dungeon crawler
-│   ├── rpg-lite/                   # RPG system example
-│   └── dungeon/                    # Multi-floor dungeon example
-│
-├── LabyrinthOfTheDragon/           # Large reference RPG game (complex)
-├── LabyrinthOfTheDragon-port/      # v1 launch port with cleaned architecture
-│
-└── context/                        # Documentation index
-    ├── ARCHITECTURE.md             # IR nodes, data flow, module organization
-    ├── DSL_REFERENCE.md            # Complete syntax reference
-    ├── DEVELOPER_EXPERIENCE.md     # Extending framework, adding IR nodes
-    ├── TOOLING.md                  # Gradle plugin, asset pipeline, IDE
-    ├── LOCALIZATION.md             # GNU gettext integration, .po files
-    └── ROADMAP.md                  # Feature status, planned work
+├── gbkt-ir/                  # IR types (zero deps, leaf module)
+├── gbkt-lang/                # DSL builders, property delegates
+├── gbkt-engine/              # Engine runtime types (combat, entity, scene, graphics, input, inventory, pickup)
+├── gbkt-world/               # World & exploration types (zones, floors, dungeon crawling)
+├── gbkt-core/                # Aggregator — re-exports IR+lang+engine+world + asset pipeline, constraints, test infra
+├── gbkt-backend-api/         # Backend contract (CodegenBackend, BackendRegistry, GenreSystemVisitor)
+├── gbkt-backend-gbdk/        # GB/GBC backend — visitors, C AST, pipeline, post-process, profiles
+├── gbkt-analysis/            # 11 analysis passes (validation, optimization, resource planning)
+├── gbkt-genre-rpg/           # RPG genre plugin (characters, battles, abilities, equipment)
+├── gbkt-genre-platformer/    # Platformer genre plugin (physics, camera, level elements)
+├── gbkt-genre-puzzle/        # Puzzle genre plugin (match-3, block-push)
+├── gbkt-genre-sport/         # Sport genre plugin (racing, ball sports, tournaments)
+├── gbkt-emulator/            # Embedded Coffee-GB emulator, agent API, debug log capture
+├── gbkt-test/                # Test infrastructure (GbktTestExtension, assertions, recipes)
+├── gbkt-mcp-server/          # MCP server wrapping StepAgent for AI agents
+├── gbkt-gradle-plugin/       # Build integration (composite include)
+├── gbkt-cli/                 # Project scaffolding CLI
+├── gbkt-intellij-plugin/     # IDE support (highlighting, completion, editors, C preview)
+├── gbkt-all/                 # Convenience meta-module — aggregates all published modules
+├── gbkt-bom/                 # Version coordinator (Bill of Materials)
+├── gbkt-examples/            # Example games
+│   ├── pong/
+│   ├── breakout/
+│   ├── racer/
+│   ├── banks/
+│   ├── metasprites/
+│   ├── metasprites-stress/
+│   ├── simple-physics/
+│   └── platformer-template/
+├── LabyrinthOfTheDragon-port/  # Reference RPG implementation
+├── LabyrinthOfTheDragon/       # Original C-based reference (pre-Kotlin)
+├── .planning/                  # GSD planning artifacts
+│   ├── phases/                 # Phase folders (NN-name/ with PLAN, SPEC, STATE, VERIFICATION, evidence/)
+│   ├── codebase/               # Codebase maps (ARCHITECTURE.md, STRUCTURE.md, this file, etc.)
+│   ├── research/               # Research notes
+│   ├── seeds/                  # Bug/feature seeds (SEED-NNN-*.md)
+│   ├── todos/                  # TODO snapshots
+│   ├── debug/                  # Debug session notes
+│   ├── quick/                  # Quick-fix records
+│   ├── PROJECT.md              # Project vision & complexity ceiling
+│   ├── REQUIREMENTS.md         # High-level requirements
+│   ├── ROADMAP.md              # Phase roadmap
+│   ├── STATE.md                # Current planning state / resume signal
+│   └── verifier-gates.md       # Verification gates
+├── context/                    # Long-form developer documentation
+├── docker/                     # Docker assets (GBDK toolchain image)
+├── scripts/                    # Utility scripts (Python, Lua)
+├── buildSrc/                   # Gradle build conventions
+├── sessions/                   # Saved emulator sessions
+├── scratch/                    # Ephemeral work area
+├── build.gradle.kts            # Root build script
+├── settings.gradle.kts         # Module include list
+├── detekt.yml                  # Detekt lint config
+├── gradle.properties           # Gradle config
+├── CLAUDE.md                   # Project-wide Claude Code instructions
+├── CONTRIBUTING.md             # Contributor guide
+└── README.md
 ```
 
 ## Directory Purposes
 
-**gbkt-core:**
-- Purpose: Complete, platform-agnostic game DSL and IR system
-- Contains: All game constructs (variables, entities, scenes, RPG systems, graphics, input)
-- Key files: `Game.kt`, `builder/GameBuilder.kt`, `ir/CoreIR.kt`, `dsl/RecordingContext.kt`
-- Exports: `Game` data class, `GameBuilder`, IR types, DSL functions like `gbGame()`, `scene()`, `entity()`
+**`gbkt-ir/`:**
+- Purpose: Defines every IR node type and visitor interface.
+- Contains: 11 expression nodes, 52 ScriptOp nodes, 8 SystemIR nodes, GameIR root, JSON serializer.
+- Key files: `gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/{Expr,ScriptOp,SystemIR,GameIR,SceneIR,ActorIR}.kt`, `{ExprVisitorI,ScriptOpVisitorI,SystemIRVisitorI}.kt`
 
-**gbkt-backend-api:**
-- Purpose: Interface contract that backends implement
-- Contains: `CodegenBackend` interface, `ValidationResult`, `GenerationResult` types
-- Key files: `CodegenBackend.kt`
-- Exports: Backend contract for ServiceLoader discovery
+**`gbkt-lang/`:**
+- Purpose: DSL builders + property delegates + operator overloads.
+- Contains: Receivers that record IR (`GameBuilder`, `ScriptBuilder`, `ActorBuilder`, `SceneBuilder`), variable delegates, system builders.
+- Key files: `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/{GameBuilder,ScriptBuilder,ActorBuilder,SceneBuilder,VariableBuilders}.kt`
 
-**gbkt-backend-gbdk:**
-- Purpose: GBDK-specific code generation (Game Boy / Game Boy Color C code)
-- Contains: `GBDKCodeGenerator`, domain-specific codegen extension functions
-- Key files: `GBDKBackend.kt`, `codegen/GBDKCodeGenerator.kt`, `codegen/core/StatementCodegen.kt`, `codegen/core/ExpressionCodegen.kt`
-- Exports: Generated C code in multi-file format (split by bank)
+**`gbkt-engine/`:**
+- Purpose: Engine runtime types — types referenced by the engine at runtime but separated from DSL.
+- Contains: `combat/`, `entity/`, `graphics/`, `input/`, `inventory/`, `pickup/`, `scene/`.
+- Key files: `gbkt-engine/src/main/kotlin/io/github/gbkt/core/scene/SceneTypes.kt`, `entity/EntityTypes.kt`
 
-**gbkt-gradle-plugin:**
-- Purpose: Build system integration — `./gradlew buildRom` tasks
-- Contains: Gradle task implementations, GBDK toolchain detection, project configuration
-- Key files: `GbktPlugin.kt`, `GbktExtension.kt`, `tasks/`
-- Exports: Tasks: `generateC`, `buildRom`, `runEmulator`
+**`gbkt-world/`:**
+- Purpose: World and exploration types.
+- Contains: `world/`, `exploration/`.
+- Key files: `gbkt-world/src/main/kotlin/io/github/gbkt/core/{world,exploration}/`
 
-**gbkt-cli:**
-- Purpose: Command-line tool for headless compilation (alternative to Gradle)
-- Contains: CLI argument parsing, game file loading, backend invocation
-- Exports: `gbkt-cli` executable JAR
+**`gbkt-core/`:**
+- Purpose: Aggregator — re-exports lower modules plus asset/constraints/test/parsers.
+- Contains: `assets/`, `builder/`, `collision/`, `combat/`, `constraints/`, `dsl/`, `entity/`, `exploration/`, `flow/`, `graphics/`, `input/`, `inventory/`, `ir/`, `movement/`, `optimization/`, `rpg/`, `scene/`, `services/`, `test/`, `ui/`, `validation/`, `world/`, plus parsers (`LdtkParser.kt`, `TiledParser.kt`, `PoParser.kt`, `PngValidator.kt`, `TileDeduplicator.kt`).
+- Key files: `gbkt-core/src/main/kotlin/io/github/gbkt/core/{AssetPipeline,GameIR,SourceMap,FileIO}.kt`
 
-**gbkt-intellij-plugin:**
-- Purpose: IDE support for `.gbkt` DSL files
-- Contains: Syntax highlighting, code completion, error markers
-- Exports: IntelliJ plugin for Kotlin IDE
+**`gbkt-backend-api/`:**
+- Purpose: Backend contract.
+- Contains: `CodegenBackend.kt`, `BackendRegistry.kt`, `GenerationResult.kt`, `ValidationResult.kt`, `GenreSystemVisitor.kt`, `CollectionCodegen.kt`.
+- Key files: `gbkt-backend-api/src/main/kotlin/io/github/gbkt/backend/api/CodegenBackend.kt`
 
-**gbkt-examples:**
-- Purpose: Reference implementations demonstrating DSL patterns
-- Examples:
-  - `pong/`: Minimal game with sprites, collision, scenes (~200 lines)
-  - `breakout/`: Brick breaker with entity pools
-  - `explorer/`: Dungeon exploration, tilemap navigation
-  - `rpg-lite/`: RPG systems (stats, abilities, items)
-  - `dungeon/`: Multi-floor world system
+**`gbkt-backend-gbdk/`:**
+- Purpose: GB/GBC codegen implementation.
+- Contains: `GBDKBackend.kt`, `codegen/{visitor,ast,pipeline,postprocess,emit}/`, `profiles/`.
+- Key files: `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/{GBDKBackend.kt,codegen/pipeline/GBDKPipelineV2.kt}`
+
+**`gbkt-analysis/`:**
+- Purpose: Static analysis passes.
+- Contains: `AnalysisPass.kt`, `PassContext.kt`, `PassResult` (inside AnalysisPass.kt), `PassPipeline.kt`, `DefaultPipeline.kt`, 11 passes in `passes/`, `config/AnalysisConfig.kt`.
+- Key files: `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/{AnalysisPass,PassPipeline,DefaultPipeline}.kt`
+
+**`gbkt-genre-rpg/`:**
+- Purpose: RPG genre plugin.
+- Contains: `dsl/`, `domain/`, `codegen/`.
+- Key files: `gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/{CharacterBuilder,AbilityBuilder,EquipmentBuilder,ClassBuilder}.kt`
+
+**`gbkt-genre-platformer/`, `gbkt-genre-puzzle/`, `gbkt-genre-sport/`:**
+- Purpose: Genre-specific DSL + IR extensions + codegen.
+- Pattern: Each has `dsl/`, `domain/`, `codegen/` subdirectories mirroring the RPG genre layout.
+
+**`gbkt-emulator/`:**
+- Purpose: Embedded Coffee-GB emulator + agent API.
+- Contains: `CoffeeGbEmulator.kt`, `GbEmulator.kt`, `EmulatorSession.kt`, `agent/` (StepAgent, UatRunner, VisualDiff, SavestateManager, OamSpriteReader, etc.), `debug/` (DebugLogWriter, EmuPrintfInterceptor, SourceMapResolver), `ui/`.
+- Key files: `gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/{CoffeeGbEmulator,EmulatorSession}.kt`, `agent/StepAgent.kt`, `agent/UatRunner.kt`
+
+**`gbkt-test/`:**
+- Purpose: JUnit5 integration for ROM tests.
+- Contains: `GbktTestExtension.kt`, `GbktGameAssertions.kt`, `GbktGameReporter.kt`, `GbktTestRecipes.kt`, `GameDiscovery.kt`.
+- Key files: `gbkt-test/src/main/kotlin/io/github/gbkt/test/GbktTestExtension.kt`
+
+**`gbkt-mcp-server/`:**
+- Purpose: MCP stdio server wrapping StepAgent for Claude Code.
+- Contains: `GbktMcpServer.kt`, `ToolHandlers.kt`, `McpEmulatorSession.kt`, `ObservationSerializer.kt`.
+- Key files: `gbkt-mcp-server/src/main/kotlin/io/github/gbkt/mcp/GbktMcpServer.kt`
+
+**`gbkt-gradle-plugin/`:**
+- Purpose: Gradle integration (composite-build include).
+- Contains: `GbktPlugin.kt`, `GbktExtension.kt`, `tasks/` (23 task classes), `internal/`.
+- Key files: `gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/{GbktPlugin,GbktExtension}.kt`, `tasks/{GenerateCTask,CompileRomTask}.kt`
+
+**`gbkt-cli/`:**
+- Purpose: Command-line project scaffolding.
+- Contains: `Main.kt`, `Commands.kt`, `templates/{MinimalTemplate,PlatformerTemplate,PuzzleTemplate,RpgTemplate}.kt`.
+
+**`gbkt-intellij-plugin/`:**
+- Purpose: IntelliJ plugin (syntax, completion, visual editors, C preview).
+- Contains: `kotlin/io/github/gbkt/intellij/`, resource bundles, plugin descriptor.
+
+**`gbkt-examples/`:**
+- Purpose: Example games + reference implementations.
+- Contains: One directory per game (`pong/`, `breakout/`, `racer/`, `banks/`, `metasprites/`, `metasprites-stress/`, `simple-physics/`, `platformer-template/`). Each has a `build.gradle.kts` that applies the gbkt plugin.
+- Note: `gbkt-examples/.archive/` contains retired examples (`shmup/`, `platformer/`); the file `gbkt-examples/CLAUDE.md` describes the active set.
+
+**`LabyrinthOfTheDragon-port/`:**
+- Purpose: Full-scale RPG reference using gbkt DSL.
+
+**`.planning/`:**
+- Purpose: GSD (Get Shit Done) workflow artifacts.
+- Structure: One folder per phase under `phases/`, plus shared `codebase/`, `research/`, `seeds/`, `todos/`, `quick/`, `debug/`.
+
+**`context/`:**
+- Purpose: Long-form developer documentation referenced from CLAUDE.md.
+- Key files: `ARCHITECTURE.md`, `DSL_REFERENCE.md`, `TESTING.md`, `DEVELOPER_EXPERIENCE.md`, `LOCALIZATION.md`, `TOOLING.md`, `CI_CD.md`, `UAT_GUIDE.md`, per-game UAT recipes (`UAT-pong.md`, etc.).
+
+**`buildSrc/`:**
+- Purpose: Gradle convention plugins shared across modules.
 
 ## Key File Locations
 
 **Entry Points:**
-
-| File | Purpose |
-|------|---------|
-| `gbkt-core/src/main/kotlin/io/github/gbkt/core/Game.kt` | `fun gbGame(name, init)` — DSL entry |
-| `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/GBDKBackend.kt` | `override fun generate()` — Codegen entry |
-| `gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/GbktPlugin.kt` | Gradle plugin initialization |
+- `gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/GbktPlugin.kt`: Gradle plugin entry — registers all tasks.
+- `gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/GenerateCTask.kt:33`: Codegen Gradle task.
+- `gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/CompileRomTask.kt:31`: ROM compile Gradle task.
+- `gbkt-cli/src/main/kotlin/io/github/gbkt/cli/Main.kt`: CLI entry point.
+- `gbkt-mcp-server/src/main/kotlin/io/github/gbkt/mcp/GbktMcpServer.kt`: MCP server entry point.
+- `gbkt-test/src/main/kotlin/io/github/gbkt/test/GbktTestExtension.kt`: JUnit5 ROM-test entry.
 
 **Configuration:**
+- `settings.gradle.kts`: Module include list.
+- `build.gradle.kts`: Root build script (toolchains, Spotless, Detekt, version catalog).
+- `gradle.properties`: Gradle config (JVM args, parallel, caching).
+- `detekt.yml`: Detekt rule config (with codegen/IR exclusions).
+- `gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/GbktExtension.kt`: User-facing `gbkt { ... }` config block.
 
-| File | Purpose |
-|------|---------|
-| `build.gradle.kts` (root) | Multi-module Gradle build configuration |
-| `settings.gradle.kts` | Module inclusion and plugin management |
-| `gbkt-core/build.gradle.kts` | Core module dependencies |
-| `gbkt-backend-gbdk/build.gradle.kts` | GBDK backend dependencies |
-| `detekt.yml` | Code quality rules and exclusions |
+**Core Logic — IR:**
+- `gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/GameIR.kt`: Root IR type.
+- `gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/Expr.kt`: 11 expression node classes.
+- `gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/ScriptOp.kt`: 52 ScriptOp node classes.
+- `gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/SystemIR.kt`: 8 SystemIR node classes.
+- `gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/ExprVisitorI.kt`: Expr visitor contract.
+- `gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/ScriptOpVisitorI.kt`: ScriptOp visitor contract.
+- `gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/SystemIRVisitorI.kt`: SystemIR visitor contract.
+- `gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/GameIRSerializer.kt`: JSON round-trip.
 
-**Core Logic:**
+**Core Logic — DSL:**
+- `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/GameBuilder.kt`: Top-level `game { ... }` receiver.
+- `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ScriptBuilder.kt`: Records ScriptOps for scene lifecycles.
+- `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ActorBuilder.kt`: Actor DSL + `ActorDelegate` (line 1218) + `ActorPropertyRef` (line 61).
+- `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/SceneBuilder.kt`: Scene DSL + `SceneRef` (line 23).
+- `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/VariableBuilders.kt`: `AssignableVar` (line 90) + variable delegates (`u8Var`, `i8Var`, etc.).
+- `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ExprBuilder.kt`: Operator overloads on `Expr`.
+- `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/InputBuilders.kt`: `dpad`, `buttons` typed API.
 
-| File | Purpose |
-|------|---------|
-| `gbkt-core/src/main/kotlin/io/github/gbkt/core/ir/CoreIR.kt` | Base IR statements (IRAssign, IRIf, IRWhile, etc.) |
-| `gbkt-core/src/main/kotlin/io/github/gbkt/core/ir/ExpressionWrapper.kt` | Expr class with 60+ operator overloads |
-| `gbkt-core/src/main/kotlin/io/github/gbkt/core/ir/Variables.kt` | GBVar, property delegates (u8Var, u16Var, arrays) |
-| `gbkt-core/src/main/kotlin/io/github/gbkt/core/dsl/RecordingContext.kt` | Thread-local recording mechanism |
-| `gbkt-core/src/main/kotlin/io/github/gbkt/core/dsl/LogicBlock.kt` | Reusable recorded code blocks with parameters |
-| `gbkt-core/src/main/kotlin/io/github/gbkt/core/builder/GameBuilder.kt` | Game element collection and registration |
+**Core Logic — Backend (visitors):**
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/ScriptOpVisitor.kt`: ScriptOp → CStatement.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/ExprVisitor.kt`: Expr → CExpr.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/ActorVisitor.kt`: ActorIR → C arrays + helpers.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/SceneVisitor.kt`: SceneIR → enter/frame/exit CFunctions.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/GBDKSystemVisitor.kt`: SystemIR → C structures.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/{Rpg,Dialog,Menu,Hud,Inventory,Combat,Collision,Metasprite,Sound}Visitor.kt`: Domain visitors.
+
+**Core Logic — Backend (C AST):**
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CFile.kt`: C source-file model.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CFunction.kt`: Function model.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CStatement.kt`: Statement model.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CExpr.kt`: Expression model.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CType.kt`: Type model.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/ast/CDeclaration.kt`: Declaration model.
+
+**Core Logic — Backend (pipeline):**
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/pipeline/GBDKPipelineV2.kt`: Master orchestrator.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/pipeline/SourceMapCollector.kt`: Tracks IR → C line mappings.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/pipeline/VramAllocator.kt`: VRAM layout decisions.
+
+**Core Logic — Backend (post-process):**
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/postprocess/COutputOptimizer.kt`: Peephole optimization.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/postprocess/FunctionDeduplicationPass.kt`: Merges identical helpers.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/postprocess/SharedConstantTablePass.kt`: Hoists shared LUTs.
+
+**Core Logic — Backend (emit + profiles):**
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/emit/`: CEmitter (CFile → String).
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/profiles/GameBoyProfile.kt`: DMG target profile.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/profiles/GameBoyColorProfile.kt`: GBC target profile.
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/profiles/GameBoyConstants.kt`: Hardware constants.
+
+**Core Logic — Analysis (11 passes):**
+- `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/SemanticValidationPass.kt`
+- `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/ConstraintCheckPass.kt`
+- `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/BankingAnalysisPass.kt`
+- `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/RAMPlanningPass.kt`
+- `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/VRAMLayoutPass.kt`
+- `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/OAMAllocationPass.kt`
+- `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/ResourceInventoryPass.kt`
+- `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/BudgetAuditPass.kt`
+- `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/ConstantFoldingPass.kt`
+- `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/DeadCodeEliminationPass.kt`
+- `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/BitwiseOptimizationPass.kt`
+- Plus `RacingValidationPass.kt` (sport-genre-specific) and `ScriptOpTraversal.kt` (shared traversal helper).
 
 **Testing:**
+- `gbkt-test/src/main/kotlin/io/github/gbkt/test/GbktTestExtension.kt`: JUnit5 extension.
+- `gbkt-test/src/main/kotlin/io/github/gbkt/test/GbktGameAssertions.kt`: Fluent assertions.
+- `gbkt-test/src/main/kotlin/io/github/gbkt/test/GbktTestRecipes.kt`: Composable recipes (`verifyTitleScreen`, `bootToScene`).
+- `gbkt-test/src/main/kotlin/io/github/gbkt/test/GameDiscovery.kt`: ROM/metadata auto-discovery.
+- `gbkt-test/src/main/kotlin/io/github/gbkt/test/GbktGameReporter.kt`: Test report output.
+- `gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/StepAgent.kt`: Emulator-driving agent.
+- `gbkt-emulator/src/main/kotlin/io/github/gbkt/emulator/agent/UatRunner.kt`: Headless UAT runner.
 
-| File | Purpose |
-|------|---------|
-| `gbkt-core/src/test/kotlin/io/github/gbkt/core/LogicBlockTest.kt` | Logic block recording and expansion tests |
-| `gbkt-core/src/test/kotlin/io/github/gbkt/core/InputTest.kt` | Input system tests |
-| `gbkt-core/src/test/kotlin/io/github/gbkt/core/TransitionTest.kt` | Scene transition tests |
-| `gbkt-core/src/test/kotlin/io/github/gbkt/core/Generators.kt` | Property-based test generators (Kotest) |
+**Asset Pipeline:**
+- `gbkt-core/src/main/kotlin/io/github/gbkt/core/AssetPipeline.kt`: Orchestrator.
+- `gbkt-core/src/main/kotlin/io/github/gbkt/core/AssetManifest.kt`: Manifest model.
+- `gbkt-core/src/main/kotlin/io/github/gbkt/core/PngValidator.kt`: PNG validation.
+- `gbkt-core/src/main/kotlin/io/github/gbkt/core/TileDeduplicator.kt`: Tile dedup.
+- `gbkt-core/src/main/kotlin/io/github/gbkt/core/LdtkParser.kt`: LDtk map parser.
+- `gbkt-core/src/main/kotlin/io/github/gbkt/core/TiledParser.kt`: Tiled map parser.
+- `gbkt-core/src/main/kotlin/io/github/gbkt/core/PoParser.kt`: GNU gettext .po parser.
 
 ## Naming Conventions
 
 **Files:**
-
-| Pattern | Example | Use |
-|---------|---------|-----|
-| `{Feature}IR.kt` | `BattleIR.kt`, `DialogIR.kt`, `AudioIR.kt` | IR node types for a domain |
-| `{Codegen}Codegen.kt` | `StatementCodegen.kt`, `ExpressionCodegen.kt` | Extension functions for code generation |
-| `{Feature}System.kt` | `BattleEngineSystem.kt`, `CollisionSystem.kt` | Integrated system implementations |
-| `{Noun}Definition.kt` | `ItemDefinition.kt`, `MenuDefinition.kt` | Immutable configuration data |
-| `{Noun}Builder.kt` | `EntityBuilder.kt`, `SceneBuilder.kt` | Mutable builders for configuration |
-| `Test.kt` suffix | `LogicBlockTest.kt`, `InputTest.kt` | Unit tests |
+- One top-level class/object per file; file name matches class name (`GameBuilder.kt` contains `GameBuilder`).
+- IR node groupings allowed: `Expr.kt` contains all 11 expression data classes; `ScriptOp.kt` contains all 52 op classes.
+- Builder files end with `Builder.kt`: `ActorBuilder.kt`, `SceneBuilder.kt`, `CombatEngineBuilder.kt`.
+- Visitor files end with `Visitor.kt`: `ScriptOpVisitor.kt`, `ExprVisitor.kt`, `ActorVisitor.kt`.
+- Visitor interfaces use `I` suffix to distinguish contract from implementation: `ExprVisitorI`, `ScriptOpVisitorI`, `SystemIRVisitorI`.
+- Codegen files end with `Codegen` only when the class itself ends with `Codegen` (e.g., `GBDKCollectionCodegen.kt`); most backend logic uses `Visitor` suffix.
+- IR files end with `IR.kt`: `GameIR.kt`, `SceneIR.kt`, `ActorIR.kt`, `WorldIR.kt`, `CombatEngineIR.kt`.
+- Pass files end with `Pass.kt`: `BankingAnalysisPass.kt`, `SemanticValidationPass.kt`, `VRAMLayoutPass.kt`.
+- Gradle task files end with `Task.kt`: `GenerateCTask.kt`, `CompileRomTask.kt`, `ConvertSpritesTask.kt`.
+- Test files end with `Test.kt`: `GbktPluginTest.kt`, `IntegrationTest.kt`.
+- Module CLAUDE files: `CLAUDE.md` at module root and at significant subdirectory roots (e.g., `gbkt-backend-gbdk/.../codegen/visitor/CLAUDE.md`).
 
 **Directories:**
+- Module roots are kebab-case with `gbkt-` prefix: `gbkt-ir`, `gbkt-backend-gbdk`, `gbkt-genre-rpg`.
+- Source roots follow Kotlin/JVM convention: `src/{main,test}/{kotlin,resources}/`.
+- Package paths mirror Java: `io/github/gbkt/<module-or-domain>/...`.
+- Code subdirectories within a module are lowercase (`codegen`, `ast`, `pipeline`, `postprocess`, `profiles`, `dsl`, `domain`).
 
-| Pattern | Examples | Purpose |
-|---------|----------|---------|
-| `ir/` | IR node definitions (sealed interfaces and data classes) | Platform-agnostic intermediate representation |
-| `dsl/` | Recording context, conditionals, loops, builders | User-facing DSL syntax |
-| `codegen/` | Statement, expression, variable generation | Transform IR to C code |
-| `{domain}/` | `graphics/`, `rpg/`, `world/`, `ui/` | Feature areas in core and codegen |
-| `{category}/{subcategory}/` | `codegen/rpg/`, `codegen/graphics/` | Organize codegen by domain |
+**Classes / functions:**
+- Classes / objects / interfaces: `PascalCase` (`GameBuilder`, `CodegenBackend`, `ActorDelegate`).
+- Functions, methods, properties: `camelCase` (`compileWithAssets`, `provideDelegate`, `currentBank`).
+- IR data classes: `PascalCase` (`Literal`, `BinaryExpr`, `IfOp`, `NavigateTo`).
+- Enum entries: `SCREAMING_SNAKE_CASE` (`VarType.UINT8`, `MovementStyle.GRID`, `BattleState.VICTORY`).
+- DSL infix functions: lowercase verbs (`isAbove`, `isAtLeast`, `isEqualTo`, `logicalAnd`, `set`).
+- Compile-time constants in IR: `SCREAMING_SNAKE_CASE` (`COMBAT_STATE_VICTORY`).
+- Backend C symbol names: `_snake_case` prefix `_` (`_ball_dx`, `_score`, `_current_tileset_id`).
 
-**Functions & Classes:**
-
-| Pattern | Example | Use |
-|---------|---------|-----|
-| `generate{Feature}()` | `generateVariables()`, `generateSceneFunctions()` | Codegen extension functions |
-| `{primitive}Var(...)` | `u8Var("x")`, `u16Var("score")` | Variable type delegation |
-| `{primitive}Array(...)` | `u8Array(10)`, `u16Array(5)` | Array type delegation |
-| `IR{Statement}` | `IRAssign`, `IRIf`, `IRWhile` | IR node types (sealed) |
-| `{noun}()` | `whenever()`, `scene()`, `entity()` | DSL builder functions |
-| `{noun}Builder` | `SceneBuilder`, `EntityBuilder` | Builder classes for DSL |
+**Tasks (Gradle):**
+- Task type classes: `PascalCase` ending in `Task` (`GenerateCTask`).
+- Task names (registered with Gradle): `camelCase` (`generateC`, `compileRom`, `buildRom`, `runEmulator`).
 
 ## Where to Add New Code
 
-**New Feature (e.g., new DSL construct):**
-1. Define IR node(s) in `gbkt-core/src/main/kotlin/io/github/gbkt/core/ir/{Feature}IR.kt`
-2. Add DSL builder in appropriate scope (`SceneBuilder`, `EntityBuilder`, etc.)
-3. Add codegen extension function in `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/{domain}/{Feature}Codegen.kt`
-4. Add tests in `gbkt-core/src/test/kotlin/io/github/gbkt/core/{Feature}Test.kt`
+**New IR node:**
+- Expression node: add to `gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/Expr.kt`; add `visit*` to `ExprVisitorI.kt`; implement in `gbkt-backend-gbdk/.../visitor/ExprVisitor.kt`.
+- ScriptOp node: add to `gbkt-ir/src/main/kotlin/io/github/gbkt/core/ir/ScriptOp.kt`; add `visit*` to `ScriptOpVisitorI.kt`; implement in `gbkt-backend-gbdk/.../visitor/ScriptOpVisitor.kt`.
+- System node: add to relevant `gbkt-ir/.../*IR.kt`; add `visit*` to `SystemIRVisitorI.kt`; implement in `gbkt-backend-gbdk/.../visitor/GBDKSystemVisitor.kt`.
+- Serialization: add `serialize*`/`deserialize*` to `gbkt-ir/.../GameIRSerializer.kt`.
+- See: context/DEVELOPER_EXPERIENCE.md → "Adding IR Nodes".
 
-**New Component/Module (e.g., new entity type):**
-- Implementation: `gbkt-core/src/main/kotlin/io/github/gbkt/core/{domain}/{Component}.kt`
-- Builder: Same module or `{Component}Builder.kt`
-- Tests: `gbkt-core/src/test/kotlin/io/github/gbkt/core/{ComponentName}Test.kt`
+**New DSL construct:**
+- Builder: extend or create `*Builder.kt` in `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/`.
+- Operator overloads: place in `*Builder.kt` or extension functions on the receiver type.
+- Property delegate: implement `provideDelegate` returning a typed ref (see `ActorDelegate` in `gbkt-lang/.../ActorBuilder.kt:1218`).
+- See: context/DEVELOPER_EXPERIENCE.md → "Adding DSL Constructs".
 
-**Utilities (helpers, extensions):**
-- Shared extension functions: `gbkt-core/src/main/kotlin/io/github/gbkt/core/Extensions.kt`
-- Domain-specific utilities: `gbkt-core/src/main/kotlin/io/github/gbkt/core/{domain}/Utilities.kt`
-- Test utilities: `gbkt-core/src/test/kotlin/io/github/gbkt/core/Generators.kt`
+**New analysis pass:**
+- Pass: add `*Pass.kt` to `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/passes/`.
+- Register in pipeline order: edit `gbkt-analysis/src/main/kotlin/io/github/gbkt/analysis/DefaultPipeline.kt`.
 
-**New Backend (e.g., for GBA):**
-1. Create module: `gbkt-backend-gba/`
-2. Implement: `class GBABackend : CodegenBackend` in `GBABackend.kt`
-3. Implement `validate()` and `generate()` methods
-4. Add codegen functions: `gbkt-backend-gba/src/main/kotlin/.../codegen/`
-5. Backend discovered via ServiceLoader at runtime
+**New backend:**
+- Module: add `gbkt-backend-<target>/` as sibling to `gbkt-backend-gbdk`.
+- Register: include in `settings.gradle.kts`; implement `CodegenBackend`; expose via ServiceLoader.
+- Profile: add `*Profile.kt` describing target capabilities (e.g., screen size, VRAM bytes, banking model).
+
+**New genre plugin:**
+- Module: add `gbkt-genre-<name>/` with `dsl/`, `domain/`, `codegen/` subdirectories mirroring existing genres.
+- Register in `settings.gradle.kts`.
+- DSL entry points: provide builder + property delegate following `ActorDelegate` pattern.
+
+**New Gradle task:**
+- Class: add `*Task.kt` to `gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/`.
+- Registration: edit `GbktPlugin.kt` `registerTasks()` and wire input/output to upstream tasks.
+
+**New example game:**
+- Folder: `gbkt-examples/<game-name>/` with `src/main/kotlin/.../<Game>Main.kt`, `build.gradle.kts`, `res/` for assets.
+- Registration: `include("gbkt-examples:<game-name>")` in `settings.gradle.kts`.
+- The example consumes the gbkt plugin; no duplicated build logic.
+
+**New documentation page:**
+- Module-level: add `CLAUDE.md` to module root.
+- Cross-cutting: add to `context/` (e.g., `context/TESTING.md`) and cross-link from root `CLAUDE.md`.
+
+**Utilities:**
+- Cross-module helpers: `gbkt-core/src/main/kotlin/io/github/gbkt/core/` (top-level files like `SourceMap.kt`, `FontCharacterMapping.kt`, `FileIO.kt`).
+- Module-local helpers: a `utils/` or top-level file in the consuming module.
 
 ## Special Directories
 
-**gbkt-core/src/main/kotlin/io/github/gbkt/core/ir/:**
-- Purpose: All IR node definitions (sealed hierarchies)
-- Generated: No (hand-written)
-- Committed: Yes
-- Note: 35 files, ~6000 lines; cannot be split across modules due to Kotlin sealed interface constraint
-- Key files: `CoreIR.kt` (base statements), `ExpressionWrapper.kt` (operator overloads), `Variables.kt` (property delegates)
+**`buildSrc/`:**
+- Purpose: Gradle convention plugins shared across modules.
+- Generated: No.
+- Committed: Yes.
 
-**gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/:**
-- Purpose: Code generation logic organized by feature domain
-- Generated: No (hand-written extension functions)
-- Committed: Yes
-- Key files: `core/StatementCodegen.kt`, `core/ExpressionCodegen.kt` (transform IR to C)
-- Note: Uses multi-file (by bank) output for GBDK #pragma bank support
+**`build/`:**
+- Purpose: Gradle build output (per-module and root).
+- Generated: Yes.
+- Committed: No (gitignored).
 
-**gbkt-examples/:**
-- Purpose: Reference implementations and test cases
-- Generated: No (hand-written by developers)
-- Committed: Yes
-- Pattern: Each example is a standalone Gradle module with own `build.gradle.kts`
-- Usage: Demonstrate patterns, verify DSL works end-to-end
+**`build/gbkt/`:**
+- Purpose: gbkt-specific build output for a project (generated C, ROM, debug files).
+- Layout: `build/gbkt/generated/{main.c,bankN.c,main.c.gbkt.map,game_metadata.json}`, `build/gbkt/output/<name>.gb`.
+- Generated: Yes.
+- Committed: No.
 
-**LabyrinthOfTheDragon-port/:**
-- Purpose: Large reference game (v1 launch cleanup)
-- Generated: No
-- Committed: Yes
-- Size: Complex multi-floor RPG with exploration, combat, NPCs
-- Role: Used to identify architectural gaps, test edge cases
+**`gbkt-examples/.archive/`:**
+- Purpose: Retired example projects.
+- Generated: No.
+- Committed: Yes (historical reference).
 
-**context/:**
-- Purpose: Design documentation index
-- Generated: No (hand-written)
-- Committed: Yes
-- Key files: ARCHITECTURE.md, DSL_REFERENCE.md, DEVELOPER_EXPERIENCE.md
-- Role: Reference for developers extending the framework
+**`sessions/`:**
+- Purpose: Emulator saved sessions for manual replay.
+- Generated: Partially (created by emulator).
+- Committed: Partial (some session files checked in for tests, others gitignored).
+
+**`scratch/`:**
+- Purpose: Ephemeral exploratory work.
+- Generated: No.
+- Committed: No.
+
+**`.planning/`:**
+- Purpose: GSD workflow tracking.
+- Generated: No.
+- Committed: Yes (phase plans, specs, verification, evidence are part of history).
+
+**`.claude/`:**
+- Purpose: Claude Code skills + MCP server registration.
+- Generated: Partially (by `./gradlew gbktSetupClaude`).
+- Committed: Skill files are committed; `mcp_servers.json` is per-user.
+
+**`.agents/skills/` (if present):**
+- Purpose: Project-level agent skills.
+- Generated: No.
+- Committed: Yes.
+
+**`LabyrinthOfTheDragon/`:**
+- Purpose: Original C-based reference implementation (pre-Kotlin port).
+- Generated: No.
+- Committed: Yes (historical / reference for the Kotlin port).
 
 ---
 
-*Structure analysis: 2026-02-17*
+*Structure analysis: 2026-05-27*

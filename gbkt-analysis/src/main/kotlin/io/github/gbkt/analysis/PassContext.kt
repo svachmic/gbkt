@@ -74,7 +74,15 @@ data class ResourceInventory(
  * @property optimizationReport Accumulated per-pass optimization summaries. IR-level optimization
  *   passes append their [PassOptimizationSummary] here. Written to disk by [BudgetAuditPass].
  * @property outputDirectory Build output directory. When non-null, [BudgetAuditPass] writes
- *   `optimization-report.json` here. Wired from GBDKPipelineV2 or set in tests.
+ *   `optimization-report.json` here. Wired from GBDKPipeline or set in tests.
+ * @property assetRoot Project asset root directory (relative paths in
+ *   [io.github.gbkt.core.ir.ZoneIR.tilesetPath] and [io.github.gbkt.core.ir.ZoneIR.tilemapPath]
+ *   resolve against this). When non-null, [io.github.gbkt.analysis.passes.BankingAnalysisPass]
+ *   reads PNG IHDR dimensions via `ImageIO.read(File(assetRoot, zone.tilemapPath ?:
+ *   zone.tilesetPath))` to enforce the cumulative tilemap-bank overflow guard (Phase 12.2 REQ-5 /
+ *   D-claude-2). When null, the overflow guard is skipped silently — JVM unit tests that do not
+ *   need filesystem access (the majority of analysis-pass tests) keep working unchanged. Mirrors
+ *   the [outputDirectory] precedent for nullable `File` plumbing through the analysis pipeline.
  */
 data class PassContext(
     val game: GameIR,
@@ -90,6 +98,7 @@ data class PassContext(
     val assetManifest: AssetManifest? = null,
     val optimizationReport: OptimizationReport = OptimizationReport(),
     val outputDirectory: java.io.File? = null,
+    val assetRoot: java.io.File? = null,
 ) {
     /**
      * Returns a copy of this context with [newDiagnostics] appended to the existing list. The

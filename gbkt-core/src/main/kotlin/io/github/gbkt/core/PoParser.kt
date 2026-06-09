@@ -207,35 +207,34 @@ object PoParser {
         }
 
         val warnings = mutableListOf<String>()
-        val paddedEntries =
-            entries.map { entry ->
-                val targetWidth = padding.widthFor(entry.context)
-                if (targetWidth == null || entry.msgstr.isEmpty()) {
-                    entry
-                } else {
-                    when {
-                        entry.msgstr.length < targetWidth -> {
-                            // Right-pad with spaces to reach target width
-                            entry.copy(msgstr = entry.msgstr.padEnd(targetWidth, ' '))
-                        }
+        val paddedEntries = entries.map { entry ->
+            val targetWidth = padding.widthFor(entry.context)
+            if (targetWidth == null || entry.msgstr.isEmpty()) {
+                entry
+            } else {
+                when {
+                    entry.msgstr.length < targetWidth -> {
+                        // Right-pad with spaces to reach target width
+                        entry.copy(msgstr = entry.msgstr.padEnd(targetWidth, ' '))
+                    }
 
-                        entry.msgstr.length > targetWidth -> {
-                            // String exceeds target width — warn but do NOT truncate
-                            val warning =
-                                "PO padding: '${entry.context}.${entry.msgid}' " +
-                                    "is ${entry.msgstr.length} chars but target width is $targetWidth " +
-                                    "(will not truncate)"
-                            warnings.add(warning)
-                            entry.copy(paddingWarnings = listOf(warning))
-                        }
+                    entry.msgstr.length > targetWidth -> {
+                        // String exceeds target width — warn but do NOT truncate
+                        val warning =
+                            "PO padding: '${entry.context}.${entry.msgid}' " +
+                                "is ${entry.msgstr.length} chars but target width is $targetWidth " +
+                                "(will not truncate)"
+                        warnings.add(warning)
+                        entry.copy(paddingWarnings = listOf(warning))
+                    }
 
-                        else -> {
-                            // Exactly at width — no change needed
-                            entry
-                        }
+                    else -> {
+                        // Exactly at width — no change needed
+                        entry
                     }
                 }
             }
+        }
 
         return PoParseResult(paddedEntries, warnings)
     }
@@ -305,10 +304,9 @@ class BankAllocator(
         val byNamespace = entries.groupBy { it.context }
 
         // Calculate size for each namespace (sum of msgstr lengths + null terminators)
-        val namespaceSizes =
-            byNamespace.mapValues { (_, nsEntries) ->
-                nsEntries.sumOf { it.msgstr.length + 1 } // +1 for C null terminator
-            }
+        val namespaceSizes = byNamespace.mapValues { (_, nsEntries) ->
+            nsEntries.sumOf { it.msgstr.length + 1 } // +1 for C null terminator
+        }
 
         // Sort by size descending (largest first for bin packing)
         val sorted = namespaceSizes.entries.sortedByDescending { it.value }

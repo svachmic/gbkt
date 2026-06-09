@@ -23,13 +23,13 @@ import kotlin.test.assertTrue
 
 // =============================================================================
 // PUZZLE CODEGEN TESTS
-// Verifies that GBDKPipelineV2 emits the correct C for all four puzzle object
+// Verifies that GBDKPipeline emits the correct C for all four puzzle object
 // types: switch, door, pressure plate, and timed block.
 // =============================================================================
 
 class PuzzleCodegenTest {
 
-    private val pipeline = GBDKPipelineV2()
+    private val pipeline = GBDKPipeline()
 
     private fun makeGame(vararg puzzleObjects: io.github.gbkt.core.ir.PuzzleObjectIR): GameIR =
         GameIR(

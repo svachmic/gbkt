@@ -1,0 +1,3 @@
+# Post-migration carrier ROM sizes (baseline evidence/pre-migration/rom-sizes.txt = 65536 each)
+PlatformerTemplate.gb (platformer-template.gb): 65536 bytes
+Banks.gb (banks.gb): 65536 bytes

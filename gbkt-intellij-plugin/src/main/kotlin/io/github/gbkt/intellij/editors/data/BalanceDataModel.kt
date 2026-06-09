@@ -70,15 +70,14 @@ data class BalanceDataModel(
 
     /** Adds a new row with default values. */
     fun addRow() {
-        val newRow =
-            columns.map { col ->
-                when (col.type) {
-                    ColumnType.INT -> 0
-                    ColumnType.FLOAT -> 0.0
-                    ColumnType.STRING -> ""
-                    ColumnType.TIER -> "C"
-                }
+        val newRow = columns.map { col ->
+            when (col.type) {
+                ColumnType.INT -> 0
+                ColumnType.FLOAT -> 0.0
+                ColumnType.STRING -> ""
+                ColumnType.TIER -> "C"
             }
+        }
         rows.add(newRow.toMutableList())
     }
 
@@ -182,16 +181,15 @@ data class BalanceDataModel(
 
             val rows =
                 (1..maxLevel).map { level ->
-                    val baseStats =
-                        stats.map { stat ->
-                            when (stat) {
-                                "HP" -> 10 + level * 5
-                                "ATK" -> 5 + level * 2
-                                "DEF" -> 5 + level * 2
-                                "AGL" -> 5 + level
-                                else -> level
-                            }
+                    val baseStats = stats.map { stat ->
+                        when (stat) {
+                            "HP" -> 10 + level * 5
+                            "ATK" -> 5 + level * 2
+                            "DEF" -> 5 + level * 2
+                            "AGL" -> 5 + level
+                            else -> level
                         }
+                    }
                     (mutableListOf<Any>(level) + baseStats).toMutableList()
                 }
 

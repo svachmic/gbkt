@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.rpg.dsl
 
+import io.github.gbkt.core.dsl.SceneRef
 import io.github.gbkt.core.dsl.game
 import io.github.gbkt.core.ir.AtbGaugeModel
 import io.github.gbkt.core.ir.AtbWaitMode
@@ -40,8 +41,8 @@ class AtbCombatTest {
                 atbCombat("mybattle") {
                     // minimal config
                 }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
@@ -70,8 +71,8 @@ class AtbCombatTest {
                     fillRate(6)
                     maxGauge(200)
                 }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
@@ -100,8 +101,8 @@ class AtbCombatTest {
 
         game("AtbTest") {
                 atbCombat("atb2") { allowPlayerToggle() }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
@@ -129,13 +130,13 @@ class AtbCombatTest {
                 atbCombat("atb3") {
                     turnOrder(TurnOrderStrategy.SPEED_BASED)
                     maxCombatants(6)
-                    onVictory { navigate("win") }
-                    onDefeat { navigate("gameover") }
+                    onVictory { navigate(SceneRef("win")) }
+                    onDefeat { navigate(SceneRef("gameover")) }
                 }
-                scene("start") { enter {} }
+                val startSceneRef = scene("start") { enter {} }
                 scene("win") { enter {} }
                 scene("gameover") { enter {} }
-                start = "start"
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
@@ -168,8 +169,8 @@ class AtbCombatTest {
 
         game("AtbTest") {
                 atbCombat("atb4") { activeMode() }
-                scene("start") { enter {} }
-                start = "start"
+                val startSceneRef = scene("start") { enter {} }
+                start = startSceneRef
             }
             .build()
             .also { gameIR ->
