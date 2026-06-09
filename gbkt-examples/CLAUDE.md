@@ -15,14 +15,12 @@ gbkt-examples/
 ├── metasprites/
 ├── metasprites-stress/
 ├── banks/
-├── racer/
 └── platformer-template/
 ```
 
-(8 active examples; 6 examples archived in Phase 11.3 — see `## Archived examples` below.
-`platformer-template/` was added in Phase 12 as the platformer-genre reference port per
-D-03; the older `gbkt-examples/platformer/` was retired by the same decision and remains
-in the archived ledger below.)
+(7 active examples. `platformer-template/` was added in Phase 12 as the platformer-genre
+reference port per D-03; the older `gbkt-examples/platformer/` was retired by the same
+decision, and `racer/` was retired in Phase 14 — see `## Archived examples` below.)
 
 ## Build Pattern
 
@@ -31,11 +29,13 @@ All examples use the `io.github.gbkt` Gradle plugin:
 ```kotlin
 // build.gradle.kts
 plugins {
-    id("io.github.gbkt") version "..."
+    kotlin("jvm")
+    id("io.github.gbkt")
 }
 gbkt {
-    gameName.set("Pong")
-    mainClass.set("io.github.gbkt.examples.pong.PongV2Kt")
+    game("io.github.gbkt.examples.pong.PongKt::pong")
+    assets("res")
+    outputName.set("pong")
     // optional: gbdkHome.set("/opt/gbdk-2020")
 }
 ```
@@ -65,12 +65,12 @@ Each example has two test files:
 ```kotlin
 // Example IR test
 @Test fun `game has correct scene count`() {
-    assertEquals(3, pongV2.scenes.size)
+    assertEquals(3, pong.scenes.size)
 }
 
 // Example simulation test
 @Test fun `ball bounces off top wall`() {
-    val ctx = SimulationContext(pongV2)
+    val ctx = SimulationContext(pong)
     ctx.navigate("game")
     ctx.set("ballDy", -1)
     ctx.set("ball_y", 10)
@@ -104,8 +104,13 @@ dependencies {
 ## Archived examples
 
 The 6 examples below were archived in Phase 11.3 (2026-05-21) to narrow the
-v1.0 active matrix to the 7 framework-validated games. Working copies live at
-`gbkt-examples/.archive/<name>/` (gitignored — local stash, not committed).
+active matrix to the 7 framework-validated games; `racer/` and the `explorer`
+GenerateC entry were additionally retired in Phase 14 (v0.1.0 release cleanup).
+
+Archived sources are **not committed** — they were developer-local stashes under
+`gbkt-examples/.archive/<name>/`, which may not exist on a fresh clone. To revive
+an archived example, recover it from git history (it was deleted from the tree in
+its archival phase) and check the revival condition below.
 
 ### explorer
 

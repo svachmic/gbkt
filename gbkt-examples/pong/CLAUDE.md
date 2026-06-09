@@ -10,7 +10,7 @@
 
 ## Code Structure
 
-`PongV2.kt` (~220 lines) — single file, single `game("Pong") { }` block:
+`Pong.kt` (~220 lines) — single file, single `game("Pong") { }` block:
 
 1. Config: `ROM_ONLY`, 2 ROM banks
 2. Forward reference: `val titleRef = sceneRef("title")`

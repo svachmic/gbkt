@@ -7,15 +7,12 @@ Build tools, asset pipeline, and configuration for gbkt.
 Convert PNG sprites to Game Boy tile format:
 
 ```kotlin
-// In your main function:
-val assetDir = "src/main/resources/sprites"
-
-// Option 1: Auto-compile all sprite assets
-val code = compileWithAssets(myGame, assetDir)
-
-// Option 2: Manual conversion
+// Manual conversion via AssetPipeline
 val sheet = AssetPipeline.loadSprite("player.png")
 val cCode = AssetPipeline.generateTileData("player", sheet)
+
+// Batch conversion for multiple sprites
+val allCode = AssetPipeline.generateAllTileData(mapOf("player" to sheet))
 ```
 
 The pipeline:
@@ -131,11 +128,11 @@ gbkt supports Game Boy Color with full 15-bit RGB555 color palettes (8 sprite pa
 ### Enabling GBC Mode
 
 ```kotlin
-val myGame = gbGame("ColorGame") {
+val myGame = game("ColorGame") {
     config {
-        gbcSupport = true              // Enable GBC features
-        gbcMode = GBCMode.COMPATIBLE   // Works on both DMG and GBC
-        // gbcMode = GBCMode.ONLY      // GBC exclusive
+        target(GbcTarget.GBC_COMPATIBLE)   // Works on both DMG and GBC
+        // target(GbcTarget.GBC_ONLY)      // GBC exclusive
+        // default is GbcTarget.DMG        // classic grayscale
     }
     // ...
 }
@@ -144,81 +141,64 @@ val myGame = gbGame("ColorGame") {
 ### Defining Palettes
 
 ```kotlin
-// Manual palette definition with hex colors
-val playerPalette = palette("player") {
-    colors(0xFFFFFF, 0x88FF88, 0x448844, 0x000000)  // lightest to darkest
+// Background palette — name inferred from the Kotlin property (by-delegate)
+val playerPalette by palette {
+    color0(GBCColor.fromRGB888(255, 255, 255))  // lightest
+    color1(GBCColor.fromRGB888(136, 255, 136))
+    color2(GBCColor.fromRGB888(68, 136, 68))
+    color3(GBCColor.fromRGB888(0, 0, 0))        // darkest
 }
 
-// Individual color setting
-val enemyPalette = palette("enemy") {
-    color(0, 255, 255, 255)  // index, R, G, B (0-255)
-    color(1, 255, 0, 0)
-    color(2, 128, 0, 0)
-    color(3, 0, 0, 0)
+// Sprite palette — same builder, registered as PaletteType.SPRITE
+val enemyPalette by spritePalette {
+    copy(GbcPresets.FIRE)
+    color3(GBCColor.fromRGB888(0, 0, 0))  // override just the darkest shade
 }
 
-// Use preset palettes
-val bgPalette = palette("bg", PalettePreset.FOREST)
-// Available: GRAYSCALE, FOREST, OCEAN, FIRE, ICE, NIGHT, SEPIA
+// Use preset palettes via copy(GbcPresets.X)
+val bgPalette by palette { copy(GbcPresets.NATURE) }
+// Available: CLASSIC_GREEN, NATURE, FIRE, ICE, OCEAN, DUNGEON, CAVERN, SUNSET,
+//            NIGHT, PASTEL, SEPIA, NEON, MONOCHROME_BLUE, WARM_GRAY, UI_LIGHT, UI_DARK
 ```
 
 ### Assigning Palettes to Sprites
 
 ```kotlin
-val player = sprite(SpriteAsset("player.png")) {
-    size = 8 x 16
-    boundTo(playerX, playerY)
-    palette = playerPalette  // Assign palette to sprite
+// Per-actor palette — inside the actor { } block
+val player by actor {
+    position(80, 72)
+    sprite(asset("sprites/player.png")) { size(8, 16) }
+    palette(GbcPresets.FIRE)   // assign GBC palette to this actor's sprite
 }
 
-// Or use direct index assignment
-val enemy = sprite(SpriteAsset("enemy.png")) {
-    size = 8 x 8
-    paletteIndex = 2  // Use palette slot 2
-}
-```
-
-### Runtime Palette Effects
-
-```kotlin
-gameplayScene = scene("gameplay") {
-    enter {
-        playerPalette.apply()  // Apply palette to its assigned slot
-    }
-
-    every.frame {
-        whenever(playerHit eq 1) {
-            playerPalette.flash(0xFF0000)  // Flash red
-        }
-
-        // Fade toward target colors
-        playerPalette.fadeTo(
-            listOf(0xFFFFFF, 0xFF0000, 0x880000, 0x000000),
-            fadeProgress  // 0-255 progress
-        )
-    }
+// Per-scene hardware slots — palette() calls in the scene block load slots 0-7
+scene("gameplay") {
+    palette(playerPalette)           // auto-assigns next free slot
+    palette(enemyPalette, slot = 3)  // or pin an explicit slot (0-7)
 }
 ```
 
 ### Automatic Palette Extraction
 
-When `gbcSupport = true`, the asset pipeline automatically extracts colors from PNG sprites:
+The asset pipeline automatically extracts colors from PNG sprites when no explicit palette
+is assigned:
 
 ```kotlin
-// Palettes are auto-extracted if sprite has no explicit palette
-val autoSprite = sprite(SpriteAsset("colorful.png")) {
-    size = 8 x 8
+// Palettes are auto-extracted if the actor's sprite has no explicit palette
+val autoSprite by actor {
+    position(80, 72)
+    sprite(asset("sprites/colorful.png")) { size(8, 8) }
     // No palette specified - colors extracted automatically!
 }
 ```
 
 ### GBC Types Reference
 
-- `GBCColor` - RGB555 color value class
+- `GBCColor` - RGB555 color value class (`GBCColor.fromRGB888(r, g, b)`)
 - `GBCPalette` - 4-color palette data class
-- `GBCMode` - Enum: `DISABLED`, `COMPATIBLE`, `ONLY`
+- `GbcTarget` - Enum: `DMG`, `GBC_COMPATIBLE`, `GBC_ONLY`
 - `PaletteType` - Enum: `SPRITE`, `BACKGROUND`
-- `Palette` - DSL wrapper with runtime operations
+- `GbcPresets` - 16 ready-made `GBCPalette` presets
 
 ### Generated C Code
 

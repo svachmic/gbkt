@@ -49,7 +49,7 @@ runtime-verified that jump works correctly. Two things to know:
 2. **Metadata `controls` omits jump — do NOT infer jump is unwired.** The gameplay scene's
    `game_metadata.json` `controls` lists only LEFT/RIGHT (held). Jump is **absent from the
    metadata** because `platformer_physics_update()` is injected as a `RawOp`, and
-   `GBDKPipelineV2.extractControls()` only walks structured ops (`IfOp`/`WhileOp`/etc.) — it
+   `GBDKPipeline.extractControls()` only walks structured ops (`IfOp`/`WhileOp`/etc.) — it
    cannot see jump inside the raw physics block. The absence is a metadata-extraction gap,
    **not** evidence that jump is missing. Verify jump by reading `_playerVy`, never by
    reading the metadata `controls` list.

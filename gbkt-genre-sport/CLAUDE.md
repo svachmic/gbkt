@@ -117,7 +117,7 @@ through `ScreenClear` gives the backend a hook to make scene-aware decisions.
 ### Part 2 — Scene-aware codegen (gbkt-backend-gbdk)
 
 `ScriptOpVisitor.visitScreenClear` reads scene context (set per-scene by
-`GBDKPipelineV2.buildSceneFile` via `setSceneContext`) and lowers `ScreenClear`
+`GBDKPipeline.buildSceneFile` via `setSceneContext`) and lowers `ScreenClear`
 differently:
 
 | Scene shape                                      | Lowering                                    |
@@ -145,7 +145,7 @@ authors to remember.
 ### What this means for `gbkt-genre-sport` maintainers
 
 The discriminator predicate `sceneHasBgTilemap(sceneId, gameIR, genreEnterOps)` lives in
-`GBDKPipelineV2`. It detects a BG tilemap via:
+`GBDKPipeline`. It detects a BG tilemap via:
 
 1. `scene.tilesetRef != null` — scene declared a tileset.
 2. Genre `enterOps` contain a `RawOp` with `set_bkg_tiles` or `set_bkg_data` —

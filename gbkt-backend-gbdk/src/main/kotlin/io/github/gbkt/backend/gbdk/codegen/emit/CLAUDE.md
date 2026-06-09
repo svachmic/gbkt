@@ -24,7 +24,7 @@ The hot site is `CEmitter.kt` `emitExpr` -- `is CLiteral` and `is CIntLiteral` b
 Selection of `CIntLiteral` vs `CLiteral` fires through two paths now:
 
 1. **Hardcoded visitor sites (bucket-a, Phase 07.9):** `ActorVisitor.generateMovementFunction`, `GBDKSystemVisitor.visitCameraSystem`, etc. construct `CBinaryExpr(signedVar, op, CIntLiteral(N))` directly.
-2. **DSL-authored path (bucket-b, Phase 9 Plan 04):** `ExprVisitor.visitBinaryExpr` inspects its `variables: List<VariableDef>` registry; when the IR shape is `BinaryExpr(VarRef(name), comparisonOp, Literal(N))` and `name` resolves to `VarType.I8`/`VarType.I16`, the visitor emits `CIntLiteral(N)` for the RHS. All other expression shapes preserve the pre-fix `CLiteral` emission. The wiring is `GBDKPipelineV2 → SceneVisitor.visit(scene, actors, gameIR.variables) → ExprVisitor(actors, variables)`.
+2. **DSL-authored path (bucket-b, Phase 9 Plan 04):** `ExprVisitor.visitBinaryExpr` inspects its `variables: List<VariableDef>` registry; when the IR shape is `BinaryExpr(VarRef(name), comparisonOp, Literal(N))` and `name` resolves to `VarType.I8`/`VarType.I16`, the visitor emits `CIntLiteral(N)` for the RHS. All other expression shapes preserve the pre-fix `CLiteral` emission. The wiring is `GBDKPipeline → SceneVisitor.visit(scene, actors, gameIR.variables) → ExprVisitor(actors, variables)`.
 
 `CEmitter` itself is unchanged across both phases — the contract boundary stays at the AST. The split lives in the visitor layer.
 
