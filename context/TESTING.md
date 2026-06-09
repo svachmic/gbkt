@@ -38,7 +38,7 @@ Tests **auto-capture** a screenshot and variable dump JSON on failure.
 
 ### Tier 3: MCP Agent Testing
 
-`gbkt-mcp-server` exposes the emulator as 16 MCP tools over stdio. Claude Code can call `emulator_start`, `emulator_step`, `emulator_assert`, etc. to explore and validate game behaviour interactively.
+`gbkt-mcp-server` exposes the emulator as 19 MCP tools over stdio. Claude Code can call `emulator_start`, `emulator_step`, `emulator_assert`, etc. to explore and validate game behaviour interactively.
 
 See the **MCP Agent Testing** section below.
 
@@ -441,7 +441,7 @@ The `emulator_get_playbook` tool returns the contents of `PLAYBOOK.md` for the c
 
 ## MCP Agent Testing
 
-`gbkt-mcp-server` exposes the gbkt emulator as 16 MCP tools over stdio transport, enabling Claude Code and other MCP clients to test games interactively.
+`gbkt-mcp-server` exposes the gbkt emulator as 19 MCP tools over stdio transport, enabling Claude Code and other MCP clients to test games interactively.
 
 ### Setup
 
@@ -475,19 +475,22 @@ This installs `/gbkt-play-game` and `/gbkt-test-game` skills and configures `.cl
 }
 ```
 
-### 16 MCP Tools
+### 19 MCP Tools
 
 | Tool | Input | Description |
 |------|-------|-------------|
 | `emulator_start` | `romFile?`, `game?`, `symFile?`, `metadataFile?`, `gbcMode?` | Start session. Use `game` for convention-based discovery (e.g., `{"game": "pong"}`) |
 | `emulator_stop` | — | Stop current session |
 | `emulator_step` | `frames?`, `buttons?` | Advance N frames with button state |
+| `emulator_press` | `button`, `frames?` | Press a single button for N frames then release (hold + release in one call) — use instead of `emulator_step` for simple taps |
 | `emulator_observe` | — | Return last observation without stepping |
 | `emulator_wait_for_scene` | `scene`, `maxFrames` | Wait until scene transition |
 | `emulator_wait_for_variable` | `name`, `expected`, `maxFrames` | Wait until variable equals value |
 | `emulator_wait_until_text` | `text`, `maxFrames` | Wait until text appears on screen |
 | `emulator_read_variable` | `name` | Read variable by name |
 | `emulator_write_variable` | `name`, `value` | Write variable by name |
+| `emulator_read_memory` | `address`, `length?` | Read N bytes from a raw Game Boy memory address (hardware register / OAM inspection) |
+| `emulator_write_memory` | `address`, `value` | Write a single byte to a raw Game Boy memory address |
 | `emulator_screenshot` | `label` | Capture PNG screenshot |
 | `emulator_describe_game` | — | Return full game metadata (scenes, actors, variables, texts) |
 | `emulator_save_state` | `label` | Save emulator state to file |
@@ -553,6 +556,82 @@ State files are written to `build/gbkt/savestates/<label>.gbst`. Load always ste
 6. Call `emulator_assert` to validate initial state.
 7. Save state: `emulator_save_state` with `{"label": "initial"}`.
 8. Test a flow; restore with `emulator_load_state` to test another.
+
+### Headed vs Headless Mode
+
+The MCP server supports two modes:
+
+| Mode | Flag | Use case |
+|------|------|----------|
+| **Headed** | `--headed` | Developer watches the agent play — a Swing window opens showing the Game Boy LCD in real time |
+| **Headless** | (default) | CI / automated tests. No display window. Fast, no GUI dependencies. |
+
+When `--headed` is passed in the MCP server's `args`, every `emulator_start` call opens a 640x576 Swing window (160x144 at 4x scale) showing exactly what the Game Boy screen looks like. The agent still controls all input — you just watch.
+
+The same flag works for programmatic use:
+
+```kotlin
+// Headed — opens viewer window
+val config = AgentSessionConfig(romFile = rom, headless = false)
+
+// Headless — CI mode (default)
+val config = AgentSessionConfig(romFile = rom)
+```
+
+### Worked Example — Pong Playthrough
+
+What a real Claude Code MCP session looks like testing Pong, step by step:
+
+```
+# 1. Start the emulator
+emulator_start(romFile: "gbkt-examples/pong/build/gbkt/output/pong.gb",
+               symFile: "gbkt-examples/pong/build/gbkt/output/pong.noi",
+               metadataFile: "gbkt-examples/pong/build/gbkt/generated/game_metadata.json")
+→ { started: true, metadata: { scenes: ["game","gameover","title"], actors: [...] } }
+
+# 2. Describe the game
+emulator_describe_game()
+→ { scenes: ["game","gameover","title"],
+    actors: [{ name: "paddle1", oamCount: 2, xVar: "paddle1_x", yVar: "paddle1_y" }, ...],
+    variables: [{ name: "p1Score", type: "UINT8" }, ...],
+    terminalScenes: ["gameover"] }
+
+# 3. Boot to title screen
+emulator_step(frames: 120)
+→ { frame: 120, scene: "title", bgText: ["...PONG...", "...PRESS START..."] }
+
+# 4. Wait for text
+emulator_wait_until_text(text: "PRESS START", maxFrames: 10)
+→ { met: true, framesElapsed: 0 }
+
+# 5. Press START and transition to gameplay
+emulator_press(button: "start")
+emulator_wait_for_scene(scene: "game", maxFrames: 60)
+→ { met: true, framesElapsed: 3, observation: { scene: "game", sprites: [...] } }
+
+# 6. Observe gameplay state
+emulator_observe()
+→ { scene: "game", actors: [{ name: "ball", x: 80, y: 72 }, ...], sprites: 5 visible }
+
+# 7. Move paddle and verify
+emulator_step(frames: 30, buttons: ["up"])
+emulator_read_variable(name: "paddle1_y")
+→ { name: "paddle1_y", value: 34 }   // Moved up by 30 frames of input
+
+# 8. Force near-win state
+emulator_write_variable(name: "p1Score", value: 4)
+
+# 9. Take a screenshot
+emulator_screenshot(label: "near_win")
+→ { filePath: "/path/to/screenshots/near_win_f210.png" }
+
+# 10. Let game play out, then stop
+emulator_step(frames: 300)
+→ { frame: 510, scene: "gameover", isTerminal: true }
+emulator_stop()
+```
+
+The workflow is identical for any gbkt game: build the ROM, start with `{"game": "<name>"}`, call `emulator_describe_game` to discover scenes/actors/variables, then boot, navigate, observe, assert. The metadata file (`game_metadata.json`) is emitted by the codegen pipeline alongside the generated C and provides everything an agent needs without reading source code.
 
 ---
 

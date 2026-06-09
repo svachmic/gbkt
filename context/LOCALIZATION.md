@@ -269,5 +269,4 @@ if (errors.isNotEmpty()) {
 ## See Also
 
 - [DSL_REFERENCE.md](DSL_REFERENCE.md) - DSL syntax reference
-- [ARCHITECTURE.md](ARCHITECTURE.md) - IR and codegen structure
-- [DEVELOPER_EXPERIENCE.md](DEVELOPER_EXPERIENCE.md) - Extending the framework
+- [ARCHITECTURE.md](ARCHITECTURE.md) - IR and codegen structure, extending the framework

@@ -14,16 +14,24 @@ Thank you for your interest in contributing to gbkt! This document provides guid
 
 ## Project Structure
 
+gbkt is a 20-module project organized in layers:
+
 ```
 gbkt/
-├── gbkt-core/            # Core DSL and IR
+├── gbkt-ir/              # IR types (Expr, ScriptOp, GameIR — leaf module, zero gbkt deps)
+├── gbkt-lang/            # DSL builders (GameBuilder, ScriptBuilder, variable delegates)
+├── gbkt-engine/, gbkt-world/  # Engine runtime + world/exploration types
+├── gbkt-core/            # Aggregator: re-exports the above + asset pipeline & test infra
 ├── gbkt-backend-api/     # Backend contract interface
 ├── gbkt-backend-gbdk/    # Game Boy/GBC code generation
-├── gbkt-cli/             # Command-line interface
-├── gbkt-gradle-plugin/   # Gradle plugin for build integration
-├── gbkt-intellij-plugin/ # IntelliJ IDEA plugin for DSL support
+├── gbkt-analysis/        # Static analysis passes
+├── gbkt-genre-*/         # Genre plugins (rpg, platformer, puzzle, sport)
+├── gbkt-{emulator,test,mcp-server}/  # Agent-testing stack
+├── gbkt-{gradle-plugin,cli,intellij-plugin}/  # Tooling
 └── context/              # Documentation
 ```
+
+See [context/ARCHITECTURE.md](context/ARCHITECTURE.md) for the dependency graph and the full module table in [CLAUDE.md](CLAUDE.md).
 
 ---
 
@@ -191,11 +199,11 @@ import io.github.gbkt.core.ir.*
 import io.github.gbkt.core.dsl.*
 
 // PREFER: Explicit imports
-import io.github.gbkt.core.ir.IRStatement
-import io.github.gbkt.core.ir.IRExpression
-import io.github.gbkt.core.ir.IRLiteral
-import io.github.gbkt.core.dsl.GameScope
-import io.github.gbkt.core.dsl.RecordingContext
+import io.github.gbkt.core.ir.Expr
+import io.github.gbkt.core.ir.ScriptOp
+import io.github.gbkt.core.ir.Literal
+import io.github.gbkt.core.dsl.GameBuilder
+import io.github.gbkt.core.dsl.ScriptBuilder
 ```
 
 **Exception:** Test files may use `import kotlin.test.*` for brevity.
@@ -227,29 +235,14 @@ import io.github.gbkt.core.dsl.RecordingContext
 
 ### 10. Package Organization
 
-**Core package structure:**
-```
-gbkt-core/src/main/kotlin/io/github/gbkt/core/
-├── ir/         # Pure IR data classes, no business logic
-├── dsl/        # DSL builders and recording context
-├── builder/    # Game builder and configuration
-├── entity/     # Entity system and pools
-├── graphics/   # Sprites, animation, camera, tilemap
-├── collision/  # Collision detection (AABB, sweep collision)
-├── rpg/        # RPG system (characters, monsters, battles, items)
-├── world/      # World system (floors, encounters, flags, map objects)
-├── scene/      # Scene management and transitions
-├── input/      # Input handling and buffering
-├── ui/         # Menu system
-└── test/       # Simulation testing framework
-```
+**Module dependency rules:**
+- `gbkt-ir` ← Pure IR data classes, zero gbkt dependencies (enforced by `validateModuleBoundaries`)
+- `gbkt-lang` ← DSL builders, depends only on `gbkt-ir`
+- `gbkt-engine`, `gbkt-world` ← Domain types, depend on `gbkt-ir`/`gbkt-lang`
+- `gbkt-core` ← Aggregator, re-exports the above
+- Backends (`gbkt-backend-gbdk`) and genre plugins depend on core — never the other way around
 
-**Dependency rules (gbkt-core):**
-- `ir/` ← Pure data, no dependencies on other packages
-- `dsl/` ← Depends only on `ir/`
-- Domain packages (`rpg/`, `world/`, etc.) ← Depend on `ir/` and `dsl/`
-
-**Note:** Code generation (`codegen/`) is in `gbkt-backend-gbdk`, not `gbkt-core`. Backends depend on core, not the other way around.
+**Note:** Code generation (`codegen/`) is in `gbkt-backend-gbdk`, not `gbkt-core`.
 
 **Guidelines:**
 - Each package has a single, clear domain
@@ -267,7 +260,7 @@ All DSL builder classes **must** be annotated with `@GbktDsl`:
 
 ```kotlin
 @GbktDsl
-class EntityBuilder(private val entityName: String) {
+class ActorBuilder(private val actorName: String) {
     // ...
 }
 ```
@@ -275,9 +268,9 @@ class EntityBuilder(private val entityName: String) {
 This prevents accidental access to outer scope receivers:
 
 ```kotlin
-entity {
-    sprite(SpriteAsset("player.png")) {
-        // Without @GbktDsl, you could accidentally call entity methods here
+actor {
+    sprite(asset("sprites/player.png")) {
+        // Without @GbktDsl, you could accidentally call actor methods here
         // With @GbktDsl, the compiler prevents this
         position(0, 0)  // Error: position is not in scope
     }
@@ -289,36 +282,34 @@ entity {
 Use `PropertyDelegateProvider` when registration must happen at declaration time:
 
 ```kotlin
-class EntityDelegate(
+class ActorDelegate(
     private val gameBuilder: GameBuilder,
-    private val init: EntityBuilder.() -> Unit
-) : PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, Entity>> {
+    private val init: ActorBuilder.() -> Unit
+) : PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, ActorRef>> {
 
     override fun provideDelegate(
         thisRef: Any?,
         property: KProperty<*>
-    ): ReadOnlyProperty<Any?, Entity> {
-        // Build and register immediately when delegate is created
-        val entity = EntityBuilder(property.name).apply(init).build()
-        gameBuilder.registerEntity(entity)
-        return ReadOnlyProperty { _, _ -> entity }
+    ): ReadOnlyProperty<Any?, ActorRef> {
+        // Build and register immediately when delegate is created;
+        // the actor name is inferred from the Kotlin property name
+        val actor = ActorBuilder(property.name).apply(init).build()
+        gameBuilder.registerActor(actor)
+        return ReadOnlyProperty { _, _ -> ActorRef(actor.name) }
     }
 }
 ```
 
-### Recording Context
+This is Project Rule #1 in practice: names come from property delegates (or lambda parameters), never duplicated as String parameters.
 
-Use `RecordingContext.record()` for capturing DSL blocks as IR:
+### Builder Contexts
 
-```kotlin
-fun onSelect(block: MenuActionScope.() -> Unit) {
-    val recorder = StatementRecorder()
-    RecordingContext.record(recorder) {
-        MenuActionScope().block()
-    }
-    onSelectStatements = recorder.statements
-}
-```
+DSL recording uses two thread-local contexts (see `gbkt-lang`):
+
+- **`GameBuilderContext`** holds the active `GameBuilder` so variable/array delegates (`u8Var`, `u8Array`, ...) can auto-register definitions.
+- **`ScriptBuilderContext`** holds the active `ScriptBuilder` so operator extensions (`score += 10`, `ball.x set 80`) emit `ScriptOp` nodes into the enclosing `enter { }` / `frame { }` block.
+
+When capturing a nested DSL block as a script list, run it against a fresh `ScriptBuilder` via the context idiom (`with(builder) { block() }` sets the thread-local and restores the previous value in a `finally` block — nested contexts are supported).
 
 ---
 
@@ -346,7 +337,7 @@ src/main/kotlin/
 
 ```kotlin
 // MyGame.kt
-val myGame = gbGame("MyGame") {
+val myGame = game("MyGame") {
     // Initialize modules (order may matter for dependencies)
     setupPlayerModule()
     setupEnemyModule()
@@ -360,14 +351,13 @@ val myGame = gbGame("MyGame") {
 
 // modules/PlayerModule.kt
 fun GameBuilder.setupPlayerModule() {
-    // Global player configuration
-    val playerPalette = palette("player") { /* ... */ }
+    // Module-specific setup (palettes, global config)
 }
 
-fun GameBuilder.createPlayer(x: Int, y: Int): Entity {
-    val player by entity {
+fun GameBuilder.createPlayer(x: Int, y: Int): ActorRef {
+    val player by actor {
         position(x, y)
-        sprite(SpriteAsset("player.png")) { size = 8 x 16 }
+        sprite(asset("sprites/player.png")) { size(8, 16) }
     }
     return player
 }
@@ -377,8 +367,8 @@ fun GameBuilder.createGameplayScene(): SceneRef {
     val player = createPlayer(80, 72)
 
     return scene("gameplay") {
-        enter { screen.showSprites() }
-        every.frame { /* ... */ }
+        enter { showSprites() }
+        frame { /* ... */ }
     }
 }
 ```
@@ -391,7 +381,7 @@ Each scene in its own file:
 // scenes/TitleScene.kt
 fun GameBuilder.createTitleScene(): SceneRef = scene("title") {
     enter { /* ... */ }
-    every.frame { /* ... */ }
+    frame { /* ... */ }
 }
 ```
 
@@ -421,7 +411,7 @@ To avoid name collisions in multi-file games:
 | Element | Convention | Example |
 |---------|------------|---------|
 | Variables | Prefix with domain | `player_x`, `enemy_count` |
-| Entities | Descriptive unique name | `mainPlayer`, `bossEnemy` |
+| Actors | Descriptive unique name | `mainPlayer`, `bossEnemy` |
 | Scenes | Domain-specific | `title`, `level1_gameplay` |
 
 ### Important Notes
@@ -452,5 +442,5 @@ Before submitting a PR, verify:
 ## Questions?
 
 - Open an issue for bugs or feature requests
-- Check existing documentation in `context/` folder
-- See [CLAUDE.md](CLAUDE.md) for quick DSL examples and source locations
+- Check existing documentation in `context/` folder — [DSL_REFERENCE.md](context/DSL_REFERENCE.md) for syntax, [ARCHITECTURE.md](context/ARCHITECTURE.md) for the pipeline and extension guide
+- See [CLAUDE.md](CLAUDE.md) for build commands and the documentation index
