@@ -71,18 +71,16 @@ env:
   GBDK_SHA256: 'd7857a5f6d135ee4c249043ca26aad9f2ec8ab5d4106d97720d404114f42605c'
 
 jobs:
-  # Single sequenced job: each step reuses the previous step's Gradle outputs on the
-  # same runner (one daemon, one compile). Order: publish (plugin-test sandbox deps) →
-  # build+test everything → merge coverage → Sonar scan → ROM smoke.
+  # Sequenced build+test job: each step reuses the previous step's Gradle outputs on
+  # the same runner (one daemon, one compile). Order: publish (plugin-test sandbox
+  # deps) → build+test everything → merge coverage (handed off to the sonar job) →
+  # ROM smoke. Static analysis lives in code-quality; the Sonar scan in its own job.
   build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          # Full history for SonarCloud blame/new-code detection
-          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
@@ -133,14 +131,16 @@ jobs:
 
       - name: Aggregate coverage report
         # Merges per-module kover results into build/reports/kover/report.xml — the
-        # single JaCoCo-format report SonarCloud reads. Tests are already up-to-date.
+        # single JaCoCo-format report the sonar job reads. Tests are already up-to-date.
         run: ./gradlew koverXmlReport
 
-      - name: SonarCloud scan
-        run: ./gradlew sonar
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload coverage report
+        # Hand-off to the sonar job (which runs on its own runner, gated on this job).
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: coverage-report
+          path: build/reports/kover/report.xml
+          if-no-files-found: error
 
       - name: ROM build smoke
         # Full lcc compile of every example to a .gb ROM — catches codegen/link/bank
@@ -163,6 +163,47 @@ jobs:
           path: |
             **/build/reports/tests/
             **/build/test-results/
+
+  # Sonar analysis stage — gated on build+test. Consumes the merged kover report
+  # produced by the build job; compilation here is mostly Gradle-cache hits.
+  sonar:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Full history for SonarCloud blame/new-code detection
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
+
+      - name: Publish library modules to mavenLocal
+        # Cold-mavenLocal bootstrap — see the build job's step for the full rationale.
+        # No GBDK needed here: `sonar` depends only on the per-project sonarResolver
+        # tasks (verified via --dry-run) — it never compiles or runs tests, so the
+        # convertSprites/png2asset path is never reached.
+        run: ./gradlew :publishConsumedModulesToMavenLocal --configure-on-demand
+
+      - name: Download coverage report
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: coverage-report
+          path: build/reports/kover/
+
+      - name: SonarCloud scan
+        run: ./gradlew sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   code-quality:
     runs-on: ubuntu-latest

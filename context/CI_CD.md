@@ -12,7 +12,8 @@ One sequenced `build` job plus two light parallel checks:
 
 | Job | What it does |
 |-----|-------------|
-| `build` | Sequenced on one runner so nothing is compiled twice: install GBDK-2020 (version + sha256 pinned, cached) → publish sandbox modules to mavenLocal (`:publishConsumedModulesToMavenLocal --configure-on-demand`) → `./gradlew build pluginTest -x detekt -x spotlessCheck` (every module's assemble + tests, incl. examples and the gradle plugin; static analysis is excluded — it belongs to `code-quality`) → `koverXmlReport` (merge per-module coverage) → `sonar` (SonarCloud scan reads the merged report) → ROM build smoke (`buildRom` for all 7 examples via lcc). Uploads test reports on failure. |
+| `build` | Sequenced on one runner so nothing is compiled twice: install GBDK-2020 (version + sha256 pinned, cached) → publish sandbox modules to mavenLocal (`:publishConsumedModulesToMavenLocal --configure-on-demand`) → `./gradlew build pluginTest -x detekt -x spotlessCheck` (every module's assemble + tests, incl. examples and the gradle plugin; static analysis is excluded — it belongs to `code-quality`) → `koverXmlReport` (merge per-module coverage, uploaded as the `coverage-report` artifact) → ROM build smoke (`buildRom` for all 7 examples via lcc). Uploads test reports on failure. |
+| `sonar` | `needs: build` — downloads the `coverage-report` artifact and runs the SonarCloud scan. Cheap by construction: `sonar` depends only on per-project `sonarResolver` tasks (verified via `--dry-run`), never compiling or testing; full-history checkout (`fetch-depth: 0`) for blame/new-code detection; no GBDK needed. |
 | `code-quality` | All static analysis: `detekt spotlessCheck :gbkt-gradle-plugin:spotlessCheck` (the plugin is an included build, so it must be addressed explicitly; it does not apply detekt — tracked debt) |
 | `version-consistency` | `:checkVersionConsistency --configure-on-demand` — verifies all modules declare the same version |
 
