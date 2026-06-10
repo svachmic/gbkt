@@ -66,7 +66,9 @@ build → publish-maven-central ──┐
 
 **Triggers:** Push/PR to `master`/`main` (path-filtered) + weekly schedule (Monday 00:00 UTC)
 
-Single job with `continue-on-error: true` — CodeQL does not yet support Kotlin 2.3.0 (tracking: https://github.com/github/codeql/issues/20661).
+Single blocking job. The build step is preceded by the same cold-mavenLocal bootstrap as `kotlin.yml` (`:publishConsumedModulesToMavenLocal --configure-on-demand`) — without it, configuring the build fails resolving gbkt SNAPSHOTs on a fresh runner.
+
+CodeQL supports Kotlin up to 2.3.20 (since CodeQL 2.25.2). Kotlin 2.4.x is **not** yet supported (tracking: https://github.com/github/codeql/issues/21938) — hold compiler bumps past 2.3.20 until that lands, or re-add `continue-on-error: true` knowingly.
 
 Concurrency: one run per branch, cancels in-progress.
 
