@@ -47,11 +47,11 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - uses: github/codeql-action/init@38697555549f1db7851b81482ff19f1fa5c4fedc # v4
+      - uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
         with:
           languages: java-kotlin
 
       - name: Build
         run: ./gradlew :gbkt-core:build :gbkt-cli:build :gbkt-backend-api:build :gbkt-backend-gbdk:build
 
-      - uses: github/codeql-action/analyze@38697555549f1db7851b81482ff19f1fa5c4fedc # v4
+      - uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
