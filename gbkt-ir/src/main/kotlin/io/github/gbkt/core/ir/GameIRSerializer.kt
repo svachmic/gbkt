@@ -174,17 +174,18 @@ object GameIRSerializer {
             musicDefs = deserializeList(json.optJSONArray("musicDefs")) { deserializeMusicDef(it) },
             actorPools =
                 deserializeList(json.optJSONArray("actorPools")) { deserializeActorPoolIR(it) },
-            // Domain-specific: simplified deserialization — not full round-trip
-            systems = emptyList(), // TODO: SystemIR deserialization
-            zones = emptyList(), // TODO: ZoneIR full deserialization
-            flags = emptyList(), // TODO: GlobalFlagsIR full deserialization
-            itemCategories = emptyList(), // TODO: ItemCategoryDef full deserialization
-            items = emptyList(), // TODO: ItemDef full deserialization
-            containers = emptyList(), // TODO: ContainerIR full deserialization
-            dropTables = emptyList(), // TODO: DropTableIR full deserialization
-            puzzleObjects = emptyList(), // TODO: PuzzleObjectIR full deserialization
-            collisionGroups = emptyList(), // TODO: CollisionGroupIR full deserialization
-            collisionRules = emptyList(), // TODO: CollisionRuleIR full deserialization
+            // Domain-specific: simplified deserialization — not full round-trip.
+            // Deferred (SEED-020): the ten collections below deserialize as emptyList().
+            systems = emptyList(), // SEED-020: SystemIR deserialization
+            zones = emptyList(), // SEED-020: ZoneIR full deserialization
+            flags = emptyList(), // SEED-020: GlobalFlagsIR full deserialization
+            itemCategories = emptyList(), // SEED-020: ItemCategoryDef full deserialization
+            items = emptyList(), // SEED-020: ItemDef full deserialization
+            containers = emptyList(), // SEED-020: ContainerIR full deserialization
+            dropTables = emptyList(), // SEED-020: DropTableIR full deserialization
+            puzzleObjects = emptyList(), // SEED-020: PuzzleObjectIR full deserialization
+            collisionGroups = emptyList(), // SEED-020: CollisionGroupIR full deserialization
+            collisionRules = emptyList(), // SEED-020: CollisionRuleIR full deserialization
         )
     }
 
@@ -1244,7 +1245,7 @@ object GameIRSerializer {
     // =========================================================================
 
     private fun serializeSystemIR(s: SystemIR): JSONObject {
-        // TODO: full SystemIR round-trip not needed for external tool use cases
+        // Deferred (SEED-020): full SystemIR round-trip not needed for external tool use cases
         return JSONObject().put("id", s.id).put("type", s::class.simpleName ?: "SystemIR")
     }
 

@@ -246,7 +246,7 @@ class BuildLogPanel(private val project: Project) : JPanel(BorderLayout()) {
 
     private fun exportLog() {
         val content = allEntries.joinToString("\n") { it.text }
-        // TODO: Save to file dialog
+        // Deferred (SEED-024): native save-to-file dialog; stdout dump is the interim export path
         println(content)
     }
 

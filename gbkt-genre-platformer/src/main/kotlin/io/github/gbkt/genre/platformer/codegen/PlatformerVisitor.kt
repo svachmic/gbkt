@@ -618,9 +618,9 @@ class PlatformerVisitor : GenreSystemVisitor {
         // platformer-template's reference geometry verbatim and are kept as named
         // companion constants below for self-citation.
         //
-        // TODO Phase 13+: lift `pivot_adjust` resolution into the `tilemapCollision { }`
+        // Deferred (SEED-021): lift `pivot_adjust` resolution into the `tilemapCollision { }`
         // builder so the user-DSL becomes the single source of truth (the metasprite
-        // lookup dance disappears). Tracked as `SEED-PHASE-13-PIVOT-ADJUST-AUTO-DERIVE.md`.
+        // lookup dance disappears). Tracked as `SEED-021-platformer-pivot-adjust-auto-derive.md`.
         val tcPosYVar = (tcSystem?.config?.get("posYVar") as? String)
         val playerMetasprite =
             gameIR.metasprites.firstOrNull { ms ->
@@ -1286,10 +1286,10 @@ class PlatformerVisitor : GenreSystemVisitor {
      *   and the documented fallback. Plan 12.7-19 — Round-5 H1 fix; see
      *   evidence/round-5-diagnostic.md Section 2.
      *
-     *   TODO Phase 13+: lift the resolution into the GenericSystem config layer once
+     *   Deferred (SEED-021): lift the resolution into the GenericSystem config layer once
      *   `tilemapCollision { ... }` learns to read the bound metasprite directly. Tracked as
-     *   `SEED-PHASE-13-PIVOT-ADJUST-AUTO-DERIVE.md`. Today's resolution is at the visitor's call
-     *   site (one level above), which is sufficient for Round-5 closure.
+     *   `SEED-021-platformer-pivot-adjust-auto-derive.md`. Today's resolution is at the visitor's
+     *   call site (one level above), which is sufficient for Round-5 closure.
      */
     private fun buildVerticalFootProbe(
         halfWMinus2: Int,
@@ -1582,7 +1582,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                 // UINT8 for _map_pos_x / _old_map_pos_x is sufficient because they index into the
                 // tilemap column (max 255 columns = 2040 px, well above any practical level).
                 //
-                // TODO(Phase 13): consolidate gameUsesTilemapCollision() with the identical
+                // Deferred (SEED-022): consolidate gameUsesTilemapCollision() with the identical
                 // predicate in GBDKPipeline into a shared utility (e.g. TilemapCollisionGate)
                 // once the cross-genre / cross-backend pattern stabilises.
                 if (gameUsesTilemapCollision(gameIR)) {
@@ -1653,7 +1653,8 @@ class PlatformerVisitor : GenreSystemVisitor {
      * because `gbkt-genre-platformer` has direct compile-time access to
      * `PlatformerPhysicsConfig.solidThreshold` (no reflection needed), but the backend predicate
      * uses reflection because `gbkt-backend-gbdk` does NOT depend on the platformer genre module.
-     * The two predicates MUST stay in lockstep — see the consolidation TODO in `visitCamera`.
+     * The two predicates MUST stay in lockstep — see SEED-022 and the consolidation note in
+     * `visitCamera`.
      */
     private fun gameUsesTilemapCollision(gameIR: GameIR): Boolean {
         // Path A — platformer_physics GenericSystem with non-null solidThreshold on physicsConfig

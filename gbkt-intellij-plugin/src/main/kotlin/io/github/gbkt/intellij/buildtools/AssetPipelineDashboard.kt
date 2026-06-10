@@ -179,7 +179,6 @@ class AssetPipelineDashboard(private val project: Project) : JPanel(BorderLayout
     }
 
     private fun openAsset(asset: AssetInfo) {
-        // TODO: Open file in editor
         val basePath = project.basePath ?: return
         val file = java.io.File(basePath, asset.sourcePath)
         if (file.exists()) {

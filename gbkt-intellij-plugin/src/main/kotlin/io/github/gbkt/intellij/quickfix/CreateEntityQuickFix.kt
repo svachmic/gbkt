@@ -40,7 +40,7 @@ class CreateEntityQuickFix(private val entityName: String) : LocalQuickFix {
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
         val file = descriptor.psiElement.containingFile as? KtFile ?: return
 
-        // Template for new entity with TODO placeholders for user customization
+        // Template for new entity with placeholder comments for user customization
         // Uses minimal template - user adds components as needed
         // Default position is centered on screen (80, 72)
         val defaults = ClampValueQuickFix.Companion.Defaults

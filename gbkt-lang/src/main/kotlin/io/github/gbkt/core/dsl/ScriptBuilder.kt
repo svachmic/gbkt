@@ -204,7 +204,7 @@ class ScriptBuilder {
      * Equivalent to `runIf(condition) { ... }` in the generated C.
      *
      * Tier-3 roadmap: a future phase will unify `whenever` → `runIf` for reactive sites; tracked as
-     * a pending todo. Not deprecated this phase.
+     * SEED-023-whenever-runif-unification. Not deprecated this phase.
      */
     fun whenever(condition: Expr, block: ScriptBuilder.() -> Unit) {
         val loc = captureV2Location()

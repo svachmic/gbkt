@@ -121,7 +121,7 @@ data class PoolCodegenContext(
 // =============================================================================
 // SCRIPT OP VISITOR
 // Translates IR v2 ScriptOp nodes into typed C AST CStatement nodes.
-// All 25 ScriptOp subtypes have real implementations — zero TODO stubs.
+// All 25 ScriptOp subtypes have real implementations — zero placeholder stubs.
 // No string output — all results are typed CStatement subtypes.
 // =============================================================================
 
