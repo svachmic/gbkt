@@ -33,9 +33,6 @@ concurrency:
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    # CodeQL doesn't support Kotlin 2.3.0 yet (requires < 2.2.30)
-    # Tracking: https://github.com/github/codeql/issues/20661
-    continue-on-error: true
     permissions:
       security-events: write
     steps:
@@ -50,6 +47,12 @@ jobs:
       - uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
         with:
           languages: java-kotlin
+
+      - name: Publish library modules to mavenLocal
+        # Cold-mavenLocal bootstrap — configuring the build compiles the gbkt-gradle-plugin
+        # included build, which resolves gbkt SNAPSHOTs from ~/.m2 (empty on a fresh runner).
+        # Rooted task path + --configure-on-demand are load-bearing; see kotlin.yml.
+        run: ./gradlew :publishConsumedModulesToMavenLocal --configure-on-demand
 
       - name: Build
         run: ./gradlew :gbkt-core:build :gbkt-cli:build :gbkt-backend-api:build :gbkt-backend-gbdk:build
