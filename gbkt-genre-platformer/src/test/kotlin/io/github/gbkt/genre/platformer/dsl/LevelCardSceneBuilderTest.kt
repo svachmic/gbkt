@@ -12,13 +12,10 @@ import io.github.gbkt.core.ir.IfOp
 import io.github.gbkt.core.ir.NavigateTo
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
-
-// Note: kotlin.test.assertFailsWith is intentionally not used — the missing-
-// onStartPress test uses try/catch + assertions so the error message can be
-// matched against a substring, not just the exception type.
 
 /**
  * Plan 12.6-04 Task 2 — locks the new `levelCardScene { }` delegate-pattern DSL surface introduced
@@ -129,8 +126,12 @@ class LevelCardSceneBuilderTest {
 
     @Test
     fun `levelCardScene without onStartPress throws helpful error`() {
+        // materialize() raises via error(...) when onStartPress is omitted — assertFailsWith
+        // pins the exact type AND returns the exception so the message can be matched too.
         val thrown =
-            try {
+            assertFailsWith<IllegalStateException>(
+                "Expected an error when onStartPress(...) is omitted"
+            ) {
                 game("test_levelcard_missing_target") {
                         val nextLevelScene by levelCardScene {
                             // Intentionally no onStartPress(...) — must error at delegate-provision
@@ -140,11 +141,7 @@ class LevelCardSceneBuilderTest {
                         start = nextLevelScene
                     }
                     .build()
-                null
-            } catch (t: Throwable) {
-                t
             }
-        assertNotNull(thrown, "Expected an error when onStartPress(...) is omitted")
         val msg = thrown.message.orEmpty()
         assertTrue(
             msg.contains("must call onStartPress"),

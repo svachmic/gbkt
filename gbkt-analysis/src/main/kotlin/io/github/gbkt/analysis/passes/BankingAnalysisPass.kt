@@ -83,30 +83,16 @@ class BankingAnalysisPass : AnalysisPass {
         val config = context.config
         val effectiveCapacity = (ROM_BANK_SIZE * config.bankFillErrorThreshold).roundToInt()
 
-        // WR-03: early guard — if the author's declared romBanks exceeds the cartridge type's cap,
-        // emit a distinct actionable error immediately before any bin-packing. This catches the
-        // configuration mistake ("MBC1 can't do 512 banks") rather than falling through to a
-        // confusing generic overflow message.
-        val declaredBanksEarly = game.config.romBanks
-        val cartridgeEarly = game.config.cartridge
-        if (declaredBanksEarly != null && declaredBanksEarly > cartridgeEarly.maxRomBanks) {
-            return PassResult.Failed(
-                listOf(
-                    Diagnostic(
-                        id = "ANLZ-03",
-                        severity = Severity.ERROR,
-                        message =
-                            "${cartridgeEarly.name} supports at most ${cartridgeEarly.maxRomBanks} ROM banks; " +
-                                "you declared romBanks=$declaredBanksEarly. " +
-                                "Switch to a larger cartridge type or reduce romBanks.",
-                        location = "CartridgeConfig.romBanks",
-                        suggestion =
-                            "Use a cartridge type with a higher maxRomBanks (e.g. MBC5 supports 256), " +
-                                "or set romBanks <= ${cartridgeEarly.maxRomBanks}.",
-                    )
-                )
-            )
-        }
+        // Early guards, in priority order: WR-03 declared-romBanks-over-cartridge-cap, then the
+        // Phase 12.2 REQ-5 / D-04 cumulative tilemap-bank overflow check. The overflow check is
+        // computed ONCE up front so both the fast-path and the bin-packer path below consult the
+        // same result without duplicating the check. It only runs when filesystem access is
+        // available (assetRoot non-null) — existing JVM-only tests that leave assetRoot at its
+        // null default are unaffected.
+        val earlyFailure =
+            checkDeclaredBanksCap(game)
+                ?: context.assetRoot?.let { checkTilemapBankOverflow(game, it) }
+        if (earlyFailure != null) return earlyFailure
 
         // 1. Build code units from scenes
         val codeUnits = buildCodeUnits(game, config.bytesPerStatement)
@@ -122,15 +108,6 @@ class BankingAnalysisPass : AnalysisPass {
         // enters the fast-path, placing the one real scene's code in bank 0 even when the
         // author wrote a multi-scene game. The dual guard is strictly more restrictive than
         // either clause alone.
-
-        // Phase 12.2 REQ-5 / D-04: cumulative tilemap-bank overflow guard. Computed ONCE up front
-        // so both the fast-path and the bin-packer path can consult the same result without
-        // duplicating the check. Only runs when filesystem access is available (assetRoot
-        // non-null). Existing JVM-only tests that leave assetRoot at its null default are
-        // unaffected.
-        val assetRoot = context.assetRoot
-        val tilemapOverflow = assetRoot?.let { checkTilemapBankOverflow(game, it) }
-        if (tilemapOverflow != null) return tilemapOverflow
 
         if (
             game.scenes.size == 1 &&
@@ -176,6 +153,34 @@ class BankingAnalysisPass : AnalysisPass {
                 diagnostics = context.diagnostics + diagnostics,
             )
         return PassResult.Success(newContext)
+    }
+
+    /**
+     * WR-03: if the author's declared romBanks exceeds the cartridge type's cap, emit a distinct
+     * actionable error before any bin-packing. This catches the configuration mistake ("MBC1 can't
+     * do 512 banks") rather than falling through to a confusing generic overflow message. Returns
+     * null when the declared value is absent or within the cap.
+     */
+    private fun checkDeclaredBanksCap(game: GameIR): PassResult? {
+        val declaredBanks = game.config.romBanks
+        val cartridge = game.config.cartridge
+        if (declaredBanks == null || declaredBanks <= cartridge.maxRomBanks) return null
+        return PassResult.Failed(
+            listOf(
+                Diagnostic(
+                    id = "ANLZ-03",
+                    severity = Severity.ERROR,
+                    message =
+                        "${cartridge.name} supports at most ${cartridge.maxRomBanks} ROM banks; " +
+                            "you declared romBanks=$declaredBanks. " +
+                            "Switch to a larger cartridge type or reduce romBanks.",
+                    location = "CartridgeConfig.romBanks",
+                    suggestion =
+                        "Use a cartridge type with a higher maxRomBanks (e.g. MBC5 supports 256), " +
+                            "or set romBanks <= ${cartridge.maxRomBanks}.",
+                )
+            )
+        )
     }
 
     // -------------------------------------------------------------------------

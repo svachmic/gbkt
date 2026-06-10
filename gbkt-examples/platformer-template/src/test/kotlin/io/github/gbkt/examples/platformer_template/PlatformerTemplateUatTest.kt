@@ -775,7 +775,7 @@ class PlatformerTemplateUatTest {
             assertTrue(
                 highPercent >= highMinPercent,
                 "anchor4 HIGH (in-region facing-right vs facing-left hflip diff) = " +
-                    "${String.format("%.2f", highPercent)}% must be >= ${highMinPercent}% " +
+                    "${String.format(java.util.Locale.ROOT, "%.2f", highPercent)}% must be >= ${highMinPercent}% " +
                     "(calibrated from a measured 28.26%). Box ${metaspriteBox.w}×${metaspriteBox.h} " +
                     "@(${metaspriteBox.x},${metaspriteBox.y}). A collapse toward the LOW floor " +
                     "means the metasprite hflip is no longer visible — D-09 integrity failure.",
@@ -783,21 +783,21 @@ class PlatformerTemplateUatTest {
             assertTrue(
                 lowPercent <= lowMaxPercent,
                 "anchor4 LOW control (in-region walk-frame-0 vs walk-frame-0) = " +
-                    "${String.format("%.2f", lowPercent)}% must be <= ${lowMaxPercent}% " +
+                    "${String.format(java.util.Locale.ROOT, "%.2f", lowPercent)}% must be <= ${lowMaxPercent}% " +
                     "(the same-file control floor). A non-zero LOW means the region crop or diff " +
                     "is non-deterministic — the HIGH/LOW contrast (D-09) would be meaningless.",
             )
             assertTrue(
                 highPercent > lowPercent,
-                "anchor4 D-09 contrast: HIGH (${String.format("%.2f", highPercent)}%) must exceed " +
-                    "LOW (${String.format("%.2f", lowPercent)}%) — this contrast is what proves the " +
+                "anchor4 D-09 contrast: HIGH (${String.format(java.util.Locale.ROOT, "%.2f", highPercent)}%) must exceed " +
+                    "LOW (${String.format(java.util.Locale.ROOT, "%.2f", lowPercent)}%) — this contrast is what proves the " +
                     "region diff responds to the hflip specifically (a no-op gate could not).",
             )
 
             println(
                 "anchor4 OAM-region hflip gate: box=${metaspriteBox.w}×${metaspriteBox.h} " +
-                    "HIGH=${String.format("%.2f", highPercent)}% (>= ${highMinPercent}%) " +
-                    "LOW=${String.format("%.2f", lowPercent)}% (<= ${lowMaxPercent}%) -- PASS"
+                    "HIGH=${String.format(java.util.Locale.ROOT, "%.2f", highPercent)}% (>= ${highMinPercent}%) " +
+                    "LOW=${String.format(java.util.Locale.ROOT, "%.2f", lowPercent)}% (<= ${lowMaxPercent}%) -- PASS"
             )
         }
     }

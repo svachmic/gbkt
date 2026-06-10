@@ -12,7 +12,7 @@ Provides an ordered pipeline of static analysis passes that validate, optimize, 
 | `AnalysisPass.kt` | `fun interface AnalysisPass { run(PassContext): PassResult }` — unit of analysis |
 | `PassContext.kt` | Immutable snapshot threaded between passes (game IR, profile, bank/VRAM/OAM assignments, diagnostics) |
 | `PassPipeline.kt` | Ordered executor: `beforePasses` -> `builtInPasses` -> `afterPasses`, fail-fast on `PassResult.Failed` |
-| `DefaultPipeline.kt` | `object DefaultPipeline.create()` — wires the 11 built-in passes in correct order |
+| `DefaultPipeline.kt` | `object DefaultPipeline.create()` — wires the 12 built-in passes in correct order |
 | `Diagnostic.kt` | `data class Diagnostic(id, severity, message, location?, suggestion?)` with `Severity` enum (ERROR/WARNING/INFO) |
 | `OptimizationReport.kt` | Accumulated per-pass optimization summaries, serialized to `optimization-report.json` |
 | `config/AnalysisConfig.kt` | Thresholds (bank fill, VRAM tiles, OAM slots, RAM), optimization toggles, `fromCartridgeConfig()` factory |
@@ -25,18 +25,19 @@ Executed in this order by `DefaultPipeline`:
 | # | Pass | Purpose |
 |---|------|---------|
 | 1 | `SemanticValidationPass` | Reference resolution, duplicate detection, IR structural integrity |
-| 2 | `ResourceInventoryPass` | Counts all game resources (scenes, actors, tilesets, arrays, etc.) |
-| 3 | `ConstraintCheckPass` | Validates hardware limits (sprite counts, tile counts, palette constraints) |
-| 4 | `DeadCodeEliminationPass` | Removes unreachable scenes via BFS over scene navigation graph (configurable) |
-| 5 | `ConstantFoldingPass` | Evaluates compile-time constant expressions in the IR (configurable) |
-| 6 | `BitwiseOptimizationPass` | Rewrites power-of-2 multiply/divide to shift operations (configurable) |
-| 7 | `BankingAnalysisPass` | First-fit-decreasing ROM bank allocation with transition graph analysis |
-| 8 | `VRAMLayoutPass` | Per-scene VRAM tile range allocation (uses asset manifest when available) |
-| 9 | `OAMAllocationPass` | Assigns OAM sprite slots to actors |
-| 10 | `RAMPlanningPass` | Plans WRAM/HRAM/SRAM layout for variables and arrays |
-| 11 | `BudgetAuditPass` | Generates budget report, writes optimization JSON, fails on accumulated errors |
+| 2 | `RacingValidationPass` | Validates racing-genre system configuration (track/lap/AI constraints) |
+| 3 | `ResourceInventoryPass` | Counts all game resources (scenes, actors, tilesets, arrays, etc.) |
+| 4 | `ConstraintCheckPass` | Validates hardware limits (sprite counts, tile counts, palette constraints) |
+| 5 | `DeadCodeEliminationPass` | Removes unreachable scenes via BFS over scene navigation graph (configurable) |
+| 6 | `ConstantFoldingPass` | Evaluates compile-time constant expressions in the IR (configurable) |
+| 7 | `BitwiseOptimizationPass` | Rewrites power-of-2 multiply/divide to shift operations (configurable) |
+| 8 | `BankingAnalysisPass` | First-fit-decreasing ROM bank allocation with transition graph analysis |
+| 9 | `VRAMLayoutPass` | Per-scene VRAM tile range allocation (uses asset manifest when available) |
+| 10 | `OAMAllocationPass` | Assigns OAM sprite slots to actors |
+| 11 | `RAMPlanningPass` | Plans WRAM/HRAM/SRAM layout for variables and arrays |
+| 12 | `BudgetAuditPass` | Generates budget report, writes optimization JSON, fails on accumulated errors |
 
-Passes 4-6 are conditionally included based on `AnalysisConfig` toggle fields (all enabled by default).
+Passes 5-7 are conditionally included based on `AnalysisConfig` toggle fields (all enabled by default).
 
 ## Extension Hooks
 
