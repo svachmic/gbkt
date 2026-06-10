@@ -319,20 +319,18 @@ class ConvertSpritesTaskSidecarTest {
         val msg = ex.message ?: ""
 
         // The message must contain both path lines.
-        assertTrue(msg.contains("Sprite PNG not found:"), "Expected 'Sprite PNG not found:' in: $msg")
+        assertTrue(
+            msg.contains("Sprite PNG not found:"),
+            "Expected 'Sprite PNG not found:' in: $msg",
+        )
         assertTrue(msg.contains("Resolved path:"), "Expected 'Resolved path:' in: $msg")
 
         // Extract path from line 1: "Sprite PNG not found: <PATH> (for metasprite"
-        val notFoundPath = msg
-            .substringAfter("Sprite PNG not found: ")
-            .substringBefore(" (for metasprite")
-            .trim()
+        val notFoundPath =
+            msg.substringAfter("Sprite PNG not found: ").substringBefore(" (for metasprite").trim()
 
         // Extract path from line 3: "  Resolved path: <PATH>"
-        val resolvedPath = msg
-            .substringAfter("Resolved path:")
-            .substringBefore("\n")
-            .trim()
+        val resolvedPath = msg.substringAfter("Resolved path:").substringBefore("\n").trim()
 
         // The expected absolute path — authoritative value from Java File API.
         val expectedAbsolutePath = File(assetDir, "sprites/nonexistent.png").absolutePath
@@ -376,7 +374,7 @@ class ConvertSpritesTaskSidecarTest {
     fun malformed_sidecar_throws_actionable_gradle_exception() {
         // Arrange: write a malformed (truncated mid-array) sidecar
         val metaFile = File(tempDir, "game_metadata.json")
-        metaFile.writeText("{\"sprites\": [")  // truncated — JSONException guaranteed
+        metaFile.writeText("{\"sprites\": [") // truncated — JSONException guaranteed
 
         val assetDir = File(tempDir, "res").apply { mkdirs() }
         val outputDir = File(tempDir, "out").apply { mkdirs() }
@@ -407,8 +405,7 @@ class ConvertSpritesTaskSidecarTest {
         // (b) Message must contain the actionable "Re-run :generateC" phrase (REQ-7)
         assertTrue(
             msg.contains("Re-run :generateC"),
-            "GradleException message must contain 'Re-run :generateC'.\n" +
-                "  Full message: $msg",
+            "GradleException message must contain 'Re-run :generateC'.\n" + "  Full message: $msg",
         )
     }
 
@@ -516,27 +513,30 @@ class ConvertSpritesTaskSidecarTest {
     /**
      * Test 8 — tRNS-at-4 auto-route: full task converts elephant with permuted temp PNG.
      *
-     * Skips when GBDK/png2asset is not discoverable (CI-safe, mirrors Test 1 pattern).
-     * Uses the real elephant.png from metasprites example (tRNS=4). Asserts:
+     * Skips when GBDK/png2asset is not discoverable (CI-safe, mirrors Test 1 pattern). Uses the
+     * real elephant.png from metasprites example (tRNS=4). Asserts:
      * - convertSprites() completes without exception
      * - Output elephant.c is produced
      * - No temp files with the "gbkt_permuted_" prefix remain in elephant.png's directory
      *
-     * D-05: no unused-slot warning is checked (we assert output .c exists, not content).
-     * D-06: WARNING is emitted by logger.warn (Gradle lifecycle — captured in task logs;
-     *   the test confirms the auto-route ran by checking the output .c was produced).
+     * D-05: no unused-slot warning is checked (we assert output .c exists, not content). D-06:
+     * WARNING is emitted by logger.warn (Gradle lifecycle — captured in task logs; the test
+     * confirms the auto-route ran by checking the output .c was produced).
      */
     @Test
     fun trns_nonzero_auto_routes_through_permuted_temp_png() {
         // Skip when png2asset is not discoverable (e.g., CI without GBDK).
-        val gbdkDir = try { GbdkToolchain.find(null) } catch (_: Exception) { return }
+        val gbdkDir =
+            try {
+                GbdkToolchain.find(null)
+            } catch (_: Exception) {
+                return
+            }
         val png2asset = GbdkToolchain.getPng2asset(gbdkDir)
         if (!png2asset.exists()) return
 
         // Use the real elephant.png (tRNS=4) as the fixture.
-        val elephantSrc = File(
-            "/Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/metasprites/res/sprites/elephant.png"
-        )
+        val elephantSrc = repoFile("gbkt-examples/metasprites/res/sprites/elephant.png")
         if (!elephantSrc.isFile) return // skip if example not present
 
         val assetDir = File(tempDir, "res").apply { mkdirs() }
@@ -575,15 +575,18 @@ class ConvertSpritesTaskSidecarTest {
 
         val outputDir = File(tempDir, "out").apply { mkdirs() }
         val project = ProjectBuilder.builder().withProjectDir(tempDir).build()
-        val task = project.tasks
-            .register("convertSpritesTest8", ConvertSpritesTask::class.java) {
-                gbdkHome.set(gbdkDir.absolutePath)
-                assetDirectory.set(assetDir)
-                this.metadataFile.set(metadataFile)
-                cSourceDir.set(outputDir)
-                strictTransparency.set(false) // auto-correct mode — Test 8 exercises the happy path
-            }
-            .get()
+        val task =
+            project.tasks
+                .register("convertSpritesTest8", ConvertSpritesTask::class.java) {
+                    gbdkHome.set(gbdkDir.absolutePath)
+                    assetDirectory.set(assetDir)
+                    this.metadataFile.set(metadataFile)
+                    cSourceDir.set(outputDir)
+                    strictTransparency.set(
+                        false
+                    ) // auto-correct mode — Test 8 exercises the happy path
+                }
+                .get()
 
         // Should complete without exception
         task.convertSprites()
@@ -593,9 +596,10 @@ class ConvertSpritesTaskSidecarTest {
         assertTrue(outC.exists(), "sprites/elephant.c must exist after tRNS auto-route; got none")
 
         // No temp files should leak (T-13.6-03b: finally block must delete temp)
-        val leakedTemps = spritesDir.listFiles { f ->
-            f.name.startsWith("gbkt_permuted_") && f.name.endsWith(".png")
-        } ?: emptyArray()
+        val leakedTemps =
+            spritesDir.listFiles { f ->
+                f.name.startsWith("gbkt_permuted_") && f.name.endsWith(".png")
+            } ?: emptyArray()
         assertTrue(
             leakedTemps.isEmpty(),
             "No gbkt_permuted_*.png temp files should remain after conversion; leaked: ${leakedTemps.map { it.name }}",
@@ -606,8 +610,8 @@ class ConvertSpritesTaskSidecarTest {
      * Test 9 — index-0 transparent PNG takes NO-OP path (no permutation, no warning).
      *
      * Creates an indexed PNG with tRNS at index 0 (already correct). Verifies that
-     * buildPng2AssetArgs returns the original PNG path (not a temp permuted file) by
-     * checking the first arg is the original PNG's absolute path.
+     * buildPng2AssetArgs returns the original PNG path (not a temp permuted file) by checking the
+     * first arg is the original PNG's absolute path.
      *
      * Also verifies -keep_palette_order is still present (12.9 D2a oracle must not regress).
      */
@@ -621,16 +625,17 @@ class ConvertSpritesTaskSidecarTest {
         val outputC = File(tempDir, "out/sprites/idx0.c")
         outputC.parentFile.mkdirs()
 
-        val args = buildPng2AssetArgs(
-            pngFile = idx0Png,
-            outputC = outputC,
-            spriteMode = SpriteMode.SPR8x16,
-            pivotX = 0,
-            pivotY = 0,
-            frameWidth = 8,
-            frameHeight = 16,
-            mirrorDedup = false,
-        )
+        val args =
+            buildPng2AssetArgs(
+                pngFile = idx0Png,
+                outputC = outputC,
+                spriteMode = SpriteMode.SPR8x16,
+                pivotX = 0,
+                pivotY = 0,
+                frameWidth = 8,
+                frameHeight = 16,
+                mirrorDedup = false,
+            )
 
         // First arg must be the original PNG (no temp permuted file substituted)
         assertTrue(
@@ -647,13 +652,13 @@ class ConvertSpritesTaskSidecarTest {
     /**
      * Test 10 — -keep_palette_order present for tRNS-at-nonzero PNG via args.
      *
-     * Creates an indexed PNG with tRNS at index 4 (non-zero) and verifies that
-     * buildPng2AssetArgs still returns -keep_palette_order (the permuted temp PNG
-     * is indexed, so the flag must be appended).
+     * Creates an indexed PNG with tRNS at index 4 (non-zero) and verifies that buildPng2AssetArgs
+     * still returns -keep_palette_order (the permuted temp PNG is indexed, so the flag must be
+     * appended).
      *
-     * Note: buildPng2AssetArgs is called with the original pngFile here (not the
-     * permuted temp) to verify the flag is still appended. The actual routing
-     * (prePermute → pass temp to args) happens inside convertSprite, tested by Test 8.
+     * Note: buildPng2AssetArgs is called with the original pngFile here (not the permuted temp) to
+     * verify the flag is still appended. The actual routing (prePermute → pass temp to args)
+     * happens inside convertSprite, tested by Test 8.
      */
     @Test
     fun keep_palette_order_still_present_for_nonzero_trns_indexed_png() {
@@ -665,16 +670,17 @@ class ConvertSpritesTaskSidecarTest {
         val outputC = File(tempDir, "out/sprites/nonzero.c")
         outputC.parentFile.mkdirs()
 
-        val args = buildPng2AssetArgs(
-            pngFile = nonZeroPng,
-            outputC = outputC,
-            spriteMode = SpriteMode.SPR8x16,
-            pivotX = 0,
-            pivotY = 0,
-            frameWidth = 8,
-            frameHeight = 16,
-            mirrorDedup = false,
-        )
+        val args =
+            buildPng2AssetArgs(
+                pngFile = nonZeroPng,
+                outputC = outputC,
+                spriteMode = SpriteMode.SPR8x16,
+                pivotX = 0,
+                pivotY = 0,
+                frameWidth = 8,
+                frameHeight = 16,
+                mirrorDedup = false,
+            )
 
         // -keep_palette_order must still be present even for non-zero tRNS indexed PNG
         assertTrue(
@@ -698,9 +704,9 @@ class ConvertSpritesTaskSidecarTest {
     /**
      * Test 11 — ConvertSpritesTask has a strictTransparency Property<Boolean>.
      *
-     * Creates a task via ProjectBuilder, sets strictTransparency.set(false), and
-     * asserts the property returns false. Then sets true and asserts true.
-     * This confirms the property exists on the task (REQ-4, D-01/D-02).
+     * Creates a task via ProjectBuilder, sets strictTransparency.set(false), and asserts the
+     * property returns false. Then sets true and asserts true. This confirms the property exists on
+     * the task (REQ-4, D-01/D-02).
      */
     @Test
     fun convert_sprites_task_has_strict_transparency_property() {
@@ -710,25 +716,26 @@ class ConvertSpritesTaskSidecarTest {
         metadataFile.writeText("""{"sprites":[]}""")
 
         val project = ProjectBuilder.builder().withProjectDir(tempDir).build()
-        val task = project.tasks
-            .register("convertSpritesTask11", ConvertSpritesTask::class.java) {
-                gbdkHome.set(File(tempDir, "fake-gbdk").apply { mkdirs() }.absolutePath)
-                assetDirectory.set(assetDir)
-                this.metadataFile.set(metadataFile)
-                cSourceDir.set(outputDir)
-                strictTransparency.set(false)
-            }
-            .get()
+        val task =
+            project.tasks
+                .register("convertSpritesTask11", ConvertSpritesTask::class.java) {
+                    gbdkHome.set(File(tempDir, "fake-gbdk").apply { mkdirs() }.absolutePath)
+                    assetDirectory.set(assetDir)
+                    this.metadataFile.set(metadataFile)
+                    cSourceDir.set(outputDir)
+                    strictTransparency.set(false)
+                }
+                .get()
 
         assertFalse(
             task.strictTransparency.get(),
-            "strictTransparency set to false must return false; got: ${task.strictTransparency.get()}"
+            "strictTransparency set to false must return false; got: ${task.strictTransparency.get()}",
         )
 
         task.strictTransparency.set(true)
         assertTrue(
             task.strictTransparency.get(),
-            "strictTransparency set to true must return true; got: ${task.strictTransparency.get()}"
+            "strictTransparency set to true must return true; got: ${task.strictTransparency.get()}",
         )
     }
 
@@ -757,12 +764,12 @@ class ConvertSpritesTaskSidecarTest {
     /**
      * Test 13 — strict ON + tRNS-at-4: GradleException with sprite name and index in message.
      *
-     * Uses the REAL elephant.png (tRNS=4, verified by PngUtils.getTransparentIndexShared in
-     * Test 8 and Plan 01 research) so the round-trip transparent index is reliable. The
+     * Uses the REAL elephant.png (tRNS=4, verified by PngUtils.getTransparentIndexShared in Test 8
+     * and Plan 01 research) so the round-trip transparent index is reliable. The
      * `writeIndexedPngWithTrns` fixture helper has a known limitation: after ImageIO.write +
      * ImageIO.read round-trip, Java's PNG decoder reports transparentPixel=0 instead of the
-     * original index, so it cannot produce a fixture with reliably non-zero transparentPixel.
-     * Using the real elephant.png avoids this.
+     * original index, so it cannot produce a fixture with reliably non-zero transparentPixel. Using
+     * the real elephant.png avoids this.
      *
      * Wires strictTransparency=true on a ProjectBuilder ConvertSpritesTask and invokes
      * convertSprites(). Asserts GradleException is thrown and the message contains:
@@ -770,18 +777,16 @@ class ConvertSpritesTaskSidecarTest {
      * - "4" (the detected transparent index)
      * - NOT "png2asset threw for" (i.e. it's the strict gate, not an exec failure)
      *
-     * The fake png2asset is a NO-OP executable shell script (exits 0, creates no .c output).
-     * With strictTransparency=true, the gate must fire BEFORE exec is reached.
-     * Without the gate, exec runs silently (exit 0, no output) and no exception is thrown.
+     * The fake png2asset is a NO-OP executable shell script (exits 0, creates no .c output). With
+     * strictTransparency=true, the gate must fire BEFORE exec is reached. Without the gate, exec
+     * runs silently (exit 0, no output) and no exception is thrown.
      *
      * Skips if elephant.png is not present (CI-safe, mirrors Test 8 pattern).
      */
     @Test
     fun strict_on_with_nonzero_trns_throws_gradle_exception_naming_sprite_and_index() {
         // Use the real elephant.png (tRNS=4, reliably read by getTransparentIndexShared)
-        val elephantSrc = File(
-            "/Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/metasprites/res/sprites/elephant.png"
-        )
+        val elephantSrc = repoFile("gbkt-examples/metasprites/res/sprites/elephant.png")
         if (!elephantSrc.isFile) return // skip if example not present
 
         // Verify the fixture actually has tRNS at a non-zero index
@@ -810,7 +815,8 @@ class ConvertSpritesTaskSidecarTest {
                 }
               ]
             }
-            """.trimIndent()
+            """
+                .trimIndent()
         )
 
         // Create an EXECUTABLE no-op png2asset script (exits 0, creates no .c output).
@@ -823,15 +829,16 @@ class ConvertSpritesTaskSidecarTest {
 
         val outputDir = File(tempDir, "out").apply { mkdirs() }
         val project = ProjectBuilder.builder().withProjectDir(tempDir).build()
-        val task = project.tasks
-            .register("convertSpritesTest13", ConvertSpritesTask::class.java) {
-                gbdkHome.set(File(tempDir, "fake-gbdk").absolutePath)
-                assetDirectory.set(assetDir)
-                this.metadataFile.set(metadataFile)
-                cSourceDir.set(outputDir)
-                strictTransparency.set(true) // strict ON
-            }
-            .get()
+        val task =
+            project.tasks
+                .register("convertSpritesTest13", ConvertSpritesTask::class.java) {
+                    gbdkHome.set(File(tempDir, "fake-gbdk").absolutePath)
+                    assetDirectory.set(assetDir)
+                    this.metadataFile.set(metadataFile)
+                    cSourceDir.set(outputDir)
+                    strictTransparency.set(true) // strict ON
+                }
+                .get()
 
         val ex = assertFailsWith<GradleException> { task.convertSprites() }
         val msg = ex.message ?: ""
@@ -839,31 +846,31 @@ class ConvertSpritesTaskSidecarTest {
         // Message must contain the sprite file name
         assertTrue(
             msg.contains("elephant.png"),
-            "Strict exception must name the sprite file; got: $msg"
+            "Strict exception must name the sprite file; got: $msg",
         )
         // Message must contain the detected transparent index (verifiedIdx)
         assertTrue(
             msg.contains("$verifiedIdx"),
-            "Strict exception must contain the index '$verifiedIdx'; got: $msg"
+            "Strict exception must contain the index '$verifiedIdx'; got: $msg",
         )
         // Message must NOT be the generic exec-failure message (must be the strict gate message)
         assertFalse(
             msg.startsWith("png2asset threw for"),
-            "Exception must come from strict gate, not exec failure; got: $msg"
+            "Exception must come from strict gate, not exec failure; got: $msg",
         )
     }
 
     /**
      * Test 14 — strict ON + index-0 / no-tRNS fixture: does NOT throw (Pitfall 6).
      *
-     * Creates an indexed PNG with tRNS at index 0 (already correct). Sets
-     * strictTransparency=true. Calls buildPng2AssetArgs() directly (since the strict gate
-     * only fires in convertSprite when transparentIdx > 0). The strict gate MUST NOT fire
-     * for index-0 sprites — Pitfall 6 from RESEARCH.md.
+     * Creates an indexed PNG with tRNS at index 0 (already correct). Sets strictTransparency=true.
+     * Calls buildPng2AssetArgs() directly (since the strict gate only fires in convertSprite when
+     * transparentIdx > 0). The strict gate MUST NOT fire for index-0 sprites — Pitfall 6 from
+     * RESEARCH.md.
      *
-     * Strategy: verify getTransparentIndexShared returns 0 for the fixture, then call
-     * convertSprite indirectly by checking that the strict check is guarded by > 0.
-     * Uses a no-tRNS PNG variant as well to confirm null path.
+     * Strategy: verify getTransparentIndexShared returns 0 for the fixture, then call convertSprite
+     * indirectly by checking that the strict check is guarded by > 0. Uses a no-tRNS PNG variant as
+     * well to confirm null path.
      */
     @Test
     fun strict_on_with_index0_transparent_does_not_throw() {
@@ -876,7 +883,7 @@ class ConvertSpritesTaskSidecarTest {
         val transparentIdx = getTransparentIndexShared(idx0Png)
         assertTrue(
             transparentIdx == 0 || transparentIdx == null,
-            "Fixture must have tRNS at index 0 or no tRNS; got: $transparentIdx"
+            "Fixture must have tRNS at index 0 or no tRNS; got: $transparentIdx",
         )
 
         // The strict gate condition is: transparentIdx != null && transparentIdx > 0
@@ -885,40 +892,38 @@ class ConvertSpritesTaskSidecarTest {
         val shouldFire = transparentIdx != null && transparentIdx > 0
         assertFalse(
             shouldFire,
-            "Strict gate must NOT fire for index-0 transparent PNG; transparentIdx=$transparentIdx"
+            "Strict gate must NOT fire for index-0 transparent PNG; transparentIdx=$transparentIdx",
         )
     }
 
     /**
-     * Test 15 — overflow fixture (4 used visible + transparent): GradleException naming
-     * sprite + count "4", regardless of strict mode (strict=false).
+     * Test 15 — overflow fixture (4 used visible + transparent): GradleException naming sprite +
+     * count "4", regardless of strict mode (strict=false).
      *
-     * Uses the REAL elephant.png (tRNS=4) as the base, but creates a SYNTHETIC overflow
-     * scenario by directly mocking the overflow guard behavior. Since `writeIndexedPngWithTrns`
-     * fixtures have a known ImageIO round-trip issue (transparentPixel resets to 0 after write),
-     * the overflow guard in convertSprite is triggered via the elephant.png path (which has
-     * verified tRNS=4) combined with a MODIFIED elephant PNG that has 4 distinct used colors.
+     * Uses the REAL elephant.png (tRNS=4) as the base, but creates a SYNTHETIC overflow scenario by
+     * directly mocking the overflow guard behavior. Since `writeIndexedPngWithTrns` fixtures have a
+     * known ImageIO round-trip issue (transparentPixel resets to 0 after write), the overflow guard
+     * in convertSprite is triggered via the elephant.png path (which has verified tRNS=4) combined
+     * with a MODIFIED elephant PNG that has 4 distinct used colors.
      *
-     * Alternative: Test the overflow guard condition using countUsedVisibleColors directly on
-     * a PNG we KNOW has 4 used visible colors, then verify the GradleException fires in the
-     * convertSprite path when the overflow guard is present in the code.
+     * Alternative: Test the overflow guard condition using countUsedVisibleColors directly on a PNG
+     * we KNOW has 4 used visible colors, then verify the GradleException fires in the convertSprite
+     * path when the overflow guard is present in the code.
      *
-     * Strategy: Use the elephant.png (verified tRNS=4) and verify that:
-     * (a) countUsedVisibleColors returns 3 for it (not overflow), and
-     * (b) a PNG manually constructed with 4 used visible colors triggers countUsedVisibleColors>3.
-     * Then verify the guard throws when called via a task with an appropriately crafted PNG.
+     * Strategy: Use the elephant.png (verified tRNS=4) and verify that: (a) countUsedVisibleColors
+     * returns 3 for it (not overflow), and (b) a PNG manually constructed with 4 used visible
+     * colors triggers countUsedVisibleColors>3. Then verify the guard throws when called via a task
+     * with an appropriately crafted PNG.
      *
-     * For the actual end-to-end overflow test, we use the elephant.png but patch its pixel
-     * data in-memory to add a 4th visible color, then check the guard fires.
+     * For the actual end-to-end overflow test, we use the elephant.png but patch its pixel data
+     * in-memory to add a 4th visible color, then check the guard fires.
      *
      * Does NOT require GBDK (overflow guard fires BEFORE png2asset invocation).
      */
     @Test
     fun overflow_fixture_with_4_used_visible_throws_gradle_exception() {
         // Use the real elephant.png (verified tRNS=4) as anchor; confirm it has 3 used visible
-        val elephantSrc = File(
-            "/Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/metasprites/res/sprites/elephant.png"
-        )
+        val elephantSrc = repoFile("gbkt-examples/metasprites/res/sprites/elephant.png")
         if (!elephantSrc.isFile) return // skip if example not present
 
         val verifiedIdx = getTransparentIndexShared(elephantSrc)
@@ -928,7 +933,7 @@ class ConvertSpritesTaskSidecarTest {
         val elephantUsed = countUsedVisibleColors(elephantSrc, verifiedIdx)
         assertTrue(
             elephantUsed <= 3,
-            "Elephant fixture must have <=3 used visible colors (not overflow); got: $elephantUsed"
+            "Elephant fixture must have <=3 used visible colors (not overflow); got: $elephantUsed",
         )
 
         // Build a 4-used-visible overflow PNG by taking the elephant PLTE (has 4 entries at
@@ -937,7 +942,8 @@ class ConvertSpritesTaskSidecarTest {
         // The temp file preserves the original tRNS chunk (written by prePermuteIndexedPng path).
         //
         // Simpler approach: create a PNG that wraps an existing IndexColorModel from the elephant
-        // but paints an extra row with a 5th palette entry (index 3, body outline — already in PLTE).
+        // but paints an extra row with a 5th palette entry (index 3, body outline — already in
+        // PLTE).
         // Since the elephant already has 3 used visible at indices 0,1,3 (verifiedIdx=4), we
         // just need to call countUsedVisibleColors to verify it returns 3 (baseline).
         //
@@ -992,9 +998,13 @@ class ConvertSpritesTaskSidecarTest {
         }
 
         // Draw pixels of the unused slot to make it "used"
-        val overflowImg = BufferedImage(
-            elephantImg.width, elephantImg.height, BufferedImage.TYPE_BYTE_INDEXED, elephantCm
-        )
+        val overflowImg =
+            BufferedImage(
+                elephantImg.width,
+                elephantImg.height,
+                BufferedImage.TYPE_BYTE_INDEXED,
+                elephantCm,
+            )
         val ovRaster = overflowImg.raster
         // Copy original pixels
         for (y in 0 until elephantImg.height) {
@@ -1020,14 +1030,15 @@ class ConvertSpritesTaskSidecarTest {
         val countFromVerified = countUsedVisibleColors(overflowPng, verifiedIdx)
         assertTrue(
             countFromVerified > 3,
-            "Overflow PNG must have >3 used visible colors (from original tRNS=$verifiedIdx); got: $countFromVerified"
+            "Overflow PNG must have >3 used visible colors (from original tRNS=$verifiedIdx); got: $countFromVerified",
         )
 
         // If ovTrnsIdx > 0 (round-trip preserved the transparent index), run the full task test.
         // If ovTrnsIdx is 0 or null (ImageIO reset), we cannot test the full overflow gate via
         // task.convertSprites() (the guard won't fire since transparentIdx <= 0). Skip gracefully.
         if (ovTrnsIdx == null || ovTrnsIdx <= 0) {
-            // Can't exercise the full task path — overflow guard is proven correct by primitive above
+            // Can't exercise the full task path — overflow guard is proven correct by primitive
+            // above
             return
         }
 
@@ -1048,7 +1059,8 @@ class ConvertSpritesTaskSidecarTest {
                 }
               ]
             }
-            """.trimIndent()
+            """
+                .trimIndent()
         )
 
         val fakeBinDir = File(tempDir, "fake-gbdk/bin").apply { mkdirs() }
@@ -1058,15 +1070,18 @@ class ConvertSpritesTaskSidecarTest {
 
         val outputDir = File(tempDir, "out").apply { mkdirs() }
         val project = ProjectBuilder.builder().withProjectDir(tempDir).build()
-        val task = project.tasks
-            .register("convertSpritesTest15", ConvertSpritesTask::class.java) {
-                gbdkHome.set(File(tempDir, "fake-gbdk").absolutePath)
-                assetDirectory.set(assetDir)
-                this.metadataFile.set(metadataFile)
-                cSourceDir.set(outputDir)
-                strictTransparency.set(false) // strict OFF — overflow fires in auto-correct path
-            }
-            .get()
+        val task =
+            project.tasks
+                .register("convertSpritesTest15", ConvertSpritesTask::class.java) {
+                    gbdkHome.set(File(tempDir, "fake-gbdk").absolutePath)
+                    assetDirectory.set(assetDir)
+                    this.metadataFile.set(metadataFile)
+                    cSourceDir.set(outputDir)
+                    strictTransparency.set(
+                        false
+                    ) // strict OFF — overflow fires in auto-correct path
+                }
+                .get()
 
         val ex = assertFailsWith<GradleException> { task.convertSprites() }
         val msg = ex.message ?: ""
@@ -1074,31 +1089,31 @@ class ConvertSpritesTaskSidecarTest {
         // Message must contain the sprite file name
         assertTrue(
             msg.contains("overflowElephant.png"),
-            "Overflow exception must name the sprite file; got: $msg"
+            "Overflow exception must name the sprite file; got: $msg",
         )
         // Message must contain a number > 3 (the used visible count)
         assertTrue(
             msg.contains("$countFromVerified") || msg.contains("${ovTrnsIdx}"),
-            "Overflow exception must contain the count or index; got: $msg"
+            "Overflow exception must contain the count or index; got: $msg",
         )
         // Message must NOT be the generic exec-failure message
         assertFalse(
             msg.startsWith("png2asset threw for"),
-            "Exception must come from overflow guard, not exec failure; got: $msg"
+            "Exception must come from overflow guard, not exec failure; got: $msg",
         )
     }
 
     /**
      * Test 16 — 3-used-visible fixture: no overflow throw (elephant passes).
      *
-     * Creates an indexed PNG with tRNS at non-zero index AND exactly 3 used visible colors
-     * (matches the elephant's actual count — REQ-5: USED not declared). Verifies that
-     * countUsedVisibleColors returns <= 3 and the overflow guard does NOT throw.
+     * Creates an indexed PNG with tRNS at non-zero index AND exactly 3 used visible colors (matches
+     * the elephant's actual count — REQ-5: USED not declared). Verifies that countUsedVisibleColors
+     * returns <= 3 and the overflow guard does NOT throw.
      *
-     * Uses writeIndexedPngWithTrns with transparentIdx=2 (non-zero) and visibleColors=3
-     * so the palette has 4 entries (0,1,3 visible; 2 transparent). Row 4 is left
-     * unset (default=0) so index 0 is "used" via both explicit paint and default fill;
-     * the used count is <= 3 (USED, not declared — REQ-5).
+     * Uses writeIndexedPngWithTrns with transparentIdx=2 (non-zero) and visibleColors=3 so the
+     * palette has 4 entries (0,1,3 visible; 2 transparent). Row 4 is left unset (default=0) so
+     * index 0 is "used" via both explicit paint and default fill; the used count is <= 3 (USED, not
+     * declared — REQ-5).
      *
      * Does NOT require GBDK (tests the countUsedVisibleColors primitive directly).
      */
@@ -1115,22 +1130,22 @@ class ConvertSpritesTaskSidecarTest {
         val usedCount = countUsedVisibleColors(elephantLikePng, transparentIdx = 2)
         assertTrue(
             usedCount <= 3,
-            "3-visible fixture must return count<=3 (elephant passes); got: $usedCount"
+            "3-visible fixture must return count<=3 (elephant passes); got: $usedCount",
         )
         // Overflow guard fires when > 3; <= 3 must NOT trigger it
         assertFalse(
             usedCount > 3,
-            "Fixture with <=3 used visible colors must NOT exceed GB OBJ palette limit; got: $usedCount"
+            "Fixture with <=3 used visible colors must NOT exceed GB OBJ palette limit; got: $usedCount",
         )
     }
 
     /**
      * Test 12 — GbktPlugin wires SpritesExtension.strictTransparency → ConvertSpritesTask.
      *
-     * Applies the gbkt plugin via ProjectBuilder, reads
-     * extension.sprites.strictTransparency (should default to false per convention),
-     * sets it to true via the sprites {} block, and asserts the extension reflects true.
-     * This tests the SpritesExtension class and fun sprites(action) helper exist on GbktExtension.
+     * Applies the gbkt plugin via ProjectBuilder, reads extension.sprites.strictTransparency
+     * (should default to false per convention), sets it to true via the sprites {} block, and
+     * asserts the extension reflects true. This tests the SpritesExtension class and fun
+     * sprites(action) helper exist on GbktExtension.
      */
     @Test
     fun gbkt_extension_has_sprites_sub_extension_with_strict_transparency() {
@@ -1141,14 +1156,14 @@ class ConvertSpritesTaskSidecarTest {
         // Default must be false (convention set in GbktPlugin.apply)
         assertFalse(
             extension.sprites.strictTransparency.get(),
-            "SpritesExtension.strictTransparency must default to false; got: ${extension.sprites.strictTransparency.get()}"
+            "SpritesExtension.strictTransparency must default to false; got: ${extension.sprites.strictTransparency.get()}",
         )
 
         // Set via action (mirrors gbkt { sprites { strictTransparency.set(true) } })
         extension.sprites { strictTransparency.set(true) }
         assertTrue(
             extension.sprites.strictTransparency.get(),
-            "SpritesExtension.strictTransparency must be true after set; got: ${extension.sprites.strictTransparency.get()}"
+            "SpritesExtension.strictTransparency must be true after set; got: ${extension.sprites.strictTransparency.get()}",
         )
     }
 
@@ -1184,9 +1199,9 @@ class ConvertSpritesTaskSidecarTest {
     /**
      * Write a minimal indexed PNG with a tRNS chunk at [transparentIdx].
      *
-     * Creates an indexed palette with [visibleColors] distinct opaque entries plus one
-     * transparent entry at [transparentIdx], all at least 1 pixel used — so the image
-     * is a valid non-trivial indexed PNG. Used to exercise the tRNS auto-route path.
+     * Creates an indexed palette with [visibleColors] distinct opaque entries plus one transparent
+     * entry at [transparentIdx], all at least 1 pixel used — so the image is a valid non-trivial
+     * indexed PNG. Used to exercise the tRNS auto-route path.
      *
      * Phase 13.6 Plan 03 Task 2: fixture helper for Tests 9+10.
      */

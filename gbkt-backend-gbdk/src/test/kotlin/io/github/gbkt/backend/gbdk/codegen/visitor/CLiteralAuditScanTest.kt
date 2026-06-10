@@ -67,9 +67,9 @@ class CLiteralAuditScanTest {
     companion object {
         val EVIDENCE_DIR =
             File(
-                "/Users/michalsvacha/GitHub/personal/gbkt/" +
-                    ".planning/phases/07.9-c-codegen-signed-vs-unsigned-literal-discipline/" +
-                    "evidence/audit-scan"
+                findRepoRoot(),
+                ".planning/phases/07.9-c-codegen-signed-vs-unsigned-literal-discipline/" +
+                    "evidence/audit-scan",
             )
 
         /**

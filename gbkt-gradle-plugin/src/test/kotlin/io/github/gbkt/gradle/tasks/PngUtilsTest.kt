@@ -6,8 +6,8 @@
  */
 package io.github.gbkt.gradle.tasks
 
-import java.awt.image.IndexColorModel
 import java.awt.image.BufferedImage
+import java.awt.image.IndexColorModel
 import java.io.File
 import javax.imageio.ImageIO
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -44,9 +44,7 @@ class PngUtilsTest {
 
     @Test
     fun `getTransparentIndexShared returns 4 for elephant png (real indexed PNG with tRNS=4)`() {
-        val elephantSrc = File(
-            "/Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/metasprites/res/sprites/elephant.png"
-        )
+        val elephantSrc = repoFile("gbkt-examples/metasprites/res/sprites/elephant.png")
         val elephant = File(tempDir, "elephant.png")
         elephantSrc.copyTo(elephant)
 
@@ -59,10 +57,10 @@ class PngUtilsTest {
 
     @Test
     fun `getTransparentIndexShared returns null for player sprite (no tRNS chunk)`() {
-        val playerSrc = File(
-            "/Users/michalsvacha/GitHub/personal/gbkt" +
-                "/gbkt-examples/platformer-template/res/graphics/player-character-gbapduck-sprites.png"
-        )
+        val playerSrc =
+            repoFile(
+                "gbkt-examples/platformer-template/res/graphics/player-character-gbapduck-sprites.png"
+            )
         val player = File(tempDir, "player-character-gbapduck-sprites.png")
         playerSrc.copyTo(player)
 
@@ -97,14 +95,13 @@ class PngUtilsTest {
 
     @Test
     fun `countUsedVisibleColors returns 3 for elephant png (transparent at 4, 3 used visible)`() {
-        val elephantSrc = File(
-            "/Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/metasprites/res/sprites/elephant.png"
-        )
+        val elephantSrc = repoFile("gbkt-examples/metasprites/res/sprites/elephant.png")
         val elephant = File(tempDir, "elephant.png")
         elephantSrc.copyTo(elephant)
 
         // elephant.png: palette indices 0=outline, 1=green-midtone, 2=bright-green(0-pixel!),
-        // 3=near-white-body, 4=transparent(tRNS). Used visible: 0(outline), 1(midtone), 3(body) = 3.
+        // 3=near-white-body, 4=transparent(tRNS). Used visible: 0(outline), 1(midtone), 3(body) =
+        // 3.
         // The bright-green at index 2 has zero pixels and must NOT be counted.
         assertEquals(
             3,
@@ -209,13 +206,17 @@ class PngUtilsTest {
 
     @Test
     fun `prePermuteIndexedPng returns temp file with transparent at index 0`() {
-        val elephantSrc = File(
-            "/Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/metasprites/res/sprites/elephant.png"
-        )
+        val elephantSrc = repoFile("gbkt-examples/metasprites/res/sprites/elephant.png")
         val elephant = File(tempDir, "elephant.png")
         elephantSrc.copyTo(elephant)
 
-        val temp = prePermuteIndexedPng(elephant, transparentIdx = 4, buildTempDir = tempDir, stemName = "elephant")
+        val temp =
+            prePermuteIndexedPng(
+                elephant,
+                transparentIdx = 4,
+                buildTempDir = tempDir,
+                stemName = "elephant",
+            )
         try {
             assertTrue(temp.isFile && temp.length() > 0, "temp file must exist and be non-empty")
             // The temp file must be an indexed PNG with tRNS at index 0
@@ -232,18 +233,23 @@ class PngUtilsTest {
 
     @Test
     fun `prePermuteIndexedPng produces compact remap - all pixels use indices 0-3 only`() {
-        // Elephant has 5 palette entries (indices 0-4), only 4 used (index 2 = 0-pixel bright-green).
+        // Elephant has 5 palette entries (indices 0-4), only 4 used (index 2 = 0-pixel
+        // bright-green).
         // Compact remap: {4→0, 0→1, 1→2, 3→3} — 0-pixel index 2 is skipped.
         // Body (was index 3) lands at new index 3.  2bpp can encode 0-3.
         // After write + read, JVM pads PLTE to 256 (mapSize=256 is expected), but NO pixel
         // should reference an index > 3 — that would mean body is at 4+ (2bpp overflow).
-        val elephantSrc = File(
-            "/Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/metasprites/res/sprites/elephant.png"
-        )
+        val elephantSrc = repoFile("gbkt-examples/metasprites/res/sprites/elephant.png")
         val elephant = File(tempDir, "elephant.png")
         elephantSrc.copyTo(elephant)
 
-        val temp = prePermuteIndexedPng(elephant, transparentIdx = 4, buildTempDir = tempDir, stemName = "elephant")
+        val temp =
+            prePermuteIndexedPng(
+                elephant,
+                transparentIdx = 4,
+                buildTempDir = tempDir,
+                stemName = "elephant",
+            )
         try {
             val img = ImageIO.read(temp) ?: error("ImageIO.read returned null for temp PNG")
             val cm = img.getColorModel() as IndexColorModel
@@ -276,15 +282,19 @@ class PngUtilsTest {
     fun `prePermuteIndexedPng temp file is in buildTempDir with deterministic name (REQ-6)`() {
         // REQ-6: the temp file must land in buildTempDir (not adjacent to source, not in TMPDIR)
         // with a deterministic name derived from the source sprite base name.
-        val elephantSrc = File(
-            "/Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/metasprites/res/sprites/elephant.png"
-        )
+        val elephantSrc = repoFile("gbkt-examples/metasprites/res/sprites/elephant.png")
         val elephant = File(tempDir, "elephant.png")
         elephantSrc.copyTo(elephant)
         val buildTmpDir = File(tempDir, "build-tmp")
         buildTmpDir.mkdirs()
 
-        val temp = prePermuteIndexedPng(elephant, transparentIdx = 4, buildTempDir = buildTmpDir, stemName = "elephant")
+        val temp =
+            prePermuteIndexedPng(
+                elephant,
+                transparentIdx = 4,
+                buildTempDir = buildTmpDir,
+                stemName = "elephant",
+            )
         try {
             assertEquals(
                 buildTmpDir.canonicalPath,
