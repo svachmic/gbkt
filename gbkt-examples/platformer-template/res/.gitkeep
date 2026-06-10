@@ -1,0 +1,6 @@
+# Phase 12 Wave-0 scaffold placeholder.
+#
+# Plan 12-04 (asset import) populates this directory with reference PNG assets
+# (title-screen, world1/world2 tilesets, area tilemaps, NextLevel card, player
+# metasprite frames) per D-claude-7. This .gitkeep keeps the directory in git
+# and satisfies the ProcessAssetsTask `assetDirectory` input requirement.

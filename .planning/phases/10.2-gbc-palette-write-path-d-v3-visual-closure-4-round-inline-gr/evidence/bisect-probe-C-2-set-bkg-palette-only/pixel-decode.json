@@ -1,0 +1,11 @@
+{
+  "probe": "bisect-probe-C-2-set-bkg-palette-only",
+  "png_file": "behavior3.png",
+  "png_size_bytes": 1452,
+  "distinct_colors": 5,
+  "has_cyan": true,
+  "has_checker": true,
+  "lcdc": "0xC3",
+  "rot_at_capture": 8,
+  "cyan_criterion": "R<100, G>150, B>150 per SEED-013"
+}

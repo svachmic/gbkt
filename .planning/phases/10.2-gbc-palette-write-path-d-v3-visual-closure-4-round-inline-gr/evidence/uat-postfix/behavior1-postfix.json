@@ -1,0 +1,17 @@
+{
+  "png_path": "behavior1-postfix.png",
+  "png_size_bytes": 1216,
+  "behavior": "behavior1-animation-advance-dmg",
+  "gbc_mode": false,
+  "frame_variables": {"idx": 2, "rot": 0},
+  "distinct_colors": 4,
+  "color_histogram": [
+    {"rgb": "0x051F2A", "count": 11182},
+    {"rgb": "0xE6F8DA", "count": 10765},
+    {"rgb": "0x99C886", "count": 696},
+    {"rgb": "0x437969", "count": 397}
+  ],
+  "cyan_present": false,
+  "checker_present": true,
+  "notes": "ImageIO distinct=4; cyanInPixels=false; behavior=behavior1-animation-advance-dmg"
+}

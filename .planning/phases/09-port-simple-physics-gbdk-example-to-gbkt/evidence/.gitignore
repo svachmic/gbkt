@@ -1,0 +1,11 @@
+# Reference binaries — reproducible from evidence/reference/BUILD.md
+reference/*.gb
+reference/*.map
+reference/*.noi
+reference/*.ihx
+reference/*.sym
+reference/build/
+# gbkt-port build outputs that may land here
+*.gb
+*.map
+*.noi

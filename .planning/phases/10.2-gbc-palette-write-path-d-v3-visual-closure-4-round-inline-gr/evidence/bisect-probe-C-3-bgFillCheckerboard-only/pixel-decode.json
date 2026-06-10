@@ -1,0 +1,16 @@
+{
+  "probe": "C-3",
+  "emission": "bgFillCheckerboard hoist only (no constant, no set_bkg_palette)",
+  "capture_frame": "rot=8 (8 A-presses + release frames, GBC mode)",
+  "png_size_bytes": 1452,
+  "distinct_colors_inferred": "5",
+  "probe_a_png_size": 1452,
+  "probe_b_png_size": 1493,
+  "lcdc": "0xC3",
+  "bcpd_slot_0_first_color": "0x7FFF",
+  "ocpd_slot_2_first_color": "0x7FFF",
+  "has_cyan": true,
+  "has_checker": true,
+  "bisect_verdict": "CYAN PRESERVED — C-3 alone does NOT break cyan",
+  "notes": "PNG size proxy for color count: 1452=5 colors (Probe A, cyan), 1493=4 colors (Probe B, gray)"
+}

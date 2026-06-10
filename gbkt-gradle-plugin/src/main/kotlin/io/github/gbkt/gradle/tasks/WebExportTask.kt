@@ -92,7 +92,7 @@ abstract class WebExportTask @Inject constructor() : DefaultTask() {
         title: String,
         romFileName: String,
         enableControls: Boolean,
-        version: String
+        version: String,
     ): String {
         val controlsJs = if (enableControls) "" else "EJS_Buttons = false;"
 

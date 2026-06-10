@@ -1,0 +1,17 @@
+{
+  "png_path": "behavior2-postfix.png",
+  "png_size_bytes": 1170,
+  "behavior": "behavior2-flip-cycle-dmg",
+  "gbc_mode": false,
+  "frame_variables": {"idx": 0, "rot": 2},
+  "distinct_colors": 4,
+  "color_histogram": [
+    {"rgb": "0x051F2A", "count": 11171},
+    {"rgb": "0xE6F8DA", "count": 10783},
+    {"rgb": "0x99C886", "count": 686},
+    {"rgb": "0x437969", "count": 400}
+  ],
+  "cyan_present": false,
+  "checker_present": true,
+  "notes": "ImageIO distinct=4; cyanInPixels=false; behavior=behavior2-flip-cycle-dmg"
+}

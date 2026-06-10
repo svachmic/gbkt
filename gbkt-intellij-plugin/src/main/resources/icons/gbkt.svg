@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Game Boy inspired icon for gbkt files -->
+  <!-- Outer body -->
+  <rect x="2" y="1" width="12" height="14" rx="1" fill="#6B7280"/>
+  <!-- Screen area -->
+  <rect x="4" y="3" width="8" height="6" rx="0.5" fill="#9CA3AF"/>
+  <!-- Screen content (Game Boy green tint) -->
+  <rect x="5" y="4" width="6" height="4" fill="#84CC16"/>
+  <!-- D-pad -->
+  <rect x="3" y="11" width="1" height="3" fill="#374151"/>
+  <rect x="2" y="12" width="3" height="1" fill="#374151"/>
+  <!-- A/B buttons -->
+  <circle cx="12" cy="12" r="1" fill="#DC2626"/>
+  <circle cx="10" cy="13" r="1" fill="#DC2626"/>
+  <!-- "K" for Kotlin -->
+  <text x="8" y="7" font-family="sans-serif" font-size="3" font-weight="bold" fill="#166534" text-anchor="middle">K</text>
+</svg>

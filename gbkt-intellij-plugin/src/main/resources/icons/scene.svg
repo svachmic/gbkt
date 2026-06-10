@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Scene icon - represents a game screen/stage -->
+  <rect x="1" y="2" width="14" height="12" rx="1" fill="#3B82F6" opacity="0.2"/>
+  <rect x="1" y="2" width="14" height="12" rx="1" fill="none" stroke="#3B82F6" stroke-width="1"/>
+  <!-- Scene elements -->
+  <rect x="3" y="10" width="10" height="2" fill="#84CC16"/>
+  <rect x="5" y="6" width="3" height="4" fill="#F59E0B"/>
+  <circle cx="11" cy="5" r="2" fill="#FBBF24"/>
+</svg>

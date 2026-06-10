@@ -17,7 +17,8 @@ data class ParsedSourceMapping(
     val kotlinLine: Int,
     val kotlinColumn: Int = 0,
     val symbol: String? = null,
-    val snippet: String? = null
+    val snippet: String? = null,
+    val irNodeType: String? = null,
 )
 
 /** Represents a loaded source map. */
@@ -25,7 +26,8 @@ data class ParsedSourceMap(
     val version: String,
     val gameName: String,
     val cFile: String,
-    val mappings: List<ParsedSourceMapping>
+    val mappings: List<ParsedSourceMapping>,
+    val bankNumber: Int? = null,
 ) {
     /**
      * Find the Kotlin source location for a given C line number. Returns the closest mapping if
@@ -67,6 +69,7 @@ object SourceMapLoader {
             val version = json.optString("version", "1.0")
             val gameName = json.getString("gameName")
             val cFile = json.getString("cFile")
+            val bankNumber = json.optInt("bankNumber", -1).takeIf { it >= 0 }
             val mappingsArray = json.getJSONArray("mappings")
 
             val mappings = mutableListOf<ParsedSourceMapping>()
@@ -81,19 +84,47 @@ object SourceMapLoader {
                         symbol =
                             mappingObj.optString("symbol", null).takeIf { !it.isNullOrEmpty() },
                         snippet =
-                            mappingObj.optString("snippet", null).takeIf { !it.isNullOrEmpty() }
+                            mappingObj.optString("snippet", null).takeIf { !it.isNullOrEmpty() },
+                        irNodeType =
+                            mappingObj.optString("irNodeType", null).takeIf { !it.isNullOrEmpty() },
                     )
                 mappings.add(mapping)
             }
 
-            return ParsedSourceMap(version, gameName, cFile, mappings)
+            return ParsedSourceMap(version, gameName, cFile, mappings, bankNumber)
         } catch (e: Exception) {
             logger.debug(
                 "Failed to parse source map ${sourceMapFile.absolutePath}: ${e.message}",
-                e
+                e,
             )
             return null
         }
+    }
+
+    /**
+     * Load all source maps from a directory, scanning for all *.gbkt.map files.
+     *
+     * @param directory The directory to scan for source map files
+     * @return Map of C file name (without path) to ParsedSourceMap
+     */
+    fun loadAllMaps(directory: File): Map<String, ParsedSourceMap> {
+        if (!directory.exists() || !directory.isDirectory) {
+            return emptyMap()
+        }
+
+        val result = mutableMapOf<String, ParsedSourceMap>()
+        val mapFiles =
+            directory.listFiles { file -> file.name.endsWith(".gbkt.map") } ?: return emptyMap()
+
+        for (mapFile in mapFiles) {
+            val sourceMap = load(mapFile)
+            if (sourceMap != null) {
+                // Key by the cFile name from the map (e.g., "main.c", "bank1.c")
+                result[sourceMap.cFile] = sourceMap
+            }
+        }
+
+        return result
     }
 
     /** Try to find the source map file next to the C source file. */

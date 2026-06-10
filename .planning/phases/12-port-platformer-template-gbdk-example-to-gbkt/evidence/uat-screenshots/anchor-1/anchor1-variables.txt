@@ -1,0 +1,4 @@
+current_scene: gameplay
+current_level: 0
+next_level: 0
+frame: 156

@@ -1,0 +1,105 @@
+BanksUatTest anchor 1 + anchor 2 test run (v3 — post-Plan-17)
+Run date: 2026-05-20
+Command: ./gradlew :gbkt-examples:banks:test --tests "*BanksUatTest.anchor 1 *" --tests "*BanksUatTest.anchor 2 *" --rerun-tasks
+
+=== RESULT ===
+
+BUILD FAILED in 6s
+2 tests completed, 2 failed
+
+=== FAILURE MESSAGES ===
+
+Anchor 1 ("anchor 1 cross-bank scene navigation"):
+  AssertionFailedError: anchor1-play-scene: screenshot must contain >= 4 distinct RGB colours
+  (Game Boy palette has 4 colours; a blank frame has 1). Found 2 distinct colour(s).
+  File: .../evidence/uat-screenshots/anchor1-play-scene.png
+  at BanksUatTest.kt:137
+
+Anchor 2 ("anchor 2 banked zone tilemap visible"):
+  AssertionFailedError: anchor2-tilemap: screenshot must contain >= 4 distinct RGB colours
+  (Game Boy palette has 4 colours; a blank frame has 1). Found 2 distinct colour(s).
+  File: .../evidence/uat-screenshots/anchor2-tilemap.png
+  at BanksUatTest.kt:137
+
+=== CONTINGENCY (c) ANALYSIS ===
+
+The screenshots ARE real content (not blank). Both PNGs are 524 bytes and have
+distinct MD5 from the 413-byte pre-Plan-17 blank (MD5 1388784b).
+
+Visual inspection of the captured PNGs confirms: checker tilemap is clearly visible —
+alternating white and light-green squares across the full 160x144 Game Boy screen.
+
+Root cause of threshold failure: The Coffee-GB emulator renders the DMG (original Game Boy)
+palette using only 2 visible shades for the checker pattern:
+  - Tile 0 (empty): pure white (#FFFFFF approx)
+  - Tile 1 (checker): light green (#B8D8A8 approx, the Coffee-GB emulator's "light" shade)
+
+The checker.png tileset has 2 unique tiles. The 2x2 png2asset tile grid uses both tiles,
+producing a visible alternating pattern. But the DMG emulator colour count is 2, not 4.
+
+The plan's 4-distinct-colour threshold (Plan-14) assumed a fully-rendered Game Boy screen
+would use all 4 DMG palette shades. The checker tileset uses exactly 2 shades — this is
+correct and expected for a 2-tile design with DMG emulation.
+
+CONTINGENCY (c) from the plan:
+> "The 4-distinct-colour threshold is too strict for the actual GB DMG palette in this ROM.
+> If the executor observes the captured frame uses fewer than 4 distinct colours legitimately
+> (e.g. 2-bpp palette renders only 2 visible colours after window-text disable), adjust the
+> Plan-14 threshold via a small follow-up edit to the helper."
+
+=== COMPARISON TO CONTINGENCY (a) — PRIOR ATTEMPT ===
+
+Plan 15 first attempt (CONTINGENCY a, pre-Plan-17):
+  - PNGs: 413 bytes (blank), 1 distinct colour, MD5 1388784b
+  - Root cause: _zone_play_zone_tiles={0} stub (ZoneIR.tileData empty)
+
+Plan 15 v3 (this attempt, post-Plan-17):
+  - PNGs: 524 bytes (checker pattern), 2 distinct colours, MD5 91d31f24
+  - Root cause: perceptual threshold too strict (4 required, 2 present — correct for 2-tile checker)
+  - Status: REAL CONTENT RENDERED — perceptual threshold is the remaining gap, not tilemap
+
+=== PROGRESS SUMMARY ===
+
+Plan 17 unblocked the core issue. The checker tilemap is now being rendered correctly.
+The only remaining issue is the 4-colour threshold in Plan-14's assertScreenshotIsNonUniform.
+
+Proposed threshold tuning: >= 2 distinct colours (sufficient to distinguish non-blank from blank)
+Rationale: blank = 1 colour, checker with 2 tiles = 2 colours — the distinction is clear.
+This is a Plan-14 edit (threshold change to the assertScreenshotIsNonUniform helper).
+
+=== CROSS-PHASE D-10 BOUNDARY ===
+
+git diff --stat .planning/phases/11-port-banks-gbdk-example-to-gbkt/
+  .../evidence/uat-screenshots/anchor1-play-scene.json    |   2 +-
+  .../evidence/uat-screenshots/anchor1-play-scene.png     | Bin 413 -> 524 bytes
+  .../evidence/uat-screenshots/anchor2-tilemap.json       |   2 +-
+  .../evidence/uat-screenshots/anchor2-tilemap.png        | Bin 413 -> 524 bytes
+  4 files changed, 2 insertions(+), 2 deletions(-)
+
+ONLY the 4 evidence files touched. No Phase 11 .md files modified. D-10 PRESERVED.
+
+=== JSON SIDECAR EVIDENCE ===
+
+anchor1-play-scene.json:
+  frameNumber: 14
+  current_scene: 1 (PLAY — navigation works)
+  current_tileset_id: 255 (0xFF init — no update in play_enter for this field)
+  capturedAt: 1779310886449
+
+anchor2-tilemap.json:
+  frameNumber: 42
+  current_scene: 1 (PLAY)
+  current_tileset_id: 255
+  capturedAt: 1779310886360
+
+=== PERCEPTUAL SIDECARS ===
+
+NOT written by assertScreenshotIsNonUniform — the helper aborts at assertTrue(colours.size >= 4)
+before reaching the File.writeText sidecar call.
+
+Manual measurement from the captured PNGs:
+  anchor1-play-scene.png: 2 distinct colours, dominant_ratio ~0.5 (checker = 50/50 split)
+  anchor2-tilemap.png:    2 distinct colours, dominant_ratio ~0.5 (checker = 50/50 split)
+
+The dominant_ratio test would PASS (< 0.95) — the two colours are roughly equal area.
+Only the distinct_colours test fails (2 found, 4 required).

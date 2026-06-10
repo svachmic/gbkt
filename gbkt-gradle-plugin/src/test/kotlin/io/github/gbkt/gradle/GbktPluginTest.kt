@@ -37,7 +37,7 @@ class GbktPluginTest {
                     mavenCentral()
                 }
             }
-        """
+            """
                 .trimIndent()
         )
     }
@@ -55,7 +55,7 @@ class GbktPluginTest {
                 mavenLocal()
                 mavenCentral()
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -82,7 +82,7 @@ class GbktPluginTest {
                 mavenLocal()
                 mavenCentral()
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -95,7 +95,7 @@ class GbktPluginTest {
 
         assertTrue(
             result.output.contains("No game defined") || result.output.contains("tasks"),
-            "Should warn about missing game or at least list tasks"
+            "Should warn about missing game or at least list tasks",
         )
     }
 
@@ -118,7 +118,7 @@ class GbktPluginTest {
                 outputName.set("mygame")
                 debug.set(false)
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -132,7 +132,7 @@ class GbktPluginTest {
         // If the extension configuration is valid, task creation succeeds
         assertTrue(
             result.output.contains("generateC") || result.output.contains("buildRom"),
-            "Should have generateC or buildRom task when game is configured"
+            "Should have generateC or buildRom task when game is configured",
         )
     }
 
@@ -160,7 +160,7 @@ class GbktPluginTest {
                     lowEntropyThreshold.set(0.3f)
                 }
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -192,7 +192,7 @@ class GbktPluginTest {
             gbkt {
                 game("com.example.Game::myGame")
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -223,7 +223,7 @@ class GbktPluginTest {
             gbkt {
                 game("com.example.Game::myGame")
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -241,7 +241,7 @@ class GbktPluginTest {
             output.contains("generateC") ||
                 output.contains("compileKotlin") ||
                 output.contains("buildRom"),
-            "Task dependency chain should be visible in dry-run"
+            "Task dependency chain should be visible in dry-run",
         )
     }
 
@@ -262,7 +262,7 @@ class GbktPluginTest {
             gbkt {
                 game("com.example.Game::myGame")
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -293,7 +293,7 @@ class GbktPluginTest {
             gbkt {
                 game("com.example.Game::myGame")
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -309,7 +309,7 @@ class GbktPluginTest {
         val output = result.output
         assertTrue(
             output.contains("buildRom") && output.contains("runEmulator"),
-            "runEmulator should depend on buildRom"
+            "runEmulator should depend on buildRom",
         )
     }
 
@@ -331,12 +331,12 @@ class GbktPluginTest {
                 game("com.example.Game::myGame")
 
                 emulator {
-                    path.set("/usr/local/bin/mgba")
-                    args.set(listOf("-s", "4"))
-                    liveReload.set(false)
+                    scale.set(4)
+                    headless.set(false)
+                    externalEmulator.set("/usr/local/bin/mgba")
                 }
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -350,12 +350,133 @@ class GbktPluginTest {
         // Extension configuration should parse without errors
         assertTrue(
             result.output.contains("runEmulator"),
-            "Emulator configuration should work without errors"
+            "Emulator configuration should work without errors",
         )
     }
 
     @Test
-    fun `emulator liveReload defaults to true`() {
+    fun `convertZoneTilesets task is registered (Phase 11_2 D-A2)`() {
+        buildFile.writeText(
+            """
+            plugins {
+                kotlin("jvm") version "2.3.0"
+                id("io.github.gbkt")
+            }
+
+            repositories {
+                mavenLocal()
+                mavenCentral()
+            }
+
+            gbkt {
+                game("com.example.Game::myGame")
+            }
+            """
+                .trimIndent()
+        )
+
+        val result =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("tasks", "--all")
+                .withPluginClasspath()
+                .build()
+
+        assertTrue(
+            result.output.contains("convertZoneTilesets"),
+            "GbktPlugin should register convertZoneTilesets task (Phase 11.2 D-A2)",
+        )
+    }
+
+    @Test
+    fun `compileRom depends on convertZoneTilesets (Phase 11_2 D-A2)`() {
+        buildFile.writeText(
+            """
+            plugins {
+                kotlin("jvm") version "2.3.0"
+                id("io.github.gbkt")
+            }
+
+            repositories {
+                mavenLocal()
+                mavenCentral()
+            }
+
+            gbkt {
+                game("com.example.Game::myGame")
+            }
+            """
+                .trimIndent()
+        )
+
+        val result =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("compileRom", "--dry-run")
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        val output = result.output
+        // Both tasks must appear in the dry-run output, and convertZoneTilesets
+        // must precede compileRom (the dependsOn edge guarantees ordering).
+        assertTrue(
+            output.contains("convertZoneTilesets"),
+            "convertZoneTilesets must be invoked in the compileRom build graph",
+        )
+        assertTrue(output.contains("compileRom"), "compileRom must be invoked in dry-run output")
+        val ztIdx = output.indexOf("convertZoneTilesets")
+        val crIdx = output.indexOf(":compileRom ")
+        assertTrue(
+            ztIdx >= 0 && crIdx >= 0 && ztIdx < crIdx,
+            "convertZoneTilesets must appear before compileRom in dry-run (D-A2 edge)",
+        )
+    }
+
+    @Test
+    fun `convertZoneTilesets runs after generateC (Phase 11_2 D-A2)`() {
+        buildFile.writeText(
+            """
+            plugins {
+                kotlin("jvm") version "2.3.0"
+                id("io.github.gbkt")
+            }
+
+            repositories {
+                mavenLocal()
+                mavenCentral()
+            }
+
+            gbkt {
+                game("com.example.Game::myGame")
+            }
+            """
+                .trimIndent()
+        )
+
+        val result =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("convertZoneTilesets", "--dry-run")
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        val output = result.output
+        assertTrue(
+            output.contains("generateC"),
+            "convertZoneTilesets dry-run must include generateC (dependsOn edge)",
+        )
+        val gcIdx = output.indexOf(":generateC ")
+        val ztIdx = output.indexOf(":convertZoneTilesets ")
+        assertTrue(
+            gcIdx >= 0 && ztIdx >= 0 && gcIdx < ztIdx,
+            "generateC must appear before convertZoneTilesets in dry-run (D-A2 edge)",
+        )
+    }
+
+    @Test
+    fun `emulator extension defaults work without explicit configuration`() {
         buildFile.writeText(
             """
             plugins {
@@ -372,11 +493,11 @@ class GbktPluginTest {
                 game("com.example.Game::myGame")
 
                 emulator {
-                    // Not setting liveReload - should default to true
-                    args.set(listOf("-s", "2"))
+                    // Not setting scale or headless — should use defaults
+                    scale.set(2)
                 }
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -390,7 +511,7 @@ class GbktPluginTest {
         // Extension configuration should parse without errors
         assertTrue(
             result.output.isNotEmpty(),
-            "Build should complete successfully with default liveReload"
+            "Build should complete successfully with default emulator settings",
         )
     }
 }

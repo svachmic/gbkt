@@ -1,71 +1,54 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Copyright (c) 2026 Michal Svacha
+ */
+
 plugins {
-    kotlin("multiplatform")
+    kotlin("jvm")
+    application
+    id("gbkt.publishing")
 }
 
 kotlin {
-    // Native targets for CLI executable
-    linuxX64 {
-        binaries {
-            executable {
-                entryPoint = "io.github.gbkt.cli.main"
-                baseName = "gbkt"
-            }
-        }
-    }
+    jvmToolchain(21)
+}
 
-    macosX64 {
-        binaries {
-            executable {
-                entryPoint = "io.github.gbkt.cli.main"
-                baseName = "gbkt"
-            }
-        }
-    }
+application {
+    mainClass.set("io.github.gbkt.cli.MainKt")
+}
 
-    macosArm64 {
-        binaries {
-            executable {
-                entryPoint = "io.github.gbkt.cli.main"
-                baseName = "gbkt"
-            }
-        }
-    }
+gbktPublishing {
+    artifactId.set("gbkt-cli")
+    description.set("gbkt CLI - Command-line interface for building Game Boy games from Kotlin DSL")
+}
 
-    sourceSets {
-        nativeMain.dependencies {
-            // Pure Kotlin - no external dependencies needed for CLI
-        }
+dependencies {
+    // Core library - DSL, IR, all game constructs
+    implementation(project(":gbkt-core"))
 
-        nativeTest.dependencies {
-            implementation(kotlin("test"))
-        }
+    // Backend API for discovering and using backends
+    implementation(project(":gbkt-backend-api"))
+
+    // Bundle GBDK backend in distribution for ServiceLoader discovery
+    runtimeOnly(project(":gbkt-backend-gbdk"))
+
+    // Test dependencies
+    testImplementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+tasks.jar {
+    manifest {
+        attributes("Implementation-Version" to project.version)
     }
 }
 
-// Task to copy the executable to a convenient location
-tasks.register("installCli") {
-    group = "build"
-    description = "Build and install the CLI executable"
-
-    val os = System.getProperty("os.name").lowercase()
-    val arch = System.getProperty("os.arch").lowercase()
-
-    val targetName = when {
-        os.contains("linux") -> "linuxX64"
-        os.contains("mac") && arch.contains("aarch64") -> "macosArm64"
-        os.contains("mac") -> "macosX64"
-        else -> throw GradleException("Unsupported platform: $os $arch")
-    }
-
-    dependsOn("linkReleaseExecutable${targetName.replaceFirstChar { it.uppercase() }}")
-
-    doLast {
-        val executableDir = layout.buildDirectory.dir("bin/$targetName/releaseExecutable").get().asFile
-        val executable = executableDir.listFiles()?.find { it.name == "gbkt.kexe" || it.name == "gbkt" }
-        if (executable != null) {
-            println("CLI executable built at: ${executable.absolutePath}")
-            println("To install globally, run:")
-            println("  sudo cp ${executable.absolutePath} /usr/local/bin/gbkt")
-        }
-    }
+// Create distribution with shell wrapper scripts
+tasks.named<CreateStartScripts>("startScripts") {
+    applicationName = "gbkt"
 }

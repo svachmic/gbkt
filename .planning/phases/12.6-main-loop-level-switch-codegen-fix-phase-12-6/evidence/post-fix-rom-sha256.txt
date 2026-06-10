@@ -1,0 +1,28 @@
+# Post-fix SHA-256 manifest captured 2026-05-26
+# Phase: 12.6-main-loop-level-switch-codegen-fix-phase-12-6
+# Plan: 12.6-08 Task 2 (D-14)
+# HEAD commit: 8e13f6d4484496511b57c2401303d7c0d338d401
+# Final restore-rebuild after pong investigation (see regression-sweep-diff.md).
+# Gradle command:
+#   ./gradlew clean :gbkt-examples:pong:buildRom :gbkt-examples:breakout:buildRom \
+#     :gbkt-examples:simple-physics:buildRom :gbkt-examples:metasprites:buildRom \
+#     :gbkt-examples:metasprites-stress:buildRom :gbkt-examples:banks:buildRom \
+#     :gbkt-examples:racer:buildRom :gbkt-examples:platformer-template:buildRom
+# Hashing command:
+#   for game in pong breakout simple-physics metasprites metasprites-stress banks racer platformer-template; do
+#     shasum -a 256 gbkt-examples/$game/build/gbkt/output/$game.gb
+#   done
+#
+# Caveat — pong is toolchain non-deterministic (4 distinct hashes from 4
+# rebuilds across 2 commits). Generated C is byte-identical pre-fix vs
+# post-fix; the ROM-level drift is sdcc/lcc compilation non-determinism
+# specific to pong. The 6 other targets are reproducibly identical.
+# See regression-sweep-diff.md for full investigation.
+4ae15ff85c607d353aa8d28aa26609f1bf9a07ae6765ae84be56b729b4e6ad6d  gbkt-examples/pong/build/gbkt/output/pong.gb
+21a42479ed36a2d3a2f62c5d4b2495168ca6a2178fc05010a155a90421796977  gbkt-examples/breakout/build/gbkt/output/breakout.gb
+247e16d2df29c9cad2df3f2f5fb68cba00133e95e94b4d47dbcf87c31384f9ad  gbkt-examples/simple-physics/build/gbkt/output/simple-physics.gb
+c42610991e67b7d33404c9f2aa9725ed449e14c30e0827fa984f363ada3f5f7b  gbkt-examples/metasprites/build/gbkt/output/metasprites.gb
+a5b3657b765a59b8fc8423b6fef286d424cd6870cccc7594f31ca0532cd26764  gbkt-examples/metasprites-stress/build/gbkt/output/metasprites-stress.gb
+c598231420e4fdc1d06f7f386be318723096a22000feb0971584371d2b58fd8f  gbkt-examples/banks/build/gbkt/output/banks.gb
+48d3a71c7bcc2842dc6a086b8f2eb8271e671a37eb96d8232352e459d089b6e8  gbkt-examples/racer/build/gbkt/output/racer.gb
+318775aa086dc345f5e18fbc43869b5d8c6163e66434996bcb8aee7bba02c7c7  gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb

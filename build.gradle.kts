@@ -1,16 +1,17 @@
 plugins {
-    kotlin("multiplatform") version "2.3.0" apply false
-    kotlin("jvm") version "2.3.0" apply false
-    id("com.diffplug.spotless") version "8.1.0" apply false
-    id("io.gitlab.arturbosch.detekt") version "1.23.8" apply false
-    id("org.sonarqube") version "7.2.2.6593"
+    kotlin("jvm") apply false
+    id("com.diffplug.spotless") apply false
+    id("io.gitlab.arturbosch.detekt") apply false
+    id("org.sonarqube")
+    id("org.jetbrains.kotlinx.kover")
 }
 
 val gbktVersion: String by project
+val isRelease = project.hasProperty("release")
 
 allprojects {
     group = "io.github.gbkt"
-    version = "$gbktVersion-SNAPSHOT"
+    version = if (isRelease) gbktVersion else "$gbktVersion-SNAPSHOT"
 
     repositories {
         mavenCentral()
@@ -22,27 +23,86 @@ sonarqube {
         property("sonar.projectKey", "svachmic_gbkt")
         property("sonar.organization", "svachmic")
         property("sonar.host.url", "https://sonarcloud.io")
-        property("sonar.coverage.jacoco.xmlReportPaths", "**/build/reports/kover/report.xml")
+        // Single merged kover report aggregated at the root (see the kover {} block below).
+        // The previous per-module glob silently matched only gbkt-core (the one module that
+        // applied kover), which is why SonarCloud reported ~5% project coverage.
+        property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            layout.buildDirectory.file("reports/kover/report.xml").get().asFile.absolutePath,
+        )
     }
 }
 
-// Task to sync version to vscode-extension/package.json
-tasks.register("syncVscodeVersion") {
-    group = "versioning"
-    description = "Syncs the gbkt version to vscode-extension/package.json"
+// ============================================================================
+// Coverage aggregation
+//
+// Every Kotlin subproject gets the kover plugin (applied in the subprojects
+// block below); the root project merges them into one JaCoCo-format XML at
+// build/reports/kover/report.xml, which is the single report SonarCloud reads.
+// gbkt-all (empty aggregator), gbkt-bom (platform), and gbkt-intellij-plugin
+// (IDE sandbox test runtime) are excluded from the merge. Because the plugin can
+// produce no coverage data here, its build file also sets sonar.coverage.exclusions
+// so SonarCloud doesn't count it as 0%-covered — see SEED-019 for the path back.
+// ============================================================================
+val koverAggregatedModules = listOf(
+    ":gbkt-ir", ":gbkt-lang", ":gbkt-engine", ":gbkt-world", ":gbkt-core",
+    ":gbkt-backend-api", ":gbkt-backend-gbdk", ":gbkt-analysis",
+    ":gbkt-genre-rpg", ":gbkt-genre-platformer", ":gbkt-genre-puzzle", ":gbkt-genre-sport",
+    ":gbkt-emulator", ":gbkt-test", ":gbkt-mcp-server", ":gbkt-cli",
+    ":gbkt-examples:pong", ":gbkt-examples:breakout", ":gbkt-examples:simple-physics",
+    ":gbkt-examples:metasprites", ":gbkt-examples:metasprites-stress",
+    ":gbkt-examples:banks", ":gbkt-examples:platformer-template",
+)
 
-    doLast {
-        val packageJsonFile = file("vscode-extension/package.json")
-        if (packageJsonFile.exists()) {
-            val content = packageJsonFile.readText()
-            val versionRegex = """"version":\s*"[^"]+"""".toRegex()
-            val updatedContent = content.replace(versionRegex, """"version": "$gbktVersion"""")
-            packageJsonFile.writeText(updatedContent)
-            println("Updated vscode-extension/package.json version to $gbktVersion")
-        } else {
-            println("Warning: vscode-extension/package.json not found")
-        }
+dependencies {
+    koverAggregatedModules.forEach { kover(project(it)) }
+}
+
+// ============================================================================
+// Composite-build test wiring
+//
+// IntegrationTest writes a TestKit sandbox whose build file declares:
+//   implementation("io.github.gbkt:gbkt-core:0.1.0-SNAPSHOT")
+//   implementation("io.github.gbkt:gbkt-backend-api:0.1.0-SNAPSHOT")
+//   runtimeOnly("io.github.gbkt:gbkt-backend-gbdk:0.1.0-SNAPSHOT")
+// plus transitive deps resolved from mavenLocal(). Against a stale ~/.m2
+// the sandbox Kotlin compile fails (13 failures when GameBuilder.start was
+// still String? in cache while DSL surface had already changed to SceneRef?).
+//
+// The :gbkt-gradle-plugin is an includeBuild so its :test task cannot directly
+// depend on root-project tasks via dependsOn. The supported pattern is a root
+// aggregator lifecycle task that callers (CI / local dev) invoke instead of
+// reaching the plugin :test task directly.
+// ============================================================================
+val mavenLocalModulesForPluginTest = listOf(
+    ":gbkt-ir", ":gbkt-lang", ":gbkt-engine", ":gbkt-world",
+    ":gbkt-core", ":gbkt-backend-api", ":gbkt-backend-gbdk",
+    // gbkt-analysis is a transitive api() dependency of gbkt-backend-gbdk
+    // (gbkt-backend-gbdk/build.gradle.kts:27). The IntegrationTest sandbox resolves it
+    // via the runtimeOnly gbkt-backend-gbdk:0.1.0-SNAPSHOT edge, so it MUST be republished
+    // too — otherwise a stale gbkt-analysis links against the fresh gbkt-ir and throws
+    // NoSuchMethodError: SceneIR.copy$default (Phase 15 F1 / D-05 — the actual root cause).
+    ":gbkt-analysis",
+    // gbkt-genre-rpg is an implementation() dependency of gbkt-backend-gbdk, so the sandbox
+    // pulls it at runtime through the same edge; the remaining genre modules and the emulator
+    // are published as well so a cold ~/.m2 (CI runner) never resolves a stale snapshot.
+    ":gbkt-genre-rpg", ":gbkt-genre-platformer", ":gbkt-genre-puzzle", ":gbkt-genre-sport",
+    ":gbkt-emulator",
+)
+
+tasks.register("publishConsumedModulesToMavenLocal") {
+    group = "verification"
+    description = "Publish all modules consumed by the gbkt-gradle-plugin IntegrationTest TestKit sandbox to mavenLocal"
+    mavenLocalModulesForPluginTest.forEach { path ->
+        dependsOn("$path:publishToMavenLocal")
     }
+}
+
+tasks.register("pluginTest") {
+    group = "verification"
+    description = "Publish consumed SNAPSHOT modules to mavenLocal then run :gbkt-gradle-plugin:test (use instead of :gbkt-gradle-plugin:test to avoid stale-mavenLocal IntegrationTest failures)"
+    dependsOn("publishConsumedModulesToMavenLocal")
+    dependsOn(gradle.includedBuild("gbkt-gradle-plugin").task(":test"))
 }
 
 // Task to check version consistency across the project
@@ -51,68 +111,62 @@ tasks.register("checkVersionConsistency") {
     description = "Checks that all version references are consistent"
 
     doLast {
-        val packageJsonFile = file("vscode-extension/package.json")
-        if (packageJsonFile.exists()) {
-            val content = packageJsonFile.readText()
-            val versionRegex = """"version":\s*"([^"]+)"""".toRegex()
-            val match = versionRegex.find(content)
-            val packageJsonVersion = match?.groupValues?.get(1)
-
-            if (packageJsonVersion != gbktVersion) {
-                throw GradleException(
-                    "Version mismatch! gradle.properties has '$gbktVersion' but " +
-                    "vscode-extension/package.json has '$packageJsonVersion'. " +
-                    "Run './gradlew syncVscodeVersion' to fix."
-                )
-            }
-            println("Version consistency check passed: $gbktVersion")
+        val rootVersion = project.property("gbktVersion") as String
+        val pluginPropsFile = file("gbkt-gradle-plugin/gradle.properties")
+        val pluginProps = java.util.Properties().apply { pluginPropsFile.inputStream().use { load(it) } }
+        val pluginVersion = pluginProps.getProperty("gbktVersion")
+            ?: error("gbkt-gradle-plugin/gradle.properties missing gbktVersion")
+        require(rootVersion == pluginVersion) {
+            "Version mismatch: root=$rootVersion, gbkt-gradle-plugin=$pluginVersion"
         }
+        println("Version consistency check passed: $rootVersion")
     }
 }
 
 subprojects {
-    val licenseHeader = """
+    // Use Apache 2.0 for IntelliJ plugin (per project requirements)
+    // Use MPL 2.0 for all other modules
+    val licenseHeader = if (name == "gbkt-intellij-plugin") {
+        """
+        |/*
+        | * Copyright 2026 Michal Svacha
+        | *
+        | * Licensed under the Apache License, Version 2.0 (the "License");
+        | * you may not use this file except in compliance with the License.
+        | * You may obtain a copy of the License at
+        | *
+        | *     http://www.apache.org/licenses/LICENSE-2.0
+        | *
+        | * Unless required by applicable law or agreed to in writing, software
+        | * distributed under the License is distributed on an "AS IS" BASIS,
+        | * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        | * See the License for the specific language governing permissions and
+        | * limitations under the License.
+        | */
+        """.trimMargin()
+    } else {
+        """
         |/* This Source Code Form is subject to the terms of the Mozilla Public
         | * License, v. 2.0. If a copy of the MPL was not distributed with this
         | * file, You can obtain one at https://mozilla.org/MPL/2.0/.
         | *
         | * Copyright (c) 2026 Michal Svacha
         | */
-    """.trimMargin()
-
-    // Apply Spotless to subprojects that have Kotlin source files
-    pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
-        apply(plugin = "com.diffplug.spotless")
-        apply(plugin = "io.gitlab.arturbosch.detekt")
-
-        configure<com.diffplug.gradle.spotless.SpotlessExtension> {
-            kotlin {
-                target("src/**/*.kt")
-                licenseHeader(licenseHeader)
-                ktfmt().kotlinlangStyle()
-                trimTrailingWhitespace()
-                endWithNewline()
-            }
-        }
-
-        configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
-            config.setFrom(rootProject.files("detekt.yml"))
-            buildUponDefaultConfig = true
-            parallel = true
-            // Use baseline to track existing violations during incremental cleanup
-            baseline = file("detekt-baseline.xml")
-        }
+        """.trimMargin()
     }
 
+    // Apply Spotless to subprojects that have Kotlin source files
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
         apply(plugin = "com.diffplug.spotless")
         apply(plugin = "io.gitlab.arturbosch.detekt")
+        // Coverage for every Kotlin module — merged at the root for SonarCloud
+        apply(plugin = "org.jetbrains.kotlinx.kover")
 
         configure<com.diffplug.gradle.spotless.SpotlessExtension> {
             kotlin {
                 target("src/**/*.kt")
                 licenseHeader(licenseHeader)
-                ktfmt().kotlinlangStyle()
+                ktfmt("0.62").kotlinlangStyle()
                 trimTrailingWhitespace()
                 endWithNewline()
             }
@@ -136,7 +190,7 @@ subprojects {
             kotlin {
                 target("src/**/*.kt")
                 licenseHeader(licenseHeader)
-                ktfmt().kotlinlangStyle()
+                ktfmt("0.62").kotlinlangStyle()
                 trimTrailingWhitespace()
                 endWithNewline()
             }

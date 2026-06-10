@@ -1,0 +1,1 @@
+_frame_counter < 60u;

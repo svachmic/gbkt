@@ -1,0 +1,14 @@
+# Phase 07.9 RED probe: friction must decelerate negative _plat_vx monotonically
+# D-N-12: multi-snapshot monotonic assertion (not single-threshold)
+# Pre-fix expectation: mag monotonicity = false (friction never fires for negative vx)
+# Post-fix expectation: |vx_10| < |vx_5| < |vx_0| = true
+
+# Boot: 120 title settle + START + 1 release + 5 settle = frame 127
+# Held LEFT for 10 frames to build negative _plat_vx
+frame=0 _plat_vx=-10 (raw=246)
+frame=5 _plat_vx=-5 (raw=251)
+frame=10 _plat_vx=0 (raw=0)
+|vx0|=10 |vx5|=5 |vx10|=0 mono_decel=true
+
+# Expected at HEAD: mono_decel=false (friction never fires for negative vx)
+# Expected after Plan 02 GREEN: mono_decel=true

@@ -1,0 +1,28 @@
+# PNG content comparison — port elephant.png vs reference sprite.png
+
+## Source PNG paths
+
+Port:      gbkt-examples/metasprites/res/sprites/elephant.png
+Reference: /Users/michalsvacha/gbdk/examples/cross-platform/metasprites/res/sprite.png
+
+## File metadata
+
+-rw-r--r--  1 michalsvacha  staff  4293 May 19 07:28 gbkt-examples/metasprites/res/sprites/elephant.png
+-rw-r--r--  1 michalsvacha  staff  4293 Dec 28 03:11 /Users/michalsvacha/gbdk/examples/cross-platform/metasprites/res/sprite.png
+
+## MD5 hashes
+
+Port:      ecd8079c82760223213cd14aa3f4b1a1  (4293 bytes)
+Reference: ecd8079c82760223213cd14aa3f4b1a1  (4293 bytes)
+
+=> IDENTICAL. Hypothesis #2 (PNG content drift) REJECTED.
+
+## byte-for-byte cmp
+
+cmp: files are identical (exit 0)
+
+## Conclusion
+
+Hypothesis #2 (PNG content drift) is REJECTED with high confidence.
+Both PNG inputs are byte-for-byte identical (same md5, same size, cmp clean).
+Whatever causes the 3-tile gap, it is NOT a difference in source pixel content.

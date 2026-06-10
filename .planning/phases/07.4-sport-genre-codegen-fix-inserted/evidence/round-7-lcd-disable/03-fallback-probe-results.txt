@@ -1,0 +1,27 @@
+# Round-7 Fallback Hypothesis Probe Results
+# Plan 07.4-28 Task 3 — Branch B (LCDC.7=1 for frames 0..3, LCDC.7=0 at frame 4)
+# H-F probed inline from 02-ie-if-stat-trace.txt data
+# H-G / H-H not probed (see explanation below)
+
+H-F VERDICT=REFUTED IE=0x01 reason="VBLANK interrupt IS enabled (IE bit 0 = 1); VBlank ISR is installed"
+
+# H-F details:
+# From 02-ie-if-stat-trace.txt: marker=race_enter+1 IE=0x01 IF=0xF1 STAT=0x81 LY=0x90
+# IE=0x01 means bit 0 (VBL_IFLAG = 0x01) is SET → VBLANK interrupt is ENABLED.
+# H-F predicate: IE AND 0x01 == 0 → would confirm; IE AND 0x01 == 1 → REFUTED.
+# Result: IE AND 0x01 = 1 → H-F REFUTED.
+
+# H-G and H-H not probed — rationale:
+# The LCDC trace directly confirms LCD disable at frame 4 (LCDC=0x39, LCDC.7=0).
+# H-G (sound stub stalling) and H-H (stack overflow) would only explain a hang if
+# LCDC.7 STAYED 1 across ALL 5 frames (LCD never disabled). Since LCDC.7 DID go to 0
+# at frame 4, the hang at frame 5 is fully explained by LCD disable alone:
+# - LCD disabled → no VBlank fires → wait_vbl_done() spins forever.
+# No additional hypothesis is needed to explain the hang signature.
+# Probing H-G would require reverting a source edit (sound stub), rebuilding the ROM,
+# and re-running the probe — unnecessary when the LCDC evidence is conclusive.
+
+# Summary:
+# The LCD-disable working hypothesis is CONFIRMED by direct LCDC register evidence.
+# H-F is the only ranked fallback that was explicitly checked (inline from existing data).
+# DIAGNOSIS.md is written per plan Branch B.

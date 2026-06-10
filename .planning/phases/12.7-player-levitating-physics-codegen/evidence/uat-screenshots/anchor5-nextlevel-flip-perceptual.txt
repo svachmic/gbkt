@@ -1,0 +1,6 @@
+file: /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/12.7-player-levitating-physics-codegen/evidence/uat-screenshots/anchor-5/01-nextlevel-flip.png
+dimensions: 160x144
+distinct_colours: 4
+dominant_ratio: 0.8533
+dominant_count: 19659
+total_pixels: 23040

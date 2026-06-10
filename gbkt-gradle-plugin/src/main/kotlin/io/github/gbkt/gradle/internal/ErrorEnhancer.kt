@@ -12,7 +12,8 @@ import java.io.File
 data class EnhancedError(
     val originalError: GbdkError,
     val kotlinLocation: ParsedSourceMapping?,
-    val suggestion: String?
+    val suggestion: String?,
+    val irNodeType: String? = null,
 )
 
 /** Enhances GBDK compiler errors with source map mappings and suggestions. */
@@ -53,14 +54,40 @@ object ErrorEnhancer {
         )
 
     /**
-     * Enhance a list of GBDK errors with source map mappings and suggestions.
+     * Enhance a list of GBDK errors with source map mappings and suggestions. Supports a single
+     * source map (single-file path) for backward compatibility.
      *
      * @param errors List of parsed GBDK errors
      * @param sourceMap Optional source map for mapping C lines to Kotlin
      * @return List of enhanced errors
      */
     fun enhanceErrors(errors: List<GbdkError>, sourceMap: ParsedSourceMap?): List<EnhancedError> {
+        val sourceMapsByFile =
+            if (sourceMap != null) mapOf(sourceMap.cFile to sourceMap) else emptyMap()
+        return enhanceErrorsMultiFile(errors, sourceMapsByFile)
+    }
+
+    /**
+     * Enhance a list of GBDK errors with multi-file source map mappings and suggestions.
+     *
+     * @param errors List of parsed GBDK errors
+     * @param sourceMaps Map of C file name to ParsedSourceMap
+     * @return List of enhanced errors
+     */
+    fun enhanceErrorsMultiFile(
+        errors: List<GbdkError>,
+        sourceMaps: Map<String, ParsedSourceMap>,
+    ): List<EnhancedError> {
         return errors.map { error ->
+            // Look up the source map for this error's C file
+            val sourceMap =
+                if (error.file != null) {
+                    val fileName = File(error.file).name
+                    sourceMaps[fileName] ?: sourceMaps.values.firstOrNull()
+                } else {
+                    sourceMaps.values.firstOrNull()
+                }
+
             val kotlinLocation =
                 if (error.line != null && sourceMap != null) {
                     sourceMap.findKotlinLocation(error.line)
@@ -73,7 +100,8 @@ object ErrorEnhancer {
             EnhancedError(
                 originalError = error,
                 kotlinLocation = kotlinLocation,
-                suggestion = suggestion
+                suggestion = suggestion,
+                irNodeType = kotlinLocation?.irNodeType,
             )
         }
     }
@@ -82,7 +110,7 @@ object ErrorEnhancer {
     private fun generateSuggestion(
         errorMessage: String,
         cLine: Int?,
-        kotlinLocation: ParsedSourceMapping?
+        kotlinLocation: ParsedSourceMapping?,
     ): String? {
         val suggestions = mutableListOf<String>()
 
@@ -108,57 +136,107 @@ object ErrorEnhancer {
         return if (suggestions.isEmpty()) null else suggestions.joinToString("\n")
     }
 
-    /** Format enhanced errors into a readable error message. */
+    /**
+     * Format enhanced errors into a Rust-style error message, grouped by DSL line.
+     *
+     * Mapped errors show both C and Kotlin locations. Unmapped errors show "(no DSL mapping --
+     * generated scaffolding)".
+     */
     fun formatEnhancedErrors(enhancedErrors: List<EnhancedError>, cSourceFile: File): String {
         val sb = StringBuilder()
         sb.appendLine("GBDK compilation failed with ${enhancedErrors.size} error(s):")
         sb.appendLine()
 
-        enhancedErrors.forEachIndexed { index, enhanced ->
-            val error = enhanced.originalError
-
-            sb.appendLine("Error ${index + 1}:")
-
-            // Show original error
-            if (error.file != null && error.line != null) {
-                sb.appendLine(
-                    "  C code location: ${error.file}:${error.line}" +
-                        if (error.column != null) ":${error.column}" else ""
-                )
-            }
-            sb.appendLine("  Message: ${error.message}")
-            sb.appendLine()
-
-            // Show Kotlin source location if available
-            if (enhanced.kotlinLocation != null) {
+        // Group errors by DSL location key
+        val grouped =
+            enhancedErrors.groupBy { enhanced ->
                 val loc = enhanced.kotlinLocation
-                sb.appendLine("  Kotlin source: ${loc.kotlinFile}:${loc.kotlinLine}")
-                if (loc.snippet != null) {
-                    sb.appendLine("  Code: ${loc.snippet}")
-                }
-                sb.appendLine()
+                if (loc != null) "${loc.kotlinFile}:${loc.kotlinLine}" else "(unmapped)"
             }
 
-            // Show suggestion if available
-            if (enhanced.suggestion != null) {
-                sb.appendLine("  Suggestion: ${enhanced.suggestion}")
-                sb.appendLine()
-            }
+        // Render mapped groups first, then unmapped
+        val mappedGroups = grouped.filter { (key, _) -> key != "(unmapped)" }
+        val unmappedGroup = grouped["(unmapped)"]
 
-            // Show raw error line for reference
-            sb.appendLine("  Raw: ${error.rawLine}")
-            sb.appendLine()
+        var errorIndex = 1
+
+        for ((dslKey, groupErrors) in mappedGroups) {
+            for (enhanced in groupErrors) {
+                renderMappedError(sb, errorIndex, enhanced)
+                errorIndex++
+            }
+        }
+
+        if (unmappedGroup != null) {
+            for (enhanced in unmappedGroup) {
+                renderUnmappedError(sb, errorIndex, enhanced)
+                errorIndex++
+            }
         }
 
         sb.appendLine("Generated C file: ${cSourceFile.absolutePath}")
-        if (enhancedErrors.any { it.kotlinLocation == null }) {
-            sb.appendLine()
-            sb.appendLine("Note: Some errors could not be mapped to Kotlin source.")
-            sb.appendLine(
-                "      Ensure your source map file (${cSourceFile.name}.gbkt.map) exists."
-            )
-        }
 
         return sb.toString()
+    }
+
+    private fun renderMappedError(sb: StringBuilder, index: Int, enhanced: EnhancedError) {
+        val error = enhanced.originalError
+        val loc = enhanced.kotlinLocation!!
+
+        sb.appendLine("Error $index:")
+
+        // C location line
+        val cLocation = buildString {
+            if (error.file != null) append(error.file)
+            if (error.line != null) {
+                if (error.file != null) append(":")
+                append(error.line)
+                if (error.column != null) append(":${error.column}")
+            }
+        }
+        if (cLocation.isNotEmpty()) {
+            sb.appendLine("  C code: $cLocation")
+        }
+        sb.appendLine("  Message: '${error.message}'")
+        sb.appendLine()
+
+        // Rust-style pointer
+        sb.appendLine("  --> ${loc.kotlinFile}:${loc.kotlinLine}")
+        val contextLabel = enhanced.irNodeType ?: loc.symbol ?: "DSL expression"
+        sb.appendLine("  |  $contextLabel")
+        sb.appendLine("  ^  ${error.message}")
+        sb.appendLine()
+
+        // Suggestion
+        if (enhanced.suggestion != null) {
+            sb.appendLine("  Suggestion: ${enhanced.suggestion}")
+            sb.appendLine()
+        }
+    }
+
+    private fun renderUnmappedError(sb: StringBuilder, index: Int, enhanced: EnhancedError) {
+        val error = enhanced.originalError
+
+        sb.appendLine("Error $index:")
+
+        val cLocation = buildString {
+            if (error.file != null) append(error.file)
+            if (error.line != null) {
+                if (error.file != null) append(":")
+                append(error.line)
+                if (error.column != null) append(":${error.column}")
+            }
+        }
+        if (cLocation.isNotEmpty()) {
+            sb.appendLine("  C code: $cLocation")
+        }
+        sb.appendLine("  Message: '${error.message}'")
+        sb.appendLine("  (no DSL mapping -- generated scaffolding)")
+        sb.appendLine()
+
+        if (enhanced.suggestion != null) {
+            sb.appendLine("  Suggestion: ${enhanced.suggestion}")
+            sb.appendLine()
+        }
     }
 }

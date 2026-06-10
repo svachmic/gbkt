@@ -1,0 +1,29 @@
+=== race_enter scope (post-fix) ===
+cls()                        = 0
+gotoxy(                      = 0
+printf(                      = 0
+_win_print_at(               = 1  (Plan 20 preserved)
+SWITCH_ROM(                  = 0  (Plan 22/30: inline=0; cross-bank handled by _bkg_tiles_load_banked helper in main.c)
+_bkg_tiles_load_banked(      = 1  (Plan 30 HOME-bank helper replaces unsafe inline SWITCH_ROM)
+set_bkg_data(                = 1
+set_bkg_tiles(               = 0  (tilemap load routed via helper; direct call count = 0)
+DISPLAY_ON (wrap macro)   = 1  (>= count(set_bkg_tiles)+count(set_bkg_data))
+
+=== main_init scope (post-fix; D-N-06 — wrap MUST NOT appear here) ===
+DISPLAY_ON                   = 1
+SHOW_BKG                     = 1  (Plan 27 H-1 preserved)
+SHOW_SPRITES                 = 1
+_bkg_tiles_load_banked(      = 0  (D-N-06: must be 0 in main; helper only in scene paths)
+
+NOTE: _bkg_tiles_load_banked helper is DEFINED in main.c (HOME bank), not called from main_init.
+The helper is called from race_enter in bank1.c. SWITCH_ROM is 0 in race_enter body.
+SWITCH_ROM still happens inside the helper (main.c) — cross-bank contract preserved safely.
+
+=== cross-genre scene-enter (D-02 reusability) ===
+source: Explorer gameplay_enter from gbkt-examples/explorer (RPG+exploration genre)
+set_bkg_*                    = 0
+DISPLAY_ON (wrap macro)   = 0
+cross_genre_note=vacuous — Explorer gameplay_enter has no set_bkg_* calls. The HOME-bank
+  helper mechanism lives in GBDKPipelineV2.guardCrossBankBgTilemapAccess (gbkt-backend-gbdk).
+  NOT in any genre visitor. Any genre that emits set_bkg_tiles in a cross-bank scene-enter
+  RawOp will automatically get the HOME-bank helper routing. D-02 honoured by architecture.

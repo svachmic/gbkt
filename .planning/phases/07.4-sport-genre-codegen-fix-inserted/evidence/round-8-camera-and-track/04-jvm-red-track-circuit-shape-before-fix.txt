@@ -1,0 +1,241 @@
+# Plan 07.4-33 Task 2 - JVM RED test output for GAP-TRACK-NOT-RENDERED-AS-CIRCUIT
+# Test: io.github.gbkt.genre.sport.codegen.TrackSynthesizerCircuitShapeTest
+# Command: ./gradlew :gbkt-genre-sport:test --tests TrackSynthesizerCircuitShapeTest
+# Captured: round-8 (date 2026-05-12)
+#
+# CONTRACT (Plan 07.4-33 must_haves):
+#   - Test FAILED against HEAD (literal 'FAILED' below)
+#   - mismatch_count >= 30 (target: 55) -> Test 1 'corridor shape' FAILS
+#   - drivable_interior_count > 0 (target: 13) -> Test 2 'interior non-drivable' FAILS
+#   - Checkpoint cells already drivable (Test 3) -> PASS pre-fix (locked for post-fix)
+
+===== gradle stdout =====
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :buildSrc:compilePluginsBlocks UP-TO-DATE
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :buildSrc:generateScriptPluginAdapters UP-TO-DATE
+> Task :buildSrc:compileKotlin UP-TO-DATE
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:pluginDescriptors UP-TO-DATE
+> Task :buildSrc:processResources UP-TO-DATE
+> Task :buildSrc:classes UP-TO-DATE
+> Task :buildSrc:jar UP-TO-DATE
+> Task :gbkt-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-gradle-plugin:compileKotlin UP-TO-DATE
+> Task :gbkt-gradle-plugin:compileJava NO-SOURCE
+> Task :gbkt-gradle-plugin:pluginDescriptors UP-TO-DATE
+> Task :gbkt-gradle-plugin:processResources UP-TO-DATE
+> Task :gbkt-gradle-plugin:classes UP-TO-DATE
+> Task :gbkt-gradle-plugin:jar UP-TO-DATE
+> Task :gbkt-analysis:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-backend-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-engine:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:compileKotlin UP-TO-DATE
+> Task :gbkt-ir:compileJava NO-SOURCE
+> Task :gbkt-ir:processResources NO-SOURCE
+> Task :gbkt-ir:classes UP-TO-DATE
+> Task :gbkt-ir:jar UP-TO-DATE
+> Task :gbkt-lang:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-lang:compileKotlin UP-TO-DATE
+> Task :gbkt-lang:compileJava NO-SOURCE
+> Task :gbkt-lang:processResources NO-SOURCE
+> Task :gbkt-lang:classes UP-TO-DATE
+> Task :gbkt-lang:jar UP-TO-DATE
+> Task :gbkt-engine:compileKotlin UP-TO-DATE
+> Task :gbkt-engine:compileJava NO-SOURCE
+> Task :gbkt-engine:processResources NO-SOURCE
+> Task :gbkt-engine:classes UP-TO-DATE
+> Task :gbkt-engine:jar UP-TO-DATE
+> Task :gbkt-world:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-world:compileKotlin UP-TO-DATE
+> Task :gbkt-world:compileJava NO-SOURCE
+> Task :gbkt-world:processResources NO-SOURCE
+> Task :gbkt-world:classes UP-TO-DATE
+> Task :gbkt-world:jar UP-TO-DATE
+> Task :gbkt-core:compileKotlin UP-TO-DATE
+> Task :gbkt-core:compileJava NO-SOURCE
+> Task :gbkt-core:processResources NO-SOURCE
+> Task :gbkt-core:classes UP-TO-DATE
+> Task :gbkt-core:jar UP-TO-DATE
+> Task :gbkt-backend-api:compileKotlin UP-TO-DATE
+> Task :gbkt-backend-api:compileJava NO-SOURCE
+> Task :gbkt-backend-api:processResources NO-SOURCE
+> Task :gbkt-backend-api:classes UP-TO-DATE
+> Task :gbkt-backend-api:jar UP-TO-DATE
+> Task :gbkt-analysis:compileKotlin UP-TO-DATE
+> Task :gbkt-analysis:compileJava NO-SOURCE
+> Task :gbkt-analysis:processResources NO-SOURCE
+> Task :gbkt-analysis:classes UP-TO-DATE
+> Task :gbkt-analysis:jar UP-TO-DATE
+> Task :gbkt-backend-gbdk:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:compileKotlin UP-TO-DATE
+> Task :gbkt-genre-rpg:compileJava NO-SOURCE
+> Task :gbkt-genre-rpg:processResources NO-SOURCE
+> Task :gbkt-genre-rpg:classes UP-TO-DATE
+> Task :gbkt-genre-rpg:jar UP-TO-DATE
+> Task :gbkt-backend-gbdk:compileKotlin UP-TO-DATE
+> Task :gbkt-backend-gbdk:compileJava NO-SOURCE
+> Task :gbkt-backend-gbdk:processResources UP-TO-DATE
+> Task :gbkt-backend-gbdk:classes UP-TO-DATE
+> Task :gbkt-backend-gbdk:jar UP-TO-DATE
+> Task :gbkt-genre-sport:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-sport:compileKotlin UP-TO-DATE
+> Task :gbkt-genre-sport:compileJava NO-SOURCE
+> Task :gbkt-genre-sport:processResources UP-TO-DATE
+> Task :gbkt-genre-sport:classes UP-TO-DATE
+> Task :gbkt-genre-sport:jar UP-TO-DATE
+> Task :gbkt-genre-sport:processTestResources NO-SOURCE
+
+> Task :gbkt-genre-sport:compileTestKotlin
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-ab4f78d2b7a0fae1a/gbkt-genre-sport/src/test/kotlin/io/github/gbkt/genre/sport/dsl/SportBuildersTest.kt:78:48 Unnecessary non-null assertion (!!) on a non-null receiver of type 'TrackDef'.
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-ab4f78d2b7a0fae1a/gbkt-genre-sport/src/test/kotlin/io/github/gbkt/genre/sport/dsl/SportBuildersTest.kt:79:37 Unnecessary non-null assertion (!!) on a non-null receiver of type 'TrackDef'.
+w: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-ab4f78d2b7a0fae1a/gbkt-genre-sport/src/test/kotlin/io/github/gbkt/genre/sport/dsl/SportBuildersTest.kt:80:32 Unnecessary non-null assertion (!!) on a non-null receiver of type 'TrackDef'.
+
+> Task :gbkt-genre-sport:compileTestJava NO-SOURCE
+> Task :gbkt-genre-sport:testClasses UP-TO-DATE
+
+> Task :gbkt-genre-sport:test FAILED
+
+TrackSynthesizerCircuitShapeTest > racer_waypoints_synthesize_to_corridor_not_arena() FAILED
+    org.opentest4j.AssertionFailedError at TrackSynthesizerCircuitShapeTest.kt:163
+
+TrackSynthesizerCircuitShapeTest > racer_corridor_interior_is_non_drivable() FAILED
+    org.opentest4j.AssertionFailedError at TrackSynthesizerCircuitShapeTest.kt:194
+
+4 tests completed, 2 failed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':gbkt-genre-sport:test'.
+> There were failing tests. See the report at: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-ab4f78d2b7a0fae1a/gbkt-genre-sport/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+
+BUILD FAILED in 2s
+37 actionable tasks: 2 executed, 35 up-to-date
+
+===== per-test detail (extracted from gradle test XML report) =====
+
+### io.github.gbkt.genre.sport.codegen.TrackSynthesizerCircuitShapeTest
+VERDICT: FAILED
+failure_message: org.opentest4j.AssertionFailedError: TrackSynthesizer corridor shape mismatch_count=55 > MAX_MISMATCH_FOR_PASS=18 (D-N-12 per-cell contract). First 10: (7,4) actual=0 expected=1; (8,4) actual=0 expected=1; (9,4) actual=0 expected=1; (10,4) actual=0 expected=1; (11,4) actual=0 expected=1; (12,4) actual=0 expected=1; (13,4) actual=0 expected=1; (4,7) actual=0 expected=1; (13,7) actual=1 expected=2; (15,7) actual=0 expected=1
+
+### io.github.gbkt.genre.sport.codegen.TrackSynthesizerCircuitShapeTest
+VERDICT: FAILED
+failure_message: org.opentest4j.AssertionFailedError: Interior cells (rows 7..13, cols 7..13) MUST NOT be TILE_DRIVABLE (D-17 — no corner cutting). Found 13 drivable cells: (13, 7),(13, 8),(13, 9),(13, 10),(13, 11),(13, 12),(7, 13),(8, 13),(9, 13),(10, 13),(11, 13),(12, 13),(13, 13)
+
+===== test stdout (system-out, all 4 tests concatenated) =====
+RED_TEST_DIAGNOSTIC checkpoint_tiles_are_drivable
+checkpoint_5_5_tile=1 (expected 1)
+checkpoint_15_15_tile=1 (expected 1)
+RED_TEST_DIAGNOSTIC racer_waypoints_synthesize_to_corridor_not_arena
+expected_grid_source=07-expected-circuit-tilemap-ascii-art.txt
+mismatch_count=55
+first_mismatches=(7,4) actual=0 expected=1; (8,4) actual=0 expected=1; (9,4) actual=0 expected=1; (10,4) actual=0 expected=1; (11,4) actual=0 expected=1; (12,4) actual=0 expected=1; (13,4) actual=0 expected=1; (4,7) actual=0 expected=1; (13,7) actual=1 expected=2; (15,7) actual=0 expected=1
+--- actual (synthesizer output) ---
+    0123456789012345678
+   +-------------------
+ 0 |...................
+ 1 |...................
+ 2 |...................
+ 3 |...................
+ 4 |....###.......###..
+ 5 |....#############..
+ 6 |....#############..
+ 7 |.....##,,,,,,##....
+ 8 |.....##,,,,,,##....
+ 9 |.....##,,,,,,##....
+10 |.....##,,,,,,##....
+11 |.....##,,,,,,##....
+12 |.....##,,,,,,##....
+13 |.....##########....
+14 |....#############..
+15 |....###.......###..
+16 |....###.......###..
+17 |...................
+18 |...................
+--- expected (07-expected-circuit-tilemap-ascii-art.txt) ---
+    0123456789012345678
+   +-------------------
+ 0 |...................
+ 1 |...................
+ 2 |...................
+ 3 |...................
+ 4 |....#############..
+ 5 |....#############..
+ 6 |....#############..
+ 7 |....###,,,,,,,###..
+ 8 |....###,,,,,,,###..
+ 9 |....###,,,,,,,###..
+10 |....###,,,,,,,###..
+11 |....###,,,,,,,###..
+12 |....###,,,,,,,###..
+13 |....###,,,,,,,###..
+14 |....#############..
+15 |....#############..
+16 |....#############..
+17 |...................
+18 |...................
+RED_TEST_DIAGNOSTIC print_actual_vs_expected_tilemap_diff
+mismatch_count=55
+expected_grid_source=07-expected-circuit-tilemap-ascii-art.txt
+--- actual ---
+    0123456789012345678
+   +-------------------
+ 0 |...................
+ 1 |...................
+ 2 |...................
+ 3 |...................
+ 4 |....###.......###..
+ 5 |....#############..
+ 6 |....#############..
+ 7 |.....##,,,,,,##....
+ 8 |.....##,,,,,,##....
+ 9 |.....##,,,,,,##....
+10 |.....##,,,,,,##....
+11 |.....##,,,,,,##....
+12 |.....##,,,,,,##....
+13 |.....##########....
+14 |....#############..
+15 |....###.......###..
+16 |....###.......###..
+17 |...................
+18 |...................
+--- expected ---
+    0123456789012345678
+   +-------------------
+ 0 |...................
+ 1 |...................
+ 2 |...................
+ 3 |...................
+ 4 |....#############..
+ 5 |....#############..
+ 6 |....#############..
+ 7 |....###,,,,,,,###..
+ 8 |....###,,,,,,,###..
+ 9 |....###,,,,,,,###..
+10 |....###,,,,,,,###..
+11 |....###,,,,,,,###..
+12 |....###,,,,,,,###..
+13 |....###,,,,,,,###..
+14 |....#############..
+15 |....#############..
+16 |....#############..
+17 |...................
+18 |...................
+RED_TEST_DIAGNOSTIC racer_corridor_interior_is_non_drivable
+drivable_interior_count=13 coords=(13, 7),(13, 8),(13, 9),(13, 10),(13, 11),(13, 12),(7, 13),(8, 13),(9, 13),(10, 13),(11, 13),(12, 13),(13, 13)
+
+===== contract summary =====
+# These lines satisfy Plan 07.4-33 verify-step grep contract:
+contract: mismatch_count=55 (target >= 30 for RED)
+contract: Test FAILED against HEAD (see VERDICT lines above)
+contract: per-cell assertion compared 361 individual cells, NOT count thresholds (D-N-12)

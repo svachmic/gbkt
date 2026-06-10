@@ -7,15 +7,12 @@ Build tools, asset pipeline, and configuration for gbkt.
 Convert PNG sprites to Game Boy tile format:
 
 ```kotlin
-// In your main function:
-val assetDir = "src/main/resources/sprites"
-
-// Option 1: Auto-compile all sprite assets
-val code = compileWithAssets(myGame, assetDir)
-
-// Option 2: Manual conversion
+// Manual conversion via AssetPipeline
 val sheet = AssetPipeline.loadSprite("player.png")
 val cCode = AssetPipeline.generateTileData("player", sheet)
+
+// Batch conversion for multiple sprites
+val allCode = AssetPipeline.generateAllTileData(mapOf("player" to sheet))
 ```
 
 The pipeline:
@@ -31,6 +28,99 @@ AssetPipeline.HIGH_CONTRAST_PALETTE // [200, 140, 80]
 AssetPipeline.INVERTED_PALETTE     // [64, 128, 192]
 ```
 
+## Sprite Asset Pipeline
+
+> Phase 12.4 contract: every metasprite declares its source PNG explicitly via the
+> `sprite(asset("..."))` DSL binder; the pipeline routes the path through `game_metadata.json` to
+> png2asset deterministically.
+
+### DSL
+
+```kotlin
+val player by metasprite {
+    sprite(asset("graphics/player-sheet.png"))    // required since Phase 12.4
+    posX(playerX); posY(playerY)
+    idx(walkFrameIdx); rot(facingRot)
+    frame {
+        tile(0, 0, 0); tile(8, 0, 1); tile(16, 0, 2)
+        tile(0, 16, 3); tile(8, 16, 4); tile(16, 16, 5)
+    }
+    // ... additional frames
+}
+```
+
+The `sprite(asset(path))` binder is mandatory. `GenerateCTask` throws a `GradleException` with the
+failing metasprite's id if it is omitted (validation gate — see "What changed in Phase 12.4" below).
+
+### Asset path resolution
+
+`asset("relative/path.png")` resolves to `{assetDirectory}/relative/path.png` where `assetDirectory` is
+configured in the project's `build.gradle.kts`:
+
+```kotlin
+gbkt {
+    // assetDirectory defaults to "res" — override with:
+    // assetDirectory.set(file("res"))
+}
+```
+
+So `sprite(asset("graphics/player-sheet.png"))` looks at `<projectDir>/res/graphics/player-sheet.png`.
+
+### Pipeline flow
+
+```
+DSL: sprite(asset(...))
+  ↓
+MetaspriteBuilder.sprite(AssetRef)        (gbkt-lang)
+  ↓
+MetaspriteIR.spritePath                   (gbkt-ir — additive nullable field)
+  ↓
+GBDKPipeline.buildMetadataFile()
+emits game_metadata.json sprites[] entry  (gbkt-backend-gbdk)
+  ↓
+ConvertSpritesTask reads the sidecar       (gbkt-gradle-plugin)
+  ↓
+png2asset <assetDir>/<spritePath>          (GBDK toolchain)
+  ↓
+build/gbkt/generated/sprites/<id>.c        (lcc compiles this)
+```
+
+The `game_metadata.json` sidecar carries the sprites array:
+
+```json
+{
+  "sprites": [
+    { "id": "player",   "spritePath": "graphics/player-character-gbapduck-sprites.png", "mirrorDedup": false },
+    { "id": "elephant", "spritePath": "sprites/elephant.png", "mirrorDedup": false }
+  ]
+}
+```
+
+This is the same cross-task sidecar pattern used by `ConvertZoneTilesetsTask` for zone tilesets
+(Phase 12.2 D-A2 sidecar pattern).
+
+### Mirror-dedup opt-in
+
+`metasprite { mirrorDedup() }` omits png2asset's `-noflip` flag for that metasprite, allowing
+png2asset to detect mirror-pair tiles and emit a smaller `_tiles[]` array with `S_FLIPX`/`S_FLIPY`
+OAM attrs. Use ONLY for from-scratch authored metasprites that take advantage of the dedup; do
+NOT use for metasprites transcribed from a reference's `-noflip` id space.
+
+### What changed in Phase 12.4
+
+**Pre-12.4:** PNG path was implicit — `ConvertSpritesTask` parsed `main.c` for
+`#include "sprites/<stem>.h"` directives and looked for `<assetDirectory>/sprites/<stem>.png`. This
+silently failed (emitting a 64-byte checkerboard placeholder) when the include stem didn't match the
+asset filename or the asset lived outside `sprites/`.
+
+**Post-12.4:** PNG path is explicit via `sprite(asset(...))`; the implicit convention is **REMOVED**. All
+4 silent-stub fallback paths in `ConvertSpritesTask` now throw `GradleException` (fail-fast). This
+follows the "explicit > implicit" principle — future authors and artists can `grep` for the actual
+PNG path in the DSL without knowing any `_<id>` → file convention.
+
+See `.planning/phases/12.4-sprite-pipeline-png2asset-integration-wire-png2asset-binary-/12.4-SPEC.md`
+for the full requirement set and acceptance criteria.
+
 ## GBC Color Palette Support
 
 gbkt supports Game Boy Color with full 15-bit RGB555 color palettes (8 sprite palettes + 8 background palettes, 4 colors each).
@@ -38,11 +128,11 @@ gbkt supports Game Boy Color with full 15-bit RGB555 color palettes (8 sprite pa
 ### Enabling GBC Mode
 
 ```kotlin
-val myGame = gbGame("ColorGame") {
+val myGame = game("ColorGame") {
     config {
-        gbcSupport = true              // Enable GBC features
-        gbcMode = GBCMode.COMPATIBLE   // Works on both DMG and GBC
-        // gbcMode = GBCMode.ONLY      // GBC exclusive
+        target(GbcTarget.GBC_COMPATIBLE)   // Works on both DMG and GBC
+        // target(GbcTarget.GBC_ONLY)      // GBC exclusive
+        // default is GbcTarget.DMG        // classic grayscale
     }
     // ...
 }
@@ -51,81 +141,64 @@ val myGame = gbGame("ColorGame") {
 ### Defining Palettes
 
 ```kotlin
-// Manual palette definition with hex colors
-val playerPalette = palette("player") {
-    colors(0xFFFFFF, 0x88FF88, 0x448844, 0x000000)  // lightest to darkest
+// Background palette — name inferred from the Kotlin property (by-delegate)
+val playerPalette by palette {
+    color0(GBCColor.fromRGB888(255, 255, 255))  // lightest
+    color1(GBCColor.fromRGB888(136, 255, 136))
+    color2(GBCColor.fromRGB888(68, 136, 68))
+    color3(GBCColor.fromRGB888(0, 0, 0))        // darkest
 }
 
-// Individual color setting
-val enemyPalette = palette("enemy") {
-    color(0, 255, 255, 255)  // index, R, G, B (0-255)
-    color(1, 255, 0, 0)
-    color(2, 128, 0, 0)
-    color(3, 0, 0, 0)
+// Sprite palette — same builder, registered as PaletteType.SPRITE
+val enemyPalette by spritePalette {
+    copy(GbcPresets.FIRE)
+    color3(GBCColor.fromRGB888(0, 0, 0))  // override just the darkest shade
 }
 
-// Use preset palettes
-val bgPalette = palette("bg", PalettePreset.FOREST)
-// Available: GRAYSCALE, FOREST, OCEAN, FIRE, ICE, NIGHT, SEPIA
+// Use preset palettes via copy(GbcPresets.X)
+val bgPalette by palette { copy(GbcPresets.NATURE) }
+// Available: CLASSIC_GREEN, NATURE, FIRE, ICE, OCEAN, DUNGEON, CAVERN, SUNSET,
+//            NIGHT, PASTEL, SEPIA, NEON, MONOCHROME_BLUE, WARM_GRAY, UI_LIGHT, UI_DARK
 ```
 
 ### Assigning Palettes to Sprites
 
 ```kotlin
-val player = sprite(SpriteAsset("player.png")) {
-    size = 8 x 16
-    boundTo(playerX, playerY)
-    palette = playerPalette  // Assign palette to sprite
+// Per-actor palette — inside the actor { } block
+val player by actor {
+    position(80, 72)
+    sprite(asset("sprites/player.png")) { size(8, 16) }
+    palette(GbcPresets.FIRE)   // assign GBC palette to this actor's sprite
 }
 
-// Or use direct index assignment
-val enemy = sprite(SpriteAsset("enemy.png")) {
-    size = 8 x 8
-    paletteIndex = 2  // Use palette slot 2
-}
-```
-
-### Runtime Palette Effects
-
-```kotlin
-gameplayScene = scene("gameplay") {
-    enter {
-        playerPalette.apply()  // Apply palette to its assigned slot
-    }
-
-    every.frame {
-        whenever(playerHit eq 1) {
-            playerPalette.flash(0xFF0000)  // Flash red
-        }
-
-        // Fade toward target colors
-        playerPalette.fadeTo(
-            listOf(0xFFFFFF, 0xFF0000, 0x880000, 0x000000),
-            fadeProgress  // 0-255 progress
-        )
-    }
+// Per-scene hardware slots — palette() calls in the scene block load slots 0-7
+scene("gameplay") {
+    palette(playerPalette)           // auto-assigns next free slot
+    palette(enemyPalette, slot = 3)  // or pin an explicit slot (0-7)
 }
 ```
 
 ### Automatic Palette Extraction
 
-When `gbcSupport = true`, the asset pipeline automatically extracts colors from PNG sprites:
+The asset pipeline automatically extracts colors from PNG sprites when no explicit palette
+is assigned:
 
 ```kotlin
-// Palettes are auto-extracted if sprite has no explicit palette
-val autoSprite = sprite(SpriteAsset("colorful.png")) {
-    size = 8 x 8
+// Palettes are auto-extracted if the actor's sprite has no explicit palette
+val autoSprite by actor {
+    position(80, 72)
+    sprite(asset("sprites/colorful.png")) { size(8, 8) }
     // No palette specified - colors extracted automatically!
 }
 ```
 
 ### GBC Types Reference
 
-- `GBCColor` - RGB555 color value class
+- `GBCColor` - RGB555 color value class (`GBCColor.fromRGB888(r, g, b)`)
 - `GBCPalette` - 4-color palette data class
-- `GBCMode` - Enum: `DISABLED`, `COMPATIBLE`, `ONLY`
+- `GbcTarget` - Enum: `DMG`, `GBC_COMPATIBLE`, `GBC_ONLY`
 - `PaletteType` - Enum: `SPRITE`, `BACKGROUND`
-- `Palette` - DSL wrapper with runtime operations
+- `GbcPresets` - 16 ready-made `GBCPalette` presets
 
 ### Generated C Code
 
@@ -253,91 +326,56 @@ The live reload feature:
 - Linux: Uses `stat -c %Y` for file modification time
 - Windows: Uses PowerShell to get LastWriteTime
 
-## VSCode Extension
+## GBDK Troubleshooting
 
-The gbkt VSCode extension provides enhanced development experience with code completion, documentation, real-time validation, and debugging tools.
-
-### Installation
-
-Install from the VSCode marketplace or build from source:
+### Installation Verification
 
 ```bash
-cd vscode-extension
-npm install
-npm run compile
+# Check GBDK_HOME is set
+echo $GBDK_HOME
+
+# Verify lcc exists
+ls $GBDK_HOME/bin/lcc
+
+# Test compilation
+$GBDK_HOME/bin/lcc --version
 ```
 
-### Features
+### Common Issues
 
-#### Source Map Navigation
+| Issue | Solution |
+|-------|----------|
+| "GBDK not found" | Set GBDK_HOME or install to /opt/gbdk-2020 |
+| "Permission denied" on lcc | `chmod +x $GBDK_HOME/bin/lcc` |
+| Bank overflow errors | Reduce code/data or use banking |
+| Undefined symbols | Check generated C for typos |
+| Source map not loading | Ensure generateC ran before compileRom |
 
-Jump from generated C code back to Kotlin DSL source:
+### Manual Compilation
 
-1. Open the generated C file (`build/gbkt/generated/main.c`) or use "View Generated C" command
-2. Right-click on any line → **"Jump to Kotlin Source"**
-3. The extension opens the corresponding Kotlin file at the correct line
+If Gradle fails, try manual compilation:
 
-**Requirements:**
-- Source maps are automatically generated during `buildRom`
-- Saved to `build/gbkt/generated/main.c.gbkt.map`
+```bash
+# Navigate to generated code
+cd build/gbkt/generated
 
-**Usage:**
-- Command Palette: `gbkt: Jump to Kotlin Source`
-- Context menu: Right-click in C files
-- Works with exact line mappings or falls back to closest previous mapping
-
-#### Language Server Protocol (LSP)
-
-Intelligent code assistance:
-
-- **Autocomplete**: DSL keywords, variables, sprites, scenes, etc.
-- **Hover Documentation**: Detailed docs and examples for all DSL constructs
-- **Signature Help**: Function signatures with parameter descriptions
-- **Symbol Rename**: F2 or context menu to rename symbols across file
-- **Code Actions**: Quick fixes for missing frame blocks, start scenes
-
-See [vscode-extension/server/README.md](../vscode-extension/server/README.md) for full LSP documentation.
-
-#### Real-time Validation
-
-The extension validates your DSL code as you type, showing warnings and errors for:
-
-- **OAM Limits**: Warns when total sprites exceed 40 (Game Boy hardware limit)
-- **Palette Usage**: Tracks sprite palettes (max 8) and background palettes (max 8)
-- **Sprite Counts**: Shows breakdown of direct sprites, entity sprites, and pool sprites
-
-The status bar displays current resource usage:
-
-```
-Sprites: 35/40 | Palettes: 4S/3B
+# Compile with GBDK
+$GBDK_HOME/bin/lcc -Wa-l -Wl-m -Wl-j -o ../output/game.gb main.c
 ```
 
-**Note**: This uses regex-based heuristics for quick validation. For full accuracy, compile-time validation has access to the complete AST.
+### Common GBDK Errors and Fixes
 
-#### Build Integration
+| Error Message | Cause | Fix |
+|---------------|-------|-----|
+| `undefined identifier 'xxx'` | Variable not declared | Check DSL spelling, ensure variable is defined |
+| `type mismatch` | Wrong type assignment | Check u8/u16/i8 types in DSL |
+| `too many global variables` | Exceeded RAM limits | Use pools, reduce variable count |
+| `bank N overflow` | Too much code/data in bank | Split across banks |
+| `function too complex` | Single function too large | Split scene logic into multiple functions |
 
-Commands available via Command Palette or status bar:
+### Debugging Tips
 
-- `gbkt: Build ROM` - Compile Kotlin DSL to ROM
-- `gbkt: Run Emulator` - Launch game in mGBA
-- `gbkt: View Generated C` - Preview generated C code
-
-### Configuration
-
-```json
-{
-  "gbkt.gradleWrapper": "./gradlew",
-  "gbkt.emulatorPath": "",
-  "gbkt.autoRefreshCPreview": true,
-  "gbkt.languageServer.enable": true
-}
-```
-
-### Development Notes
-
-The plugin uses composite builds:
-- `gbkt-gradle-plugin` is included via `pluginManagement { includeBuild() }`
-- `gbkt-core` must be published to mavenLocal before plugin builds:
-  ```bash
-  ./gradlew :gbkt-core:publishToMavenLocal
-  ```
+1. **Check generated C first**: Review `build/gbkt/generated/main.c` for issues
+2. **Use source maps**: The `.gbkt.map` file maps C lines back to Kotlin
+3. **Start minimal**: Build with minimal DSL code, add features incrementally
+4. **Check GBDK docs**: Some errors are GBDK-specific, not gbkt issues

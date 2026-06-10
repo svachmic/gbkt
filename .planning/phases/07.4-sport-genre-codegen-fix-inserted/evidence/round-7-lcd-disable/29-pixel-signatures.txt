@@ -1,0 +1,29 @@
+=== Pixel signatures ===
+23-postfix-race-entry-mcp.png unique_pixels=4 non_bg_pixels=8064 bg=(5, 31, 42, 255) size=160x144
+24-sc-1-visual-player-and-rival.png unique_pixels=4 non_bg_pixels=8064 bg=(5, 31, 42, 255) size=160x144
+25-sc-3-visual-camera-scroll.png unique_pixels=4 non_bg_pixels=8184 bg=(5, 31, 42, 255) size=160x144
+26-sc-4-visual-track-corridor.png unique_pixels=4 non_bg_pixels=8184 bg=(5, 31, 42, 255) size=160x144
+=== Deltas ===
+delta(.../round-6-wram-corruption/01-baseline-race-entry-postH1.png, 23-postfix-race-entry-mcp.png) = 0 
+delta(23-postfix-race-entry-mcp.png, 25-sc-3-visual-camera-scroll.png) = 190 
+=== Supporting variable reads ===
+camera_y_at_race_entry=8
+car_y_at_race_entry=80
+camera_y_after_60_frame_up_hold=8
+car_y_after_60_frame_up_hold=5
+=== Plan 29 Task 3 — anchor interpretation note ===
+delta(prefix, 23) = 0 because the prefix anchor PNG is from Plan 27's auto-capture
+which happened POST-H1-SHOW_BKG fix (Plan 27 already had visible content at race entry —
+the bug was the RUNTIME hang at frame 124, not blank rendering). Plan 30's LCD-wrap fix
+preserves rendering identical to the H1 baseline AND eliminates the hang. The fix is
+silent at the pixel level for race entry frame 30, and load-bearing at the runtime
+liveness level (see 22-postfix-wram-canary-30-frame.txt and 30-watchdog-liveness-60-frame.txt).
+
+car_y motion 80 → 5 over 60 frames of held UP proves player sprite responds to input
+(75-pixel up-translation visible). delta(23, 25) = 190 confirms the post-hold frame
+differs from race-entry at the pixel level. SC-3 primary verdict: PASS via car_y motion
++ delta(23, 25) > 0; supporting variable camera_y > 0 met (value=8, which is the maxY
+for the racer's 152x152 zone vs 144px screen height).
+
+=== SC-6 PNG row (Plan 29 Task 5 Warning 5 gate) ===
+28-sc-6-results-scene-transition.png unique_pixels=2 non_bg_pixels=1614 bg=(varies) size=160x144

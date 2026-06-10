@@ -1,0 +1,57 @@
+# Round 6 WRAM corruption canary snapshot
+# Probe: Round6WramCorruptionProbe
+# Format: <address> <variable> = <decimal value>
+
+## checkpoint: title (frame 120)
+0xC0B1 _pool_carAi_active = 0
+0xC0B2 _pool_carAi_x = 0
+0xC0B3 _pool_carAi_y = 0
+0xC0D3 _car_x = 80
+0xC0D4 _car_y = 80
+0xC0D5 _rival_x = 80
+0xC0D6 _rival_y = 96
+0xC0D7 _raceTime = 0
+0xC0E7 _camera_x = 0
+0xC0E8 _camera_y = 0
+0xC0EC _vehicle_carPlayer_speed_cur = 0
+0xC0ED _vehicle_carPlayer_heading = 0
+0xC0EE _racing_lap_count_track1 = 0
+
+## checkpoint: race_enter + 2 frames
+# Expected canary (clean):
+#   _car_x=80, _car_y=80, _pool_carAi_active=1, _pool_carAi_x=80, _pool_carAi_y=96
+#   _rival_x=80, _rival_y=96, _camera_x=0, _camera_y=0,
+#   _racing_lap_count_track1=0, _vehicle_carPlayer_speed_cur=0
+# Corruption fingerprint (round-5 followup):
+#   even-address bytes == 57 (0x39), odd-address bytes == 0
+
+0xC0B1 _pool_carAi_active = 1
+0xC0B2 _pool_carAi_x = 80
+0xC0B3 _pool_carAi_y = 96
+0xC0D3 _car_x = 80
+0xC0D4 _car_y = 80
+0xC0D5 _rival_x = 80
+0xC0D6 _rival_y = 96
+0xC0D7 _raceTime = 2
+0xC0E7 _camera_x = 0
+0xC0E8 _camera_y = 8
+0xC0EC _vehicle_carPlayer_speed_cur = 0
+0xC0ED _vehicle_carPlayer_heading = 0
+0xC0EE _racing_lap_count_track1 = 0
+
+## checkpoint: race_enter + 30 frames (post-screenshot)
+0xC0B1 _pool_carAi_active = 1
+0xC0B2 _pool_carAi_x = 77
+0xC0B3 _pool_carAi_y = 45
+0xC0D3 _car_x = 80
+0xC0D4 _car_y = 80
+0xC0D5 _rival_x = 80
+0xC0D6 _rival_y = 96
+0xC0D7 _raceTime = 32
+0xC0E7 _camera_x = 0
+0xC0E8 _camera_y = 8
+0xC0EC _vehicle_carPlayer_speed_cur = 0
+0xC0ED _vehicle_carPlayer_heading = 0
+0xC0EE _racing_lap_count_track1 = 0
+
+screenshot: /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/07.4-sport-genre-codegen-fix-inserted/evidence/round-6-wram-corruption/01-baseline-race-entry-postH1.png

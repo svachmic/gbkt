@@ -1,0 +1,35 @@
+# Pre-fix SHA-256 manifest captured 2026-05-25
+# Phase: 12.6-main-loop-level-switch-codegen-fix-phase-12-6
+# Plan: 12.6-01 (Wave 1 baseline capture)
+# HEAD commit: 28f2077ffeedcaaf876e112073d9fb037984b21b
+# Worktree: .claude/worktrees/agent-ac6d912a58230bb1a (branch: worktree-agent-ac6d912a58230bb1a; base: master)
+# Gradle command:
+#   ./gradlew clean :gbkt-examples:pong:buildRom :gbkt-examples:breakout:buildRom \
+#     :gbkt-examples:simple-physics:buildRom :gbkt-examples:metasprites:buildRom \
+#     :gbkt-examples:metasprites-stress:buildRom :gbkt-examples:banks:buildRom \
+#     :gbkt-examples:racer:buildRom
+# Hashing command:
+#   find gbkt-examples/{pong,breakout,simple-physics,metasprites,metasprites-stress,banks,racer}/build/gbkt/output \
+#     -name '*.gb' -exec shasum -a 256 {} \;
+#
+# Purpose: BASELINE for Plan 12.6-08 D-14 byte-identity check. After the
+# DEFECT-1 + DEFECT-2 fix lands (Plans 12.6-02..07), the same 7 targets
+# must rebuild byte-identical against this manifest. The `gameUsesTilemapCollision`
+# gate in GBDKPipelineV2.buildMainLoopLevelSwitchGuardIfNeeded already
+# short-circuits these games (no platformer-template-style level-switch
+# emission), so any divergence here signals accidental cross-pollination
+# from `levelCardScene` / `spawn()` codegen.
+#
+# Verify command (post-fix):
+#   shasum -a 256 -c .planning/phases/12.6-.../evidence/pre-fix-rom-sha256.txt
+#   (after stripping these header lines and re-rooting paths if working from a
+#   different worktree)
+#
+# 7 ROMs:
+8cb4cec8884799960765fe9f0a39a8844385d6c45f3a9c4db09738e5f25c61a8  gbkt-examples/pong/build/gbkt/output/pong.gb
+21a42479ed36a2d3a2f62c5d4b2495168ca6a2178fc05010a155a90421796977  gbkt-examples/breakout/build/gbkt/output/breakout.gb
+247e16d2df29c9cad2df3f2f5fb68cba00133e95e94b4d47dbcf87c31384f9ad  gbkt-examples/simple-physics/build/gbkt/output/simple-physics.gb
+c42610991e67b7d33404c9f2aa9725ed449e14c30e0827fa984f363ada3f5f7b  gbkt-examples/metasprites/build/gbkt/output/metasprites.gb
+a5b3657b765a59b8fc8423b6fef286d424cd6870cccc7594f31ca0532cd26764  gbkt-examples/metasprites-stress/build/gbkt/output/metasprites-stress.gb
+c598231420e4fdc1d06f7f386be318723096a22000feb0971584371d2b58fd8f  gbkt-examples/banks/build/gbkt/output/banks.gb
+48d3a71c7bcc2842dc6a086b8f2eb8271e671a37eb96d8232352e459d089b6e8  gbkt-examples/racer/build/gbkt/output/racer.gb

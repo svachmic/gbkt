@@ -1,0 +1,29 @@
+{
+  "frameNumber": 11,
+  "variables": {
+    "sound_channels": 255,
+    "spdX": 0,
+    "sound_duration": 0,
+    "joypad_prev": 0,
+    "spdY": -31,
+    "cpu": 1,
+    "joypad": 16,
+    "posX": 1024,
+    "sound_priority": 0,
+    "posY": 992,
+    "shadow_OAM": 78,
+    "map_tile_offset": 0,
+    "wait_counter": 0,
+    "sys_time": 7,
+    "RAMBANK": 0,
+    "is_GBA": 0,
+    "ball_x": 64,
+    "ball_y": 62,
+    "current_scene": 0,
+    "current_tileset_id": 255,
+    "dialog_speed": 1,
+    "RAM": 78
+  },
+  "capturedAt": 1781089239594,
+  "label": "behavior2_jump"
+}

@@ -110,6 +110,21 @@ object GbdkToolchain {
         return lcc
     }
 
+    /**
+     * Get the png2asset sprite converter executable.
+     *
+     * Returns the file whether or not it exists — callers should check [File.exists] before use.
+     * Non-existence is a soft failure (sprite conversion skipped gracefully) since png2asset is
+     * optional for projects that provide pre-converted headers.
+     */
+    fun getPng2asset(gbdkHome: File): File {
+        return if (isWindows()) {
+            File(gbdkHome, "bin/png2asset.exe")
+        } else {
+            File(gbdkHome, "bin/png2asset")
+        }
+    }
+
     /** Validate that a directory contains a valid GBDK installation. */
     fun isValidGbdk(dir: File): Boolean {
         if (!dir.exists() || !dir.isDirectory) return false
@@ -137,21 +152,21 @@ object GbdkToolchain {
                     "/opt/homebrew/gbdk-2020",
                     "/opt/gbdk-2020",
                     "$userHome/gbdk-2020",
-                    "$userHome/dev/gbdk-2020"
+                    "$userHome/dev/gbdk-2020",
                 )
             isWindows() ->
                 listOf(
                     "C:\\gbdk-2020",
                     "C:\\Program Files\\gbdk-2020",
                     "C:\\Program Files (x86)\\gbdk-2020",
-                    "${System.getenv("USERPROFILE")}\\gbdk-2020"
+                    "${System.getenv("USERPROFILE")}\\gbdk-2020",
                 )
             else ->
                 listOf( // Linux and others
                     "/usr/local/gbdk-2020",
                     "/opt/gbdk-2020",
                     "$userHome/gbdk-2020",
-                    "$userHome/dev/gbdk-2020"
+                    "$userHome/dev/gbdk-2020",
                 )
         }
     }

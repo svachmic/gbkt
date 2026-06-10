@@ -1,0 +1,36 @@
+01-title-pre-start.png: 160x144 unique_pixels=2  # nearly uniform — possibly BG-off with HUD only
+02-race-entry-frame30.png: 160x144 unique_pixels=2  # nearly uniform — possibly BG-off with HUD only
+03-race-after-hold-up-60f.png: 160x144 unique_pixels=2  # nearly uniform — possibly BG-off with HUD only
+
+### Extended analysis (with proper PNG defilter)
+
+01-title-pre-start.png: 160x144
+  Unique colors (defiltered): 2  (R=230,G=248,B=218 BG=22083px 95%; R=5,G=31,B=42 text=957px 4%)
+  Non-background pixels: 957 (4%) — title text across 4 lines
+  MD5: ed796b4fdd825b67bdd49b046e0870c4
+
+02-race-entry-frame30.png: 160x144
+  Unique colors (defiltered): 2  (R=230,G=248,B=218 BG=22961px 99%; R=5,G=31,B=42 text=79px 0%)
+  Non-background pixels: 79 (0%) — only "LAP:" HUD text (window layer, 4 chars)
+  MD5: c69f8187f2a9942c5abdbf63a682586e
+  NOTE: golden reference from prior run (same build, same ROM HEAD)
+
+03-race-after-hold-up-60f.png: 160x144
+  Unique colors (defiltered): 2  (same as 02 — 99% BG, 0% content)
+  Non-background pixels: 79 (0%) — identical to race-entry; camera and BG unchanged
+  MD5: c69f8187f2a9942c5abdbf63a682586e  (same file — JVM probe timed out)
+  NOTE: matches 02 exactly; consistent with camera_x locked at 0 (update_camera_camera clamp bug)
+
+### Interpretation per plan's pixel-signature table
+
+Title unique_pixels=2 (>= 4 in plan table terms: REFUTED — title has only 2 colors, same as race)
+Race-entry unique_pixels=2: "nearly uniform — BG-off with HUD only"
+After-UP unique_pixels=2: same as race-entry
+
+Interpretation row: title=2, race-entry=2, after-UP=2 (same as 02)
+→ title itself is BG-off (only text); race scene has even less text; BG never enabled
+→ H-1 (SHOW_BKG missing) applies across ALL scenes — LCD enabled but LCDC.BG=0 throughout
+
+Key diagnostic: race-entry has 79 non-BG px vs. title 957 — race has LESS content (only "LAP:")
+  A working race tilemap would add 2000–8000 tile pixels on top of HUD.
+  The complete absence confirms BG tile layer is disabled (LCDC bit 0 = 0).

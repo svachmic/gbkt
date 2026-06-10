@@ -1,0 +1,277 @@
+<!--
+  Copyright 2026 Michal Svacha
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<idea-plugin>
+    <id>io.github.gbkt.intellij</id>
+    <name>gbkt - Game Boy Kotlin</name>
+    <vendor email="support@gbkt.io" url="https://github.com/svachmic/gbkt">Michal Svacha</vendor>
+
+    <description><![CDATA[
+    <h1>gbkt - Game Boy Development Companion</h1>
+    <p>
+        A comprehensive IDE companion for developing Game Boy games using the gbkt Kotlin DSL framework.
+        This plugin transforms IntelliJ IDEA into a complete Game Boy development environment.
+    </p>
+
+    <h2>Features</h2>
+    <ul>
+        <li><b>Project Wizard</b> - Create new gbkt projects with templates (RPG, Platformer, Minimal)</li>
+        <li><b>Project Support</b> - Automatic detection of gbkt projects with SDK validation</li>
+        <li><b>Code Intelligence</b> - Full autocomplete, navigation, and refactoring for gbkt DSL</li>
+        <li><b>Asset Pipeline</b> - Visual editors for sprites, tilemaps, and palettes</li>
+        <li><b>Build Integration</b> - One-click ROM compilation with GBDK-2020</li>
+        <li><b>Emulator Integration</b> - Launch and debug ROMs directly from the IDE</li>
+        <li><b>SDK Management</b> - Automatic GBDK-2020 detection and configuration</li>
+    </ul>
+
+    <h2>Getting Started</h2>
+    <ol>
+        <li>Install GBDK-2020 from <a href="https://github.com/gbdk-2020/gbdk-2020">GitHub</a></li>
+        <li>Create a new gbkt project or open an existing one</li>
+        <li>The plugin will automatically detect and configure your project</li>
+    </ol>
+    ]]></description>
+
+    <change-notes><![CDATA[
+    <h2>0.1.0</h2>
+    <ul>
+        <li>Initial release</li>
+        <li>File type support for .gbkt.kts files</li>
+        <li>Basic project detection and SDK validation</li>
+        <li>DSL-aware syntax highlighting with customizable colors</li>
+        <li>Context-aware code completion for DSL keywords and builder methods</li>
+        <li>Quick documentation for DSL elements (Ctrl+Q / F1)</li>
+        <li>Build ROM and Run in Emulator actions</li>
+        <li>GBDK-2020 auto-detection</li>
+        <li>Sprite Editor with 8x8 grid overlay and GB preview mode</li>
+        <li>2BPP color validation for sprite assets</li>
+        <li>GBC palette editor with 15-bit color space support</li>
+        <li>Animation preview for sprite sequences</li>
+        <li>String Resource Manager with GB font preview</li>
+        <li>Character limit validation (18 chars/line, 90 total)</li>
+        <li>Parameter detection and validation (%name, %damage, etc.)</li>
+        <li>Balance Data Table Editor with preset templates</li>
+        <li>Progression curve visualization for exp/stats</li>
+        <li>Code generation for data tables</li>
+        <li>Tilemap Editor with tileset palette</li>
+        <li>Tile placement tools (brush, fill, eraser)</li>
+        <li>Tile attribute overlay (wall, water, exit, etc.)</li>
+        <li>Map object placement (chests, doors, NPCs, etc.)</li>
+        <li>Exit connection visualization with direction arrows</li>
+    </ul>
+    ]]></change-notes>
+
+    <!-- Minimum IntelliJ version (2024.2+, requires JDK 21) -->
+    <idea-version since-build="242"/>
+
+    <!-- Dependencies -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends>org.jetbrains.kotlin</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Notification Group -->
+        <notificationGroup id="gbkt.notifications" displayType="BALLOON"/>
+
+        <!-- File Type Registration -->
+        <fileType
+            name="gbkt"
+            implementationClass="io.github.gbkt.intellij.GbktFileType"
+            fieldName="INSTANCE"
+            language="gbkt"
+            extensions="gbkt.kts"/>
+
+        <!-- GNU gettext PO/POT File Types -->
+        <fileType
+            name="PO"
+            implementationClass="io.github.gbkt.intellij.lang.PoFileType"
+            fieldName="INSTANCE"
+            extensions="po"/>
+
+        <fileType
+            name="POT"
+            implementationClass="io.github.gbkt.intellij.lang.PotFileType"
+            fieldName="INSTANCE"
+            extensions="pot"/>
+
+        <!-- Language Registration -->
+        <lang.parserDefinition
+            language="gbkt"
+            implementationClass="io.github.gbkt.intellij.lang.GbktParserDefinition"/>
+
+        <!-- Syntax Highlighting for .gbkt.kts files -->
+        <lang.syntaxHighlighterFactory
+            language="gbkt"
+            implementationClass="io.github.gbkt.intellij.highlighting.GbktSyntaxHighlighterFactory"/>
+
+        <!-- Color Settings Page (Settings > Editor > Color Scheme > gbkt) -->
+        <colorSettingsPage
+            implementation="io.github.gbkt.intellij.highlighting.GbktColorSettingsPage"/>
+
+        <!-- Code Completion for gbkt DSL -->
+        <!-- Note: Targets Kotlin since .gbkt.kts are Kotlin scripts -->
+        <completion.contributor
+            language="Kotlin"
+            implementationClass="io.github.gbkt.intellij.completion.GbktCompletionContributor"/>
+
+        <!-- Documentation Provider for Quick Docs -->
+        <lang.documentationProvider
+            language="Kotlin"
+            implementationClass="io.github.gbkt.intellij.documentation.GbktDocumentationProvider"/>
+
+        <!-- Project Service for gbkt SDK detection -->
+        <projectService
+            serviceImplementation="io.github.gbkt.intellij.sdk.GbktSdkService"/>
+
+        <!-- Project Service for C code generation -->
+        <projectService
+            serviceImplementation="io.github.gbkt.intellij.codegen.GbktCodegenService"/>
+
+        <!-- Application Service for global settings -->
+        <applicationService
+            serviceImplementation="io.github.gbkt.intellij.settings.GbktSettings"/>
+
+        <!-- Startup Activity for SDK validation -->
+        <postStartupActivity
+            implementation="io.github.gbkt.intellij.startup.GbktStartupActivity"/>
+
+        <!-- Project Configuration -->
+        <projectConfigurable
+            instance="io.github.gbkt.intellij.settings.GbktProjectConfigurable"
+            id="gbkt.project.settings"
+            displayName="gbkt"
+            parentId="project.propGroup"/>
+
+        <!-- Application Configuration -->
+        <applicationConfigurable
+            instance="io.github.gbkt.intellij.settings.GbktApplicationConfigurable"
+            id="gbkt.application.settings"
+            displayName="gbkt"/>
+
+        <!-- Tool Window for build output and emulator -->
+        <toolWindow
+            id="gbkt"
+            anchor="bottom"
+            icon="/icons/gbkt_tool.svg"
+            factoryClass="io.github.gbkt.intellij.toolwindow.GbktToolWindowFactory"/>
+
+        <!-- Debug Tool Window for emulator, entity preview, collision viz -->
+        <toolWindow
+            id="gbkt Debug"
+            anchor="right"
+            icon="/icons/gbkt_tool.svg"
+            factoryClass="io.github.gbkt.intellij.debug.DebugToolWindowFactory"/>
+
+        <!-- Sprite Editor Provider -->
+        <!-- Adds "Sprite Editor" tab to PNG files in gbkt projects -->
+        <fileEditorProvider
+            implementation="io.github.gbkt.intellij.editors.sprite.SpriteEditorProvider"/>
+
+        <!-- Go-to-Definition for gbkt DSL elements -->
+        <gotoDeclarationHandler
+            implementation="io.github.gbkt.intellij.navigation.GbktGotoDeclarationHandler"/>
+
+        <!-- DSL Inspection for error highlighting -->
+        <localInspection
+            language="Kotlin"
+            implementationClass="io.github.gbkt.intellij.inspections.GbktDslInspection"
+            displayName="gbkt DSL validation"
+            groupName="gbkt"
+            enabledByDefault="true"
+            level="ERROR"/>
+
+        <!-- Asset Reference Inspection (missing asset files) -->
+        <localInspection
+            language="Kotlin"
+            implementationClass="io.github.gbkt.intellij.inspections.GbktAssetRefInspection"
+            displayName="Missing asset reference"
+            groupName="gbkt"
+            enabledByDefault="true"
+            level="ERROR"/>
+
+        <!-- Budget gutter icons for scene/actor blocks -->
+        <codeInsight.lineMarkerProvider
+            implementationClass="io.github.gbkt.intellij.gutter.BudgetGutterIconProvider"
+            language="Kotlin"/>
+
+        <!-- DSL Annotator for syntax highlighting -->
+        <annotator
+            language="Kotlin"
+            implementationClass="io.github.gbkt.intellij.highlighting.GbktDslAnnotator"/>
+
+        <!-- Rename refactoring support for gbkt DSL elements -->
+        <renamePsiElementProcessor
+            implementation="io.github.gbkt.intellij.refactoring.GbktRenamePsiElementProcessor"/>
+
+        <!-- Module Type for gbkt projects -->
+        <moduleType
+            id="GBKT_MODULE"
+            implementationClass="io.github.gbkt.intellij.project.GbktModuleType"/>
+
+        <!-- Module Builder for project creation wizard -->
+        <moduleBuilder
+            builderClass="io.github.gbkt.intellij.project.GbktModuleBuilder"
+            id="gbkt.module.builder"
+            order="first"/>
+
+        <!-- Run Configuration (future) -->
+        <!--
+        <configurationType
+            implementation="io.github.gbkt.intellij.run.GbktRunConfigurationType"/>
+        -->
+    </extensions>
+
+    <actions>
+        <!-- Build Actions -->
+        <group id="gbkt.BuildMenu" text="gbkt" popup="true">
+            <add-to-group group-id="BuildMenu" anchor="after" relative-to-action="BuildMenu"/>
+        </group>
+
+        <action
+            id="gbkt.BuildRom"
+            class="io.github.gbkt.intellij.actions.BuildRomAction"
+            text="Build ROM"
+            description="Compile gbkt project to Game Boy ROM">
+            <add-to-group group-id="gbkt.BuildMenu"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift B"/>
+        </action>
+
+        <action
+            id="gbkt.RunInEmulator"
+            class="io.github.gbkt.intellij.actions.RunInEmulatorAction"
+            text="Run in Emulator"
+            description="Build and run ROM in configured emulator">
+            <add-to-group group-id="gbkt.BuildMenu"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift R"/>
+        </action>
+
+        <action
+            id="gbkt.GenerateC"
+            class="io.github.gbkt.intellij.actions.GenerateCAction"
+            text="Generate C Code"
+            description="Generate C code from gbkt DSL">
+            <add-to-group group-id="gbkt.BuildMenu"/>
+        </action>
+
+        <!-- Context Menu Actions -->
+        <action
+            id="gbkt.OpenSpriteEditor"
+            class="io.github.gbkt.intellij.actions.OpenSpriteEditorAction"
+            text="Open in Sprite Editor"
+            description="Open PNG file in gbkt sprite editor">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="before" relative-to-action="$Cut"/>
+        </action>
+    </actions>
+</idea-plugin>

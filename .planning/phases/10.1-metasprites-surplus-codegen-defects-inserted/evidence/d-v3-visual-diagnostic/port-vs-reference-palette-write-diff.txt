@@ -1,0 +1,165 @@
+# Port vs Reference — GBC Palette-Write Side-by-Side Diff
+
+Date: 2026-05-19
+Build: post-Plan-10.1-04, generated 2026-05-19 07:30 ($./gradlew :gbkt-examples:metasprites:generateC)
+
+## Boot-Time Bootstrap Sequence
+
+| Step | Reference (`metasprites.c`) | Port (`build/gbkt/generated/main.c`)              | Verdict   |
+|------|------------------------------|---------------------------------------------------|-----------|
+| 1    | `DISPLAY_OFF;` (line 161)    | **MISSING**                                       | **GAP-1** |
+| 2    | `cgb_compatibility();` (line 164) | `cgb_compatibility();` (line 209)            | MATCH     |
+| 3    | `set_sprite_palette(0, 1, gray_pal);` (line 165)  | **DEFERRED to play_enter line 234**         | **GAP-2** |
+| 3a   | `set_sprite_palette(1, 1, pink_pal);` (line 166)  | **DEFERRED to play_enter line 235**         | **GAP-2** |
+| 3b   | `set_sprite_palette(2, 1, cyan_pal);` (line 167)  | **DEFERRED to play_enter line 236**         | **GAP-2** |
+| 3c   | `set_sprite_palette(3, 1, green_pal);` (line 168) | **DEFERRED to play_enter line 237**         | **GAP-2** |
+| 4    | `fill_bkg_rect(0, 0, W, H, 0);` (line 177)        | **DEFERRED to play_enter line 242**         | DIFF (probably OK) |
+| 5    | `set_bkg_data(0, 1, pattern);` (line 180)         | **DEFERRED to play_enter line 243**         | DIFF (probably OK) |
+| 6    | `load_and_duplicate_sprite_tile_data();` (line 183) — emits 4× set_sprite_data | `set_sprite_data(0u, 48u, elephant_tiles);` (line 217) — 1× call, no flip dupes | DIFF (D-V1 partial; out of scope for D-V3) |
+| 7    | `SHOW_BKG; SHOW_SPRITES;` (line 186)              | `SHOW_BKG;` (line 215) + `SHOW_SPRITES;` (line 216) | MATCH (split into two macros) |
+| 8    | `SPRITES_8x8;` (line 192)                          | `SPRITES_8x8;` (line 213)                          | MATCH     |
+| 9    | `DISPLAY_ON;` (line 194) — LAST                    | `DISPLAY_ON;` (line 214) — **NOT LAST**            | **GAP-3** |
+
+### Port main() Actual Order (lines 207-230)
+
+```c
+void main(void) {
+    cgb_compatibility();                  // 209
+    NR52_REG = 128u;                      // 210
+    NR50_REG = 119u;                      // 211
+    NR51_REG = 255u;                      // 212
+    SPRITES_8x8;                          // 213
+    DISPLAY_ON;                           // 214  ← LCD turned ON here
+    SHOW_BKG;                             // 215  (after DISPLAY_ON)
+    SHOW_SPRITES;                         // 216
+    set_sprite_data(0u, 48u, elephant_tiles);  // 217  ← sprite VRAM after DISPLAY_ON
+    play_enter();                         // 218  ← palette writes inside, after DISPLAY_ON
+    while (1) { … }
+}
+
+// play_enter() body (lines 233-250):
+void play_enter(void) {
+    set_sprite_palette(0u, 1u, gray_pal);  // 234  ← palette write while LCD is ON
+    set_sprite_palette(1u, 1u, pink_pal);  // 235
+    set_sprite_palette(2u, 1u, cyan_pal);  // 236
+    set_sprite_palette(3u, 1u, green_pal); // 237
+    SHOW_SPRITES;                          // 238  (redundant; already enabled in main)
+    static const UINT8 _checkerboard_bg_pattern[] = { … };
+    fill_bkg_rect(0, 0, DEVICE_SCREEN_WIDTH, DEVICE_SCREEN_HEIGHT, 0);  // 242
+    set_bkg_data(0, 1, _checkerboard_bg_pattern);                       // 243
+    _posX = 1280u; _posY = 1152u; _spdX = 0u; _spdY = 0u; _idx = 0u; _rot = 0u;
+}
+```
+
+## Three Identified Codegen-Level Gaps
+
+### GAP-1: No `DISPLAY_OFF` at main() entry
+
+Reference's first statement is `DISPLAY_OFF;` (defensively guarantee LCD-off state for
+all subsequent palette/VRAM writes). Port skips this entirely and depends on the boot-time
+LCD state being OFF after BIOS handoff. On real hardware this is usually true (GBC BIOS
+hands off with LCD off), but on some emulators (or after a soft-reset path) the LCD state
+may differ. Without explicit `DISPLAY_OFF`, the safety guard is implicit.
+
+**Pipeline source site:** `GBDKPipelineV2.kt:3697` — `buildMainFunction()` constructs
+`mainBody` without prepending a `CRawCode("DISPLAY_OFF;")`.
+
+### GAP-2: Palette writes deferred to play_enter (post-DISPLAY_ON)
+
+Reference loads all 4 sprite palettes in `main()` itself, between `cgb_compatibility()`
+and `DISPLAY_ON`. Port emits the 4 calls inside `play_enter()` (a banked scene-enter
+function), called AFTER `DISPLAY_ON` and AFTER `SHOW_SPRITES` and AFTER `set_sprite_data`.
+
+`set_sprite_palette()` writes to OCPD palette RAM via OCPS auto-increment. The write
+loop polls `STAT_REG` to determine VRAM-mode safety. When LCD is OFF the writes
+complete unconditionally; when LCD is ON the writes must wait for a vblank window.
+
+The port's deferred path is functional ONLY IF:
+- The first `set_sprite_palette` call happens during a vblank window, OR
+- GBDK's `set_sprite_palette` busy-loop correctly stalls until vblank arrives.
+
+Since `play_enter()` runs IMMEDIATELY after `DISPLAY_ON` (no `vsync()` in between),
+and the GBDK macro `DISPLAY_ON` does not synchronize to vblank, the very first
+`set_sprite_palette` call may execute during an active PPU scanline — exactly the
+condition where palette writes can stall or partially complete.
+
+**Pipeline source site:** No emission of `set_sprite_palette()` calls in
+`GBDKPipelineV2.buildMainFunction()`. All sprite palette emissions live in
+`SceneVisitor.visit()` → `palette(p)` DSL call lowering, deferred to scene-enter.
+
+### GAP-3: `DISPLAY_ON` is not the last bootstrap macro
+
+Reference order: SHOW_BKG, SHOW_SPRITES, SPRITES_8x8, DISPLAY_ON (LAST).
+Port order: SPRITES_8x8, DISPLAY_ON, SHOW_BKG, SHOW_SPRITES, set_sprite_data, play_enter.
+
+`SHOW_BKG` and `SHOW_SPRITES` write to the LCDC register's BG_ENABLE / OBJ_ENABLE bits.
+Toggling these AFTER `DISPLAY_ON` causes the PPU to immediately re-enable/disable the
+layer; this is allowed by hardware but creates a brief window where the layer state
+during the first scanline is ill-defined.
+
+`set_sprite_data` after `DISPLAY_ON` is a VRAM write that must stall until vblank.
+GBDK's `set_sprite_data` does poll for VRAM-access safety, so this is functionally
+correct but adds an unnecessary stall.
+
+**Pipeline source site:** Same — `GBDKPipelineV2.kt:3722-3738` enqueues macros in
+the wrong order for GBC-strict timing.
+
+## Layer Diagnosis (Cause Localization)
+
+Per Plan 10.1-19 acceptance criteria, the named cause must be one of:
+
+| Hypothesis from DEF-10.1-13-C | Evidence Verdict |
+|--------------------------------|------------------|
+| (a) DSL doesn't declare GBC color palettes | **FALSIFIED.** 4× `spritePalette` declared in Metasprites.kt:95-122; 4× distinct `palette_color_t` arrays at main.c:33-36 (non-zero, gray/pink/cyan/green color gradients). |
+| (b) MetaspriteVisitor doesn't emit `set_sprite_palette(...)` | **FALSIFIED.** 4× `set_sprite_palette(slot, 1u, *_pal)` at main.c:234-237 (slots 0/1/2/3 in declaration order). Note: emitted by SceneVisitor's palette lowering, not MetaspriteVisitor, but the calls exist. |
+| (c) cgb_compatibility() doesn't run on GBC mode path | **FALSIFIED.** Single `cgb_compatibility();` call at main.c:209, emitted unconditionally for `GbcTarget != DMG` (GBDKPipelineV2.kt:3702-3704). |
+| (d) Some other GBC bootstrap missing | **CONFIRMED.** Three GAPs identified above (GAP-1 missing DISPLAY_OFF; GAP-2 palette writes after DISPLAY_ON; GAP-3 DISPLAY_ON not last). |
+
+### Named Root Cause (single phrase)
+
+> **Bootstrap-order mismatch:** `GBDKPipelineV2.buildMainFunction()` does NOT
+> mirror the reference's `DISPLAY_OFF → cgb_compatibility → palette writes → BG/sprite
+> tile data → SHOW_BKG/SHOW_SPRITES/SPRITES_8x8 → DISPLAY_ON` sequence. Specifically,
+> the four `set_sprite_palette()` calls are deferred to a scene-enter function that
+> runs AFTER `DISPLAY_ON`, allowing the first PPU frame to composite with
+> uninitialized OCPD palette RAM (all-zero entries → all-black sprite render on GBC).
+> The defect manifests visually as a completely black GBC screenshot because EVERY
+> sprite slot (0/1/2/3) is uninitialized at the moment the LCD first turns on.
+
+### Why BG is Also Black
+
+The BG appearance also being black is consistent with this root cause:
+
+- Port's `fill_bkg_rect(0, 0, W, H, 0)` (filling tilemap with tile 0) and
+  `set_bkg_data(0, 1, _checkerboard_bg_pattern)` (writing tile 0's pixel data) BOTH
+  live in `play_enter()` AFTER `DISPLAY_ON`. The first frame post-DISPLAY_ON
+  composites with whatever was in BG VRAM at boot (typically all zeros = tile 0,
+  pixel pattern = 0 = palette index 0 = first BG palette entry).
+- BG color palette is set by `cgb_compatibility()` to a DMG-compat default, with
+  color 0 typically = white. So BG color-0 would render WHITE not black post-init.
+- **However**, if the screenshot is captured before play_enter's `fill_bkg_rect`
+  + `set_bkg_data` complete, the BG could show garbage or zero. The user's
+  screenshot was captured AFTER pressing A 8× (49+ frames in), so play_enter MUST
+  have completed. Yet the BG was still black.
+- This suggests an additional issue: the cgb_compatibility() DEFAULT BG palette
+  may not be applied for `GBC_COMPATIBLE` targets without an explicit BG palette
+  load. (Hypothesis only — requires runtime confirmation.)
+
+### Open Questions Best Answered by Runtime Diagnostics
+
+The codegen-level diagnosis (GAPs 1-3) is sufficient to name a fix shape, but
+two questions remain that need an mGBA palette-RAM dump to fully confirm:
+
+1. **Is OCPD palette RAM actually all zeros after `DISPLAY_ON` on real GBC?**
+   If YES → confirms the deferred-write hypothesis; fix is GAP-2.
+   If NO (palettes populated correctly) → the bug is elsewhere; root cause may
+   be in `move_metasprite_*` OAM attribute byte mapping (CGB-palette field).
+
+2. **Does BCPD background palette RAM hold the cgb_compatibility default colors?**
+   If YES → BG should not render black; check BG tilemap content + tile data.
+   If NO → cgb_compatibility() may have been ignored, OR the GbcTarget=GBC_COMPATIBLE
+   compiler flag `-Wm-yc` may not be in effect.
+
+These two questions can be answered post-checkpoint via the orchestrator's
+`mcp__gbkt-emulator__*` capture (sym-file read + palette-RAM dump). The named
+cause and fix shape below are sufficient for human review.

@@ -1,0 +1,39 @@
+# Post-fix SHA-256 manifest captured 2026-05-26
+# Phase: 12.7-player-levitating-physics-codegen
+# Plan: 12.7-07 (R-04)
+# HEAD commit: 062a0a79a6a15a98d54b4f6c6b71c31a59e550f2
+# Captured at post-W3 HEAD (snap-to-tile-top + grounded-guard codegen landed via W3).
+# Gradle command:
+#   ./gradlew clean \
+#     :gbkt-examples:pong:buildRom \
+#     :gbkt-examples:breakout:buildRom \
+#     :gbkt-examples:simple-physics:buildRom \
+#     :gbkt-examples:metasprites:buildRom \
+#     :gbkt-examples:metasprites-stress:buildRom \
+#     :gbkt-examples:banks:buildRom \
+#     :gbkt-examples:racer:buildRom \
+#     :gbkt-examples:platformer-template:buildRom
+# Hashing command:
+#   for game in pong breakout simple-physics metasprites metasprites-stress banks racer platformer-template; do
+#     shasum -a 256 gbkt-examples/$game/build/gbkt/output/$game.gb
+#   done
+#
+# Caveat — pong toolchain non-determinism: PASS* per project_pong_toolchain_nondeterminism.md
+# (pong.gb hashes differently every rebuild even from the same commit; generated C is
+# byte-identical pre/post; this is a pre-existing sdcc/lcc artifact, not a 12.7 regression).
+#
+# Caveat — platformer-template hash drift: INTENTIONAL CHANGE per Plan 12.7-06 / W3.
+# Plan 06 single-target post-snap hash:
+#   a7fc51f277a992402f1b9a87324bda7f39920a32845cac692cec917246243317
+# This sweep reproduces the same hash, confirming the snap codegen change is stable
+# across clean rebuilds and isolated to platformer-template's PlayerPhysicsSystem
+# lowering. The 6 strict non-platformer targets remain byte-identical to the Phase
+# 12.6 baseline (.planning/phases/12.6-.../evidence/post-fix-rom-sha256.txt).
+36c7a52e59452114f989a377d0da90e2ce4e85a67a7eef1d32d1a8ede8818d9c  gbkt-examples/pong/build/gbkt/output/pong.gb
+21a42479ed36a2d3a2f62c5d4b2495168ca6a2178fc05010a155a90421796977  gbkt-examples/breakout/build/gbkt/output/breakout.gb
+247e16d2df29c9cad2df3f2f5fb68cba00133e95e94b4d47dbcf87c31384f9ad  gbkt-examples/simple-physics/build/gbkt/output/simple-physics.gb
+c42610991e67b7d33404c9f2aa9725ed449e14c30e0827fa984f363ada3f5f7b  gbkt-examples/metasprites/build/gbkt/output/metasprites.gb
+a5b3657b765a59b8fc8423b6fef286d424cd6870cccc7594f31ca0532cd26764  gbkt-examples/metasprites-stress/build/gbkt/output/metasprites-stress.gb
+c598231420e4fdc1d06f7f386be318723096a22000feb0971584371d2b58fd8f  gbkt-examples/banks/build/gbkt/output/banks.gb
+48d3a71c7bcc2842dc6a086b8f2eb8271e671a37eb96d8232352e459d089b6e8  gbkt-examples/racer/build/gbkt/output/racer.gb
+a7fc51f277a992402f1b9a87324bda7f39920a32845cac692cec917246243317  gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb

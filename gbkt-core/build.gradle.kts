@@ -1,36 +1,33 @@
 plugins {
-    kotlin("multiplatform")
-    `maven-publish`
-    id("org.jetbrains.kotlinx.kover") version "0.9.4"
+    kotlin("jvm")
+    id("gbkt.publishing")
 }
 
 kotlin {
-    // Target JVM for running the compiler/codegen
-    jvm {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-        }
-    }
+    jvmToolchain(21)
+}
 
-    // Target Native for potential CLI tool
-    linuxX64()
-    macosX64()
-    macosArm64()
-    
-    sourceSets {
-        commonMain.dependencies {
-            // No external dependencies - pure Kotlin
-        }
+gbktPublishing {
+    artifactId.set("gbkt-core")
+    description.set("gbkt Core - Kotlin DSL, IR, and game constructs for Game Boy development")
+}
 
-        commonTest.dependencies {
-            implementation(kotlin("test"))
-            implementation(libs.kotest.property)
-            implementation(libs.coroutines.test)
-        }
+dependencies {
+    // Re-export layered modules for backward compatibility.
+    // Consumers that depend on gbkt-core transitively see all v2 types.
+    api(project(":gbkt-ir"))
+    api(project(":gbkt-lang"))
+    api(project(":gbkt-engine"))
+    api(project(":gbkt-world"))
 
-        jvmMain.dependencies {
-            // JSON parsing for Tiled map files
-            implementation(libs.json)
-        }
-    }
+    // JSON parsing for Tiled map files
+    implementation(libs.json)
+
+    // Test dependencies
+    testImplementation(kotlin("test"))
+    testImplementation(libs.kotest.property)
+    testImplementation(libs.coroutines.test)
+
+    // Backend for test code generation
+    testImplementation(project(":gbkt-backend-gbdk"))
 }

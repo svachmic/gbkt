@@ -1,0 +1,37 @@
+Pre-shoot state audit for Plan 15 re-execution (v3 — post-Plan-17)
+Captured: 2026-05-20 (post Plan 17 landing, before running BanksUatTest)
+
+=== Evidence PNG State BEFORE re-shoot ===
+
+File: anchor1-play-scene.png
+Size: 413 bytes
+MD5:  1388784b94404a79b2ec2a9ae39e0f90
+Note: BLANK — same 413-byte placeholder from Plan 08 (pre-11.2)
+
+File: anchor2-tilemap.png
+Size: 413 bytes
+MD5:  1388784b94404a79b2ec2a9ae39e0f90
+Note: BLANK — same 413-byte placeholder from Plan 08 (pre-11.2)
+
+Both files are identical blanks. The MD5 1388784b is the Coffee-GB
+emulator's solid-white output before set_bkg_data loads any tile data.
+
+This was also the pre-shoot state for the Plan-15-first-attempt (CONTINGENCY a)
+and Plan-08 (first re-shoot attempt). The blanks were unchanged through both
+prior attempts because the perceptual check failed before new pixels were committed.
+
+=== ROM Build State ===
+
+ROM: gbkt-examples/banks/build/gbkt/output/banks.gb
+Size: 65536 bytes (64 KB MBC5 padded)
+Built: 2026-05-20 clean build (`:clean :buildRom`)
+
+Generated C artifacts (post-Plan-17):
+- _zone_play_zone_tilemap.c: PRESENT (1869 bytes)
+  → 20x18 = 360 byte checker initializer, tiled from png2asset 2x2 map
+- bank1.c: _bkg_tiles_load_banked uses _zone_play_zone_tilemap (not _zone_play_zone_tiles stub)
+- zone_bank2.c: NO _zone_play_zone_tiles[1]={0} stub (Phase-17 Phase-C guard active)
+
+Plan-17 commits (unblocker):
+- 565af0ea: feat(11.1-17): wire _zone_play_zone_tilemap[] into _bkg_tiles_load_banked
+- c2f2ba3d: test(11.1-17): add INV-8 sentinel locking _zone_play_zone_tilemap shape

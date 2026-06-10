@@ -5,57 +5,258 @@ on:
     tags:
       - 'v*'
 
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+
 jobs:
-  release:
+  # ============================================================================
+  # Build and Test
+  # ============================================================================
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "IS_SNAPSHOT=false" >> $GITHUB_OUTPUT
+
+      - name: Build all modules
+        run: ./gradlew build -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
+
+      - name: Run all tests
+        run: |
+          ./gradlew :gbkt-core:test -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
+          ./gradlew :gbkt-backend-api:test -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
+          ./gradlew :gbkt-backend-gbdk:test -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
+          ./gradlew :gbkt-gradle-plugin:test -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: build-artifacts
+          path: |
+            gbkt-core/build/libs/*.jar
+            gbkt-backend-api/build/libs/*.jar
+            gbkt-backend-gbdk/build/libs/*.jar
+            gbkt-gradle-plugin/build/libs/*.jar
+            gbkt-cli/build/libs/*.jar
+            gbkt-bom/build/publications/
+          retention-days: 7
+
+  # ============================================================================
+  # Publish to Maven Central (OSSRH)
+  # ============================================================================
+  publish-maven-central:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Publish library modules to Maven Central
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          ./gradlew :gbkt-core:publishAllPublicationsToOSSRHRepository \
+                    :gbkt-backend-api:publishAllPublicationsToOSSRHRepository \
+                    :gbkt-backend-gbdk:publishAllPublicationsToOSSRHRepository \
+                    :gbkt-bom:publishAllPublicationsToOSSRHRepository \
+                    :gbkt-cli:publishAllPublicationsToOSSRHRepository \
+                    -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease \
+                    --no-daemon
+
+  # ============================================================================
+  # Publish Gradle Plugin to Plugin Portal
+  # ============================================================================
+  publish-gradle-plugin:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      # First publish gbkt-core and gbkt-backend-api to mavenLocal
+      # because gradle-plugin depends on them
+      - name: Publish dependencies to mavenLocal
+        run: |
+          ./gradlew :gbkt-core:publishToMavenLocal \
+                    :gbkt-backend-api:publishToMavenLocal \
+                    -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease \
+                    --no-daemon
+
+      - name: Publish Gradle Plugin to Portal
+        env:
+          GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
+          GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
+        run: |
+          cd gbkt-gradle-plugin
+          ../gradlew publishPlugins -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
+        # Note: Requires manual approval on first submission
+
+  # ============================================================================
+  # Create GitHub Release
+  # ============================================================================
+  create-release:
+    needs: [publish-maven-central, publish-gradle-plugin]
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
 
       - name: Extract version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build
-        run: ./gradlew build --no-daemon
+      - name: Build release artifacts
+        run: ./gradlew build -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease --no-daemon
 
-      - name: Run all tests
-        run: ./gradlew jvmTest linuxX64Test --no-daemon
-
-      - name: Publish to Maven Local
-        run: ./gradlew publishToMavenLocal --no-daemon
+      - name: Generate SBOM
+        run: |
+          ./gradlew :gbkt-core:cyclonedxBom -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease || echo "SBOM generation skipped (plugin not configured)"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
           generate_release_notes: true
+          body: |
+            ## Installation
+
+            ### Gradle Plugin (recommended)
+            ```kotlin
+            plugins {
+                id("io.github.gbkt") version "${{ steps.version.outputs.VERSION }}"
+            }
+            ```
+
+            ### Library Only
+            ```kotlin
+            dependencies {
+                implementation(platform("io.github.gbkt:gbkt-bom:${{ steps.version.outputs.VERSION }}"))
+                implementation("io.github.gbkt:gbkt-core")
+                implementation("io.github.gbkt:gbkt-backend-gbdk")
+            }
+            ```
+
+            ### CLI
+            Download the CLI distribution below and add to your PATH.
+
           files: |
             gbkt-core/build/libs/*.jar
+            gbkt-backend-api/build/libs/*.jar
+            gbkt-backend-gbdk/build/libs/*.jar
             gbkt-gradle-plugin/build/libs/*.jar
+            gbkt-cli/build/distributions/*.zip
+            gbkt-cli/build/distributions/*.tar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Future: Publish to Maven Central (requires signing setup)
-  # publish:
-  #   needs: release
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Publish to Maven Central
-  #       run: ./gradlew publish
-  #       env:
-  #         MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-  #         MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-  #         SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
-  #         SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+  # ============================================================================
+  # Publish to GitHub Packages (backup/alternative)
+  # ============================================================================
+  publish-github-packages:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Publish to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./gradlew :gbkt-core:publishAllPublicationsToGitHubPackagesRepository \
+                    :gbkt-backend-api:publishAllPublicationsToGitHubPackagesRepository \
+                    :gbkt-backend-gbdk:publishAllPublicationsToGitHubPackagesRepository \
+                    :gbkt-bom:publishAllPublicationsToGitHubPackagesRepository \
+                    :gbkt-cli:publishAllPublicationsToGitHubPackagesRepository \
+                    -PgbktVersion=${{ steps.version.outputs.VERSION }} -Prelease \
+                    --no-daemon

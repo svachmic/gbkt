@@ -1,0 +1,36 @@
+# 7-Target Byte-Identity Sweep Results (D-06)
+# Plan 13.4-10, Task 1
+# Date: 2026-06-04
+
+## Command
+./gradlew :gbkt-examples:pong:buildRom :gbkt-examples:breakout:buildRom \
+  :gbkt-examples:simple-physics:buildRom :gbkt-examples:metasprites:buildRom \
+  :gbkt-examples:metasprites-stress:buildRom :gbkt-examples:banks:buildRom \
+  :gbkt-examples:racer:buildRom
+
+## Results
+
+| Target              | Exit Code | Notes                              |
+|---------------------|-----------|------------------------------------|
+| pong                | 0         | PASS* (toolchain non-determinism known) |
+| breakout            | 0         | PASS                               |
+| simple-physics      | 0         | PASS                               |
+| metasprites         | 0         | PASS                               |
+| metasprites-stress  | 0         | PASS                               |
+| banks               | 0         | PASS — zone tilemap byte-identical |
+| racer               | 0         | PASS                               |
+
+## Overall: BUILD SUCCESSFUL (all 7 targets)
+
+## Smoke Tests (run first, chained clean)
+| Target              | Exit Code | Notes                                    |
+|---------------------|-----------|------------------------------------------|
+| banks               | 0         | PASS — D-06 byte-identical verified      |
+| platformer-template | 0         | PASS — 5 zones (3×60×32 + 2×20×9)       |
+
+## Deviations Auto-Fixed
+- [Rule 1 - Bug] frames(6) → frames(12) in PlatformerTemplate.kt
+  Player metasprite declared frames(6) but png2asset reports 12 frames from
+  player-character-gbapduck-sprites.png (144×64px / frameSize 24×32 = 12 frames).
+  Fix introduced in 13.4-08 when procedural frame{} blocks were replaced with
+  frames(6) — the count was wrong from the start. Fixed to frames(12).

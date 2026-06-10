@@ -1,0 +1,70 @@
+# Round 6 Hypothesis Experiments Matrix
+#
+# All experiments run on worktree-agent-abb4e3c6f1dfcb753 against ROM HEAD c5e3f1bc
+# (H-1 SHOW_BKG applied). Each experiment toggled the indicated change, ran a clean
+# rebuild via ./gradlew :gbkt-examples:racer:clean :gbkt-examples:racer:buildRom,
+# then ran Round6WramCorruptionProbe; the change was reverted before the next
+# experiment. Throwaway-worktree isolation was replaced with in-place edit + revert
+# (functionally equivalent, leaves no branches behind).
+#
+# Verdict legend:
+#   CONFIRMED — probe passed OR hang signature changed (different frame count / no hang)
+#   REFUTED   — probe failed with the IDENTICAL hang signature (frame 124, same payload)
+#   N/A       — experiment not applicable to this game configuration
+#
+# Format: pipe-separated; HYPOTHESIS | CHANGE_SUMMARY | WRAM_FINGERPRINT | PNG_UNIQUE_PIXELS | VERDICT | EVIDENCE_FILES
+#
+# Note on PNG_UNIQUE_PIXELS: all auto-captured failure PNGs are the same blank screen
+# (the watchdog screenshots at the same hang point with LCD in the same state). Pixel
+# signature is constant ≈ 2 unique pixels (BG + minimal HUD); not a discriminator.
+
+HYPOTHESIS | CHANGE_SUMMARY                                            | WRAM_FINGERPRINT          | PNG_UNIQUE_PIXELS | VERDICT  | EVIDENCE_FILES
+BASELINE   | H-1 SHOW_BKG only                                          | hang@124 (canaries N/R)   | 2                 | n/a      | 00-baseline-wram-snapshot.txt, 01-baseline-race-entry-postH1.png
+H-A        | -Wf--no-overlay (SDCC overlay disabled)                    | hang@124 (canaries N/R)   | 2                 | REFUTED  | 02-h-a-no-overlay-wram-snapshot.txt, 02-h-a-no-overlay-race-entry.png
+H-B        | SWITCH_ROM(1) appended after set_bkg_tiles in race_enter   | hang@124 (canaries N/R)   | 2                 | REFUTED  | 03-h-b-bank1-restore-wram-snapshot.txt, 03-h-b-bank1-restore-race-entry.png
+H-C        | sound_driver_update() per-frame call stubbed (removed)     | hang@124 (canaries N/R)   | 2                 | REFUTED  | 04-h-c-sound-stub-wram-snapshot.txt, 04-h-c-sound-stub-race-entry.png
+H-D        | BGP_REG = 0xE4 inserted before SHOW_BKG in main_init       | hang@124 (canaries N/R)   | 2                 | REFUTED  | 05-h-d-bgp-init-wram-snapshot.txt, 05-h-d-bgp-init-race-entry.png
+H-E (NEW)  | Initialise uninitialised loop counters in _win_print_at /  |                           |                   |          |
+           | _win_clear_region (codegen bug found via code inspection)  | hang@124 (canaries N/R)   | 2                 | REFUTED  | (no separate evidence file — fix reverted, see DIAGNOSIS.md H-E notes)
+
+# Footnote N/R = canaries not read; probe could not call read_variable because
+# the EmulatorFrameHangException was thrown by stepN before the read-variable
+# calls executed. The hang occurs at frame 124 = title_settle(120) + START(1)
+# + release(1) + stepN(2). race_frame_trampoline is invoked at frame 122, but
+# the hang itself fires at the FOURTH frame after START — which is two race
+# scene frames in. This indicates the hang is in wait_vbl_done waiting for a
+# VBlank that never arrives.
+
+## ALL HYPOTHESES REFUTED — escalation
+
+# Plan 07.4-27 entered Task 2's ZERO-CONFIRMED escalation branch.
+#
+# Five hypothesis experiments (H-A through H-E) all produced the IDENTICAL hang
+# signature: EmulatorFrameHangException at frame 124 with the watchdog payload
+# "ROM did not complete a frame within 1000000 t-cycles — likely an infinite
+# CPU loop with no VBlank. Check LCDC (is BG/LCD enabled?), BGP, and the most
+# recent scene-enter."
+#
+# Code inspection revealed multiple latent codegen bugs (uninitialised for-loop
+# counters in _win_print_at / _win_clear_region / _win_fill_screen) but
+# initialising them did NOT prevent the hang. Those bugs remain valid follow-up
+# items but are NOT the upstream cause of the round-6 hang.
+#
+# The hang signature, deterministic frame count, and watchdog payload's pointer
+# to LCDC all point to the LCD being disabled during race_enter (likely by a
+# GBDK set_bkg_data / set_bkg_tiles helper that temporarily disables the LCD
+# during VRAM writes) and never being re-enabled. None of H-A..H-E address
+# that pathway directly.
+#
+# Per the plan's branching outcome rule (ZERO CONFIRMED), Plan 07.4-27 STOPS
+# without naming a confirmed hypothesis. The H-1 SHOW_BKG fix (commit c5e3f1bc)
+# remains in place because it is correct in isolation (Plan 25 DIAGNOSIS.md)
+# and is a load-bearing prerequisite for any further round-6 work. The
+# Round6WramCorruptionProbe (committed) is retained for use by a future plan
+# that diagnoses the LCD-disable pathway.
+#
+# Follow-up recommendation for Plan 07.4-28 (or a new round-7 plan): inspect
+# GBDK's set_bkg_data / set_bkg_tiles implementation in /Users/michalsvacha/
+# gbdk/include/ and lib/, identify the LCD-disable hook, and add a watchdog
+# screenshot probe at race_enter+1 frame that captures the LCDC state register
+# directly via memory read (the StepAgent has readMemory; LCDC is at 0xFF40).

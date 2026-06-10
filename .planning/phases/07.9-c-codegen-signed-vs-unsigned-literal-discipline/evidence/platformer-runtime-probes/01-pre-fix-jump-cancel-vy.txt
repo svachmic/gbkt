@@ -1,0 +1,13 @@
+# Phase 07.9 RED probe: jump-cancel must halve _plat_vy when A released during ascent
+# Pre-fix expectation: vyAfterRelease == vyMid (cancel never fires)
+# Post-fix expectation: vyAfterRelease == vyMid / 2 (halved)
+
+# Boot: 120 title settle + START + 1 release + 5 settle = frame 127
+# Set _plat_grounded=1 (no tile collision wired in basic platformer)
+frame=mid-ascent (A still held) _plat_vy=-4 (raw=252)
+# Expected: vyMid=-4 (A-press→vy=-8, +hold1→-6, +hold2→-4)
+frame=post-release _plat_vy=-1 (raw=255)
+expected_halved=-1 cancel_fired=true
+
+# Expected at HEAD: cancel_fired=false (vy unchanged)
+# Expected after Plan 02 GREEN: cancel_fired=true (vy halved)

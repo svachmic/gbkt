@@ -9,10 +9,26 @@ config:
   warningsAsErrors: false
   excludes: ''
 
+performance:
+  SpreadOperator:
+    active: true
+    excludes:
+      - '**/intellij/inspections/**'  # IntelliJ API requires vararg spread
+      - '**/test/**'  # Test code prioritizes readability over perf — spread is idiomatic for varargs forwarding
+
 complexity:
   LongMethod:
     active: true
     threshold: 80  # DSL builders get long
+    excludes:
+      - '**/codegen/**'  # Codegen methods generate C code strings
+      - '**/test/**'  # Test files can have long test methods
+      - '**/ir/**'  # IR transformation methods are inherently long
+      - '**/validation/**'  # Validation functions check many cases
+      - '**/collision/**'  # Collision math requires many steps
+      - '**/CodeGenerator.kt'  # Main generator orchestrates many codegen calls
+      - '**/dsl/**'  # DSL GameBuilder.build() accumulates all IR fields per feature
+      - '**/mcp/**'  # MCP tool registration block (registerEmulatorTools) and per-tool dispatch (batchAssert) are inherently large
   LongParameterList:
     active: true
     functionThreshold: 6
@@ -20,6 +36,19 @@ complexity:
     ignoreDefaultParameters: true
     ignoreDataClasses: true
     ignoreAnnotatedParameter: []
+    excludes:
+      - '**/entity/**'  # Entity data classes have many components
+      - '**/rpg/**'  # RPG data classes have many fields
+      - '**/ui/**'  # UI data classes have many properties
+      - '**/test/**'  # Test simulation classes have many fields
+      - '**/world/**'  # Floor data classes have many fields
+      - '**/exploration/**'  # Exploration config has many fields
+      - '**/builder/**'  # Builder classes have many configuration options
+      - '**/collision/**'  # Collision functions need position/velocity params
+      - '**/codegen/**'  # Codegen helpers naturally take many inputs (positions, hitboxes, expressions) — parallels '**/collision/**'
+      - '**/validation/**'  # Validation passes many context params
+      - '**/combat/**'  # Battle engine configs have many options
+      - '**/movement/**'  # Movement controller configs have many options
   ComplexCondition:
     active: false  # IR generation is inherently nested
   TooManyFunctions:
@@ -31,11 +60,23 @@ complexity:
     thresholdInEnums: 5
     excludes:
       - '**/codegen/**'  # Codegen files legitimately have many functions
+      - '**/ir/**'  # IR wrapper classes have many operator overloads
+      - '**/test/**'  # Test helper classes have many assertion methods
+      - '**/builder/**'  # Builder classes have many configuration methods
+      - '**/dsl/**'  # DSL top-level builder (GameBuilder) accumulates one entry point per DSL feature
+      - '**/scene/**'  # Scene transition scope has many transition types
+      - '**/graphics/**'  # Camera has many methods for different operations
+      - '**/world/**'  # Tile/zone builders have many configuration methods
+      - '**/CodeGenerator.kt'  # Main generator orchestrates codegen and multi-file split
+      - '**/analysis/passes/**'  # Validation passes have many small per-diagnostic check helpers (parallel to codegen)
+      - '**/mcp/**'  # MCP server has one handler method per exposed tool
+      - '**/emulator/agent/**'  # Agent classes (StepAgent, UatRunner) wrap many emulator/observation/assertion operations
   LargeClass:
     active: true
     threshold: 600
     excludes:
       - '**/codegen/**'  # Codegen files may exceed for complex systems
+      - '**/test/**'  # Test classes can be large with many test cases
   CyclomaticComplexMethod:
     active: true
     threshold: 15
@@ -43,9 +84,23 @@ complexity:
     ignoreSimpleWhenEntries: true
     ignoreNestingFunctions: false
     nestingFunctions: []
+    excludes:
+      - '**/codegen/**'  # Codegen has complex when expressions
+      - '**/ir/**'  # IR substitution/deepCopy inherently complex
+      - '**/dsl/**'  # DSL stack-walking and recording context are inherently complex
+      - '**/optimization/**'  # Optimization logic is complex
+      - '**/validation/**'  # Validation has complex branching
+      - '**/analysis/passes/**'  # Cross-subsystem polymorphic walks (parallel to '**/validation/**')
+      - '**/collision/**'  # Collision math is complex
+      - '**/intellij/completion/**'  # Completion type resolution checks many types
+      - '**/mcp/**'  # MCP tool dispatch (registerEmulatorTools, batchAssert) branches over many tool types
   NestedBlockDepth:
     active: true
     threshold: 5  # DSL builders can be nested
+    excludes:
+      - '**/codegen/**'  # C code generation has deep nesting
+      - '**/validation/**'  # Validation logic has deep nesting
+      - '**/collision/**'  # Collision math has deep nesting
 
 style:
   MagicNumber:
@@ -61,22 +116,63 @@ style:
     maxLineLength: 120
     excludePackageStatements: true
     excludeImportStatements: true
-    excludeCommentStatements: false
+    excludeCommentStatements: true  # KDoc tables and narrative comments aren't code; matches the package/import exclusions above
     excludeRawStrings: true
+    excludes:
+      - '**/test/**'  # Test files can have long assertion messages
+      - '**/commonTest/**'
+      - '**/codegen/**'  # Codegen files generate C code strings
+  UnusedParameter:
+    active: true
+    excludes:
+      - '**/codegen/**'  # Callback parameters needed for interface compliance
+      - '**/dsl/**'  # DSL callback parameters for future expansion
+      - '**/rpg/**'  # Callback placeholders
+      - '**/flow/**'  # Flow callback parameters
+      - '**/ui/**'  # Menu callback parameters
+      - '**/scene/**'  # Scene callback parameters
   WildcardImport:
     active: true
+    excludes:
+      - '**/test/**'  # Test files use wildcards for brevity
+      - '**/commonTest/**'
+      - '**/codegen/**'  # Codegen AST uses wildcard imports for the C AST type aliases
     excludeImports:
       - 'java.util.*'
       - 'kotlinx.coroutines.*'
       - 'kotlin.test.*'  # Allowed in test files for brevity
+      - 'io.github.gbkt.core.dsl.*'  # Required for operator extension functions in game files
   ReturnCount:
     active: true
     max: 4
     excludedFunctions:
       - 'equals'
+      - 'canAfford'  # Resource cost checking has multiple early returns
+      - 'findWhileLoop'  # Recursive tree traversal in PathfindingCodegenTest
+      - 'findRecursiveCall'  # Recursive tree traversal in PathfindingCodegenTest
     excludeLabeled: true
     excludeReturnFromLambda: true
     excludeGuardClauses: true
+    excludes:
+      - '**/intellij/completion/**'  # Completion providers need early returns for control flow
+      - '**/intellij/navigation/**'  # Navigation handlers need early returns
+      - '**/intellij/codegen/**'  # Codegen service has multiple return paths
+      - '**/intellij/inspections/**'  # Inspection checks need early returns
+      - '**/intellij/toolwindow/**'  # Tool window navigation handlers need early returns
+      - '**/codegen/**'  # Visitor helpers use fail-fast validation pattern (each invalid input returns null); parallels intellij/codegen exclusion
+      - '**/mcp/**'  # MCP tool handlers fail-fast on invalid input arguments (each returns CallToolResult error)
+  LoopWithTooManyJumpStatements:
+    active: true
+    maxJumpCount: 1
+    excludes:
+      - '**/codegen/**'  # Complex loop-based C code generation
+      - '**/AssetPipeline.kt'  # Asset parsing with early exits
+  FunctionOnlyReturningConstant:
+    active: true
+    ignoreOverridableFunction: true
+    ignoreActualFunction: true
+    excludes:
+      - '**/codegen/**'  # Codegen pattern matching returns null for no-match
   ThrowsCount:
     active: true
     max: 4
@@ -94,12 +190,16 @@ naming:
     variablePattern: '[a-z][A-Za-z0-9]*'
     privateVariablePattern: '(_)?[a-z][A-Za-z0-9]*'
     excludeClassPattern: '$^'
+    excludes:
+      - '**/test/**'  # Test fixtures often use SCREAMING_SNAKE_CASE for tile/coord/map constants (TILE_WALL, RACER_MAP_W) that read as test data, not mutable state
   ClassNaming:
     active: true
     classPattern: '[A-Z][a-zA-Z0-9]*'
   PackageNaming:
     active: true
     packagePattern: '[a-z]+(\.[a-z][A-Za-z0-9]*)*'
+    excludes:
+      - '**/examples/**'  # Sample games' packages mirror their directory names; matches the InvalidPackageDeclaration exemption already documented in this file
   TopLevelPropertyNaming:
     active: true
     constantPattern: '[A-Z][_A-Z0-9]*'
@@ -119,6 +219,10 @@ exceptions:
       - 'RuntimeException'
       - 'Throwable'
     allowedExceptionNameRegex: '_|(ignore|expected).*'
+    excludes:
+      - '**/intellij/codegen/**'  # Codegen service catches exceptions at boundary
+      - '**/mcp/**'  # MCP tool handlers catch broadly at protocol boundary — convert exceptions into JSON error responses
+      - '**/emulator/**'  # Agent code catches broadly at IO/parse boundary (savestate IO, metadata parse, debug session)
   TooGenericExceptionThrown:
     active: true
     exceptionNames:

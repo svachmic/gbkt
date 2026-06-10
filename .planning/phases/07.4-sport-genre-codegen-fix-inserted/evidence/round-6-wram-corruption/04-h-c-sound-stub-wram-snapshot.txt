@@ -1,0 +1,30 @@
+# H-C experiment WRAM snapshot — sound_driver_update() call stubbed
+#
+# Change applied: gbkt-backend-gbdk/.../GBDKPipelineV2.kt main_init builder
+# commented out the per-frame sound_driver_update() call at line 3389. The
+# function is still defined but never invoked, so it cannot touch the
+# _sound_duration / _sound_channels / _sound_priority WRAM globals.
+#
+# Rationale (from 26-PLAN26-FOLLOWUP.md H-C): "Sound driver corrupts WRAM
+# 0xC0xx region on first race-scene frame ... sound_driver_update writes
+# WRAM-resident state". Sound globals are in the same WRAM page being
+# corrupted.
+#
+# NOTE: H-C is NOT N/A — racer DOES use sound. play_sound_winSfx() is
+# called when laps >= 3, and sound_driver_update() is called every frame
+# (touches _sound_duration[ch] = 4-byte array in WRAM 0xC0xx). The
+# experiment stubs the per-frame call, not the play_sound_* helpers.
+#
+# Probe result: Round6WramCorruptionProbe FAILED. Identical hang
+# signature at frame 124. EmulatorFrameHangException identical to
+# baseline.
+#
+# 0xC0xx canaries: probe could not read them; hang occurred before
+# read_variable calls.
+
+## verdict
+#
+# H-C REFUTED. Removing the per-frame sound_driver_update() call did
+# NOT prevent the hang. The frame count is identical (124), proving the
+# hang occurs at the same code path. Sound driver writes are not the
+# upstream cause of the WRAM corruption.

@@ -1,0 +1,51 @@
+# Phase 12.11 Diagnostic Probe — Runtime Memory Snapshot
+# Probe date: 2026-06-02T22:02:56.039338Z
+# ROM: /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb
+
+## PHASE 1: Boot + title → gameplay
+At gameplay entry (boot path):
+  _current_level @ 0xC0EF = 0
+  _next_level    @ 0xC0F0 = 0
+  current_scene  @ 0xC0E4 = 1
+  LCDC_REG       @ 0xFF40 = 0xC7 (bit7=1)
+
+## PHASE 2: Traverse level-1 until guard fires
+Level-end trigger fired at frame offset 1194
+  _next_level = 1 (was 0)
+
+## PHASE 3: On card scene (after trigger)
+  current_scene  @ 0xC0E4 = 2
+  _current_level @ 0xC0EF = 0
+  _next_level    @ 0xC0F0 = 1
+
+## PHASE 4: State BEFORE START press (settle complete)
+  LCDC_REG       @ 0xFF40 = 0xC7 (bit7=1)
+  __joypad       @ 0xC0C5 = 0x00
+  __joypad_prev  @ 0xC0C6 = 0x00
+  current_scene  @ 0xC0E4 = 2
+  _current_level @ 0xC0EF = 0
+  _next_level    @ 0xC0F0 = 1
+
+## PHASE 5: State AFTER START press (postStartObs.scene = nextLevelScene)
+  LCDC_REG       @ 0xFF40 = 0xC7 (bit7=1, display ON)
+  __joypad       @ 0xC0C5 = 0x00 (J_START bit: CLEAR)
+  __joypad_prev  @ 0xC0C6 = 0x00 (J_START bit: CLEAR (pressed check fires))
+  current_scene  @ 0xC0E4 = 2
+  _current_level @ 0xC0EF = 0
+  _next_level    @ 0xC0F0 = 1
+  post_release_scene = nextLevelScene
+
+## PHASE 6: Final state after 130-frame gameplay settle
+  _current_level @ 0xC0EF = 0 (expected: 1 for Failure A PASS)
+  _next_level    @ 0xC0F0 = 1
+  current_scene = nextLevelScene
+  LCDC_REG       @ 0xFF40 = 0xC7
+
+## DIAGNOSTIC VERDICT
+  button_pressed(J_START) fires if: joypad & J_START != 0 AND prev & J_START == 0
+  From PHASE 5:
+    __joypad J_START bit: CLEAR
+    __joypad_prev J_START bit: CLEAR
+    button_pressed(J_START) would: NOT FIRE
+  LCDC bit7 on START-press frame: 1 (display ON — VRAM writes at risk)
+  Failure A diagnosis: _current_level after switch = 0 (FAIL — stuck at 0)

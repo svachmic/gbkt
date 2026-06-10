@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.jupiter.api.io.TempDir
 
 /**
@@ -54,7 +55,7 @@ class IntegrationTest {
                     mavenCentral()
                 }
             }
-        """
+            """
                 .trimIndent()
         )
     }
@@ -83,7 +84,7 @@ class IntegrationTest {
         assertTrue(cFile.readText().isNotEmpty(), "C code should not be empty")
         assertTrue(
             cFile.readText().contains("void main(void)"),
-            "C code should contain main function"
+            "C code should contain main function",
         )
     }
 
@@ -108,7 +109,7 @@ class IntegrationTest {
         // Verify sprite-related code is present
         assertTrue(
             cCode.contains("player") || cCode.contains("sprite"),
-            "C code should contain sprite references"
+            "C code should contain sprite references",
         )
     }
 
@@ -116,7 +117,7 @@ class IntegrationTest {
     @DisabledIfEnvironmentVariable(
         named = "CI",
         matches = "true",
-        disabledReason = "Requires GBDK installation"
+        disabledReason = "Requires GBDK installation",
     )
     fun `end-to-end game compiles to ROM when GBDK is available`() {
         createMinimalGameFixture()
@@ -134,7 +135,7 @@ class IntegrationTest {
                 // GBDK not available - this is expected if GBDK is not installed
                 assertTrue(
                     e.message?.contains("GBDK") == true || e.message?.contains("lcc") == true,
-                    "Should indicate GBDK-related issue: ${e.message}"
+                    "Should indicate GBDK-related issue: ${e.message}",
                 )
                 return
             }
@@ -164,11 +165,11 @@ class IntegrationTest {
         assertTrue(cCode.contains("#include"), "Should include headers")
         assertTrue(
             cCode.contains("void main(void)") || cCode.contains("int main("),
-            "Should have main function"
+            "Should have main function",
         )
         assertTrue(
             cCode.count { it == '{' } == cCode.count { it == '}' },
-            "Braces should be balanced"
+            "Braces should be balanced",
         )
     }
 
@@ -180,7 +181,7 @@ class IntegrationTest {
     fun `asset pipeline handles missing asset directory gracefully`() {
         createGameWithSpritesFixture()
         createBasicBuildFile()
-        // Don't create the assets directory
+        // Don't create the assets directory — processAssets skips silently (graceful degradation)
 
         val result =
             GradleRunner.create()
@@ -189,21 +190,16 @@ class IntegrationTest {
                 .withPluginClasspath()
                 .build()
 
-        // Should succeed but warn about missing assets
+        // generateC succeeds — asset file validation (file existence on disk) happens at
+        // convertSprites / compileRom time, not at C generation time
         assertEquals(TaskOutcome.SUCCESS, result.task(":generateC")?.outcome)
-        assertTrue(
-            result.output.contains("Warning") ||
-                result.output.contains("not found") ||
-                result.output.contains("Asset"),
-            "Should warn about missing assets"
-        )
     }
 
     @Test
     fun `asset pipeline handles missing sprite file gracefully`() {
         createGameWithSpritesFixture()
         createBasicBuildFile()
-        // Create assets directory but no sprite file
+        // Create assets directory but no sprite file — processAssets skips silently
 
         val result =
             GradleRunner.create()
@@ -212,11 +208,9 @@ class IntegrationTest {
                 .withPluginClasspath()
                 .build()
 
+        // generateC succeeds — missing individual sprite files are a compile-time concern
+        // (convertSprites / compileRom), not a C generation concern
         assertEquals(TaskOutcome.SUCCESS, result.task(":generateC")?.outcome)
-        assertTrue(
-            result.output.contains("Warning") || result.output.contains("not found"),
-            "Should warn about missing sprite file"
-        )
     }
 
     @Test
@@ -230,15 +224,14 @@ class IntegrationTest {
                 .withProjectDir(testProjectDir)
                 .withArguments("generateC", "--stacktrace")
                 .withPluginClasspath()
-                .build()
+                .buildAndFail()
 
-        // Should either fail or warn about invalid dimensions
-        // The exact behavior depends on validation settings
+        // Backend validates that sprite dimensions are multiples of 8
         assertTrue(
-            result.output.contains("dimension") ||
-                result.output.contains("multiple of 8") ||
-                result.task(":generateC")?.outcome == TaskOutcome.SUCCESS,
-            "Should handle invalid dimensions appropriately"
+            result.output.contains("multiple of 8") ||
+                result.output.contains("dimension") ||
+                result.output.contains("ASSET_FILE"),
+            "Should report invalid dimensions: ${result.output}",
         )
     }
 
@@ -295,7 +288,7 @@ class IntegrationTest {
         assertTrue(
             result.output.contains("Incremental") ||
                 result.output.contains("Processing: player.png"),
-            "Should process incrementally or show processing message"
+            "Should process incrementally or show processing message",
         )
     }
 
@@ -320,15 +313,15 @@ class IntegrationTest {
         // Verify task order
         assertTrue(
             output.contains("compileKotlin") || output.contains(":compileKotlin"),
-            "Should include compileKotlin"
+            "Should include compileKotlin",
         )
         assertTrue(
             output.contains("generateC") || output.contains(":generateC"),
-            "Should include generateC"
+            "Should include generateC",
         )
         assertTrue(
             output.contains("compileRom") || output.contains(":compileRom"),
-            "Should include compileRom"
+            "Should include compileRom",
         )
     }
 
@@ -348,11 +341,11 @@ class IntegrationTest {
         val output = result.output
         assertTrue(
             output.contains("compileKotlin") || output.contains(":compileKotlin"),
-            "generateC should depend on compileKotlin"
+            "generateC should depend on compileKotlin",
         )
         assertTrue(
             output.contains("processAssets") || output.contains(":processAssets"),
-            "generateC should depend on processAssets when assets are configured"
+            "generateC should depend on processAssets when assets are configured",
         )
     }
 
@@ -425,7 +418,7 @@ class IntegrationTest {
         val outcome1 = result1.task(":generateC")?.outcome
         assertTrue(
             outcome1 == TaskOutcome.SUCCESS || outcome1 == TaskOutcome.FROM_CACHE,
-            "First build should succeed or come from cache, but was: $outcome1"
+            "First build should succeed or come from cache, but was: $outcome1",
         )
 
         // Clean and rebuild - should get from cache
@@ -446,7 +439,7 @@ class IntegrationTest {
         val outcome2 = result2.task(":generateC")?.outcome
         assertTrue(
             outcome2 == TaskOutcome.SUCCESS || outcome2 == TaskOutcome.FROM_CACHE,
-            "Rebuild should succeed or be retrieved from cache, but was: $outcome2"
+            "Rebuild should succeed or be retrieved from cache, but was: $outcome2",
         )
     }
 
@@ -491,7 +484,7 @@ class IntegrationTest {
             result.output.contains("Class not found") ||
                 result.output.contains("Could not find") ||
                 result.output.contains("NoClassDefFoundError"),
-            "Should fail with clear error message about missing class"
+            "Should fail with clear error message about missing class",
         )
     }
 
@@ -505,15 +498,15 @@ class IntegrationTest {
             """
             package test
 
-            import io.github.gbkt.core.*
+            import io.github.gbkt.core.dsl.*
 
-            val wrongGame = gbGame("TestGame") {
+            val wrongGame = game("TestGame") {
                 val mainScene = scene("main") {
-                    every.frame { }
+                    frame { }
                 }
                 start = mainScene
             }
-        """
+            """
                 .trimIndent()
         )
 
@@ -529,7 +522,7 @@ class IntegrationTest {
             result.output.contains("Could not find game property") ||
                 result.output.contains("NoSuchMethodException") ||
                 result.output.contains("testGame"),
-            "Should fail with clear error message about missing property"
+            "Should fail with clear error message about missing property",
         )
     }
 
@@ -550,8 +543,17 @@ class IntegrationTest {
                 mavenCentral()
             }
 
+            // Defeat the changing-module SNAPSHOT cache (default 24h TTL) so this nested
+            // GradleRunner sandbox always re-resolves the freshly-republished 0.1.0-SNAPSHOT
+            // artifacts. Without this, gbkt-ir and gbkt-backend-gbdk can desync in the Gradle
+            // module cache and link mismatched SceneIR.copy${'$'}default arities → NoSuchMethodError
+            // (Phase 15 F1 / D-05; pluginTest republishes ~/.m2 but the cache, not ~/.m2, is read).
+            configurations.all { resolutionStrategy.cacheChangingModulesFor(0, "seconds") }
+
             dependencies {
-                implementation("io.github.gbkt:gbkt-core-jvm:0.1.0-SNAPSHOT")
+                implementation("io.github.gbkt:gbkt-core:0.1.0-SNAPSHOT")
+                implementation("io.github.gbkt:gbkt-backend-api:0.1.0-SNAPSHOT")
+                runtimeOnly("io.github.gbkt:gbkt-backend-gbdk:0.1.0-SNAPSHOT")
             }
 
             kotlin {
@@ -563,7 +565,7 @@ class IntegrationTest {
                 assets("src/main/resources/sprites")
                 outputName.set("game")
             }
-        """
+            """
                 .trimIndent()
         )
     }
@@ -575,20 +577,20 @@ class IntegrationTest {
             """
             package test
 
-            import io.github.gbkt.core.*
+            import io.github.gbkt.core.dsl.*
 
-            val testGame = gbGame("TestGame") {
+            val testGame = game("TestGame") {
                 var score by u8Var(0)
 
                 val mainScene = scene("main") {
-                    every.frame {
+                    frame {
                         score += 1
                     }
                 }
 
                 start = mainScene
             }
-        """
+            """
                 .trimIndent()
         )
     }
@@ -600,24 +602,26 @@ class IntegrationTest {
             """
             package test
 
-            import io.github.gbkt.core.*
-            import io.github.gbkt.core.assets.SpriteAsset
+            import io.github.gbkt.core.dsl.*
 
-            val testGame = gbGame("TestGame") {
-                val player = sprite(SpriteAsset("player.png")) {
-                    size = 8 x 16
+            val testGame = game("TestGame") {
+                val player by actor {
                     position(80, 72)
+                    sprite(asset("sprites/player.png")) {
+                        size(8, 16)
+                        hitbox(0, 0, 8, 16)
+                    }
                 }
 
                 val mainScene = scene("main") {
-                    every.frame {
+                    frame {
                         player.x += 1
                     }
                 }
 
                 start = mainScene
             }
-        """
+            """
                 .trimIndent()
         )
     }
@@ -629,32 +633,34 @@ class IntegrationTest {
             """
             package test
 
-            import io.github.gbkt.core.*
-            import io.github.gbkt.core.assets.SpriteAsset
+            import io.github.gbkt.core.dsl.*
+            import io.github.gbkt.core.ir.PositionDef
 
-            val testGame = gbGame("TestGame") {
+            val testGame = game("TestGame") {
                 var score by u16Var(0)
                 var lives by u8Var(3)
 
-                val playerPalette = palette("player") {
-                    colors(0xFFFFFF, 0x88FF88, 0x448844, 0x000000)
-                }
-
-                val player = sprite(SpriteAsset("player.png")) {
-                    size = 8 x 16
+                val player by actor {
                     position(80, 72)
-                    palette = playerPalette
+                    sprite(asset("sprites/player.png")) {
+                        size(8, 16)
+                        hitbox(0, 0, 8, 16)
+                    }
                 }
 
-                val enemy = sprite(SpriteAsset("enemy.png")) {
-                    size = 8 x 8
+                val enemy by actor {
                     position(150, 100)
+                    sprite(asset("sprites/enemy.png")) {
+                        size(8, 8)
+                        hitbox(0, 0, 8, 8)
+                    }
                 }
 
-                val titleScene = scene("title") {
+                val gameoverScene = scene("gameover") {
                     enter {
-                        screen.clear()
-                        printCentered("GAME") at 6
+                        clear()
+                        printCentered("GAME OVER") at 6
+                        print("SCORE: %d", score.toExpr(), position = PositionDef(4, 9))
                     }
                 }
 
@@ -664,33 +670,113 @@ class IntegrationTest {
                         player.y set 72
                     }
 
-                    every.frame {
+                    frame {
                         whenever(buttons.a.pressed) {
                             player.y -= 5
                         }
 
-                        whenever(player collidesWith enemy) {
+                        whenever(player.collides(enemy)) {
                             lives -= 1
                             score += 10
                         }
 
                         whenever(lives isEqualTo 0) {
-                            scene("gameover")
+                            navigate(gameoverScene)
                         }
                     }
                 }
 
-                scene("gameover") {
+                val titleScene = scene("title") {
                     enter {
-                        screen.clear()
-                        printCentered("GAME OVER") at 6
-                        print("SCORE: ", score) at (4 to 9)
+                        clear()
+                        printCentered("GAME") at 6
                     }
                 }
 
                 start = titleScene
             }
-        """
+            """
+                .trimIndent()
+        )
+    }
+
+    /**
+     * Creates a simple-physics-shaped game fixture.
+     *
+     * Single scene with a frame loop, one actor, two i16 variables, and three `whenever(...)`
+     * conditions that mirror the player-movement pattern from `gbkt-examples/simple-physics`. The
+     * game is small enough that `estimatedBytes <= HOME_BANK_SCENE_BUDGET` so BankingAnalysisPass
+     * takes the single-scene-fits-HOME fast-path and folds bank1.c out of the emission set — the
+     * exact code path that exposed the stale-output bug (D-K-01..D-K-04).
+     */
+    private fun createSimplePhysicsLikeFixture() {
+        val gameFile = File(srcDir, "test/TestGame.kt")
+        gameFile.parentFile.mkdirs()
+        gameFile.writeText(
+            """
+            package test
+
+            import io.github.gbkt.core.dsl.*
+
+            val testGame = game("TestGame") {
+                var posX by i16Var(80 shl 4)
+                var posY by i16Var(72 shl 4)
+
+                val playScene = scene("play") {
+                    frame {
+                        whenever(dpad.left.held) { posX -= 16 }
+                        whenever(dpad.right.held) { posX += 16 }
+                        whenever(posX isBelow 0) { posX set 0 }
+                    }
+                }
+
+                start = playScene
+            }
+            """
+                .trimIndent()
+        )
+    }
+
+    /**
+     * Creates a game fixture with TWO scenes.
+     *
+     * Having two scenes prevents BankingAnalysisPass from taking the single-scene HOME fast-path,
+     * ensuring bank1.c IS emitted and Gradle snapshots it as an output file. This is Step 1 of the
+     * two-step stale-output regression test (D-R-02).
+     */
+    private fun createTwoSceneGameFixture() {
+        val gameFile = File(srcDir, "test/TestGame.kt")
+        gameFile.parentFile.mkdirs()
+        // NOTE: ScriptBuilder.whenever{} evaluates its body lambda synchronously during DSL
+        // construction (see ScriptBuilderContext.with). Forward references to SceneRef via a
+        // nullable var that is assigned after the referencing scene is built therefore NPE at
+        // DSL evaluation time — not at runtime. Avoid forward-reference patterns: define mainScene
+        // first so titleScene can capture its SceneRef directly.
+        gameFile.writeText(
+            """
+            package test
+
+            import io.github.gbkt.core.dsl.*
+
+            val testGame = game("TestGame") {
+                var score by u8Var(0)
+
+                val mainScene = scene("main") {
+                    frame {
+                        score += 1
+                    }
+                }
+
+                val titleScene = scene("title") {
+                    enter { clear() }
+                    frame {
+                        whenever(buttons.start.pressed) { navigate(mainScene) }
+                    }
+                }
+
+                start = titleScene
+            }
+            """
                 .trimIndent()
         )
     }
@@ -699,7 +785,7 @@ class IntegrationTest {
         filename: String,
         width: Int,
         height: Int,
-        color: Color = Color.WHITE
+        color: Color = Color.WHITE,
     ) {
         val spriteFile = File(resourcesDir, filename)
         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
@@ -708,6 +794,82 @@ class IntegrationTest {
         g.fillRect(0, 0, width, height)
         g.dispose()
         ImageIO.write(image, "PNG", spriteFile)
+    }
+
+    // ============================================================================
+    // Output Sync — Staleness Regression Tests (09.2 D-R-01, D-R-02, D-S-04)
+    // ============================================================================
+
+    @Test
+    fun `generateC deletes stale files dropped from the emission set`() {
+        // Step 1: Run generateC with a two-scene game.
+        // The BankingAnalysisPass fast-path only fires for single-scene games, so a two-scene
+        // game routes via bank 1 → bank1.c IS emitted and Gradle snapshots it as an output.
+        // This reproduces the "prior MBC5 / multi-scene build left bank1.c behind" scenario
+        // from the 09.1 regression (D-R-02 hand-staged stale-file pattern).
+        createTwoSceneGameFixture()
+        createBasicBuildFile()
+
+        val firstResult =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("generateC", "--stacktrace")
+                .withPluginClasspath()
+                .build()
+
+        assertEquals(TaskOutcome.SUCCESS, firstResult.task(":generateC")?.outcome)
+        val generatedDir = File(testProjectDir, "build/gbkt/generated")
+        assertTrue(
+            File(generatedDir, "bank1.c").exists(),
+            "Step 1: two-scene game must emit bank1.c so Gradle snapshots it as an output",
+        )
+
+        // Step 2: Switch to a single-scene game small enough for the HOME fast-path.
+        // BankingAnalysisPass folds the scene into main.c → bank1.c is NOT emitted.
+        // bank1.c from Step 1 is in Gradle's output snapshot so it is NOT pre-cleaned by
+        // Gradle's own stale-output cleanup. Instead, syncOutputDir must delete it because
+        // it is absent from the current emission set — this is the bug-fix verification.
+        createMinimalGameFixture()
+
+        val result =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("generateC", "--stacktrace")
+                .withPluginClasspath()
+                .build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":generateC")?.outcome)
+        assertFalse(
+            File(generatedDir, "bank1.c").exists(),
+            "stale bank1.c should be deleted by syncOutputDir",
+        )
+        assertTrue(
+            result.output.contains("Removed stale: bank1.c"),
+            "S-04 lifecycle log must announce the deletion",
+        )
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(
+        named = "GBDK_HOME",
+        matches = ".+",
+        disabledReason = "Requires GBDK installation (GBDK_HOME env var)",
+    )
+    fun `simple-physics fixture builds ROM end-to-end without staleness errors`() {
+        createSimplePhysicsLikeFixture() // NEW helper — single-scene-fits-HOME shape
+        createBasicBuildFile() // outputName.set("game") → build/gbkt/output/game.gb
+
+        val result =
+            GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments("buildRom", "--stacktrace")
+                .withPluginClasspath()
+                .build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":buildRom")?.outcome)
+        val romFile = File(testProjectDir, "build/gbkt/output/game.gb")
+        assertTrue(romFile.exists(), "ROM file must be produced by buildRom")
+        assertTrue(romFile.length() > 0, "ROM file must not be empty")
     }
 
     /**

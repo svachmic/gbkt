@@ -4,9 +4,28 @@ on:
   push:
     branches: [master]
     paths:
+      - 'gbkt-ir/**'
+      - 'gbkt-lang/**'
+      - 'gbkt-engine/**'
+      - 'gbkt-world/**'
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
+      - 'gbkt-backend-api/**'
+      - 'gbkt-backend-gbdk/**'
+      - 'gbkt-analysis/**'
+      - 'gbkt-emulator/**'
+      - 'gbkt-test/**'
+      - 'gbkt-mcp-server/**'
+      - 'gbkt-all/**'
+      - 'gbkt-bom/**'
+      - 'gbkt-genre-rpg/**'
+      - 'gbkt-genre-platformer/**'
+      - 'gbkt-genre-puzzle/**'
+      - 'gbkt-genre-sport/**'
+      - 'gbkt-examples/**'
+      - 'gbkt-intellij-plugin/**'
+      - 'buildSrc/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'gradle.properties'
@@ -15,9 +34,28 @@ on:
   pull_request:
     branches: [master]
     paths:
+      - 'gbkt-ir/**'
+      - 'gbkt-lang/**'
+      - 'gbkt-engine/**'
+      - 'gbkt-world/**'
       - 'gbkt-core/**'
       - 'gbkt-cli/**'
       - 'gbkt-gradle-plugin/**'
+      - 'gbkt-backend-api/**'
+      - 'gbkt-backend-gbdk/**'
+      - 'gbkt-analysis/**'
+      - 'gbkt-emulator/**'
+      - 'gbkt-test/**'
+      - 'gbkt-mcp-server/**'
+      - 'gbkt-all/**'
+      - 'gbkt-bom/**'
+      - 'gbkt-genre-rpg/**'
+      - 'gbkt-genre-platformer/**'
+      - 'gbkt-genre-puzzle/**'
+      - 'gbkt-genre-sport/**'
+      - 'gbkt-examples/**'
+      - 'gbkt-intellij-plugin/**'
+      - 'buildSrc/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'gradle.properties'
@@ -28,82 +66,188 @@ concurrency:
   group: kotlin-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            gradle-target: jvmTest linuxX64Test
-          - os: macos-latest
-            gradle-target: jvmTest macosArm64Test macosX64Test
+env:
+  GBDK_VERSION: '4.5.0'
+  GBDK_SHA256: 'd7857a5f6d135ee4c249043ca26aad9f2ec8ab5d4106d97720d404114f42605c'
 
-    runs-on: ${{ matrix.os }}
+jobs:
+  # Sequenced build+test job: each step reuses the previous step's Gradle outputs on
+  # the same runner (one daemon, one compile). Order: publish (plugin-test sandbox
+  # deps) → build+test everything → merge coverage (handed off to the sonar job) →
+  # ROM smoke. Static analysis lives in code-quality; the Sonar scan in its own job.
+  build:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
 
-      - name: Build core modules
-        run: ./gradlew -PcoreOnly=true :gbkt-core:build :gbkt-cli:build --no-daemon
+      - name: Cache GBDK
+        id: cache-gbdk
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/gbdk
+          key: gbdk-linux64-${{ env.GBDK_VERSION }}
 
-      - name: Run Tests
-        run: ./gradlew -PcoreOnly=true :gbkt-core:${{ matrix.gradle-target }} --no-daemon
+      - name: Install GBDK
+        if: steps.cache-gbdk.outputs.cache-hit != 'true'
+        run: |
+          curl -fsSL --proto '=https' -o /tmp/gbdk.tar.gz \
+            "https://github.com/gbdk-2020/gbdk-2020/releases/download/${GBDK_VERSION}/gbdk-linux64.tar.gz"
+          echo "${GBDK_SHA256}  /tmp/gbdk.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/gbdk.tar.gz -C "$HOME"
+          rm /tmp/gbdk.tar.gz
+
+      - name: Export GBDK_HOME
+        run: echo "GBDK_HOME=$HOME/gbdk" >> "$GITHUB_ENV"
+
+      - name: Publish library modules to mavenLocal
+        # Bootstrap step: compiling the gbkt-gradle-plugin included build (required to even
+        # CONFIGURE the example projects) resolves gbkt SNAPSHOT artifacts from mavenLocal,
+        # and the IntegrationTest TestKit sandbox does the same at runtime. The ROOTED task
+        # path + --configure-on-demand are both load-bearing: an unrooted task name makes
+        # Gradle search every project (configuring the examples → compiling the plugin →
+        # chicken-and-egg on a cold ~/.m2). The module list is owned by the root task.
+        run: ./gradlew :publishConsumedModulesToMavenLocal --configure-on-demand
+
+      - name: Build and test all modules
+        # Root `build` covers assemble + tests for every subproject, including the example
+        # games; pluginTest runs the gbkt-gradle-plugin suite. Static analysis (detekt,
+        # spotless) is excluded here — it belongs to the code-quality job, so a lint
+        # finding never masquerades as a build/test failure. Local `./gradlew build`
+        # still runs the full check lifecycle.
+        run: ./gradlew build pluginTest -x detekt -x spotlessCheck
+
+      - name: Aggregate coverage report
+        # Merges per-module kover results into build/reports/kover/report.xml — the
+        # single JaCoCo-format report the sonar job reads. Tests are already up-to-date.
+        run: ./gradlew koverXmlReport
+
+      - name: Upload coverage report
+        # Hand-off to the sonar job (which runs on its own runner, gated on this job).
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: coverage-report
+          path: build/reports/kover/report.xml
+          if-no-files-found: error
+
+      - name: ROM build smoke
+        # Full lcc compile of every example to a .gb ROM — catches codegen/link/bank
+        # regressions that JVM-tier tests cannot see (rom-build verifier gate).
+        run: |
+          ./gradlew \
+            :gbkt-examples:pong:buildRom \
+            :gbkt-examples:breakout:buildRom \
+            :gbkt-examples:simple-physics:buildRom \
+            :gbkt-examples:metasprites:buildRom \
+            :gbkt-examples:metasprites-stress:buildRom \
+            :gbkt-examples:banks:buildRom \
+            :gbkt-examples:platformer-template:buildRom
 
       - name: Upload Test Reports
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: test-reports-${{ matrix.os }}
+          name: test-reports
           path: |
             **/build/reports/tests/
             **/build/test-results/
+
+  # Sonar analysis stage — gated on build+test. Consumes the merged kover report
+  # produced by the build job; compilation here is mostly Gradle-cache hits.
+  sonar:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Full history for SonarCloud blame/new-code detection
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
+
+      - name: Publish library modules to mavenLocal
+        # Cold-mavenLocal bootstrap — see the build job's step for the full rationale.
+        # No GBDK needed here: `sonar` depends only on the per-project sonarResolver
+        # tasks (verified via --dry-run) — it never compiles or runs tests, so the
+        # convertSprites/png2asset path is never reached.
+        run: ./gradlew :publishConsumedModulesToMavenLocal --configure-on-demand
+
+      - name: Download coverage report
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: coverage-report
+          path: build/reports/kover/
+
+      - name: SonarCloud scan
+        run: ./gradlew sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   code-quality:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
 
-      - name: Check formatting
-        run: ./gradlew -PcoreOnly=true :gbkt-core:spotlessCheck :gbkt-cli:spotlessCheck --no-daemon
-        continue-on-error: true
+      - name: Publish library modules to mavenLocal
+        # Static analysis configures every project; configuring the examples compiles the
+        # gbkt-gradle-plugin included build, which resolves gbkt SNAPSHOTs from mavenLocal.
+        run: ./gradlew :publishConsumedModulesToMavenLocal --configure-on-demand
+
+      - name: Static analysis (detekt + spotless)
+        # All lint/format checks live in this job — the build job runs with -x detekt
+        # -x spotlessCheck. :gbkt-gradle-plugin:spotlessCheck is addressed explicitly
+        # (included build — root task names don't reach it); the plugin build does not
+        # apply detekt (tracked debt).
+        run: ./gradlew detekt spotlessCheck :gbkt-gradle-plugin:spotlessCheck
 
   version-consistency:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
 
       - name: Check version consistency
-        run: ./gradlew -PcoreOnly=true checkVersionConsistency --no-daemon
+        # Rooted path + configure-on-demand: this is a root-only properties check and must
+        # not trigger configuration of the example projects (no mavenLocal bootstrap here).
+        run: ./gradlew :checkVersionConsistency --configure-on-demand

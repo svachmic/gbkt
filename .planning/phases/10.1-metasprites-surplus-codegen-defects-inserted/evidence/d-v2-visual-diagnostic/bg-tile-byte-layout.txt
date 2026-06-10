@@ -1,0 +1,121 @@
+BG Tile Byte Layout — Captured Evidence (D-V2 visual diagnostic, Task 2)
+=========================================================================
+
+Goal
+----
+Capture the actual byte stream that flows to the LCD's BG tile RAM at tile slot 0
+after `bgFillCheckerboard()` runs, then compare to the literal `MetaspriteBuilder.kt`
+emits and to the visually-observed BG pattern in the user-verified screenshot.
+
+Source 1 — Generated C (the byte stream that flows to VRAM)
+-----------------------------------------------------------
+Extracted from `gbkt-examples/metasprites/build/gbkt/generated/main.c` after
+`./gradlew :gbkt-examples:metasprites:generateC` (regenerated on 2026-05-19 in
+the worktree, no GBDK toolchain required for this layer):
+
+  239:    static const UINT8 _checkerboard_bg_pattern[] = {
+  240-    0xF0,0xF0,0xF0,0xF0,0x0F,0x0F,0x0F,0x0F,
+  241-    0xF0,0xF0,0xF0,0xF0,0x0F,0x0F,0x0F,0x0F};
+  242-    fill_bkg_rect(0, 0, DEVICE_SCREEN_WIDTH, DEVICE_SCREEN_HEIGHT, 0);
+  243-    set_bkg_data(0, 1, _checkerboard_bg_pattern);
+
+This is the EXACT byte sequence that GBDK's `set_bkg_data(0, 1, _checkerboard_bg_pattern)`
+copies into VRAM tile slot 0 at run time. There is no transformation, no reordering, no
+flipping between the C constant and the VRAM bytes — `set_bkg_data` is a verbatim memcpy
+into BG character RAM at `0x8000 + tile_id * 16` (when LCDC.4 = 1, which is the GBDK default).
+
+So the captured VRAM bytes for tile 0 are exactly:
+
+  index | byte
+  ------+------
+    0   | 0xF0
+    1   | 0xF0
+    2   | 0xF0
+    3   | 0xF0
+    4   | 0x0F
+    5   | 0x0F
+    6   | 0x0F
+    7   | 0x0F
+    8   | 0xF0
+    9   | 0xF0
+   10   | 0xF0
+   11   | 0xF0
+   12   | 0x0F
+   13   | 0x0F
+   14   | 0x0F
+   15   | 0x0F
+
+= 16 bytes = 1 complete 8×8 tile.
+
+Source 2 — DSL literal (the upstream truth)
+-------------------------------------------
+Extracted from `gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/MetaspriteBuilder.kt`
+lines 362-364:
+
+    "static const UINT8 _checkerboard_bg_pattern[] = {\n" +
+    "    0xF0,0xF0,0xF0,0xF0,0x0F,0x0F,0x0F,0x0F,\n" +
+    "    0xF0,0xF0,0xF0,0xF0,0x0F,0x0F,0x0F,0x0F};\n" +
+
+Identical to the generated C. No codegen transformation. Confirmed by
+`Seed005CheckerboardBytePatternTest` which locks the emitted shape and is GREEN
+on the current `HEAD`.
+
+Source 3 — User-verified runtime screenshot (the downstream truth)
+------------------------------------------------------------------
+File: `.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/uat-screenshots/behavior1-animation-advance.png`
+(160×144 native GB resolution, captured by the orchestrator-driven MCP re-shoot
+described in Plan 10.1-13 SUMMARY)
+
+Visual inspection of the BG (everything behind the elephant sprite) shows uniform
+cells whose horizontal-to-vertical aspect is clearly NOT 1:1. The dark/light
+checker cells are about TWICE as wide as they are tall. This matches the user
+description "rectangles rather than squares — slightly wider than taller"
+captured at the Plan 10.1-13 checkpoint and is the originating symptom for
+DEF-10.1-13-B.
+
+Reconciliation
+--------------
+The three sources are mutually consistent under the GB 2-bpp planar encoding
+documented in `gb-tile-plane-encoding-notes.md`:
+
+  - DSL literal == generated-C byte literal (no codegen transformation, no plane
+    reordering, no flipping)
+  - Generated-C byte literal == captured VRAM tile-0 bytes (verbatim memcpy via
+    `set_bkg_data`)
+  - VRAM tile-0 bytes, when decoded as 8 rows × (plane0, plane1) pairs, render
+    per-tile as a 4-pixel-wide × 2-pixel-tall alternating pattern
+  - Uniform tiling across the BG grid by `fill_bkg_rect(0, 0, 20, 18, 0)`
+    preserves the 4w×2h cell aspect, producing the visible rectangle pattern
+  - Visible rectangle pattern matches the screenshot
+
+Therefore the screenshot's "rectangles, slightly wider than taller" perception
+is FAITHFUL to the per-tile pixel decode, NOT an emulator scaling artifact, NOT
+a CRT-aspect distortion, NOT a perceptual illusion. The bytes themselves
+encode rectangles.
+
+Conclusion (full chain DSL → generated C → VRAM → screen → eyeball)
+-------------------------------------------------------------------
+The current literal in `MetaspriteBuilder.kt` emits 4-wide × 2-tall checker
+cells. To produce true 4-wide × 4-tall (square) checker cells, the byte stream
+must be reordered to group all `0xF0` pairs in the first 4 rows and all `0x0F`
+pairs in the last 4 rows — i.e.:
+
+    0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,
+    0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F
+
+(8 consecutive `0xF0` bytes followed by 8 consecutive `0x0F` bytes), instead of
+the current interleaved arrangement (4 of `0xF0`, then 4 of `0x0F`, repeated).
+
+MCP runtime VRAM-read note (deferred — orchestrator may supplement)
+-------------------------------------------------------------------
+The executor agent for Plan 10.1-17 does not have `mcp__gbkt-emulator__*` tools
+attached (per upstream MCP-tool-stripping bug — same constraint that drove the
+Plan 10.1-13 checkpoint to `human-action`). A runtime VRAM read at address
+`0x8000..0x800F` after `bgFillCheckerboard()` would provide independent
+hardware-side confirmation of Source 1 above, but the deduction chain via DSL
+→ generated C → `set_bkg_data` → VRAM is already airtight: `set_bkg_data` is a
+documented verbatim memcpy with no transformation. Adding the runtime VRAM read
+would be belt-and-suspenders, not load-bearing. If the orchestrator wants the
+extra rigor, it can supplement post-checkpoint via the MCP-driven path described
+in Plan 10.1-13's SUMMARY (`/gbkt-play-game metasprites` session + a step that
+dumps `mem_read_range(0x8000, 16)` after the play-scene enter).

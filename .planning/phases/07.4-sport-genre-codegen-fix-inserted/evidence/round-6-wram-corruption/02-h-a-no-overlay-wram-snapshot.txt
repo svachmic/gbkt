@@ -1,0 +1,36 @@
+# H-A experiment WRAM snapshot — SDCC overlay disabled (-Wf--no-overlay)
+#
+# Change applied: gbkt-examples/racer/build.gradle.kts compilerFlags property:
+#     compilerFlags.set(listOf("-Wf--no-overlay"))
+# Flag is forwarded by CompileRomTask.kt:117 directly to lcc/sdcc.
+#
+# Rationale (from 26-PLAN26-FOLLOWUP.md H-A): "SDCC for GB allocates locals via
+# static overlay by default. Two nested for-loops in racing_tick with stacked
+# UINT8s could exceed the analyzer's recall." The function racing_tick_track1()
+# has substantial local-variable pressure: UINT8 delta, INT8 vx/vy, INT16
+# propXs/propYs, plus inside the AI loop: UINT8 ai_primary, ai_fallback,
+# ai_delta_probe, UINT8 blocked[4], cd, ai_tertiary, etc.
+#
+# Probe result: Round6WramCorruptionProbe FAILED. Identical hang signature
+# at frame 124. EmulatorFrameHangException identical to baseline.
+#
+# Watchdog payload (verbatim):
+#   "Emulator error during frame step (after 124 frames): ROM did not complete
+#    a frame within 1000000 t-cycles — likely an infinite CPU loop with no
+#    VBlank. Check LCDC, BGP, and the most recent scene-enter."
+#
+# 0xC0xx canaries: probe could not read them; hang occurred before
+# read_variable calls.
+
+## verdict
+#
+# H-A REFUTED. Disabling SDCC's local-variable overlay allocation did NOT
+# prevent the hang. The frame count is identical (124), proving the hang
+# occurs at the same code path. SDCC overlay-collision is not the
+# upstream cause.
+#
+# Note: -Wf--no-overlay is the correct sdcc flag (passed to lcc which
+# forwards to sdcc). The flag was accepted (BUILD SUCCESSFUL) so the
+# experiment was exercised, not bypassed. ROM size and structure
+# remained roughly equivalent, so the flag did change the code
+# generation but not in a way that fixed the hang.

@@ -1,0 +1,6 @@
+void play_enter(void) BANKED {
+    set_bkg_data(0u, _zone_play_zone_tileset_count, _zone_play_zone_tileset);
+    _bkg_tiles_load_banked(2u, 0u, 0u, 20u, 18u, _zone_play_zone_tiles);
+    SHOW_BKG;
+    SHOW_SPRITES;
+}

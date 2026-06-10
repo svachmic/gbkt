@@ -1,0 +1,327 @@
+# Plan 07.4-34 — JVM GREEN evidence for CEmitter CCast precedence fix
+# Generated: 2026-05-12T18:40:28Z
+# Commit under test: 2322a4a6 — fix(07.4-34): parenthesise CCast inner expr to honour C precedence — closes GAP-CAMERA-NO-FOLLOW
+#
+# Section 1: targeted CameraBoundsClampPrecedenceTest (Plan 32 RED contract)
+# Class FQCN: io.github.gbkt.backend.gbdk.codegen.visitor.CameraBoundsClampPrecedenceTest
+# Expected: BUILD SUCCESSFUL, 3/3 GREEN
+# -------------------------------------------------------
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :buildSrc:compilePluginsBlocks UP-TO-DATE
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :buildSrc:generateScriptPluginAdapters UP-TO-DATE
+> Task :buildSrc:compileKotlin UP-TO-DATE
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:pluginDescriptors UP-TO-DATE
+> Task :buildSrc:processResources UP-TO-DATE
+> Task :buildSrc:classes UP-TO-DATE
+> Task :buildSrc:jar UP-TO-DATE
+> Task :gbkt-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-gradle-plugin:compileKotlin UP-TO-DATE
+> Task :gbkt-gradle-plugin:compileJava NO-SOURCE
+> Task :gbkt-gradle-plugin:pluginDescriptors UP-TO-DATE
+> Task :gbkt-gradle-plugin:processResources UP-TO-DATE
+> Task :gbkt-gradle-plugin:classes UP-TO-DATE
+> Task :gbkt-gradle-plugin:jar UP-TO-DATE
+> Task :gbkt-analysis:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-backend-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-engine:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:compileKotlin UP-TO-DATE
+> Task :gbkt-ir:compileJava NO-SOURCE
+> Task :gbkt-ir:processResources NO-SOURCE
+> Task :gbkt-ir:classes UP-TO-DATE
+> Task :gbkt-ir:jar UP-TO-DATE
+> Task :gbkt-lang:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-lang:compileKotlin UP-TO-DATE
+> Task :gbkt-lang:compileJava NO-SOURCE
+> Task :gbkt-lang:processResources NO-SOURCE
+> Task :gbkt-lang:classes UP-TO-DATE
+> Task :gbkt-lang:jar UP-TO-DATE
+> Task :gbkt-engine:compileKotlin UP-TO-DATE
+> Task :gbkt-engine:compileJava NO-SOURCE
+> Task :gbkt-engine:processResources NO-SOURCE
+> Task :gbkt-engine:classes UP-TO-DATE
+> Task :gbkt-engine:jar UP-TO-DATE
+> Task :gbkt-world:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-world:compileKotlin UP-TO-DATE
+> Task :gbkt-world:compileJava NO-SOURCE
+> Task :gbkt-world:processResources NO-SOURCE
+> Task :gbkt-world:classes UP-TO-DATE
+> Task :gbkt-world:jar UP-TO-DATE
+> Task :gbkt-core:compileKotlin UP-TO-DATE
+> Task :gbkt-core:compileJava NO-SOURCE
+> Task :gbkt-core:processResources NO-SOURCE
+> Task :gbkt-core:classes UP-TO-DATE
+> Task :gbkt-core:jar UP-TO-DATE
+> Task :gbkt-backend-api:compileKotlin UP-TO-DATE
+> Task :gbkt-backend-api:compileJava NO-SOURCE
+> Task :gbkt-backend-api:processResources NO-SOURCE
+> Task :gbkt-backend-api:classes UP-TO-DATE
+> Task :gbkt-backend-api:jar UP-TO-DATE
+> Task :gbkt-analysis:compileKotlin UP-TO-DATE
+> Task :gbkt-analysis:compileJava NO-SOURCE
+> Task :gbkt-analysis:processResources NO-SOURCE
+> Task :gbkt-analysis:classes UP-TO-DATE
+> Task :gbkt-analysis:jar UP-TO-DATE
+> Task :gbkt-backend-gbdk:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:compileKotlin UP-TO-DATE
+> Task :gbkt-genre-rpg:compileJava NO-SOURCE
+> Task :gbkt-genre-rpg:processResources NO-SOURCE
+> Task :gbkt-genre-rpg:classes UP-TO-DATE
+> Task :gbkt-genre-rpg:jar UP-TO-DATE
+> Task :gbkt-backend-gbdk:processResources UP-TO-DATE
+> Task :gbkt-emulator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-emulator:compileKotlin UP-TO-DATE
+> Task :gbkt-emulator:compileJava NO-SOURCE
+> Task :gbkt-emulator:processResources NO-SOURCE
+> Task :gbkt-emulator:classes UP-TO-DATE
+> Task :gbkt-emulator:jar UP-TO-DATE
+> Task :gbkt-genre-sport:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-sport:processResources UP-TO-DATE
+> Task :gbkt-backend-gbdk:processTestResources NO-SOURCE
+> Task :gbkt-backend-gbdk:compileKotlin
+> Task :gbkt-backend-gbdk:compileJava NO-SOURCE
+> Task :gbkt-backend-gbdk:classes UP-TO-DATE
+> Task :gbkt-backend-gbdk:jar
+> Task :gbkt-genre-sport:compileKotlin
+> Task :gbkt-genre-sport:compileJava NO-SOURCE
+> Task :gbkt-genre-sport:classes UP-TO-DATE
+> Task :gbkt-genre-sport:jar UP-TO-DATE
+> Task :gbkt-backend-gbdk:compileTestKotlin UP-TO-DATE
+> Task :gbkt-backend-gbdk:compileTestJava NO-SOURCE
+> Task :gbkt-backend-gbdk:testClasses UP-TO-DATE
+> Task :gbkt-backend-gbdk:test
+
+BUILD SUCCESSFUL in 1s
+39 actionable tasks: 4 executed, 35 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.0.0/userguide/configuration_cache_enabling.html
+
+# Section 2: full :gbkt-backend-gbdk:test (full regression sweep)
+# -------------------------------------------------------
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :buildSrc:compilePluginsBlocks UP-TO-DATE
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :buildSrc:generateScriptPluginAdapters UP-TO-DATE
+> Task :buildSrc:compileKotlin UP-TO-DATE
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:pluginDescriptors UP-TO-DATE
+> Task :buildSrc:processResources UP-TO-DATE
+> Task :buildSrc:classes UP-TO-DATE
+> Task :buildSrc:jar UP-TO-DATE
+> Task :gbkt-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-gradle-plugin:compileKotlin UP-TO-DATE
+> Task :gbkt-gradle-plugin:compileJava NO-SOURCE
+> Task :gbkt-gradle-plugin:pluginDescriptors UP-TO-DATE
+> Task :gbkt-gradle-plugin:processResources UP-TO-DATE
+> Task :gbkt-gradle-plugin:classes UP-TO-DATE
+> Task :gbkt-gradle-plugin:jar UP-TO-DATE
+> Task :gbkt-analysis:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-backend-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-engine:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:compileKotlin UP-TO-DATE
+> Task :gbkt-ir:compileJava NO-SOURCE
+> Task :gbkt-ir:processResources NO-SOURCE
+> Task :gbkt-ir:classes UP-TO-DATE
+> Task :gbkt-ir:jar UP-TO-DATE
+> Task :gbkt-lang:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-lang:compileKotlin UP-TO-DATE
+> Task :gbkt-lang:compileJava NO-SOURCE
+> Task :gbkt-lang:processResources NO-SOURCE
+> Task :gbkt-lang:classes UP-TO-DATE
+> Task :gbkt-lang:jar UP-TO-DATE
+> Task :gbkt-engine:compileKotlin UP-TO-DATE
+> Task :gbkt-engine:compileJava NO-SOURCE
+> Task :gbkt-engine:processResources NO-SOURCE
+> Task :gbkt-engine:classes UP-TO-DATE
+> Task :gbkt-engine:jar UP-TO-DATE
+> Task :gbkt-world:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-world:compileKotlin UP-TO-DATE
+> Task :gbkt-world:compileJava NO-SOURCE
+> Task :gbkt-world:processResources NO-SOURCE
+> Task :gbkt-world:classes UP-TO-DATE
+> Task :gbkt-world:jar UP-TO-DATE
+> Task :gbkt-core:compileKotlin UP-TO-DATE
+> Task :gbkt-core:compileJava NO-SOURCE
+> Task :gbkt-core:processResources NO-SOURCE
+> Task :gbkt-core:classes UP-TO-DATE
+> Task :gbkt-core:jar UP-TO-DATE
+> Task :gbkt-backend-api:compileKotlin UP-TO-DATE
+> Task :gbkt-backend-api:compileJava NO-SOURCE
+> Task :gbkt-backend-api:processResources NO-SOURCE
+> Task :gbkt-backend-api:classes UP-TO-DATE
+> Task :gbkt-backend-api:jar UP-TO-DATE
+> Task :gbkt-analysis:compileKotlin UP-TO-DATE
+> Task :gbkt-analysis:compileJava NO-SOURCE
+> Task :gbkt-analysis:processResources NO-SOURCE
+> Task :gbkt-analysis:classes UP-TO-DATE
+> Task :gbkt-analysis:jar UP-TO-DATE
+> Task :gbkt-backend-gbdk:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:compileKotlin UP-TO-DATE
+> Task :gbkt-genre-rpg:compileJava NO-SOURCE
+> Task :gbkt-genre-rpg:processResources NO-SOURCE
+> Task :gbkt-genre-rpg:classes UP-TO-DATE
+> Task :gbkt-genre-rpg:jar UP-TO-DATE
+> Task :gbkt-backend-gbdk:compileKotlin UP-TO-DATE
+> Task :gbkt-backend-gbdk:compileJava NO-SOURCE
+> Task :gbkt-backend-gbdk:processResources UP-TO-DATE
+> Task :gbkt-backend-gbdk:classes UP-TO-DATE
+> Task :gbkt-backend-gbdk:jar UP-TO-DATE
+> Task :gbkt-emulator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-emulator:compileKotlin UP-TO-DATE
+> Task :gbkt-emulator:compileJava NO-SOURCE
+> Task :gbkt-emulator:processResources NO-SOURCE
+> Task :gbkt-emulator:classes UP-TO-DATE
+> Task :gbkt-emulator:jar UP-TO-DATE
+> Task :gbkt-genre-sport:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-sport:compileKotlin UP-TO-DATE
+> Task :gbkt-genre-sport:compileJava NO-SOURCE
+> Task :gbkt-genre-sport:processResources UP-TO-DATE
+> Task :gbkt-genre-sport:classes UP-TO-DATE
+> Task :gbkt-genre-sport:jar UP-TO-DATE
+> Task :gbkt-backend-gbdk:compileTestKotlin UP-TO-DATE
+> Task :gbkt-backend-gbdk:compileTestJava NO-SOURCE
+> Task :gbkt-backend-gbdk:processTestResources NO-SOURCE
+> Task :gbkt-backend-gbdk:testClasses UP-TO-DATE
+> Task :gbkt-backend-gbdk:test
+
+BUILD SUCCESSFUL in 1s
+39 actionable tasks: 1 executed, 38 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.0.0/userguide/configuration_cache_enabling.html
+
+# Section 3: :gbkt-genre-sport:test (cross-genre regression sweep)
+# NOTE: 2 pre-existing GAP-TRACK-CIRCUIT RED failures in
+# TrackSynthesizerCircuitShapeTest (Plan 32 baseline, Plan 35 GREEN scope).
+# Confirmed pre-existing at HEAD~1 too — NOT regressions from this plan's
+# CEmitter fix. T-07.4-34-04 covers camera-axis regressions only (handled
+# in Task 4 cross-genre proof via Explorer/Dungeon update_camera_*()).
+# -------------------------------------------------------
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :buildSrc:compilePluginsBlocks UP-TO-DATE
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :buildSrc:generateScriptPluginAdapters UP-TO-DATE
+> Task :buildSrc:compileKotlin UP-TO-DATE
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:pluginDescriptors UP-TO-DATE
+> Task :buildSrc:processResources UP-TO-DATE
+> Task :buildSrc:classes UP-TO-DATE
+> Task :buildSrc:jar UP-TO-DATE
+> Task :gbkt-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-gradle-plugin:compileKotlin UP-TO-DATE
+> Task :gbkt-gradle-plugin:compileJava NO-SOURCE
+> Task :gbkt-gradle-plugin:pluginDescriptors UP-TO-DATE
+> Task :gbkt-gradle-plugin:processResources UP-TO-DATE
+> Task :gbkt-gradle-plugin:classes UP-TO-DATE
+> Task :gbkt-gradle-plugin:jar UP-TO-DATE
+> Task :gbkt-analysis:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-backend-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-engine:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-ir:compileKotlin UP-TO-DATE
+> Task :gbkt-ir:compileJava NO-SOURCE
+> Task :gbkt-ir:processResources NO-SOURCE
+> Task :gbkt-ir:classes UP-TO-DATE
+> Task :gbkt-ir:jar UP-TO-DATE
+> Task :gbkt-lang:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-lang:compileKotlin UP-TO-DATE
+> Task :gbkt-lang:compileJava NO-SOURCE
+> Task :gbkt-lang:processResources NO-SOURCE
+> Task :gbkt-lang:classes UP-TO-DATE
+> Task :gbkt-lang:jar UP-TO-DATE
+> Task :gbkt-engine:compileKotlin UP-TO-DATE
+> Task :gbkt-engine:compileJava NO-SOURCE
+> Task :gbkt-engine:processResources NO-SOURCE
+> Task :gbkt-engine:classes UP-TO-DATE
+> Task :gbkt-engine:jar UP-TO-DATE
+> Task :gbkt-world:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-world:compileKotlin UP-TO-DATE
+> Task :gbkt-world:compileJava NO-SOURCE
+> Task :gbkt-world:processResources NO-SOURCE
+> Task :gbkt-world:classes UP-TO-DATE
+> Task :gbkt-world:jar UP-TO-DATE
+> Task :gbkt-core:compileKotlin UP-TO-DATE
+> Task :gbkt-core:compileJava NO-SOURCE
+> Task :gbkt-core:processResources NO-SOURCE
+> Task :gbkt-core:classes UP-TO-DATE
+> Task :gbkt-core:jar UP-TO-DATE
+> Task :gbkt-backend-api:compileKotlin UP-TO-DATE
+> Task :gbkt-backend-api:compileJava NO-SOURCE
+> Task :gbkt-backend-api:processResources NO-SOURCE
+> Task :gbkt-backend-api:classes UP-TO-DATE
+> Task :gbkt-backend-api:jar UP-TO-DATE
+> Task :gbkt-analysis:compileKotlin UP-TO-DATE
+> Task :gbkt-analysis:compileJava NO-SOURCE
+> Task :gbkt-analysis:processResources NO-SOURCE
+> Task :gbkt-analysis:classes UP-TO-DATE
+> Task :gbkt-analysis:jar UP-TO-DATE
+> Task :gbkt-backend-gbdk:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-rpg:compileKotlin UP-TO-DATE
+> Task :gbkt-genre-rpg:compileJava NO-SOURCE
+> Task :gbkt-genre-rpg:processResources NO-SOURCE
+> Task :gbkt-genre-rpg:classes UP-TO-DATE
+> Task :gbkt-genre-rpg:jar UP-TO-DATE
+> Task :gbkt-backend-gbdk:compileKotlin UP-TO-DATE
+> Task :gbkt-backend-gbdk:compileJava NO-SOURCE
+> Task :gbkt-backend-gbdk:processResources UP-TO-DATE
+> Task :gbkt-backend-gbdk:classes UP-TO-DATE
+> Task :gbkt-backend-gbdk:jar UP-TO-DATE
+> Task :gbkt-genre-sport:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gbkt-genre-sport:compileKotlin UP-TO-DATE
+> Task :gbkt-genre-sport:compileJava NO-SOURCE
+> Task :gbkt-genre-sport:processResources UP-TO-DATE
+> Task :gbkt-genre-sport:classes UP-TO-DATE
+> Task :gbkt-genre-sport:jar UP-TO-DATE
+> Task :gbkt-genre-sport:processTestResources NO-SOURCE
+> Task :gbkt-genre-sport:compileTestKotlin
+> Task :gbkt-genre-sport:compileTestJava NO-SOURCE
+> Task :gbkt-genre-sport:testClasses UP-TO-DATE
+
+> Task :gbkt-genre-sport:test FAILED
+
+TrackSynthesizerCircuitShapeTest > racer_waypoints_synthesize_to_corridor_not_arena() FAILED
+    org.opentest4j.AssertionFailedError at TrackSynthesizerCircuitShapeTest.kt:163
+
+TrackSynthesizerCircuitShapeTest > racer_corridor_interior_is_non_drivable() FAILED
+    org.opentest4j.AssertionFailedError at TrackSynthesizerCircuitShapeTest.kt:194
+
+158 tests completed, 2 failed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':gbkt-genre-sport:test'.
+> There were failing tests. See the report at: file:///Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-a8265beef09a64147/gbkt-genre-sport/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+
+BUILD FAILED in 1s
+37 actionable tasks: 2 executed, 35 up-to-date
+
+# Final verdict (Plan 07.4-34 Task 2 acceptance)
+# -------------------------------------------------------
+Section 1 — CameraBoundsClampPrecedenceTest: BUILD SUCCESSFUL (3/3 tests pass)
+Section 2 — :gbkt-backend-gbdk:test full suite: BUILD SUCCESSFUL
+Section 3 — :gbkt-genre-sport:test: 2 PRE-EXISTING GAP-TRACK-CIRCUIT failures
+             (TrackSynthesizerCircuitShapeTest.racer_corridor_interior_is_non_drivable,
+              .racer_waypoints_synthesize_to_corridor_not_arena) — Plan 35 GREEN scope,
+             confirmed pre-existing by reverting CEmitter.kt to HEAD~1 and re-running.
+
+Acceptance gate verdict: PASS — CEmitter CCast precedence fix closes Plan 32
+RED contract; no NEW failures introduced anywhere in the test surface.

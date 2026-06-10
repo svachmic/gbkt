@@ -1,0 +1,63 @@
+# gbkt-analysis — Static Analysis Passes
+
+Provides an ordered pipeline of static analysis passes that validate, optimize, and plan resource allocation for a gbkt game IR before code generation.
+
+## Dependencies
+- **Depends on:** `gbkt-backend-api` (which depends on `gbkt-core`)
+- **Used by:** `gbkt-backend-gbdk` (runs the pipeline before C codegen)
+
+## Key Files
+| File | Role |
+|------|------|
+| `AnalysisPass.kt` | `fun interface AnalysisPass { run(PassContext): PassResult }` — unit of analysis |
+| `PassContext.kt` | Immutable snapshot threaded between passes (game IR, profile, bank/VRAM/OAM assignments, diagnostics) |
+| `PassPipeline.kt` | Ordered executor: `beforePasses` -> `builtInPasses` -> `afterPasses`, fail-fast on `PassResult.Failed` |
+| `DefaultPipeline.kt` | `object DefaultPipeline.create()` — wires the 12 built-in passes in correct order |
+| `Diagnostic.kt` | `data class Diagnostic(id, severity, message, location?, suggestion?)` with `Severity` enum (ERROR/WARNING/INFO) |
+| `OptimizationReport.kt` | Accumulated per-pass optimization summaries, serialized to `optimization-report.json` |
+| `config/AnalysisConfig.kt` | Thresholds (bank fill, VRAM tiles, OAM slots, RAM), optimization toggles, `fromCartridgeConfig()` factory |
+| `report/BudgetReporter.kt` | Formats the ASCII budget report (bank usage bars, VRAM table, scene breakdown) |
+
+## Analysis Passes
+
+Executed in this order by `DefaultPipeline`:
+
+| # | Pass | Purpose |
+|---|------|---------|
+| 1 | `SemanticValidationPass` | Reference resolution, duplicate detection, IR structural integrity |
+| 2 | `RacingValidationPass` | Validates racing-genre system configuration (track/lap/AI constraints) |
+| 3 | `ResourceInventoryPass` | Counts all game resources (scenes, actors, tilesets, arrays, etc.) |
+| 4 | `ConstraintCheckPass` | Validates hardware limits (sprite counts, tile counts, palette constraints) |
+| 5 | `DeadCodeEliminationPass` | Removes unreachable scenes via BFS over scene navigation graph (configurable) |
+| 6 | `ConstantFoldingPass` | Evaluates compile-time constant expressions in the IR (configurable) |
+| 7 | `BitwiseOptimizationPass` | Rewrites power-of-2 multiply/divide to shift operations (configurable) |
+| 8 | `BankingAnalysisPass` | First-fit-decreasing ROM bank allocation with transition graph analysis |
+| 9 | `VRAMLayoutPass` | Per-scene VRAM tile range allocation (uses asset manifest when available) |
+| 10 | `OAMAllocationPass` | Assigns OAM sprite slots to actors |
+| 11 | `RAMPlanningPass` | Plans WRAM/HRAM/SRAM layout for variables and arrays |
+| 12 | `BudgetAuditPass` | Generates budget report, writes optimization JSON, fails on accumulated errors |
+
+Passes 5-7 are conditionally included based on `AnalysisConfig` toggle fields (all enabled by default).
+
+## Extension Hooks
+
+`PassPipeline` accepts `beforePasses` and `afterPasses` lists for user-injected custom passes:
+
+```kotlin
+DefaultPipeline.create(
+    config = analysisConfig,
+    beforePasses = listOf(myCustomLintPass),
+    afterPasses = listOf(myMetricsPass),
+)
+```
+
+## Testing
+```bash
+./gradlew :gbkt-analysis:test
+```
+
+## Common Tasks
+- **Add a new pass:** Implement `AnalysisPass`, register it in `DefaultPipeline.create()` at the correct position
+- **Add a new diagnostic:** Add an entry to the `DiagnosticCode` enum, create a `Diagnostic(code = DiagnosticCode.X, severity, message)` in your pass, return via `ctx.withDiagnostics()`. Custom passes (via `beforePasses`/`afterPasses`) may still use free-form string ids through the primary constructor.
+- **Adjust thresholds:** Modify defaults in `AnalysisConfig` or override per-game via `fromCartridgeConfig()`
+- **Skip an optimization pass:** Set `deadCodeEliminationEnabled`, `constantFoldingEnabled`, or `bitwiseOptimizationEnabled` to `false` in config

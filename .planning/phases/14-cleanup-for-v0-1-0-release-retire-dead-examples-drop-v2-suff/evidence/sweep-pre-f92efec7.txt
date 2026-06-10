@@ -1,0 +1,29 @@
+=== PHASE-14 SWEEP @ f92efec7 ===
+V2_COUNT=537
+SETTINGS_EXAMPLE_INCLUDES=8
+RACER_DIR=present
+LABYRINTH_TRACKED=262
+ARCHIVE_TRACKED=0
+RPGREGISTRY_CLEAR=1
+VSTAR_FILES=4
+CI_BAD_REFS=2
+VERSION=gbktVersion=0.1.0
+COMPILE_EXIT=0
+BUILDROM_ALL_EXIT=0
+ROM_pong=ok
+ROM_breakout=ok
+ROM_simple-physics=ok
+ROM_metasprites=ok
+ROM_metasprites-stress=ok
+ROM_banks=ok
+ROM_platformer-template=ok
+TEST_TASK_EXIT=1
+PLUGINTEST_TASK_EXIT=1
+--- FAILING_TESTS (sorted classname:failures) ---
+io.github.gbkt.examples.banks.BanksUatTest:2
+io.github.gbkt.examples.platformer_template.PlatformerTemplate128UatTest:1
+io.github.gbkt.examples.platformer_template.PlatformerTemplateUatTest:1
+io.github.gbkt.examples.platformer_template.PlayerMetaspriteGeometryTest:2
+io.github.gbkt.examples.pong.PongStepAgentTest:1
+io.github.gbkt.gradle.IntegrationTest:12
+=== END SWEEP ===

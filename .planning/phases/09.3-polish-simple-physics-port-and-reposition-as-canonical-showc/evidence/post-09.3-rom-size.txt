@@ -1,0 +1,2 @@
+32768
+JVM-tier cross-check: SimplePhysicsEmissionTest GREEN against _spdY = -32 (Plan 02). ROM byte delta is localized via the JVM contract; no binary diff required.

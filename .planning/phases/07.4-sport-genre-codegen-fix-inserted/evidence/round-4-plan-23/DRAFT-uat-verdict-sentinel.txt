@@ -1,0 +1,18 @@
+phase: 07.4-sport-genre-codegen-fix-inserted
+verified: 2026-05-11T<HH:MM>:00Z
+round: 4
+method: mcp-play-through-with-visual-evidence
+plan: 07.4-23
+all_six_scs_natural_play: <true|false>
+caveats: <"none" | "SC-2: <details>" | "SC-3: <details>">
+evidence_dir: .planning/phases/07.4-sport-genre-codegen-fix-inserted/evidence/round-4-plan-23/
+uat_racer_md: <passed | passed-with-caveats>
+d19_signal: <met | met-with-caveats>
+verifier: <human-driven-mcp-session-id>
+preconditions_verified_by_executor:
+  rom_freshness: 2026-05-11T09:39 (65536 bytes, MBC5)
+  race_enter_scope_grep: PASSED (cls=0, gotoxy=0, printf=0, _win_print_at>=1, _win_clear_region>=1, HIDE_SPRITES>=1, SWITCH_ROM(2)>=1)
+  update_camera_camera: clamped at 0 (Plan 21 fix verified, no >-8 literal)
+  generated_c_evidence_files:
+    - 00-race_enter_body_post_fix.c
+    - 00-update_camera_camera_body.c

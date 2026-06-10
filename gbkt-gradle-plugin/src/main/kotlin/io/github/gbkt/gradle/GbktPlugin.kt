@@ -7,14 +7,28 @@
 package io.github.gbkt.gradle
 
 import io.github.gbkt.gradle.internal.GbdkToolchain
+import io.github.gbkt.gradle.tasks.BudgetReportTask
+import io.github.gbkt.gradle.tasks.CaptureScreenshotTask
 import io.github.gbkt.gradle.tasks.CompileRomTask
+import io.github.gbkt.gradle.tasks.ConvertSpritesTask
+import io.github.gbkt.gradle.tasks.ConvertZoneTilesetsTask
 import io.github.gbkt.gradle.tasks.CopyGeneratedCTask
 import io.github.gbkt.gradle.tasks.DebugEmulatorTask
+import io.github.gbkt.gradle.tasks.DiffScreenshotsTask
+import io.github.gbkt.gradle.tasks.EmulatorTestTask
 import io.github.gbkt.gradle.tasks.GenerateAssetsTask
 import io.github.gbkt.gradle.tasks.GenerateCTask
+import io.github.gbkt.gradle.tasks.GenerateGameConstantsTask
+import io.github.gbkt.gradle.tasks.GeneratePlaybookTask
 import io.github.gbkt.gradle.tasks.ProcessAssetsTask
+import io.github.gbkt.gradle.tasks.ReadVariableTask
 import io.github.gbkt.gradle.tasks.RunEmulatorTask
+import io.github.gbkt.gradle.tasks.RunInputScriptTask
+import io.github.gbkt.gradle.tasks.SaveStateTask
+import io.github.gbkt.gradle.tasks.SetupClaudeTask
+import io.github.gbkt.gradle.tasks.ValidateRomTask
 import io.github.gbkt.gradle.tasks.WebExportTask
+import java.io.File
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -52,10 +66,14 @@ class GbktPlugin : Plugin<Project> {
         extension.debug.convention(true)
         extension.compilerFlags.convention(emptyList())
         extension.gbcMode.convention("DISABLED")
-
-        // Emulator defaults
-        extension.emulator.args.convention(emptyList())
-        extension.emulator.liveReload.convention(true)
+        extension.target.convention("gbc")
+        extension.ramBanks.convention(0)
+        extension.skipValidation.convention(false)
+        extension.budgetReport.convention(true)
+        // Emulator defaults (embedded Coffee-GB)
+        extension.emulator.scale.convention(4)
+        extension.emulator.headless.convention(false)
+        extension.emulator.maxFrames.convention(600)
 
         // Web export defaults
         extension.web.enableControls.convention(true)
@@ -85,8 +103,27 @@ class GbktPlugin : Plugin<Project> {
         extension.generateAssets.enabled.convention(false)
         extension.generateAssets.objectName.convention("Assets")
 
+        // Sprites pipeline defaults (Phase 13.6 REQ-4 / D-01 / D-02)
+        extension.sprites.strictTransparency.convention(false)
+
+        // Locale defaults (compile-time i18n)
+        extension.locale.convention("en")
+
+        // Apply -Pgbkt.locale project property override.
+        // Enables: ./gradlew buildRom -Pgbkt.locale=cs → labyrinth_cs.gb
+        val localeFromProp = project.findProperty("gbkt.locale") as? String
+        if (localeFromProp != null) {
+            extension.locale.set(localeFromProp)
+        }
+
+        // Register gbktSetupClaude BEFORE afterEvaluate — available even without a game configured
+        registerSetupClaudeTask(project)
+
         // Register tasks after project evaluation to pick up configuration
-        project.afterEvaluate { registerTasks(project, extension) }
+        project.afterEvaluate {
+            checkClaudeSkillsVersion(project)
+            registerTasks(project, extension)
+        }
     }
 
     private fun registerTasks(project: Project, extension: GbktExtension) {
@@ -99,7 +136,7 @@ class GbktPlugin : Plugin<Project> {
                 |  gbkt {
                 |      game("package.ClassName::propertyName")
                 |  }
-            """
+                """
                     .trimMargin()
             )
             return
@@ -114,7 +151,7 @@ class GbktPlugin : Plugin<Project> {
                 """
                 |gbkt: Cannot find 'main' source set.
                 |Make sure you have applied the 'kotlin("jvm")' plugin.
-            """
+                """
                     .trimMargin()
             )
         }
@@ -139,8 +176,10 @@ class GbktPlugin : Plugin<Project> {
                         assetDirectory.set(defaultDir)
                     }
                 }
-                outputDirectory.set(project.layout.buildDirectory.dir("gbkt/processed-assets"))
-                manifestFile.set(project.layout.buildDirectory.file("gbkt/asset-manifest.txt"))
+                outputDirectory.set(project.layout.buildDirectory.dir("generated/assets"))
+                manifestFile.set(
+                    project.layout.buildDirectory.file("generated/assets/asset-manifest.json")
+                )
             }
 
         // Register generateAssets task when enabled
@@ -149,16 +188,16 @@ class GbktPlugin : Plugin<Project> {
                 extension.generateAssets.packageName.orNull
                     ?: throw GradleException(
                         """
-                    |gbkt: generateAssets.packageName is required when generateAssets.enabled is true.
-                    |
-                    |Configure in build.gradle.kts:
-                    |  gbkt {
-                    |      generateAssets {
-                    |          enabled.set(true)
-                    |          packageName.set("com.example.mygame")
-                    |      }
-                    |  }
-                """
+                        |gbkt: generateAssets.packageName is required when generateAssets.enabled is true.
+                        |
+                        |Configure in build.gradle.kts:
+                        |  gbkt {
+                        |      generateAssets {
+                        |          enabled.set(true)
+                        |          packageName.set("com.example.mygame")
+                        |      }
+                        |  }
+                        """
                             .trimMargin()
                     )
 
@@ -193,7 +232,7 @@ class GbktPlugin : Plugin<Project> {
                 val srcDirs = kotlinSourceSet.javaClass.getMethod("srcDir", Any::class.java)
                 srcDirs.invoke(
                     kotlinSourceSet,
-                    project.layout.buildDirectory.dir("generated/source/gbkt/main/kotlin")
+                    project.layout.buildDirectory.dir("generated/source/gbkt/main/kotlin"),
                 )
             } else {
                 // Fallback: add to java source set
@@ -213,12 +252,19 @@ class GbktPlugin : Plugin<Project> {
                 dependsOn(processAssets)
 
                 gameSpec.set(extension.game)
+                target.set(extension.target)
                 assetDirectory.set(extension.assetDirectory)
-                outputCFile.set(project.layout.buildDirectory.file("gbkt/generated/main.c"))
+                outputDir.set(project.layout.buildDirectory.dir("gbkt/generated"))
                 this.runtimeClasspath.from(runtimeClasspath)
 
                 // Wire processed assets directory
                 processedAssetsDir.set(processAssets.flatMap { it.outputDirectory })
+
+                // Locale for PO file selection (compile-time i18n)
+                locale.set(extension.locale)
+
+                // Validation
+                skipValidation.set(extension.skipValidation)
 
                 // Optimization settings
                 optimizationEnabled.set(extension.optimization.enabled)
@@ -232,10 +278,161 @@ class GbktPlugin : Plugin<Project> {
                 useUnicode.set(extension.optimization.useUnicode)
             }
 
+        // Register generateGameConstants task — reads game_metadata.json, generates
+        // GameConstants.kt
+        // for test code to use instead of magic strings. Output goes to the test source set.
+        val generateGameConstants =
+            project.tasks.register<GenerateGameConstantsTask>("generateGameConstants") {
+                dependsOn(generateC)
+                metadataFile.set(
+                    generateC.flatMap { it.outputDir }.map { it.file("game_metadata.json") }
+                )
+
+                val className = extension.game.get().split("::")[0]
+                val pkg = className.substringBeforeLast(".")
+                val packagePath = pkg.replace(".", "/")
+
+                this.packageName.set(pkg)
+                outputFile.set(
+                    project.layout.buildDirectory.file(
+                        "generated/source/gbkt/test/kotlin/$packagePath/GameConstants.kt"
+                    )
+                )
+            }
+
+        // Register generatePlaybook task — generates PLAYBOOK.md skeleton from metadata.
+        // Output goes to the project root (not build/) so developers can edit it in source control.
+        // The task does NOT overwrite an existing PLAYBOOK.md — idempotent once authored.
+        project.tasks.register<GeneratePlaybookTask>("generatePlaybook") {
+            dependsOn(generateC)
+            metadataFile.set(
+                generateC.flatMap { it.outputDir }.map { it.file("game_metadata.json") }
+            )
+            gameName.set(extension.outputName)
+            outputFile.set(project.file("PLAYBOOK.md"))
+        }
+
+        // Add generated test source directory to test source set
+        val testSourceSet = sourceSets?.findByName("test")
+        if (testSourceSet != null) {
+            val testKotlinSS = testSourceSet.extensions.findByName("kotlin")
+            if (testKotlinSS != null) {
+                @Suppress("UNCHECKED_CAST")
+                val srcDirs = testKotlinSS.javaClass.getMethod("srcDir", Any::class.java)
+                srcDirs.invoke(
+                    testKotlinSS,
+                    project.layout.buildDirectory.dir("generated/source/gbkt/test/kotlin"),
+                )
+            } else {
+                testSourceSet.java.srcDir(
+                    project.layout.buildDirectory.dir("generated/source/gbkt/test/kotlin")
+                )
+            }
+            project.tasks.findByName("compileTestKotlin")?.dependsOn(generateGameConstants)
+        }
+
+        // Register budgetReport task — runs analysis pipeline and prints ASCII budget report
+        project.tasks.register<BudgetReportTask>("budgetReport") {
+            dependsOn(compileKotlinTask)
+
+            gameSpec.set(extension.game)
+            target.set(extension.target)
+            this.runtimeClasspath.from(runtimeClasspath)
+        }
+
+        // Register convertSprites task — runs png2asset on sprite PNGs, generates .c/.h files
+        // alongside the generated C so lcc can find sprite includes like "sprites/paddle.h"
+        val convertSprites =
+            project.tasks.register<ConvertSpritesTask>("convertSprites") {
+                dependsOn(generateC)
+
+                gbdkHome.set(
+                    extension.gbdkHome.orElse(
+                        project.provider { GbdkToolchain.find(null).absolutePath }
+                    )
+                )
+                assetDirectory.set(extension.assetDirectory)
+                metadataFile.set(
+                    generateC.flatMap { it.outputDir }.map { it.file("game_metadata.json") }
+                )
+                cSourceDir.set(generateC.flatMap { it.outputDir })
+                // Phase 13.6 REQ-4 / D-01 / D-02: thread strictTransparency from SpritesExtension
+                // into the task so it is an @Input (Gradle up-to-date / caching key).
+                strictTransparency.set(extension.sprites.strictTransparency)
+            }
+
+        // generateGameConstants reads game_metadata.json from build/gbkt/generated/ — the same
+        // directory that convertSprites declares as @OutputDirectory. Gradle 9 validation rejects
+        // an @InputFile inside another task's @OutputDirectory without an explicit ordering edge.
+        // dependsOn (not mustRunAfter) is required because mustRunAfter is an ordering hint only
+        // and does not satisfy the file-input/output overlap validation. convertSprites skips
+        // gracefully when GBDK is not installed, so this does not break test-only workflows.
+        generateGameConstants.configure { dependsOn(convertSprites) }
+
+        // Phase 11.2 (D-A2): convertZoneTilesets — png2asset for zone tileset PNGs (sibling to
+        // convertSprites)
+        val convertZoneTilesets =
+            project.tasks.register<ConvertZoneTilesetsTask>("convertZoneTilesets") {
+                dependsOn(generateC)
+                // convertSprites and convertZoneTilesets share cSourceDir = build/gbkt/generated as
+                // an @OutputDirectory. Gradle 9 fails fast when one task's input directory overlaps
+                // another's output without an explicit ordering edge. mustRunAfter (not dependsOn)
+                // is correct here — the two tasks are independent in purpose; they only share the
+                // output dir for lcc include resolution.
+                mustRunAfter(convertSprites)
+                gbdkHome.set(
+                    extension.gbdkHome.orElse(
+                        project.provider { GbdkToolchain.find(null).absolutePath }
+                    )
+                )
+                assetDirectory.set(extension.assetDirectory)
+                metadataFile.set(
+                    generateC.flatMap { it.outputDir }.map { it.file("game_metadata.json") }
+                )
+                cSourceDir.set(generateC.flatMap { it.outputDir })
+            }
+
+        // convertZoneTilesets also declares build/gbkt/generated/ as @OutputDirectory — same
+        // Gradle 9 file-input/output overlap pattern as convertSprites above. mustRunAfter
+        // satisfies the Gradle 9 configuration validation (unlike convertSprites which requires
+        // dependsOn because it must complete first to avoid flaking INV-8). convertZoneTilesets
+        // writes zone-specific tilemap .c files to the same directory; generateGameConstants only
+        // reads game_metadata.json (written by generateC, not by this task). mustRunAfter
+        // provides the ordering guarantee Gradle 9 requires without adding an execution dependency.
+        generateGameConstants.configure { mustRunAfter(convertZoneTilesets) }
+
+        // Register copyResources task - copies binary assets needed by INCBIN directives
+        val copyResources =
+            project.tasks.register("copyResources") {
+                group = "gbkt"
+                description = "Copy resource files for GBDK compilation"
+                dependsOn(generateC)
+
+                // Only configure if resourceDirectory is set and exists
+                val resDir = extension.resourceDirectory
+                if (resDir.isPresent && resDir.get().asFile.exists()) {
+                    inputs.dir(resDir)
+                    outputs.dir(generateC.flatMap { it.outputDir }.map { it.dir("res") })
+
+                    doLast {
+                        val srcDir = resDir.get().asFile
+                        val destDir = File(generateC.get().outputDir.get().asFile, "res")
+                        destDir.mkdirs()
+                        srcDir.copyRecursively(destDir, overwrite = true)
+                        project.logger.lifecycle(
+                            "Copied resources: ${srcDir.absolutePath} -> ${destDir.absolutePath}"
+                        )
+                    }
+                }
+            }
+
         // Register compileRom task - GBDK discovery is lazy (at task execution time)
         val compileRom =
             project.tasks.register<CompileRomTask>("compileRom") {
                 dependsOn(generateC)
+                dependsOn(convertSprites)
+                dependsOn(convertZoneTilesets)
+                dependsOn(copyResources)
 
                 // Lazily determine GBDK home - only when task executes
                 gbdkHome.set(
@@ -243,15 +440,31 @@ class GbktPlugin : Plugin<Project> {
                         project.provider { GbdkToolchain.find(null).absolutePath }
                     )
                 )
-                cSourceFile.set(generateC.flatMap { it.outputCFile })
+                cSourceDir.set(generateC.flatMap { it.outputDir })
                 compilerFlags.set(extension.compilerFlags)
                 generateDebugFiles.set(extension.debug)
                 gbcMode.set(extension.gbcMode)
-                outputRom.set(
-                    project.layout.buildDirectory.file(
-                        "gbkt/output/${extension.outputName.get()}.gb"
-                    )
-                )
+                ramBanks.set(extension.ramBanks)
+                // Build locale-aware output ROM name.
+                // Locale suffix is appended ONLY when an explicit locale override was
+                // specified (via -Pgbkt.locale or gbkt { locale.set(...) }).
+                // When only the convention default is in effect, the name is unchanged
+                // to preserve backward compatibility (game.gb not game_en.gb).
+                // Examples:
+                //   ./gradlew buildRom -Pgbkt.locale=cs → labyrinth_cs.gb
+                //   ./gradlew buildRom (no locale override) → game.gb
+                val baseName = extension.outputName.get()
+                val localeExplicitlySet = project.findProperty("gbkt.locale") != null
+                val locale = extension.locale.getOrElse("en")
+                val romFileName =
+                    if (
+                        localeExplicitlySet && locale.isNotBlank() && !baseName.endsWith("_$locale")
+                    ) {
+                        "${baseName}_${locale}.gb"
+                    } else {
+                        "${baseName}.gb"
+                    }
+                outputRom.set(project.layout.buildDirectory.file("gbkt/output/$romFileName"))
             }
 
         // Register buildRom lifecycle task
@@ -273,20 +486,42 @@ class GbktPlugin : Plugin<Project> {
                 }
             }
 
+        // Register `run` lifecycle task — full pipeline: generateC → buildRom → launch emulator
+        // This is the recommended single command for the full development loop.
+        // Uses dependsOn (not finalizedBy) so the emulator only launches when the build succeeds.
+        project.tasks.register("run") {
+            group = "gbkt"
+            description = "Full pipeline: generateC → buildRom → launch embedded emulator"
+            dependsOn("runEmulator") // runEmulator already dependsOn(buildRom)
+        }
+
+        // Register validateRom task — opt-in validation via mGBA Lua scripting
+        // Does NOT depend on buildRom; user runs ./gradlew validateRom explicitly
+        // Uses externalEmulator path if configured (falls back to mGBA auto-detection)
+        project.tasks.register<ValidateRomTask>("validateRom") {
+            dependsOn(compileRom)
+            romFile.set(compileRom.flatMap { it.outputRom })
+            emulatorPath.set(extension.emulator.externalEmulator)
+        }
+
+        // Register emulatorTest task — CI-safe headless emulator test
+        // Depends on buildRom so the ROM is always current before testing.
+        // Uses embedded Coffee-GB emulator — no external emulator required.
+        project.tasks.register<EmulatorTestTask>("emulatorTest") {
+            dependsOn(buildRom)
+            romFile.set(compileRom.flatMap { it.outputRom })
+            maxFrames.set(extension.emulator.maxFrames)
+            headless.set(true)
+        }
+
         // Register copyGeneratedC task only when keepGeneratedC is enabled
         if (extension.output.keepGeneratedC.getOrElse(false)) {
             val copyGeneratedC =
                 project.tasks.register<CopyGeneratedCTask>("copyGeneratedC") {
                     dependsOn(generateC)
 
-                    sourceCFile.set(generateC.flatMap { it.outputCFile })
-
-                    // Source map file is next to C file with .gbkt.map extension
-                    val buildDir = project.layout.buildDirectory
-                    sourceMapFile.set(buildDir.file("gbkt/generated/main.c.gbkt.map"))
-
+                    sourceCDir.set(generateC.flatMap { it.outputDir })
                     outputDir.set(extension.output.cOutputDir)
-
                     copySourceMaps.set(extension.output.keepSourceMaps)
                 }
 
@@ -299,25 +534,21 @@ class GbktPlugin : Plugin<Project> {
             dependsOn(buildRom)
 
             romFile.set(compileRom.flatMap { it.outputRom })
-            emulatorPath.set(extension.emulator.path)
-            emulatorArgs.set(extension.emulator.args)
-            liveReload.set(extension.emulator.liveReload)
-            liveReloadScript.set(extension.emulator.liveReloadScript)
+            scale.set(extension.emulator.scale)
+            headless.set(extension.emulator.headless)
+            externalEmulator.set(extension.emulator.externalEmulator)
             buildDirectory.set(project.layout.buildDirectory)
         }
 
         // Register debug emulator task
-        val debugEmulator =
-            project.tasks.register<DebugEmulatorTask>("debugEmulator") {
-                dependsOn(buildRom)
+        project.tasks.register<DebugEmulatorTask>("debugEmulator") {
+            dependsOn(buildRom)
 
-                romFile.set(compileRom.flatMap { it.outputRom })
-                sourceMapFile.set(
-                    project.layout.buildDirectory.file("gbkt/generated/main.c.gbkt.map")
-                )
-                emulatorPath.set(extension.emulator.path)
-                buildDirectory.set(project.layout.buildDirectory)
-            }
+            romFile.set(compileRom.flatMap { it.outputRom })
+            headless.set(extension.emulator.headless)
+            scale.set(extension.emulator.scale)
+            buildDirectory.set(project.layout.buildDirectory)
+        }
 
         // Register webExport task
         project.tasks.register<WebExportTask>("webExport") {
@@ -330,60 +561,72 @@ class GbktPlugin : Plugin<Project> {
             outputDir.set(project.layout.buildDirectory.dir("web"))
         }
 
-        // Register runWatch task - convenience task for live development
+        // Register runWatch task - convenience task for live development (embedded emulator)
         project.tasks.register("runWatch") {
             group = "gbkt"
-            description =
-                "Start emulator with live reload and print instructions for continuous build"
-
-            dependsOn(buildRom)
+            description = "Full pipeline: generateC → buildRom → launch embedded emulator"
 
             doLast {
                 val romFile = compileRom.get().outputRom.get().asFile
-                val liveReloadEnabled = extension.emulator.liveReload.getOrElse(true)
 
                 project.logger.lifecycle("")
                 project.logger.lifecycle("=".repeat(60))
-                project.logger.lifecycle("LIVE RELOAD DEVELOPMENT MODE")
+                project.logger.lifecycle("GBKT EMBEDDED EMULATOR")
                 project.logger.lifecycle("=".repeat(60))
                 project.logger.lifecycle("")
                 project.logger.lifecycle("ROM: ${romFile.absolutePath}")
                 project.logger.lifecycle("")
-
-                if (liveReloadEnabled) {
-                    project.logger.lifecycle(
-                        "Live reload is ENABLED. The emulator will automatically"
-                    )
-                    project.logger.lifecycle("reload the ROM when it detects changes.")
-                    project.logger.lifecycle("")
-                    project.logger.lifecycle(
-                        "To enable continuous builds, run in a separate terminal:"
-                    )
-                    project.logger.lifecycle("")
-                    project.logger.lifecycle("    ./gradlew -t buildRom")
-                    project.logger.lifecycle("")
-                    project.logger.lifecycle(
-                        "This will rebuild the ROM automatically when you save files."
-                    )
-                } else {
-                    project.logger.lifecycle(
-                        "Live reload is DISABLED. Enable it in build.gradle.kts:"
-                    )
-                    project.logger.lifecycle("")
-                    project.logger.lifecycle("    gbkt {")
-                    project.logger.lifecycle("        emulator {")
-                    project.logger.lifecycle("            liveReload.set(true)")
-                    project.logger.lifecycle("        }")
-                    project.logger.lifecycle("    }")
-                }
-
+                project.logger.lifecycle("The embedded Coffee-GB emulator is launching.")
+                project.logger.lifecycle("To rebuild and re-launch, run in a separate terminal:")
+                project.logger.lifecycle("")
+                project.logger.lifecycle("    ./gradlew -t buildRom")
                 project.logger.lifecycle("")
                 project.logger.lifecycle("=".repeat(60))
                 project.logger.lifecycle("")
             }
 
             // After printing instructions, launch the emulator
-            finalizedBy("runEmulator")
+            dependsOn("runEmulator")
+        }
+
+        // ── Agent DX tasks (gbkt-agent group) ──────────────────────────────────
+        // These tasks expose the AgentDebugSession primitives as CLI-callable commands so
+        // agents (Claude via Bash) can invoke them with ./gradlew <task>.
+
+        // Register captureScreenshot task
+        project.tasks.register<CaptureScreenshotTask>("captureScreenshot") {
+            description = "Capture screenshot from ROM after N frames"
+            dependsOn(buildRom)
+            romFile.set(compileRom.flatMap { it.outputRom })
+            screenshotDir.set(project.layout.buildDirectory.dir("gbkt/screenshots"))
+        }
+
+        // Register runScript task — executes a line-based input script against the ROM
+        project.tasks.register<RunInputScriptTask>("runScript") {
+            description = "Execute an input script against ROM in headless emulator"
+            dependsOn(buildRom)
+            romFile.set(compileRom.flatMap { it.outputRom })
+        }
+
+        // Register readVariable task — reads a named DSL variable from the running ROM
+        project.tasks.register<ReadVariableTask>("readVariable") {
+            description = "Read a named DSL variable from ROM after N frames"
+            dependsOn(buildRom)
+            romFile.set(compileRom.flatMap { it.outputRom })
+        }
+
+        // Register saveState task — saves (and optionally loads) emulator state checkpoints
+        project.tasks.register<SaveStateTask>("saveState") {
+            description = "Save emulator state checkpoint after N frames"
+            dependsOn(buildRom)
+            romFile.set(compileRom.flatMap { it.outputRom })
+            stateFile.set(project.layout.buildDirectory.file("gbkt/states/checkpoint.gbst"))
+        }
+
+        // Register diffScreenshots task — pixel-level screenshot comparison
+        // Note: does NOT depend on buildRom — it is a pure file comparison task.
+        project.tasks.register<DiffScreenshotsTask>("diffScreenshots") {
+            description = "Compare two screenshots pixel-by-pixel (fails on mismatch)"
         }
 
         // Register a clean task for gbkt outputs
@@ -393,4 +636,34 @@ class GbktPlugin : Plugin<Project> {
             doLast { project.delete(project.layout.buildDirectory.dir("gbkt")) }
         }
     }
+
+    private fun registerSetupClaudeTask(project: Project) {
+        project.tasks.register<SetupClaudeTask>("gbktSetupClaude") {
+            pluginVersion.set(project.provider { resolvePluginVersion() })
+            claudeDir.set(project.rootProject.layout.projectDirectory.dir(".claude"))
+            headedMode.convention(true)
+        }
+    }
+
+    private fun checkClaudeSkillsVersion(project: Project) {
+        // Only warn once per build (avoid duplicate warnings in multi-module builds)
+        val alreadyChecked = project.rootProject.extensions.extraProperties
+        val key = "gbkt.claude.version.checked"
+        if (alreadyChecked.has(key)) return
+        alreadyChecked.set(key, true)
+
+        val versionFile = File(project.rootProject.projectDir, ".claude/.gbkt-version")
+        if (!versionFile.exists()) return
+        val installed = versionFile.readText().trim()
+        val current = resolvePluginVersion()
+        if (installed != current) {
+            project.logger.warn(
+                "gbkt: Claude Code skills are outdated (installed: $installed, current: $current). " +
+                    "Run ./gradlew gbktSetupClaude to update."
+            )
+        }
+    }
+
+    private fun resolvePluginVersion(): String =
+        GbktPlugin::class.java.`package`?.implementationVersion ?: "dev"
 }
