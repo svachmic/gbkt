@@ -1,7 +1,6 @@
 plugins {
     kotlin("jvm")
     id("gbkt.publishing")
-    id("org.jetbrains.kotlinx.kover")
 }
 
 kotlin {

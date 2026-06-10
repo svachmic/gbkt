@@ -3,6 +3,7 @@ plugins {
     id("com.diffplug.spotless") apply false
     id("io.gitlab.arturbosch.detekt") apply false
     id("org.sonarqube")
+    id("org.jetbrains.kotlinx.kover")
 }
 
 val gbktVersion: String by project
@@ -22,8 +23,37 @@ sonarqube {
         property("sonar.projectKey", "svachmic_gbkt")
         property("sonar.organization", "svachmic")
         property("sonar.host.url", "https://sonarcloud.io")
-        property("sonar.coverage.jacoco.xmlReportPaths", "**/build/reports/kover/report.xml")
+        // Single merged kover report aggregated at the root (see the kover {} block below).
+        // The previous per-module glob silently matched only gbkt-core (the one module that
+        // applied kover), which is why SonarCloud reported ~5% project coverage.
+        property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            layout.buildDirectory.file("reports/kover/report.xml").get().asFile.absolutePath,
+        )
     }
+}
+
+// ============================================================================
+// Coverage aggregation
+//
+// Every Kotlin subproject gets the kover plugin (applied in the subprojects
+// block below); the root project merges them into one JaCoCo-format XML at
+// build/reports/kover/report.xml, which is the single report SonarCloud reads.
+// gbkt-all (empty aggregator), gbkt-bom (platform), and gbkt-intellij-plugin
+// (IDE sandbox test runtime) are excluded from the merge.
+// ============================================================================
+val koverAggregatedModules = listOf(
+    ":gbkt-ir", ":gbkt-lang", ":gbkt-engine", ":gbkt-world", ":gbkt-core",
+    ":gbkt-backend-api", ":gbkt-backend-gbdk", ":gbkt-analysis",
+    ":gbkt-genre-rpg", ":gbkt-genre-platformer", ":gbkt-genre-puzzle", ":gbkt-genre-sport",
+    ":gbkt-emulator", ":gbkt-test", ":gbkt-mcp-server", ":gbkt-cli",
+    ":gbkt-examples:pong", ":gbkt-examples:breakout", ":gbkt-examples:simple-physics",
+    ":gbkt-examples:metasprites", ":gbkt-examples:metasprites-stress",
+    ":gbkt-examples:banks", ":gbkt-examples:platformer-template",
+)
+
+dependencies {
+    koverAggregatedModules.forEach { kover(project(it)) }
 }
 
 // ============================================================================
@@ -51,6 +81,11 @@ val mavenLocalModulesForPluginTest = listOf(
     // too — otherwise a stale gbkt-analysis links against the fresh gbkt-ir and throws
     // NoSuchMethodError: SceneIR.copy$default (Phase 15 F1 / D-05 — the actual root cause).
     ":gbkt-analysis",
+    // gbkt-genre-rpg is an implementation() dependency of gbkt-backend-gbdk, so the sandbox
+    // pulls it at runtime through the same edge; the remaining genre modules and the emulator
+    // are published as well so a cold ~/.m2 (CI runner) never resolves a stale snapshot.
+    ":gbkt-genre-rpg", ":gbkt-genre-platformer", ":gbkt-genre-puzzle", ":gbkt-genre-sport",
+    ":gbkt-emulator",
 )
 
 tasks.register("publishConsumedModulesToMavenLocal") {
@@ -122,6 +157,8 @@ subprojects {
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
         apply(plugin = "com.diffplug.spotless")
         apply(plugin = "io.gitlab.arturbosch.detekt")
+        // Coverage for every Kotlin module — merged at the root for SonarCloud
+        apply(plugin = "org.jetbrains.kotlinx.kover")
 
         configure<com.diffplug.gradle.spotless.SpotlessExtension> {
             kotlin {
