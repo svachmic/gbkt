@@ -66,13 +66,23 @@ concurrency:
   group: kotlin-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GBDK_VERSION: '4.5.0'
+  GBDK_SHA256: 'd7857a5f6d135ee4c249043ca26aad9f2ec8ab5d4106d97720d404114f42605c'
+
 jobs:
+  # Single sequenced job: each step reuses the previous step's Gradle outputs on the
+  # same runner (one daemon, one compile). Order: publish (plugin-test sandbox deps) →
+  # build+test everything → merge coverage → Sonar scan → ROM smoke.
   build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Full history for SonarCloud blame/new-code detection
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
@@ -85,55 +95,59 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
 
+      - name: Cache GBDK
+        id: cache-gbdk
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/gbdk
+          key: gbdk-linux64-${{ env.GBDK_VERSION }}
+
+      - name: Install GBDK
+        if: steps.cache-gbdk.outputs.cache-hit != 'true'
+        run: |
+          curl -fsSL -o /tmp/gbdk.tar.gz \
+            "https://github.com/gbdk-2020/gbdk-2020/releases/download/${GBDK_VERSION}/gbdk-linux64.tar.gz"
+          echo "${GBDK_SHA256}  /tmp/gbdk.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/gbdk.tar.gz -C "$HOME"
+          rm /tmp/gbdk.tar.gz
+
+      - name: Export GBDK_HOME
+        run: echo "GBDK_HOME=$HOME/gbdk" >> "$GITHUB_ENV"
+
       - name: Publish library modules to mavenLocal
+        # Required before the gbkt-gradle-plugin IntegrationTest TestKit sandbox runs —
+        # the sandbox resolves gbkt SNAPSHOT artifacts from mavenLocal. The module list
+        # is owned by the root publishConsumedModulesToMavenLocal task.
+        run: ./gradlew publishConsumedModulesToMavenLocal
+
+      - name: Build and test all modules
+        # Root `build` covers assemble + check (tests, detekt) for every subproject,
+        # including the example games; pluginTest runs the gbkt-gradle-plugin suite.
+        run: ./gradlew build pluginTest
+
+      - name: Aggregate coverage report
+        # Merges per-module kover results into build/reports/kover/report.xml — the
+        # single JaCoCo-format report SonarCloud reads. Tests are already up-to-date.
+        run: ./gradlew koverXmlReport
+
+      - name: SonarCloud scan
+        run: ./gradlew sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ROM build smoke
+        # Full lcc compile of every example to a .gb ROM — catches codegen/link/bank
+        # regressions that JVM-tier tests cannot see (rom-build verifier gate).
         run: |
           ./gradlew \
-            :gbkt-ir:publishToMavenLocal \
-            :gbkt-lang:publishToMavenLocal \
-            :gbkt-engine:publishToMavenLocal \
-            :gbkt-world:publishToMavenLocal \
-            :gbkt-core:publishToMavenLocal \
-            :gbkt-backend-api:publishToMavenLocal \
-            :gbkt-backend-gbdk:publishToMavenLocal \
-            :gbkt-emulator:publishToMavenLocal \
-            :gbkt-analysis:publishToMavenLocal \
-            :gbkt-genre-rpg:publishToMavenLocal \
-            :gbkt-genre-platformer:publishToMavenLocal \
-            :gbkt-genre-puzzle:publishToMavenLocal \
-            :gbkt-genre-sport:publishToMavenLocal \
-            --configure-on-demand --no-daemon
-
-      - name: Build all modules
-        run: |
-          ./gradlew \
-            :gbkt-core:build \
-            :gbkt-cli:build \
-            :gbkt-backend-api:build \
-            :gbkt-backend-gbdk:build \
-            :gbkt-intellij-plugin:build \
-            :gbkt-examples:pong:build \
-            :gbkt-examples:breakout:build \
-            :gbkt-examples:simple-physics:build \
-            :gbkt-examples:metasprites:build \
-            :gbkt-examples:metasprites-stress:build \
-            :gbkt-examples:banks:build \
-            :gbkt-examples:platformer-template:build \
-            --no-daemon
-
-      - name: Run Tests
-        run: ./gradlew :gbkt-core:test :gbkt-backend-api:test :gbkt-backend-gbdk:test :gbkt-gradle-plugin:test --no-daemon
-
-      - name: Verify Example C Generation
-        run: |
-          ./gradlew \
-            :gbkt-examples:pong:generateC \
-            :gbkt-examples:breakout:generateC \
-            :gbkt-examples:simple-physics:generateC \
-            :gbkt-examples:metasprites:generateC \
-            :gbkt-examples:metasprites-stress:generateC \
-            :gbkt-examples:banks:generateC \
-            :gbkt-examples:platformer-template:generateC \
-            --no-daemon
+            :gbkt-examples:pong:buildRom \
+            :gbkt-examples:breakout:buildRom \
+            :gbkt-examples:simple-physics:buildRom \
+            :gbkt-examples:metasprites:buildRom \
+            :gbkt-examples:metasprites-stress:buildRom \
+            :gbkt-examples:banks:buildRom \
+            :gbkt-examples:platformer-template:buildRom
 
       - name: Upload Test Reports
         if: failure()
@@ -159,26 +173,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
 
-      - name: Publish library modules to mavenLocal
-        run: |
-          ./gradlew \
-            :gbkt-ir:publishToMavenLocal \
-            :gbkt-lang:publishToMavenLocal \
-            :gbkt-engine:publishToMavenLocal \
-            :gbkt-world:publishToMavenLocal \
-            :gbkt-core:publishToMavenLocal \
-            :gbkt-backend-api:publishToMavenLocal \
-            :gbkt-backend-gbdk:publishToMavenLocal \
-            :gbkt-emulator:publishToMavenLocal \
-            :gbkt-analysis:publishToMavenLocal \
-            :gbkt-genre-rpg:publishToMavenLocal \
-            :gbkt-genre-platformer:publishToMavenLocal \
-            :gbkt-genre-puzzle:publishToMavenLocal \
-            :gbkt-genre-sport:publishToMavenLocal \
-            --configure-on-demand --no-daemon
-
       - name: Check formatting
-        run: ./gradlew spotlessCheck --no-daemon
+        # :gbkt-gradle-plugin:spotlessCheck is addressed explicitly — it is an included
+        # build, so the root spotlessCheck does not reach it.
+        run: ./gradlew spotlessCheck :gbkt-gradle-plugin:spotlessCheck
 
   version-consistency:
     runs-on: ubuntu-latest
@@ -195,23 +193,5 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
 
-      - name: Publish library modules to mavenLocal
-        run: |
-          ./gradlew \
-            :gbkt-ir:publishToMavenLocal \
-            :gbkt-lang:publishToMavenLocal \
-            :gbkt-engine:publishToMavenLocal \
-            :gbkt-world:publishToMavenLocal \
-            :gbkt-core:publishToMavenLocal \
-            :gbkt-backend-api:publishToMavenLocal \
-            :gbkt-backend-gbdk:publishToMavenLocal \
-            :gbkt-emulator:publishToMavenLocal \
-            :gbkt-analysis:publishToMavenLocal \
-            :gbkt-genre-rpg:publishToMavenLocal \
-            :gbkt-genre-platformer:publishToMavenLocal \
-            :gbkt-genre-puzzle:publishToMavenLocal \
-            :gbkt-genre-sport:publishToMavenLocal \
-            --configure-on-demand --no-daemon
-
       - name: Check version consistency
-        run: ./gradlew checkVersionConsistency --no-daemon
+        run: ./gradlew checkVersionConsistency

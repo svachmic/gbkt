@@ -1,6 +1,6 @@
 # CI/CD Workflows
 
-gbkt uses four GitHub Actions workflows for build, quality, release, and security analysis. All action dependencies are pinned to SHA hashes for supply-chain security and kept up-to-date by Dependabot.
+gbkt uses three GitHub Actions workflows for build, release, and security analysis. All action dependencies are pinned to SHA hashes for supply-chain security and kept up-to-date by Dependabot.
 
 ## Workflows
 
@@ -8,28 +8,25 @@ gbkt uses four GitHub Actions workflows for build, quality, release, and securit
 
 **Triggers:** Push to `master` or PR to `master` (path-filtered to source modules + build files)
 
-Three parallel jobs:
+One sequenced `build` job plus two light parallel checks:
 
 | Job | What it does |
 |-----|-------------|
-| `build` | Publishes library modules to mavenLocal, builds all modules, runs tests, verifies example C generation. Uploads test reports on failure. |
-| `code-quality` | Runs Spotless formatting check (`spotlessCheck`) |
-| `version-consistency` | Runs `checkVersionConsistency` to verify all modules declare the same version |
+| `build` | Sequenced on one runner so nothing is compiled twice: install GBDK-2020 (version + sha256 pinned, cached) → publish sandbox modules to mavenLocal (`publishConsumedModulesToMavenLocal`) → `./gradlew build pluginTest` (every module's assemble + tests + detekt, incl. examples and the gradle plugin) → `koverXmlReport` (merge per-module coverage) → `sonar` (SonarCloud scan reads the merged report) → ROM build smoke (`buildRom` for all 7 examples via lcc). Uploads test reports on failure. |
+| `code-quality` | Spotless formatting check — `spotlessCheck :gbkt-gradle-plugin:spotlessCheck` (the plugin is an included build, so it must be addressed explicitly) |
+| `version-consistency` | `checkVersionConsistency` — verifies all modules declare the same version |
+
+**Secrets:** `SONAR_TOKEN`, `GITHUB_TOKEN` (build job, Sonar step)
 
 Concurrency: one run per branch, cancels in-progress.
 
-### SonarCloud (`sonar.yml`)
+### Coverage
 
-**Triggers:** Push to `master` or PR to `master` (path-filtered)
+Every Kotlin module applies Kover (wired centrally in the root `build.gradle.kts`); the root `koverXmlReport` merges all module results into `build/reports/kover/report.xml` (JaCoCo XML format), which is the single report `sonar.coverage.jacoco.xmlReportPaths` points at. Do not re-introduce per-module report paths — a glob that matches only some modules silently under-reports project coverage (this is how SonarCloud once showed ~5% when actual line coverage was ~83%).
 
-Single job:
-1. Publishes library modules to mavenLocal
-2. Runs Kotlin tests with Kover coverage reporting
-3. Executes SonarCloud scan
+### GBDK in CI
 
-**Secrets:** `SONAR_TOKEN`, `GITHUB_TOKEN`
-
-Concurrency: one run per branch, cancels in-progress.
+The `build` job installs GBDK-2020 (release tarball pinned by version and sha256 in the workflow `env`, cached via `actions/cache`) so `convertSprites`, png2asset byte-identity tests, and the `buildRom` smoke all run for real. The pinned version must match the version developers use locally — png2asset output shape feeds byte-identity tests with committed goldens. To bump: update `GBDK_VERSION` and `GBDK_SHA256` together.
 
 ### Release (`release.yml`)
 
