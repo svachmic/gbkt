@@ -2626,7 +2626,6 @@ class RpgVisitor(private val gameIR: GameIR) {
     @Suppress("UNCHECKED_CAST")
     fun generateActionRpgFunctions(system: GenericSystem): List<CFunction> {
         val config = system.config["config"] as? ActionRpgConfig ?: return emptyList()
-        val id = system.id.replace('-', '_').replace(' ', '_')
         return buildList {
             add(generateArpgUpdateFunction(config))
             add(generateArpgAttackFunction(config))

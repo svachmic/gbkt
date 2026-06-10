@@ -181,7 +181,6 @@ class BudgetGutterIconProvider : LineMarkerProvider {
 
     /** Build tooltip text with bank and optional VRAM usage details. */
     private fun buildTooltip(entry: BudgetEntry): String {
-        val bankKb = entry.bankTotalBytes / 1024
         val bankDetail =
             "Bank: ${formatBytes(entry.bankUsedBytes)} / ${formatBytes(entry.bankTotalBytes)} (${entry.usagePercent}%)"
         return if (entry.vramDetail != null) {

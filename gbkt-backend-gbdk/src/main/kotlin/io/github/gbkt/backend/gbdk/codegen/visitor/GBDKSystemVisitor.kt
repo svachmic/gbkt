@@ -3096,7 +3096,6 @@ class GBDKSystemVisitor(
     @Suppress("LongMethod")
     override fun visitPathfindingSystem(system: PathfindingSystem): List<CFunction> {
         val closedSetSize = system.mapWidth * system.mapHeight / 8 + 1
-        val openListSize = system.maxOpenNodes * 4 // 4 bytes per node: x, y, g_cost, f_cost
 
         // ------------------------------------------------------------------
         // pf_is_closed(x, y) — bit-test the closed set

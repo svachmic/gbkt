@@ -1526,8 +1526,7 @@ class GBDKPipeline {
         val atbDefines =
             gameIR.systems
                 .filterIsInstance<CombatEngineSystem>()
-                .filter { it.combatType == io.github.gbkt.core.ir.CombatType.ATB }
-                .firstOrNull()
+                .firstOrNull { it.combatType == io.github.gbkt.core.ir.CombatType.ATB }
                 ?.let { atbSystem ->
                     val cfg = atbSystem.atbConfig
                     listOf(

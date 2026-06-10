@@ -11,7 +11,6 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CArray
 import io.github.gbkt.backend.gbdk.codegen.ast.CArrayAccess
 import io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CCall
-import io.github.gbkt.backend.gbdk.codegen.ast.CComment
 import io.github.gbkt.backend.gbdk.codegen.ast.CConst
 import io.github.gbkt.backend.gbdk.codegen.ast.CExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CExprStatement
@@ -776,26 +775,6 @@ class HudVisitor(private val gameIR: GameIR) {
                             )
                             elemOffset += elem.maxValue
                         }
-                    }
-                }
-            }
-
-        // Tile constant declarations for this HUD's elements
-        // These are emitted as global variables (const UINT8) for tile index lookups.
-        // We use const globals (static, HOME bank) so the address can be passed to set_win_tiles.
-        val tileDefs =
-            buildList<CStatement> {
-                for (elem in hud.elements) {
-                    val elemId = hudElementId(elem)
-                    when (elem) {
-                        is HudBar -> {
-                            // fill and empty tiles for the bar
-                            add(CComment("tile constants defined as globals in main.c"))
-                        }
-                        is HudIcons -> {
-                            add(CComment("icon tile constants defined as globals in main.c"))
-                        }
-                        else -> Unit
                     }
                 }
             }

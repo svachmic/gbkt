@@ -263,7 +263,7 @@ val breakout =
                                     bricksLeft -= 1
                                     score += 10
                                     ballDy *= -1
-                                    playSound(hitSfx)
+                                    playSound(scoreSfx)
                                     print(
                                         HUD_FORMAT,
                                         score.toExpr(),

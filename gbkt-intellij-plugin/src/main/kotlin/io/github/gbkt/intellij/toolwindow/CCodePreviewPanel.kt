@@ -42,9 +42,10 @@ import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VirtualFileEvent
-import com.intellij.openapi.vfs.VirtualFileListener
 import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
@@ -441,17 +442,23 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
      * automatically reloaded.
      */
     private fun setupSourceMapFileWatcher() {
-        VirtualFileManager.getInstance()
-            .addVirtualFileListener(
-                object : VirtualFileListener {
-                    override fun contentsChanged(event: VirtualFileEvent) {
+        project.messageBus
+            .connect(this)
+            .subscribe(
+                VirtualFileManager.VFS_CHANGES,
+                object : BulkFileListener {
+                    override fun after(events: List<VFileEvent>) {
                         if (!autoRefreshCheckbox.isSelected) return
                         if (isDisposed) return
-                        if (!event.file.name.endsWith(".gbkt.map")) return
 
-                        // Verify file belongs to this project
+                        // Verify a source map belonging to this project changed
                         val projectPath = project.basePath ?: return
-                        if (!event.file.path.startsWith(projectPath)) return
+                        val mapChanged = events.any { event ->
+                            event is VFileContentChangeEvent &&
+                                event.path.endsWith(".gbkt.map") &&
+                                event.path.startsWith(projectPath)
+                        }
+                        if (!mapChanged) return
 
                         ApplicationManager.getApplication().invokeLater {
                             if (!isDisposed) {
@@ -461,7 +468,6 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
                         }
                     }
                 },
-                /* disposable = */ this,
             )
     }
 
