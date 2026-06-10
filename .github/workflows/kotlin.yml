@@ -115,10 +115,13 @@ jobs:
         run: echo "GBDK_HOME=$HOME/gbdk" >> "$GITHUB_ENV"
 
       - name: Publish library modules to mavenLocal
-        # Required before the gbkt-gradle-plugin IntegrationTest TestKit sandbox runs —
-        # the sandbox resolves gbkt SNAPSHOT artifacts from mavenLocal. The module list
-        # is owned by the root publishConsumedModulesToMavenLocal task.
-        run: ./gradlew publishConsumedModulesToMavenLocal
+        # Bootstrap step: compiling the gbkt-gradle-plugin included build (required to even
+        # CONFIGURE the example projects) resolves gbkt SNAPSHOT artifacts from mavenLocal,
+        # and the IntegrationTest TestKit sandbox does the same at runtime. The ROOTED task
+        # path + --configure-on-demand are both load-bearing: an unrooted task name makes
+        # Gradle search every project (configuring the examples → compiling the plugin →
+        # chicken-and-egg on a cold ~/.m2). The module list is owned by the root task.
+        run: ./gradlew :publishConsumedModulesToMavenLocal --configure-on-demand
 
       - name: Build and test all modules
         # Root `build` covers assemble + check (tests, detekt) for every subproject,
@@ -173,6 +176,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
 
+      - name: Publish library modules to mavenLocal
+        # spotlessCheck configures every project; configuring the examples compiles the
+        # gbkt-gradle-plugin included build, which resolves gbkt SNAPSHOTs from mavenLocal.
+        run: ./gradlew :publishConsumedModulesToMavenLocal --configure-on-demand
+
       - name: Check formatting
         # :gbkt-gradle-plugin:spotlessCheck is addressed explicitly — it is an included
         # build, so the root spotlessCheck does not reach it.
@@ -194,4 +202,6 @@ jobs:
         uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
 
       - name: Check version consistency
-        run: ./gradlew checkVersionConsistency
+        # Rooted path + configure-on-demand: this is a root-only properties check and must
+        # not trigger configuration of the example projects (no mavenLocal bootstrap here).
+        run: ./gradlew :checkVersionConsistency --configure-on-demand
