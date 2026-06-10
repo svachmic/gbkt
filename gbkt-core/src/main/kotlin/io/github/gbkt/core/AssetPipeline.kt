@@ -253,14 +253,19 @@ object AssetPipeline {
                 .take(maxColors)
                 .map { GBCColor.fromHex(it.key) }
 
-        // Ensure we have exactly 4 colors (pad with grayscale if needed)
+        // Ensure we have exactly 4 colors (pad with grayscale if needed). The spacing
+        // is computed once from the initial deficit so every padded luminance stays in
+        // 0..255 — recomputing it per iteration drove the last value negative and made
+        // fromRGB888 throw for any image with fewer than 4 unique colors.
         val colors = sortedColors.toMutableList()
         if (colors.isEmpty()) colors.add(GBCColor.WHITE)
-        while (colors.size < 4) {
-            // Add grayscale colors based on what we have
-            val luminanceStep = 255 / (4 - colors.size + 1)
-            val lum = 255 - (colors.size * luminanceStep)
-            colors.add(GBCColor.fromRGB888(lum, lum, lum))
+        val missing = 4 - colors.size
+        if (missing > 0) {
+            val luminanceStep = 255 / (missing + 1)
+            for (i in 1..missing) {
+                val lum = 255 - i * luminanceStep
+                colors.add(GBCColor.fromRGB888(lum, lum, lum))
+            }
         }
 
         // Sort by luminance (lightest first, as is GB convention)

@@ -75,7 +75,7 @@ class FontCharacterMapping(
 
                 // Extended character with explicit mapping
                 charToTile.containsKey(ch) -> {
-                    val tileIndex = charToTile[ch]!!
+                    val tileIndex = charToTile.getValue(ch)
                     sb.append("\\x%02X".format(tileIndex))
                 }
 

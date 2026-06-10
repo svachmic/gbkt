@@ -23,6 +23,7 @@ import io.github.gbkt.core.ir.SizeDef
 import io.github.gbkt.core.ir.SpriteDef
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -172,6 +173,27 @@ class BudgetReporterTest {
         // Should show bank number 1 for the battle scene
         assertContains(report, "battle")
         assertContains(report, "Est. Size")
+    }
+
+    @Test
+    fun `ansi breakdown line aligns with plain breakdown line`() {
+        val scene = SceneIR(id = "gameplay")
+        val game = GameIR(name = "AlignTest", scenes = listOf(scene))
+        val bankAssignments = mapOf("gameplay" to BankSlot(1))
+        val ctx = baseContext(game).copy(bankAssignments = bankAssignments)
+
+        fun breakdownLine(report: String): String =
+            report.substringAfter("Per-scene breakdown").substringBefore("VRAM").lines().single {
+                it.contains("gameplay") && it.contains("|")
+            }
+
+        val plainLine = breakdownLine(BudgetReporter.formatReport(ctx, ansiEnabled = false))
+        val ansiLine = breakdownLine(BudgetReporter.formatReport(ctx, ansiEnabled = true))
+
+        // The fill column must be padded BEFORE colorizing — stripping the ANSI
+        // codes from the colored line must yield exactly the plain-text line.
+        val stripped = ansiLine.replace(Regex("\u001B\\[[0-9;]*m"), "")
+        assertEquals(plainLine, stripped)
     }
 
     // -------------------------------------------------------------------------

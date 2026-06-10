@@ -783,7 +783,7 @@ class RpgVisitor(private val gameIR: GameIR) {
                     val abilityId = action.abilityId.replace('-', '_').replace(' ', '_')
                     add(CExprStatement(CCall("use_ability_$abilityId")))
                     if (def.abilityCooldowns.containsKey(action.abilityId)) {
-                        val cdTurns = def.abilityCooldowns[action.abilityId]!!
+                        val cdTurns = def.abilityCooldowns.getValue(action.abilityId)
                         add(
                             CExprStatement(
                                 CBinaryExpr(

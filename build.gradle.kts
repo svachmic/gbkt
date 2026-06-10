@@ -40,7 +40,9 @@ sonarqube {
 // block below); the root project merges them into one JaCoCo-format XML at
 // build/reports/kover/report.xml, which is the single report SonarCloud reads.
 // gbkt-all (empty aggregator), gbkt-bom (platform), and gbkt-intellij-plugin
-// (IDE sandbox test runtime) are excluded from the merge.
+// (IDE sandbox test runtime) are excluded from the merge. Because the plugin can
+// produce no coverage data here, its build file also sets sonar.coverage.exclusions
+// so SonarCloud doesn't count it as 0%-covered — see SEED-019 for the path back.
 // ============================================================================
 val koverAggregatedModules = listOf(
     ":gbkt-ir", ":gbkt-lang", ":gbkt-engine", ":gbkt-world", ":gbkt-core",

@@ -339,14 +339,9 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
             // Separator takes up lines — count them
             val separatorLines = separator.count { it == '\n' }
 
-            if (combined.isNotEmpty()) {
-                combined.append(separator)
-                currentLine += separatorLines
-            } else {
-                // First file: add separator header at top
-                combined.append(separator)
-                currentLine += separatorLines
-            }
+            // Every file gets a separator header, including the first one at the top
+            combined.append(separator)
+            currentLine += separatorLines
 
             // Record starting line offset for this file (1-based)
             fileLineOffsets[fileName] = currentLine

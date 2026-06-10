@@ -292,13 +292,9 @@ object BudgetReporter {
             val bankCol = bankNum.toString().padStart(headerBank.length)
             val sizeCol = "${estimatedKb} KB".padStart(headerSize.length)
             val fillStr = "$bankFillPct%"
-            val fillCol =
-                colorize(fillStr, bankFillPct, ansiEnabled)
-                    .padStart(
-                        // When ANSI codes are present, pad the raw text and then add color
-                        // separately
-                        if (ansiEnabled) headerFill.length else headerFill.length
-                    )
+            // Pad the raw text before colorizing: ANSI escape codes inflate the string
+            // length, so padding the colorized string would under-pad the column.
+            val fillCol = colorize(fillStr.padStart(headerFill.length), bankFillPct, ansiEnabled)
 
             appendLine(" $sceneCol | $bankCol | $sizeCol | $fillCol")
         }

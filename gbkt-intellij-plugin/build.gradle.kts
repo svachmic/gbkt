@@ -83,3 +83,14 @@ tasks {
         enabled = false
     }
 }
+
+// Coverage-only Sonar exclusion: this module is excluded from the kover merge by
+// design (IDE sandbox test runtime — see root build.gradle.kts koverAggregatedModules),
+// so SonarCloud would otherwise count every line here as uncovered. Bugs, smells, and
+// hotspots are still scanned. Remove when SEED-019 (IntelliJ Platform test framework
+// coverage) lands.
+extensions.configure<org.sonarqube.gradle.SonarExtension> {
+    properties {
+        property("sonar.coverage.exclusions", "**/*")
+    }
+}

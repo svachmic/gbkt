@@ -138,7 +138,7 @@ class ScriptOpInterpreter(private val game: GameIR) {
         if (name.endsWith(".x") || name.endsWith(".y")) {
             val actorId = name.substringBeforeLast(".")
             if (actorPositions.containsKey(actorId)) {
-                val (cx, cy) = actorPositions[actorId]!!
+                val (cx, cy) = actorPositions.getValue(actorId)
                 actorPositions[actorId] =
                     if (name.endsWith(".x")) Pair(value.toInt(), cy) else Pair(cx, value.toInt())
             }

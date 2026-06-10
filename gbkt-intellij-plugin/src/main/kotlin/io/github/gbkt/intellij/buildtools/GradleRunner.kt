@@ -123,7 +123,9 @@ object GradleRunner {
 
         // On Unix, try to make it executable if it exists but isn't executable
         if (!isWindows && wrapper.exists()) {
-            wrapper.setExecutable(true)
+            if (!wrapper.setExecutable(true)) {
+                logger.warn("Failed to make $wrapperName executable at ${wrapper.absolutePath}")
+            }
             if (wrapper.canExecute()) {
                 return wrapper
             }
