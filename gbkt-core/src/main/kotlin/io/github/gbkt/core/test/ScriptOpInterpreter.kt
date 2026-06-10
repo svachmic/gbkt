@@ -771,7 +771,7 @@ class ScriptOpInterpreter(private val game: GameIR) {
      * variable and executes the body ops.
      */
     private fun executePoolForEachActive(op: PoolForEachActive) {
-        val slots = poolSlots[op.poolId] ?: return
+        val slots: List<Boolean> = poolSlots[op.poolId] ?: return
         for (i in slots.indices) {
             if (slots[i]) {
                 variables[op.slotVarName] = i.toLong()

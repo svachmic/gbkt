@@ -418,7 +418,10 @@ class RpgVisitor(private val gameIR: GameIR) {
                             )
                         )
                     }
-                    StackMode.REFRESH_DURATION -> {
+                    // REFRESH_DURATION re-arms an existing effect's timer while INDEPENDENT
+                    // applies a fresh instance; both lower to the same state-setting C code.
+                    StackMode.REFRESH_DURATION,
+                    StackMode.INDEPENDENT -> {
                         add(
                             CExprStatement(
                                 CBinaryExpr(CVar("_effect_${id}_active"), "=", CLiteral(1))
@@ -457,22 +460,6 @@ class RpgVisitor(private val gameIR: GameIR) {
                                 thenBody = stackBody,
                             )
                         )
-                        add(
-                            CExprStatement(
-                                CBinaryExpr(CVar("_effect_${id}_active"), "=", CLiteral(1))
-                            )
-                        )
-                        add(
-                            CExprStatement(
-                                CBinaryExpr(
-                                    CVar("_effect_${id}_duration"),
-                                    "=",
-                                    CLiteral(def.duration),
-                                )
-                            )
-                        )
-                    }
-                    StackMode.INDEPENDENT -> {
                         add(
                             CExprStatement(
                                 CBinaryExpr(CVar("_effect_${id}_active"), "=", CLiteral(1))
@@ -2641,16 +2628,16 @@ class RpgVisitor(private val gameIR: GameIR) {
         val config = system.config["config"] as? ActionRpgConfig ?: return emptyList()
         val id = system.id.replace('-', '_').replace(' ', '_')
         return buildList {
-            add(generateArpgUpdateFunction(id, config))
-            add(generateArpgAttackFunction(id, config))
+            add(generateArpgUpdateFunction(config))
+            add(generateArpgAttackFunction(config))
             if (config.dodgeRoll != null) {
-                add(generateArpgDodgeRollFunction(id, config))
+                add(generateArpgDodgeRollFunction(config))
             }
             if (config.atb != null && config.model == CombatModel.HYBRID_ATB) {
-                add(generateAtbCheckReadyFunction(id, config))
+                add(generateAtbCheckReadyFunction(config))
             }
             if (config.behaviorPresets.isNotEmpty()) {
-                add(generateAiUpdateFunction(id, config))
+                add(generateAiUpdateFunction(config))
             }
         }
     }
@@ -2691,7 +2678,7 @@ class RpgVisitor(private val gameIR: GameIR) {
      * - If ATB mode: fills ATB gauges per party slot by baseSpeed per frame
      * - If stamina configured: regenerates `_gauge_stamina += regenRate` clamped to maxStamina
      */
-    private fun generateArpgUpdateFunction(id: String, config: ActionRpgConfig): CFunction {
+    private fun generateArpgUpdateFunction(config: ActionRpgConfig): CFunction {
         val body =
             buildList<CStatement> {
                 add(CComment("ARPG update — called every frame"))
@@ -2792,7 +2779,7 @@ class RpgVisitor(private val gameIR: GameIR) {
      * - Resets cooldown timer to configured value
      * - Emits attack damage call
      */
-    private fun generateArpgAttackFunction(id: String, config: ActionRpgConfig): CFunction {
+    private fun generateArpgAttackFunction(config: ActionRpgConfig): CFunction {
         val body =
             buildList<CStatement> {
                 add(CComment("ARPG attack — check cooldown timer"))
@@ -2849,7 +2836,7 @@ class RpgVisitor(private val gameIR: GameIR) {
      * - Sets i-frame counter from [DodgeRollConfig.iFrameDuration]
      * - Sets cooldown timer from [DodgeRollConfig.cooldownFrames]
      */
-    private fun generateArpgDodgeRollFunction(id: String, config: ActionRpgConfig): CFunction {
+    private fun generateArpgDodgeRollFunction(config: ActionRpgConfig): CFunction {
         val dodgeRoll = config.dodgeRoll!!
         val body =
             buildList<CStatement> {
@@ -2928,7 +2915,7 @@ class RpgVisitor(private val gameIR: GameIR) {
      * When the gauge reaches [AtbConfig.maxGauge], resets it to 0 and returns 1 so the caller knows
      * the character may act.
      */
-    private fun generateAtbCheckReadyFunction(id: String, config: ActionRpgConfig): CFunction {
+    private fun generateAtbCheckReadyFunction(config: ActionRpgConfig): CFunction {
         val atb = config.atb!!
         val body =
             buildList<CStatement> {
@@ -2972,7 +2959,7 @@ class RpgVisitor(private val gameIR: GameIR) {
      * - [BehaviorPresetType.ATTACK_WHEN_CLOSE]: call `ai_attack(entity_id)` within melee range
      * - [BehaviorPresetType.FLEE]: call `ai_flee(entity_id)` when HP below threshold
      */
-    private fun generateAiUpdateFunction(id: String, config: ActionRpgConfig): CFunction {
+    private fun generateAiUpdateFunction(config: ActionRpgConfig): CFunction {
         val body =
             buildList<CStatement> {
                 add(CComment("AI behavior dispatch for entity_id"))

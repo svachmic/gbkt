@@ -144,7 +144,7 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
         val project = file.project
         val addedNames = hashSetOf<String>()
         val gbktFiles =
-            FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
+            FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project)).toList()
 
         for (virtualFile in gbktFiles) {
             val psiFile =
@@ -210,7 +210,7 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
 
         // Search all gbkt files in the project
         val gbktFiles =
-            FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project))
+            FileTypeIndex.getFiles(GbktFileType, GlobalSearchScope.projectScope(project)).toList()
 
         for (virtualFile in gbktFiles) {
             val psiFile =

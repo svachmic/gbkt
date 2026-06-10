@@ -87,7 +87,7 @@ class VRAMLayoutPass : AnalysisPass {
             }
 
             // Background tiles used by this scene (manifest-aware; falls back to heuristic)
-            val bgTilesUsed = estimateBgTiles(scene, game, context.assetManifest)
+            val bgTilesUsed = estimateBgTiles(scene, context.assetManifest)
 
             val totalUsed = spriteTiles + globalTiles + bgTilesUsed
 
@@ -194,12 +194,8 @@ class VRAMLayoutPass : AnalysisPass {
      * - The matching entry has [AssetManifestEntry.TilemapEntry.uniqueTileCount] == 0 (unknown)
      *
      * When [SceneIR.tilesetRef] is null, returns 0 — the scene uses no dedicated BG tileset.
-     *
-     * The [game] parameter is retained for potential future refinement (e.g. cross-referencing
-     * [GameIR.assets] by path when no manifest is present).
      */
-    @Suppress("UnusedParameter") // game retained for future refinement
-    private fun estimateBgTiles(scene: SceneIR, game: GameIR, manifest: AssetManifest?): Int {
+    private fun estimateBgTiles(scene: SceneIR, manifest: AssetManifest?): Int {
         val tilesetRef = scene.tilesetRef ?: return 0
         // Try to find actual unique tile count from the asset manifest
         val entry =

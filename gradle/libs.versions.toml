@@ -2,8 +2,25 @@
 json = "20251224"
 kotest = "5.9.1"
 coroutines = "1.9.0"
+coffeegb = "1.6.0"
+junit4 = "4.13.2"
+mcp-sdk = "0.9.0"
+# gbkt-mcp-server pins a newer coroutines line than the shared `coroutines` version used by
+# gbkt-core tests. Kept separate to preserve exact resolution; unify when convenient.
+coroutines-mcp = "1.10.1"
+serialization-json = "1.8.1"
+kotlinx-io = "0.7.0"
+slf4j = "2.0.17"
 
 [libraries]
 json = { module = "org.json:json", version.ref = "json" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+coffeegb-core = { module = "eu.rekawek.coffeegb:core", version.ref = "coffeegb" }
+junit4 = { module = "junit:junit", version.ref = "junit4" }
+mcp-kotlin-sdk = { module = "io.modelcontextprotocol:kotlin-sdk", version.ref = "mcp-sdk" }
+mcp-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines-mcp" }
+mcp-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines-mcp" }
+serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization-json" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
+slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }

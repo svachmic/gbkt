@@ -28,25 +28,25 @@ dependencies {
     implementation(project(":gbkt-test"))
 
     // MCP Kotlin SDK — server + stdio transport
-    implementation("io.modelcontextprotocol:kotlin-sdk:0.9.0")
+    implementation(libs.mcp.kotlin.sdk)
 
     // Coroutines for async wrapping of blocking StepAgent calls
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+    implementation(libs.mcp.coroutines.core)
 
     // kotlinx-serialization for JSON tool results
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+    implementation(libs.serialization.json)
 
     // kotlinx-io for stdio transport
-    implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.7.0")
+    implementation(libs.kotlinx.io.core)
 
     // SLF4J NOP — suppress logging noise in stdio mode
-    runtimeOnly("org.slf4j:slf4j-nop:2.0.17")
+    runtimeOnly(libs.slf4j.nop)
 
     // Test dependencies
     testImplementation(kotlin("test"))
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
+    testImplementation(libs.mcp.coroutines.test)
 }
 
 tasks.test {

@@ -141,7 +141,7 @@ object ActorVisitor {
         for (row in 0 until tilesHigh) {
             for (col in 0 until tilesWide) {
                 val slot = baseSlot + row * tilesWide + col
-                // set_sprite_tile(slot, tileStart + tileIndex)
+                // Emit the set_sprite_tile call assigning this slot its sequential tile index.
                 statements.add(
                     CExprStatement(
                         CCall(
@@ -150,7 +150,8 @@ object ActorVisitor {
                         )
                     )
                 )
-                // move_sprite(slot, _actorId_x + 8 + col*8, _actorId_y + 16 + row*8)
+                // Emit the move_sprite call placing the slot at the actor position plus the
+                // hardware offset (8/16) and the per-tile column/row offset.
                 val xArg = buildPositionExpr("${prefix}_x", colOffset = col, hardwareOffset = 8)
                 val yArg = buildPositionExpr("${prefix}_y", colOffset = row, hardwareOffset = 16)
                 statements.add(
@@ -312,7 +313,8 @@ object ActorVisitor {
         for (row in 0 until tilesHigh) {
             for (col in 0 until tilesWide) {
                 val slot = baseSlot + row * tilesWide + col
-                // set_sprite_tile(slot, tileStart + frame * tilesPerFrame + slotIndex)
+                // Emit the set_sprite_tile call: the slot's tile is the frame number scaled by
+                // tiles-per-frame, offset from the tileset start.
                 val tileExpr =
                     CBinaryExpr(
                         CBinaryExpr(CVar("frame"), "*", CLiteral(tilesPerFrame)),
@@ -830,7 +832,7 @@ object ActorVisitor {
         val actorIdUpper = actorId.uppercase()
 
         val cases =
-            actor.animationStates.mapIndexed { idx, state ->
+            actor.animationStates.map { state ->
                 val stateConst = CRawExpr("ANIM_${actorIdUpper}_${state.name.uppercase()}")
                 val caseBody = mutableListOf<CStatement>()
 

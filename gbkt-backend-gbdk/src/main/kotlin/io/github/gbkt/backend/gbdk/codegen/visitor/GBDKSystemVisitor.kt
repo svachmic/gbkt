@@ -562,7 +562,7 @@ class GBDKSystemVisitor(
             }
         val hasEntityCollision = collisionActors.isNotEmpty()
 
-        // 1. exploration_move_{id}()
+        // 1. The exploration movement function, named exploration_move_<id>
         val jUp = CVar("J_UP")
         val jDown = CVar("J_DOWN")
         val jLeft = CVar("J_LEFT")
@@ -721,7 +721,7 @@ class GBDKSystemVisitor(
                 sectionComment = "Exploration system: ${system.id}",
             )
 
-        // 2. exploration_step_{id}()
+        // 2. The per-step bookkeeping function, named exploration_step_<id>
         val explorationStep =
             CFunction(
                 name = "exploration_step_$sanitizedId",
@@ -796,10 +796,10 @@ class GBDKSystemVisitor(
                     },
             )
 
-        // 3. exploration_encounter_check_{id}()
+        // 3. The random-encounter check function, named exploration_encounter_check_<id>
         val explorationEncounterCheck = buildEncounterCheckFunction(sanitizedId, zones)
 
-        // 4. exploration_interact_{id}()
+        // 4. The interaction handler function, named exploration_interact_<id>
         val explorationInteract =
             CFunction(
                 name = "exploration_interact_$sanitizedId",
@@ -826,7 +826,7 @@ class GBDKSystemVisitor(
 
         // 8. Zone object handler + dispatch functions (GAP-06)
         val zoneObjectFunctions =
-            if (hasZoneObjects) buildZoneObjectFunctions(sanitizedId, zones) else emptyList()
+            if (hasZoneObjects) buildZoneObjectFunctions(zones) else emptyList()
 
         // 9. Entity collision functions — generated when actors have non-PASSTHROUGH config
         val entityCollisionFunctions =
@@ -2323,14 +2323,10 @@ class GBDKSystemVisitor(
      * - **NpcObjectIR**: visibility-flag guard (`visibleFlagId`) prevents interaction when hidden
      * - **SignObjectIR**: no state; directly runs `onInteract` ops
      *
-     * @param sanitizedId Exploration system ID (hyphens/spaces replaced by underscores).
      * @param zones All zones in the game; only zones with `objects.isNotEmpty()` generate code.
      * @return Flat list of all generated functions (per-object handlers + dispatch functions).
      */
-    private fun buildZoneObjectFunctions(
-        sanitizedId: String,
-        zones: List<ZoneIR>,
-    ): List<CFunction> {
+    private fun buildZoneObjectFunctions(zones: List<ZoneIR>): List<CFunction> {
         val result = mutableListOf<CFunction>()
         for (zone in zones) {
             if (zone.objects.isEmpty()) continue
@@ -4304,23 +4300,21 @@ class GBDKSystemVisitor(
                     buildList {
                         // C89: declare slot before use
                         add(CVarDecl("slot", CU8, initializer = null))
-                        // if (_oam_free_top == 0) return 0xFF; /* no free slot */
+                        // Guard: when the free list is empty, bail out with the 0xFF sentinel.
                         add(
                             CIf(
                                 condition = CBinaryExpr(freeTopVar, "==", CLiteral(0)),
                                 thenBody = listOf(CReturn(CLiteral(0xFF))),
                             )
                         )
-                        // _oam_free_top--;
+                        // Pop the next free slot: decrement the stack top, then read the entry.
                         add(CExprStatement(CUnaryExpr("--", freeTopVar)))
-                        // slot = _oam_free_list[_oam_free_top];
                         add(
                             CExprStatement(
                                 CBinaryExpr(slotVar, "=", CArrayAccess(freeListVar, freeTopVar))
                             )
                         )
                         add(CComment("caller is responsible for set_sprite_tile and move_sprite"))
-                        // return slot;
                         add(CReturn(slotVar))
                     },
                 sectionComment = "OAM slot management (spawn/destroy)",
@@ -4342,21 +4336,21 @@ class GBDKSystemVisitor(
                 params = listOf(CParam("slot", CU8)),
                 body =
                     buildList {
-                        // if (slot == 0xFF) return; /* invalid slot */
+                        // Guard: ignore the 0xFF invalid-slot sentinel.
                         add(
                             CIf(
                                 condition = CBinaryExpr(slotVar, "==", CLiteral(0xFF)),
                                 thenBody = listOf(CReturn(null)),
                             )
                         )
-                        // move_sprite(slot, 0, 0); /* hide off-screen */
+                        // Hide the sprite by moving it off-screen to position (0, 0).
                         add(
                             CExprStatement(
                                 CCall("move_sprite", listOf(slotVar, CLiteral(0), CLiteral(0)))
                             )
                         )
-                        // if (_oam_free_top < 40) { _oam_free_list[_oam_free_top] = slot;
-                        // _oam_free_top++; }
+                        // Push the slot back onto the free list, bounded by the 40-entry OAM
+                        // capacity.
                         add(
                             CIf(
                                 condition = CBinaryExpr(freeTopVar, "<", CLiteral(40)),
@@ -4945,7 +4939,7 @@ class GBDKSystemVisitor(
                                     CBinaryExpr(CVar("_door_${id}_open"), "=", CLiteral(1))
                                 )
                             )
-                            // set_bkg_tile_xy(x, y, openTile)
+                            // Swap the door's background tile to its open graphic.
                             add(
                                 CExprStatement(
                                     CCall(
@@ -4977,7 +4971,7 @@ class GBDKSystemVisitor(
                                     CBinaryExpr(CVar("_door_${id}_open"), "=", CLiteral(0))
                                 )
                             )
-                            // set_bkg_tile_xy(x, y, closedTile)
+                            // Swap the door's background tile back to its closed graphic.
                             add(
                                 CExprStatement(
                                     CCall(

@@ -1126,12 +1126,13 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
         val yExpr = CBinaryExpr(CVar("_${actorId}_y"), "+", CLiteral(16))
         return CBlock(
             listOf(
-                // _actorId_oam_slot = spawn_actor(hash);
+                // Store the spawned slot in the actor's OAM-slot variable.
                 CExprStatement(
                     CBinaryExpr(slotVar, "=", CCall("spawn_actor", listOf(actorHash))),
                     sourceLocation = op.sourceLocation,
                 ),
-                // if (_actorId_oam_slot != 0xFF) { move_sprite(slot, x+8, y+16); }
+                // When the spawn succeeded (slot is not the 0xFF sentinel), move the sprite to
+                // the actor position plus the hardware offset.
                 CIf(
                     condition = CBinaryExpr(slotVar, "!=", CRawExpr("0xFF")),
                     thenBody =
@@ -1158,12 +1159,12 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
         val slotVar = CVar("_${actorId}_oam_slot")
         return CBlock(
             listOf(
-                // destroy_actor(_actorId_oam_slot);
+                // Release the slot, then reset the actor's OAM-slot variable to the 0xFF
+                // invalid sentinel.
                 CExprStatement(
                     CCall("destroy_actor", listOf(slotVar)),
                     sourceLocation = op.sourceLocation,
                 ),
-                // _actorId_oam_slot = 0xFF;
                 CExprStatement(CBinaryExpr(slotVar, "=", CRawExpr("0xFF"))),
             ),
             sourceLocation = op.sourceLocation,

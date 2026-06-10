@@ -313,7 +313,7 @@ class BankAllocator(
 
         val bankUsage = mutableMapOf<Int, Int>() // bank -> bytes used
         val namespaceToBank = mutableMapOf<String, Int>()
-        val warnings = mutableListOf<String>()
+        val warnings = emptyList<String>()
 
         for ((namespace, size) in sorted) {
             // Find first bank with space
@@ -327,13 +327,11 @@ class BankAllocator(
                     break
                 }
             }
-            if (!assigned) {
-                throw IllegalStateException(
-                    "Game content exceeds ROM capacity. Too many localized strings to fit in the " +
-                        "available ROM banks. Reduce string content or use fewer localization " +
-                        "namespaces. (Namespace '$namespace' with $size bytes could not fit in " +
-                        "any of the $maxBanks available banks.)"
-                )
+            check(assigned) {
+                "Game content exceeds ROM capacity. Too many localized strings to fit in the " +
+                    "available ROM banks. Reduce string content or use fewer localization " +
+                    "namespaces. (Namespace '$namespace' with $size bytes could not fit in " +
+                    "any of the $maxBanks available banks.)"
             }
         }
 

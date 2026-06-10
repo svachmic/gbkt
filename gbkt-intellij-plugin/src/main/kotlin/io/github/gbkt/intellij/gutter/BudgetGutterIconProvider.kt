@@ -68,7 +68,7 @@ class BudgetGutterIconProvider : LineMarkerProvider {
         val calleeName = ref.getReferencedName()
 
         // Guard: must be a tracked DSL call in a gbkt-related file
-        val vFile = ref.containingFile?.virtualFile
+        val vFile = ref.containingFile.virtualFile
         val isTrackedCall = calleeName in TRACKED_DSL_FUNCTIONS
         val isGbktFile = vFile?.name?.let { it.endsWith(".kt") || it.endsWith(".gbkt.kts") } == true
         if (!isTrackedCall || !isGbktFile) return null

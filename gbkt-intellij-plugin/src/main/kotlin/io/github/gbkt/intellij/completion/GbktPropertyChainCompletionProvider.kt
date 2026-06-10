@@ -149,7 +149,7 @@ class GbktPropertyChainCompletionProvider : CompletionProvider<CompletionParamet
     /** Find base type by checking analysis definition lists. */
     private fun findTypeFromAnalysis(name: String, analysis: GbktDslVisitor): BaseType? {
         val typeChecks =
-            listOf(
+            listOf<Pair<List<GbktDslVisitor.DslDefinition>, BaseType>>(
                 analysis.entities to BaseType.ENTITY,
                 analysis.scenes to BaseType.SCENE,
                 analysis.cameras to BaseType.CAMERA,

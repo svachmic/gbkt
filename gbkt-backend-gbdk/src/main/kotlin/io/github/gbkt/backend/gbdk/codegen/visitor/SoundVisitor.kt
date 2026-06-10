@@ -236,7 +236,7 @@ class SoundVisitor(private val gameIR: GameIR) {
         // 3. play_sound_<id>() wrapper for each unique PlaySound sound ID
         //    Also include wrappers for explicitly registered SoundEffectDefs (even if not in
         // scripts)
-        val scriptSoundIds = collectUniqueSoundIds().toMutableSet()
+        val scriptSoundIds = collectUniqueSoundIds().toSet()
         val defSoundIds = gameIR.soundEffects.map { it.id }.toSet()
         val allSoundIds = (scriptSoundIds + defSoundIds).sorted()
         for (soundId in allSoundIds) {
@@ -342,7 +342,7 @@ class SoundVisitor(private val gameIR: GameIR) {
                 // Fallback: no SoundEffectDef registered — emit comment stub
                 listOf(CComment("no SoundEffectDef for '$soundId' — stub"))
             } else {
-                buildNRxxRegisterWrites(sanitizedId, def)
+                buildNRxxRegisterWrites(def)
             }
 
         return CFunction(name = "play_sound_$sanitizedId", returnType = CVoid, body = body)
@@ -362,10 +362,7 @@ class SoundVisitor(private val gameIR: GameIR) {
      * All register values are emitted as hex literals with the `u` unsigned suffix (e.g. `0xF0u`).
      */
     @Suppress("MagicNumber")
-    private fun buildNRxxRegisterWrites(
-        sanitizedId: String,
-        def: SoundEffectDef,
-    ): List<CStatement> {
+    private fun buildNRxxRegisterWrites(def: SoundEffectDef): List<CStatement> {
         val regs = def.registers
         val body = mutableListOf<CStatement>()
 

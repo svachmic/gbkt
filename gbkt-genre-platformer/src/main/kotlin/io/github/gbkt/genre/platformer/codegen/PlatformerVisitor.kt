@@ -1723,7 +1723,7 @@ class PlatformerVisitor : GenreSystemVisitor {
         val body =
             when (cfg.mode) {
                 CameraScrollMode.SMOOTH_FOLLOW -> buildSmoothFollowBody(cfg)
-                CameraScrollMode.SCREEN_LOCK -> buildScreenLockBody(cfg)
+                CameraScrollMode.SCREEN_LOCK -> buildScreenLockBody()
             }
 
         return CFunction(
@@ -1966,7 +1966,7 @@ class PlatformerVisitor : GenreSystemVisitor {
                 ),
         )
 
-    private fun buildScreenLockBody(cfg: PlatformerCameraConfig): List<CStatement> = buildList {
+    private fun buildScreenLockBody(): List<CStatement> = buildList {
         add(CComment("Screen-lock camera: snap to 160x144 screen boundaries"))
         add(CBlankLine)
         add(CComment("Snap horizontal position to screen grid"))

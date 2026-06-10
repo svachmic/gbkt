@@ -149,9 +149,7 @@ class PuzzleVisitor : GenreSystemVisitor {
                     functions.add(
                         buildSave(id, config.width, config.height, config.blockPushConfig)
                     )
-                    functions.add(
-                        buildUndo(id, config.width, config.height, config.blockPushConfig)
-                    )
+                    functions.add(buildUndo(id, config.width, config.height))
                 }
             }
         }
@@ -1017,13 +1015,7 @@ class PuzzleVisitor : GenreSystemVisitor {
     // puzzle_undo_<id>() — block-push mode, undo enabled
     // =========================================================================
 
-    @Suppress("UnusedParameter")
-    private fun buildUndo(
-        id: String,
-        width: Int,
-        height: Int,
-        blockPushConfig: BlockPushConfig,
-    ): CFunction {
+    private fun buildUndo(id: String, width: Int, height: Int): CFunction {
         val gridSize = width * height
         val body = mutableListOf<CStatement>()
         body.add(CComment("Pop grid state from undo stack and restore"))

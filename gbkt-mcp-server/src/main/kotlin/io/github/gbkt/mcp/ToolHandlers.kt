@@ -12,6 +12,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import java.io.File
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
@@ -44,9 +45,13 @@ internal fun errorResult(message: String): CallToolResult =
 internal fun jsonResult(json: String): CallToolResult =
     CallToolResult(content = listOf(TextContent(json)))
 
-/** Runs a tool handler on [Dispatchers.IO], converting any exception into an error result. */
-private suspend fun runTool(toolName: String, block: suspend () -> CallToolResult): CallToolResult =
-    withContext(Dispatchers.IO) {
+/** Runs a tool handler on [dispatcher], converting any exception into an error result. */
+private suspend fun runTool(
+    toolName: String,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    block: suspend () -> CallToolResult,
+): CallToolResult =
+    withContext(dispatcher) {
         try {
             block()
         } catch (e: Exception) {
@@ -62,6 +67,9 @@ private suspend fun runTool(toolName: String, block: suspend () -> CallToolResul
  * separation enables direct unit testing without the MCP Server/transport layer.
  */
 internal object ToolHandlerLogic {
+
+    /** Dispatcher for blocking emulator I/O. Replaceable in tests; defaults to [Dispatchers.IO]. */
+    var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
     /** Maximum frames any single step/wait call may advance (10 minutes at ~60 fps). */
     private const val MAX_FRAMES = 36_000
@@ -141,7 +149,7 @@ internal object ToolHandlerLogic {
 
             // If game name is provided and romFile is not, use convention-based discovery
             if (gameName != null && romPath == null) {
-                return withContext(Dispatchers.IO) {
+                return withContext(ioDispatcher) {
                     try {
                         val result = session.startByName(gameName, gbcMode)
                         val meta = result.metadata
@@ -363,7 +371,7 @@ internal object ToolHandlerLogic {
         toolResult {
             val a = requireArgs(args)
             val label = a.requireLabel()
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val result = session.saveState(label)
                 jsonResult(result.toString())
             }
@@ -373,7 +381,7 @@ internal object ToolHandlerLogic {
         toolResult {
             val a = requireArgs(args)
             val label = a.requireLabel()
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val result = session.loadState(label)
                 jsonResult(result.toString())
             }
@@ -399,21 +407,21 @@ internal object ToolHandlerLogic {
                 checks.add(AssertCheck(type, checkArgs))
             }
 
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val result = session.batchAssert(checks)
                 jsonResult(result.toString())
             }
         }
 
     suspend fun handleGetPlaybook(session: McpEmulatorSession): CallToolResult {
-        return withContext(Dispatchers.IO) {
+        return withContext(ioDispatcher) {
             val result = session.getPlaybook()
             jsonResult(result.toString())
         }
     }
 
     suspend fun handleListGames(session: McpEmulatorSession): CallToolResult {
-        return withContext(Dispatchers.IO) {
+        return withContext(ioDispatcher) {
             val result = session.listGames()
             jsonResult(result.toString())
         }

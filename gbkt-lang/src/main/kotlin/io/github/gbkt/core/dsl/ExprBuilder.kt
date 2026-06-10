@@ -295,11 +295,9 @@ fun AssignableVar.toPixel(fractionalBits: Int = 4): Expr {
 fun AssignableVar.easeToZero(by: Int = 1) {
     val sb =
         ScriptBuilderContext.current ?: error("easeToZero() called outside a ScriptBuilder block")
-    // if (v < 0) { v += by }
     sb.whenever(BinaryExpr(VarRef(name), BinaryOp.LT, Literal(0))) {
         assign(name, Literal(by), AssignOp.ADD)
     }
-    // if (v > 0) { v -= by }
     sb.whenever(BinaryExpr(VarRef(name), BinaryOp.GT, Literal(0))) {
         assign(name, Literal(by), AssignOp.SUB)
     }

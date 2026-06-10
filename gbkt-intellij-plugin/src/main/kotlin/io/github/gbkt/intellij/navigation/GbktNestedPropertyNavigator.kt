@@ -225,7 +225,8 @@ object GbktNestedPropertyNavigator {
                 ?: return null
 
         // Search for a call expression with the target name
-        val nestedCalls = PsiTreeUtil.findChildrenOfType(lambda, KtCallExpression::class.java)
+        val nestedCalls =
+            PsiTreeUtil.findChildrenOfType(lambda, KtCallExpression::class.java).toList()
 
         for (nestedCall in nestedCalls) {
             val calleeName = nestedCall.calleeExpression?.text

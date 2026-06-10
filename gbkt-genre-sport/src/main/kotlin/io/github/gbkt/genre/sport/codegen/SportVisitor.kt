@@ -366,8 +366,8 @@ class SportVisitor : GenreSystemVisitor {
 
         // Pickup reconciliation: convert SportPickupDef → PickupDef, delegate to GBDKSystemVisitor.
         val pickupResult = buildPickupResult(config.id, config.pickups, gameIR)
-        functions += pickupResult.functions as List<CFunction>
-        varDecls += pickupResult.varDecls as List<CVarDecl>
+        functions += pickupResult.functions
+        varDecls += pickupResult.varDecls
 
         // Locate the bound scene for racing_tick injection. Discovery fallback chain:
         //  1. Scene whose actorIds list contains the player vehicle's actor id (preferred when
@@ -1802,8 +1802,8 @@ class SportVisitor : GenreSystemVisitor {
 
         // Pickup reconciliation: convert SportPickupDef → PickupDef, delegate to GBDKSystemVisitor.
         val pickupResult = buildPickupResult(config.id, config.pickups, gameIR)
-        functions += pickupResult.functions as List<CFunction>
-        varDecls += pickupResult.varDecls as List<CVarDecl>
+        functions += pickupResult.functions
+        varDecls += pickupResult.varDecls
 
         return GenreVisitorResult(functions = functions, varDecls = varDecls)
     }
@@ -2059,8 +2059,8 @@ class SportVisitor : GenreSystemVisitor {
 
         // Pickup reconciliation: convert SportPickupDef → PickupDef, delegate to GBDKSystemVisitor
         val pickupResult = buildPickupResult(config.id, config.pickups, gameIR)
-        functions += pickupResult.functions as List<CFunction>
-        varDecls += pickupResult.varDecls as List<CVarDecl>
+        functions += pickupResult.functions
+        varDecls += pickupResult.varDecls
 
         return GenreVisitorResult(functions = functions, varDecls = varDecls)
     }
@@ -2340,14 +2340,14 @@ class SportVisitor : GenreSystemVisitor {
      * @param systemId ID of the parent sport system (used to namespace pickup system).
      * @param sportPickups List of [SportPickupDef] from the racing/ball sport config.
      * @param gameIR Full [GameIR] for context.
-     * @return [GenreVisitorResult] from pickup system codegen (or empty if no pickups).
+     * @return [PickupCodegen] from pickup system codegen (or empty if no pickups).
      */
     private fun buildPickupResult(
         systemId: String,
         sportPickups: List<SportPickupDef>,
         gameIR: GameIR,
-    ): GenreVisitorResult {
-        if (sportPickups.isEmpty()) return GenreVisitorResult()
+    ): PickupCodegen {
+        if (sportPickups.isEmpty()) return PickupCodegen()
 
         val pickupDefs = sportPickups.map { sportPickup ->
             PickupDef(
@@ -2373,6 +2373,12 @@ class SportVisitor : GenreSystemVisitor {
         val pickupFunctions = pickupSystem.accept(visitor)
         val pickupVarDecls = visitor.buildPickupVarDecls(pickupSystem, sanitizedPickupId)
 
-        return GenreVisitorResult(functions = pickupFunctions, varDecls = pickupVarDecls)
+        return PickupCodegen(functions = pickupFunctions, varDecls = pickupVarDecls)
     }
+
+    /** Concretely-typed pickup codegen output, avoiding unchecked [CodegenFragment] downcasts. */
+    private data class PickupCodegen(
+        val functions: List<CFunction> = emptyList(),
+        val varDecls: List<CVarDecl> = emptyList(),
+    )
 }

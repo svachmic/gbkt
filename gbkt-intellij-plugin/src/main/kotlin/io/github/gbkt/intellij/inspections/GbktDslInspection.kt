@@ -147,7 +147,7 @@ class GbktDslInspection : LocalInspectionTool() {
         callee: String,
         holder: ProblemsHolder,
     ) {
-        val args = expression.valueArguments
+        val args = expression.valueArguments.toList()
         // Use centralized constraints from ClampValueQuickFix for consistency
         val constraints = ClampValueQuickFix.Companion.Constraints
 

@@ -21,10 +21,10 @@ gbktPublishing {
 
 dependencies {
     // Coffee-GB emulator core — headless Game Boy emulation engine
-    implementation("eu.rekawek.coffeegb:core:1.6.0")
+    implementation(libs.coffeegb.core)
 
     // JSON parsing for .gbkt.map source map files
-    implementation("org.json:json:20251224")
+    implementation(libs.json)
 
     // Test dependencies
     testImplementation(kotlin("test"))

@@ -1682,7 +1682,7 @@ class GBDKPipeline {
                     // C4: Wrap enter function with tileset reuse guard if scene has a tilesetRef
                     val tilesetId = scene.tilesetRef?.let { tilesetIdMap[it.path] }
                     if (tilesetId != null) {
-                        addTilesetGuardToEnterFunction(functionsWithHud, scene.id, tilesetId)
+                        addTilesetGuardToEnterFunction(functionsWithHud, scene.id)
                     } else {
                         functionsWithHud
                     }
@@ -1844,7 +1844,6 @@ class GBDKPipeline {
     private fun addTilesetGuardToEnterFunction(
         functions: List<CFunction>,
         sceneId: String,
-        tilesetId: Int,
     ): List<CFunction> {
         val tilesetConstant = "TILESET_ID_${sceneId.uppercase()}"
         val guardStatements = buildList {

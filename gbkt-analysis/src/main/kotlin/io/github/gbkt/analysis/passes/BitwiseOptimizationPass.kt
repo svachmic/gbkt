@@ -101,6 +101,8 @@ class BitwiseOptimizationPass : AnalysisPass {
         return when (rebuiltExpr.op) {
             BinaryOp.MUL -> {
                 // Pick whichever side has the power-of-2 constant (prefer right)
+                // The cast below is NOT redundant: K2 cannot smart-cast optimizedLeft to Literal
+                // from the compound leftIsPow2/rightIsPow2 guards (Sonar S6531 false positive).
                 val n =
                     if (rightIsPow2) (optimizedRight as Literal).value
                     else (optimizedLeft as Literal).value

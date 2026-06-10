@@ -21,7 +21,7 @@ package io.github.gbkt.core.inventory
  * status cures, ability unlocks, etc. The engine base effects ([HealEffect], [BuffEffect],
  * [ScriptEffect]) are defined in the IR layer in `InventoryIR.kt`.
  */
-interface ItemEffect {
+fun interface ItemEffect {
     /** Applies this effect. Called when the item is used from the inventory. */
     fun apply()
 }

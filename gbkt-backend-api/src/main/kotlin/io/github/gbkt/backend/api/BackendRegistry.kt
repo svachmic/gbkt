@@ -101,10 +101,7 @@ object BackendRegistry {
     }
 
     /** Get all registered backends. */
-    fun all(): List<CodegenBackend> {
-        val state = ensureInitialized()
-        return state.backends.values.toList()
-    }
+    fun all(): List<CodegenBackend> = discover()
 
     /** Get all supported target platform IDs. */
     fun supportedTargets(): List<String> {
