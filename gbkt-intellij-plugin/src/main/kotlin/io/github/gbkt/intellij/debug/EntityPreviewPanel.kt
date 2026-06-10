@@ -229,11 +229,12 @@ class EntityPreviewPanel(private val project: Project) : JPanel(BorderLayout()) 
     }
 
     private fun addDemoEntity() {
+        val index = entities.size
         val newEntity =
             EntityInfo(
-                name = "entity_${entities.size}",
-                x = (Math.random() * 140 + 10).toInt(),
-                y = (Math.random() * 124 + 10).toInt(),
+                name = "entity_$index",
+                x = 10 + (index * 24) % 140,
+                y = 10 + (index * 16) % 124,
                 width = 8,
                 height = 8,
                 hitboxX = 0,
