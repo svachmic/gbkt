@@ -63,9 +63,9 @@ abstract class ConvertSpritesTask @Inject constructor(private val execOperations
      *
      * When `true`, any indexed sprite PNG whose tRNS chunk declares a transparent color at a
      * non-zero palette index will fail with a [GradleException] naming the sprite file and index,
-     * instead of auto-correcting. When `false` (default), the framework auto-corrects and emits
-     * a D-06 WARNING. Threaded from [io.github.gbkt.gradle.SpritesExtension.strictTransparency]
-     * via [io.github.gbkt.gradle.GbktPlugin].
+     * instead of auto-correcting. When `false` (default), the framework auto-corrects and emits a
+     * D-06 WARNING. Threaded from [io.github.gbkt.gradle.SpritesExtension.strictTransparency] via
+     * [io.github.gbkt.gradle.GbktPlugin].
      *
      * Default: `false` (convention set in GbktPlugin.apply).
      */
@@ -173,10 +173,12 @@ abstract class ConvertSpritesTask @Inject constructor(private val execOperations
             val pivotY = entry.optInt("pivotY", 0)
             val frameWidth = entry.optInt("frameWidth", 8)
             val frameHeight = entry.optInt("frameHeight", 8)
-            // Phase 13.3 D-07 — read optional frameCount for build-time frame-count cross-validation.
+            // Phase 13.3 D-07 — read optional frameCount for build-time frame-count
+            // cross-validation.
             // Use opt* with -1 sentinel: JSON optInt returns the default when the key is absent.
             // null in Kotlin means "no declared count → skip validation".
-            val declaredFrameCount: Int? = if (entry.has("frameCount")) entry.getInt("frameCount") else null
+            val declaredFrameCount: Int? =
+                if (entry.has("frameCount")) entry.getInt("frameCount") else null
             // Phase 13.3 D-01 — read isMetasprite flag; backward-compat: old sidecars without
             // the flag return false (actor-sprite behavior).
             val isMetaspriteEntry = entry.optBoolean("isMetasprite", false)
@@ -304,21 +306,25 @@ abstract class ConvertSpritesTask @Inject constructor(private val execOperations
         // 2bpp indices from the source palette order — index 0 must be transparent for GB OBJ
         // hardware to render it correctly (OBJ palette index 0 is the hardware-transparent slot).
         //
-        // Algorithm: build compact remap {transparentIdx→0, used-visible→1..N, skip 0-pixel entries}
+        // Algorithm: build compact remap {transparentIdx→0, used-visible→1..N, skip 0-pixel
+        // entries}
         // (see PngUtils.prePermuteIndexedPng KDoc + RESEARCH.md Pattern 2 / Pitfall 1).
         //
-        // D-06 WARNING: emit exactly once per auto-corrected sprite (REQ-3) naming the file + index.
+        // D-06 WARNING: emit exactly once per auto-corrected sprite (REQ-3) naming the file +
+        // index.
         // D-05: stay SILENT about declared-but-unused (0-pixel) palette slots (no unused-slot msg).
         //
         // Seam for Plan 04 strictTransparency gate: the strict check will be inserted at the
         // "TODO(13.6-04)" marker below — it fires BEFORE the auto-correct path when strict=true.
         //
         // T-13.6-03a (path traversal): temp file created in a stable build-temp directory
-        // (buildTempDir, under sourceDir) — not the system TMPDIR, not adjacent to the source asset.
+        // (buildTempDir, under sourceDir) — not the system TMPDIR, not adjacent to the source
+        // asset.
         // T-13.6-03b (temp leak): tempFile?.delete() in the single try/finally block below that
         // wraps the entire temp-file lifetime (buildPng2AssetArgs + exec) — WR-04 fix.
         // REQ-6 (deterministic name): buildTempDir path is stable across rebuilds so the
-        // gbkt_permuted_<base>.png filename in the png2asset "Conversion args" comment is reproducible.
+        // gbkt_permuted_<base>.png filename in the png2asset "Conversion args" comment is
+        // reproducible.
         val transparentIdx = getTransparentIndexShared(pngFile)
         val tempFile: File?
         if (transparentIdx != null && transparentIdx > 0) {
@@ -347,7 +353,8 @@ abstract class ConvertSpritesTask @Inject constructor(private val execOperations
                 )
             }
             // WR-05 (ASCII messages): use ASCII 'index N != 0' instead of non-ASCII U+2260 (!=)
-            // so non-UTF-8 consoles (Windows cp1252/cp437, some CI log collectors) render correctly.
+            // so non-UTF-8 consoles (Windows cp1252/cp437, some CI log collectors) render
+            // correctly.
             logger.warn(
                 "sprite ${pngFile.name} declares transparent color at palette index " +
                     "$transparentIdx (index != 0); framework routed it to GB OBJ index 0 " +
@@ -368,9 +375,12 @@ abstract class ConvertSpritesTask @Inject constructor(private val execOperations
         }
 
         // Phase 12.5 D-06: build args from sidecar-driven fields (spriteMode, pivotX, pivotY,
-        // frameWidth, frameHeight, mirrorDedup). Height heuristic deleted (sidecar is authoritative).
-        // Phase 13.6 REQ-2: pass pngToConvert (permuted temp PNG or original) to buildPng2AssetArgs.
-        // WR-04: the entire temp-file lifetime (buildPng2AssetArgs + exec) is inside one try/finally
+        // frameWidth, frameHeight, mirrorDedup). Height heuristic deleted (sidecar is
+        // authoritative).
+        // Phase 13.6 REQ-2: pass pngToConvert (permuted temp PNG or original) to
+        // buildPng2AssetArgs.
+        // WR-04: the entire temp-file lifetime (buildPng2AssetArgs + exec) is inside one
+        // try/finally
         // so no throwing statement between temp creation and cleanup can leak the file.
         var lastArgs: List<String> = emptyList()
         val exitValue: Int =
@@ -534,28 +544,27 @@ abstract class ConvertSpritesTask @Inject constructor(private val execOperations
 /**
  * Generate a `.h` header file for a png2asset-produced sprite:
  * 1. Declares the native tile array from png2asset output as `extern`
- * 2. Declares the palette array extern unconditionally (png2asset always emits the
- *    `_palettes[]` array for every sprite — no `-no_palettes` flag is passed; the
- *    `-keep_palette_order` flag only affects ORDER, not whether the array is emitted)
+ * 2. Declares the palette array extern unconditionally (png2asset always emits the `_palettes[]`
+ *    array for every sprite — no `-no_palettes` flag is passed; the `-keep_palette_order` flag only
+ *    affects ORDER, not whether the array is emitted)
  * 3. Provides a `#define` alias mapping the v2 pipeline name to the native name
  *
- * **CR-01 fix:** The `#include <gb/cgb.h>` and `extern const palette_color_t
- * <stem>_palettes[]` were previously gated on [isIndexed]. This caused a latent SDCC
- * "Undefined identifier '<stem>_palettes'" link error for any GBC game whose metasprite
- * PNG is non-indexed (RGB), because `GBDKPipeline.buildMetaspriteSpritePaletteStatements`
- * emits `set_sprite_palette(..., <stem>_palettes)` for every metasprite regardless of
- * PNG format. The isIndexed gate has been removed: both the include and the extern are now
- * always emitted.
+ * **CR-01 fix:** The `#include <gb/cgb.h>` and `extern const palette_color_t <stem>_palettes[]`
+ * were previously gated on [isIndexed]. This caused a latent SDCC "Undefined identifier
+ * '<stem>_palettes'" link error for any GBC game whose metasprite PNG is non-indexed (RGB), because
+ * `GBDKPipeline.buildMetaspriteSpritePaletteStatements` emits `set_sprite_palette(...,
+ * <stem>_palettes)` for every metasprite regardless of PNG format. The isIndexed gate has been
+ * removed: both the include and the extern are now always emitted.
  *
- * The [isIndexed] parameter is retained for call-site documentation purposes; it no longer
- * affects the emitted output.
+ * The [isIndexed] parameter is retained for call-site documentation purposes; it no longer affects
+ * the emitted output.
  *
- * Exposed as `internal` at file scope so [ConvertSpritesHeaderPaletteExternTest] can call
- * it directly (mirrors the [buildPng2AssetArgs] visibility pattern).
+ * Exposed as `internal` at file scope so [ConvertSpritesHeaderPaletteExternTest] can call it
+ * directly (mirrors the [buildPng2AssetArgs] visibility pattern).
  */
 internal fun generateSpriteHeader(
-    stemName: String,          // "paddle"
-    nativeArrayName: String,   // "paddle_tiles"
+    stemName: String, // "paddle"
+    nativeArrayName: String, // "paddle_tiles"
     pathBasedArrayName: String, // "sprites_paddle_tiles"
     outputH: File,
     @Suppress("UNUSED_PARAMETER")
@@ -726,13 +735,13 @@ internal fun remapMetaspriteSubPalette(outputC: File) {
  * exception naming both counts and the metasprite id so the developer can correct the `frames(N)`
  * DSL call.
  *
- * Parse strategy (RESEARCH G2): regex `<stemName>_metasprites\[(\d+)\]` captures the explicit
- * size — png2asset always emits an explicit `[N]` in the pointer-array declaration. This is O(1)
- * and robust.
+ * Parse strategy (RESEARCH G2): regex `<stemName>_metasprites\[(\d+)\]` captures the explicit size
+ * — png2asset always emits an explicit `[N]` in the pointer-array declaration. This is O(1) and
+ * robust.
  *
- * When [png2assetCOutput] does NOT contain a matching `<stemName>_metasprites[N]` declaration,
- * this helper passes silently (the png2asset output is outside the expected shape; no strict
- * validation is possible without the array declaration).
+ * When [png2assetCOutput] does NOT contain a matching `<stemName>_metasprites[N]` declaration, this
+ * helper passes silently (the png2asset output is outside the expected shape; no strict validation
+ * is possible without the array declaration).
  *
  * Exposed as `internal` at file scope so [ConvertSpritesFrameCountValidationTest] can call it
  * directly (mirrors the [buildPng2AssetArgs] and [generateSpriteHeader] visibility pattern).
@@ -743,16 +752,12 @@ internal fun remapMetaspriteSubPalette(outputC: File) {
  *   pointer-array declaration from the output.
  * @throws IllegalArgumentException when [declaredCount] disagrees with the parsed count.
  */
-internal fun validateFrameCount(
-    declaredCount: Int,
-    png2assetCOutput: String,
-    stemName: String,
-) {
+internal fun validateFrameCount(declaredCount: Int, png2assetCOutput: String, stemName: String) {
     // Parse the explicit array size from `<stemName>_metasprites[N]` in the png2asset .c output.
     // The regex matches the pointer-array declaration, e.g.:
     //   const metasprite_t* const elephant_metasprites[5] = {
     val pattern = Regex("""${Regex.escape(stemName)}_metasprites\[(\d+)\]""")
-    val match = pattern.find(png2assetCOutput) ?: return  // Not found → skip validation
+    val match = pattern.find(png2assetCOutput) ?: return // Not found → skip validation
     val parsedCount = match.groupValues[1].toInt()
     if (parsedCount != declaredCount) {
         throw IllegalArgumentException(
@@ -768,18 +773,17 @@ internal fun validateFrameCount(
 /**
  * Parse the actual tile count from a png2asset-generated `.c` file for a metasprite.
  *
- * Implements Plan 13.3-14 Task 2: reads the explicit array size from
- * `<stemName>_tiles[<LEN>]` in the generated `.c` content, then computes
- * `tileCount = LEN / 16` (16 bytes per 8×8 2bpp tile). This gives the ACTUAL
- * deduped tile count that png2asset stored in the file — which may differ from
- * the geometric frame-size calculation (png2asset deduplicates tiles with `-noflip`).
+ * Implements Plan 13.3-14 Task 2: reads the explicit array size from `<stemName>_tiles[<LEN>]` in
+ * the generated `.c` content, then computes `tileCount = LEN / 16` (16 bytes per 8×8 2bpp tile).
+ * This gives the ACTUAL deduped tile count that png2asset stored in the file — which may differ
+ * from the geometric frame-size calculation (png2asset deduplicates tiles with `-noflip`).
  *
- * Fails loudly if the array length is not divisible by 16 (malformed output).
- * Returns `null` if no `<stemName>_tiles[N]` declaration is found in the output
- * (unexpected shape — skip count macro emission rather than emit a wrong value).
+ * Fails loudly if the array length is not divisible by 16 (malformed output). Returns `null` if no
+ * `<stemName>_tiles[N]` declaration is found in the output (unexpected shape — skip count macro
+ * emission rather than emit a wrong value).
  *
- * Exposed as `internal` at file scope so tests can call it directly (mirrors
- * [validateFrameCount] and [buildPng2AssetArgs] visibility pattern).
+ * Exposed as `internal` at file scope so tests can call it directly (mirrors [validateFrameCount]
+ * and [buildPng2AssetArgs] visibility pattern).
  *
  * @param png2assetCOutput Full text content of the png2asset-generated `.c` file.
  * @param stemName The metasprite id / stem name (e.g. "elephant").
@@ -806,9 +810,9 @@ internal fun parseTileCount(png2assetCOutput: String, stemName: String): Int? {
 /**
  * Build the png2asset command-line argument list from sidecar-driven fields.
  *
- * Phase 12.5 D-06: this function replaces the former height-heuristic approach.
- * All cutting-flag parameters are now sourced from the sidecar entry. The sidecar is
- * authoritative; the height-heuristic is deleted.
+ * Phase 12.5 D-06: this function replaces the former height-heuristic approach. All cutting-flag
+ * parameters are now sourced from the sidecar entry. The sidecar is authoritative; the
+ * height-heuristic is deleted.
  *
  * Argument order:
  * 1. Input PNG path

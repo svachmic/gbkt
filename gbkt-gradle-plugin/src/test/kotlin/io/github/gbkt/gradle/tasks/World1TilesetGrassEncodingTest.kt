@@ -234,16 +234,16 @@ class World1TilesetGrassEncodingTest {
      * png2asset-emitted .c file. Returns the byte values as `List<Int>` (each in 0..255), or `null`
      * if the symbol is not found.
      *
-     * Inline copy of [ConvertZoneTilesetsTask.parseMapArrayBytes] (kt:507-530) per the
-     * Phase 12.7 "inline-per-class" convention (12.7-PATTERNS.md §"Shared Patterns") -- keeps the
-     * test class self-contained and avoids cross-module test-utility coupling.
+     * Inline copy of [ConvertZoneTilesetsTask.parseMapArrayBytes] (kt:507-530) per the Phase 12.7
+     * "inline-per-class" convention (12.7-PATTERNS.md §"Shared Patterns") -- keeps the test class
+     * self-contained and avoids cross-module test-utility coupling.
      *
-     * Only diff from the production helper: regex accepts BOTH `unsigned char` AND `uint8_t`
-     * token forms. The post-12.2 png2asset emits `_tileset_tiles[]` as `const uint8_t` (see
-     * the captured snapshot at line 17 of `_zone_world1Area1Zone_tileset.c`), while the
-     * `_tileset_map[]` and `_tilemap_raw_map[]` arrays (which the production parser was written
-     * against) use `const unsigned char`. Supporting both via `(?:unsigned\s+char|uint8_t)` keeps
-     * the test resilient to either form across png2asset versions.
+     * Only diff from the production helper: regex accepts BOTH `unsigned char` AND `uint8_t` token
+     * forms. The post-12.2 png2asset emits `_tileset_tiles[]` as `const uint8_t` (see the captured
+     * snapshot at line 17 of `_zone_world1Area1Zone_tileset.c`), while the `_tileset_map[]` and
+     * `_tilemap_raw_map[]` arrays (which the production parser was written against) use `const
+     * unsigned char`. Supporting both via `(?:unsigned\s+char|uint8_t)` keeps the test resilient to
+     * either form across png2asset versions.
      */
     private fun parseTileBytes(file: File, symbol: String): List<Int>? {
         val text = file.readText()
@@ -272,8 +272,8 @@ class World1TilesetGrassEncodingTest {
      * test working directory. Mirrors [ConvertZoneTilesetsTaskTest.findPlatformerTemplatePng]'s
      * contract:
      * - returns the resolved File when found,
-     * - returns null when the fixture is not part of this checkout layout (caller skips
-     *   silently, same as the Banks helper).
+     * - returns null when the fixture is not part of this checkout layout (caller skips silently,
+     *   same as the Banks helper).
      *
      * Search root: `gbkt-examples/platformer-template/res/graphics/<filename>`.
      */

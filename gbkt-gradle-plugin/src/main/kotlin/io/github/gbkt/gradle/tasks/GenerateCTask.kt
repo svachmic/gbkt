@@ -521,10 +521,11 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
                 } catch (_: NoSuchMethodException) {
                     null
                 }
-            val mbcType = if (mbcByteMethod != null) {
-                val mbcByteInt = mbcByteMethod.invoke(cartridge) as? Int
-                if (mbcByteInt != null) "0x%02X".format(mbcByteInt) else null
-            } else null
+            val mbcType =
+                if (mbcByteMethod != null) {
+                    val mbcByteInt = mbcByteMethod.invoke(cartridge) as? Int
+                    if (mbcByteInt != null) "0x%02X".format(mbcByteInt) else null
+                } else null
 
             val props = java.util.Properties()
             props.setProperty("cartridge", cartridgeName)
@@ -570,7 +571,10 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
 
             val propsFile = File(outputDir, "gbkt-build.properties")
             propsFile.outputStream().use { props.store(it, "gbkt build metadata") }
-            println("Build metadata: cartridge=$cartridgeName" + if (mbcType != null) ", mbcType=$mbcType" else "")
+            println(
+                "Build metadata: cartridge=$cartridgeName" +
+                    if (mbcType != null) ", mbcType=$mbcType" else ""
+            )
             return true
         } catch (e: Exception) {
             println("WARNING: Could not extract build metadata: ${e.message}")
@@ -694,7 +698,6 @@ abstract class GenerateCWorkAction : WorkAction<GenerateCParams> {
             println("Warning: Asset optimization analysis failed: ${e.message}")
         }
     }
-
 }
 
 // =============================================================================
@@ -769,10 +772,10 @@ internal fun syncOutputDir(outputDir: File, emittedSet: Set<String>): List<Strin
  *
  * **Why reflection?** `GenerateCTask` runs in a Gradle classloader-isolated worker (see
  * `GenerateCWorkAction`). The `gameIR` value is produced by the user's classpath via reflection
- * throughout `executePath()`; direct typed access to `gbkt-ir` types would require adding
- * `gbkt-ir` as a compile dependency to the plugin, coupling the plugin build to the IR module
- * version. Using reflection keeps the same coupling assumptions as the rest of the file (lines 362,
- * 373, 374, etc.).
+ * throughout `executePath()`; direct typed access to `gbkt-ir` types would require adding `gbkt-ir`
+ * as a compile dependency to the plugin, coupling the plugin build to the IR module version. Using
+ * reflection keeps the same coupling assumptions as the rest of the file (lines 362, 373, 374,
+ * etc.).
  *
  * **When is this gate active?** The `MetaspriteIR.spritePath` field is *nullable* during the Phase
  * 12.4 migration window (D-01b) so that existing tests that create `MetaspriteIR` instances without
@@ -781,9 +784,9 @@ internal fun syncOutputDir(outputDir: File, emittedSet: Set<String>): List<Strin
  * fails the build with an actionable message.
  *
  * **Silent-skip alternative rejected:** Without this gate, a metasprite with null `spritePath` is
- * silently skipped by the sidecar emitter in [GBDKPipeline], so [ConvertSpritesTask] never sees
- * it, `sprites_<id>_tiles` is never defined, and `lcc` fails with an opaque "undefined symbol"
- * error deep in the link step — exactly the failure mode D-04 targeted.
+ * silently skipped by the sidecar emitter in [GBDKPipeline], so [ConvertSpritesTask] never sees it,
+ * `sprites_<id>_tiles` is never defined, and `lcc` fails with an opaque "undefined symbol" error
+ * deep in the link step — exactly the failure mode D-04 targeted.
  *
  * @param gameIR The IR root produced by `GameBuilder.build()` — typed as `Any` because this
  *   function is called from a classloader-isolated worker context where `GameIR` is only accessible
@@ -846,7 +849,7 @@ internal fun validateMetaspriteSpritePaths(gameIR: Any) {
             try {
                 ms.javaClass.getMethod("getSpriteMode").invoke(ms)
             } catch (_: NoSuchMethodException) {
-                null  // legacy IR — treat same as not-set; gate below throws
+                null // legacy IR — treat same as not-set; gate below throws
             }
         if (spriteMode == null)
             throw GradleException(

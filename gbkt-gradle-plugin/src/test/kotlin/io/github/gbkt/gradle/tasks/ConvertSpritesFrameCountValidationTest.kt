@@ -46,7 +46,8 @@ class ConvertSpritesFrameCountValidationTest {
     // -------------------------------------------------------------------------
 
     /** Fragment from a png2asset-generated .c file with 5 animation frames. */
-    private val elephant5FrameOutput = """
+    private val elephant5FrameOutput =
+        """
         const metasprite_t elephant_metasprite0[] = {
             METASPR_ITEM(0, 0, 0, 0), METASPR_TERM
         };
@@ -66,23 +67,30 @@ class ConvertSpritesFrameCountValidationTest {
             elephant_metasprite0, elephant_metasprite1, elephant_metasprite2,
             elephant_metasprite3, elephant_metasprite4
         };
-    """.trimIndent()
+        """
+            .trimIndent()
 
     /** Fragment with 3 frames (mismatch scenario). */
-    private val tiger3FrameOutput = """
+    private val tiger3FrameOutput =
+        """
         const metasprite_t tiger_metasprite0[] = { METASPR_ITEM(0, 0, 0, 0), METASPR_TERM };
         const metasprite_t tiger_metasprite1[] = { METASPR_ITEM(0, 0, 1, 0), METASPR_TERM };
         const metasprite_t tiger_metasprite2[] = { METASPR_ITEM(0, 0, 2, 0), METASPR_TERM };
         const metasprite_t* const tiger_metasprites[3] = {
             tiger_metasprite0, tiger_metasprite1, tiger_metasprite2
         };
-    """.trimIndent()
+        """
+            .trimIndent()
 
-    /** Fragment with no pointer array (png2asset output that lacks the metasprites[] declaration). */
-    private val noPointerArrayOutput = """
+    /**
+     * Fragment with no pointer array (png2asset output that lacks the metasprites[] declaration).
+     */
+    private val noPointerArrayOutput =
+        """
         const metasprite_t elephant_metasprite0[] = { METASPR_ITEM(0, 0, 0, 0), METASPR_TERM };
         /* pointer array line is absent */
-    """.trimIndent()
+        """
+            .trimIndent()
 
     // -------------------------------------------------------------------------
     // Test 1: Matching declared count → passes (no exception)
@@ -113,15 +121,16 @@ class ConvertSpritesFrameCountValidationTest {
     // -------------------------------------------------------------------------
     @Test
     fun `validateFrameCount throws when declared count disagrees with png2asset output count`() {
-        val ex = assertThrows<Exception>(
-            "D-07: validateFrameCount must throw when declared count (3) disagrees with parsed count (5)"
-        ) {
-            validateFrameCount(
-                declaredCount = 3,
-                png2assetCOutput = elephant5FrameOutput,
-                stemName = "elephant",
-            )
-        }
+        val ex =
+            assertThrows<Exception>(
+                "D-07: validateFrameCount must throw when declared count (3) disagrees with parsed count (5)"
+            ) {
+                validateFrameCount(
+                    declaredCount = 3,
+                    png2assetCOutput = elephant5FrameOutput,
+                    stemName = "elephant",
+                )
+            }
 
         assertTrue(
             ex.message?.contains("3") == true,
@@ -162,15 +171,16 @@ class ConvertSpritesFrameCountValidationTest {
     // -------------------------------------------------------------------------
     @Test
     fun `validateFrameCount throws for tiger when declared count mismatches`() {
-        val ex = assertThrows<Exception>(
-            "D-07: validateFrameCount must throw when declared (5) disagrees with parsed tiger count (3)"
-        ) {
-            validateFrameCount(
-                declaredCount = 5,
-                png2assetCOutput = tiger3FrameOutput,
-                stemName = "tiger",
-            )
-        }
+        val ex =
+            assertThrows<Exception>(
+                "D-07: validateFrameCount must throw when declared (5) disagrees with parsed tiger count (3)"
+            ) {
+                validateFrameCount(
+                    declaredCount = 5,
+                    png2assetCOutput = tiger3FrameOutput,
+                    stemName = "tiger",
+                )
+            }
 
         assertTrue(
             ex.message?.contains("5") == true || ex.message?.contains("3") == true,

@@ -102,16 +102,34 @@ class IsIndexedPngTest {
     private fun syntheticPngHeader(colorType: Byte): ByteArray {
         return byteArrayOf(
             // PNG signature (8 bytes)
-            0x89.toByte(), 0x50.toByte(), 0x4E.toByte(), 0x47.toByte(),
-            0x0D.toByte(), 0x0A.toByte(), 0x1A.toByte(), 0x0A.toByte(),
+            0x89.toByte(),
+            0x50.toByte(),
+            0x4E.toByte(),
+            0x47.toByte(),
+            0x0D.toByte(),
+            0x0A.toByte(),
+            0x1A.toByte(),
+            0x0A.toByte(),
             // IHDR length (4 bytes, big-endian) = 13
-            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x0D.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x0D.toByte(),
             // IHDR chunk type "IHDR" (4 bytes)
-            0x49.toByte(), 0x48.toByte(), 0x44.toByte(), 0x52.toByte(),
+            0x49.toByte(),
+            0x48.toByte(),
+            0x44.toByte(),
+            0x52.toByte(),
             // width (4 bytes, big-endian) = 8
-            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x08.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x08.toByte(),
             // height (4 bytes, big-endian) = 8
-            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x08.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x08.toByte(),
             // bit depth (1 byte) = 8
             0x08.toByte(),
             // color type (1 byte) — caller-supplied

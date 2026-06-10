@@ -59,16 +59,17 @@ class ConvertSpritesKeepPaletteOrderTest {
         val indexedPng = writeIndexedPng("player.png")
         val outputC = File(tempDir, "player.c")
 
-        val args = buildPng2AssetArgs(
-            pngFile = indexedPng,
-            outputC = outputC,
-            spriteMode = SpriteMode.SPR8x16,
-            pivotX = 12,
-            pivotY = 6,
-            frameWidth = 24,
-            frameHeight = 32,
-            mirrorDedup = false,
-        )
+        val args =
+            buildPng2AssetArgs(
+                pngFile = indexedPng,
+                outputC = outputC,
+                spriteMode = SpriteMode.SPR8x16,
+                pivotX = 12,
+                pivotY = 6,
+                frameWidth = 24,
+                frameHeight = 32,
+                mirrorDedup = false,
+            )
 
         assertTrue(
             args.contains("-keep_palette_order"),
@@ -90,16 +91,17 @@ class ConvertSpritesKeepPaletteOrderTest {
         val rgbPng = writeRgbPng("paddle.png")
         val outputC = File(tempDir, "paddle.c")
 
-        val args = buildPng2AssetArgs(
-            pngFile = rgbPng,
-            outputC = outputC,
-            spriteMode = SpriteMode.SPR8x16,
-            pivotX = 0,
-            pivotY = 0,
-            frameWidth = 8,
-            frameHeight = 16,
-            mirrorDedup = false,
-        )
+        val args =
+            buildPng2AssetArgs(
+                pngFile = rgbPng,
+                outputC = outputC,
+                spriteMode = SpriteMode.SPR8x16,
+                pivotX = 0,
+                pivotY = 0,
+                frameWidth = 8,
+                frameHeight = 16,
+                mirrorDedup = false,
+            )
 
         assertFalse(
             args.contains("-keep_palette_order"),
@@ -128,16 +130,34 @@ class ConvertSpritesKeepPaletteOrderTest {
     private fun syntheticPngHeader(colorType: Byte): ByteArray =
         byteArrayOf(
             // PNG signature (8 bytes)
-            0x89.toByte(), 0x50.toByte(), 0x4E.toByte(), 0x47.toByte(),
-            0x0D.toByte(), 0x0A.toByte(), 0x1A.toByte(), 0x0A.toByte(),
+            0x89.toByte(),
+            0x50.toByte(),
+            0x4E.toByte(),
+            0x47.toByte(),
+            0x0D.toByte(),
+            0x0A.toByte(),
+            0x1A.toByte(),
+            0x0A.toByte(),
             // IHDR length (4 bytes, big-endian) = 13
-            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x0D.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x0D.toByte(),
             // IHDR chunk type "IHDR" (4 bytes)
-            0x49.toByte(), 0x48.toByte(), 0x44.toByte(), 0x52.toByte(),
+            0x49.toByte(),
+            0x48.toByte(),
+            0x44.toByte(),
+            0x52.toByte(),
             // width (4 bytes, big-endian) = 8
-            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x08.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x08.toByte(),
             // height (4 bytes, big-endian) = 8
-            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x08.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x00.toByte(),
+            0x08.toByte(),
             // bit depth (1 byte) = 8
             0x08.toByte(),
             // color type (1 byte) — caller-supplied

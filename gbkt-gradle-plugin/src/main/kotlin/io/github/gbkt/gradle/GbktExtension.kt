@@ -148,8 +148,8 @@ abstract class GbktExtension @Inject constructor(objects: ObjectFactory) {
      * }
      * ```
      *
-     * Note: The budget report is printed inline during `generateC` by `generate()`. The
-     * standalone `budgetReport` task remains independently callable regardless of this flag.
+     * Note: The budget report is printed inline during `generateC` by `generate()`. The standalone
+     * `budgetReport` task remains independently callable regardless of this flag.
      */
     abstract val budgetReport: Property<Boolean>
 
@@ -163,10 +163,10 @@ abstract class GbktExtension @Inject constructor(objects: ObjectFactory) {
      *
      * Only meaningful for cartridge types with RAM (MBC1+RAM, MBC5+RAM+BATTERY, etc.).
      *
-     * @deprecated Set `ramBanks` in the DSL `config { ramBanks = N }` block instead.
-     * The DSL value flows through `gbkt-build.properties` and takes precedence over this
-     * Gradle extension property. This property remains as a backward-compatibility fallback
-     * for builds that have not yet migrated to the typed `config { cartridge(Cartridge.X) }` DSL form.
+     * @deprecated Set `ramBanks` in the DSL `config { ramBanks = N }` block instead. The DSL value
+     *   flows through `gbkt-build.properties` and takes precedence over this Gradle extension
+     *   property. This property remains as a backward-compatibility fallback for builds that have
+     *   not yet migrated to the typed `config { cartridge(Cartridge.X) }` DSL form.
      */
     abstract val ramBanks: Property<Int>
 
@@ -531,9 +531,9 @@ abstract class GenerateAssetsExtension @Inject constructor() {
 /**
  * Sprite pipeline settings for the gbkt plugin.
  *
- * Controls tRNS transparency routing behaviour for indexed sprite PNGs. When a sprite PNG
- * declares its transparent color at a non-zero palette index, the framework can either
- * auto-correct silently (default) or hard-fail the build (strict mode).
+ * Controls tRNS transparency routing behaviour for indexed sprite PNGs. When a sprite PNG declares
+ * its transparent color at a non-zero palette index, the framework can either auto-correct silently
+ * (default) or hard-fail the build (strict mode).
  *
  * Usage:
  * ```kotlin
@@ -544,9 +544,9 @@ abstract class GenerateAssetsExtension @Inject constructor() {
  * }
  * ```
  *
- * Phase 13.6 REQ-4 / D-01 / D-02: SpritesExtension mirrors the existing sub-extension
- * pattern (OptimizationExtension, EmulatorExtension, etc.) so the DSL surface is
- * property-name-inferred (no magic strings).
+ * Phase 13.6 REQ-4 / D-01 / D-02: SpritesExtension mirrors the existing sub-extension pattern
+ * (OptimizationExtension, EmulatorExtension, etc.) so the DSL surface is property-name-inferred (no
+ * magic strings).
  */
 abstract class SpritesExtension @Inject constructor() {
 
@@ -554,8 +554,8 @@ abstract class SpritesExtension @Inject constructor() {
      * Enable strict transparency routing mode.
      *
      * When `true`, any indexed sprite PNG whose tRNS chunk declares a transparent color at a
-     * non-zero palette index will fail the [io.github.gbkt.gradle.tasks.ConvertSpritesTask] with
-     * a [org.gradle.api.GradleException] naming the sprite file and the non-zero index.
+     * non-zero palette index will fail the [io.github.gbkt.gradle.tasks.ConvertSpritesTask] with a
+     * [org.gradle.api.GradleException] naming the sprite file and the non-zero index.
      *
      * When `false` (default), the framework auto-corrects by pre-permuting the palette so the
      * transparent color lands at index 0 before handing to png2asset, and emits a build WARNING

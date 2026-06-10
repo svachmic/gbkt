@@ -67,22 +67,23 @@ class PalettePolarityWarningTest {
             const palette_color_t _zone_test_tileset_palettes[4] = {
             	RGB8(  0,  0,  0), RGB8( 64, 64, 64), RGB8(192,192,192), RGB8(255,255,255)
             	};
-            """.trimIndent()
+            """
+                .trimIndent()
         )
 
         val symbol = "_zone_test_tileset_palettes"
         val values = parsePaletteRgb555Values(cFile, symbol)
-        assertNotNull(values, "parsePaletteRgb555Values must parse an RGB8-format palette_color_t array")
+        assertNotNull(
+            values,
+            "parsePaletteRgb555Values must parse an RGB8-format palette_color_t array",
+        )
         assertTrue(values!!.isNotEmpty(), "Parsed values must not be empty")
         assertTrue(
             values.size == 4,
             "Must parse 4 palette entries from RGB8 form; got ${values.size}: $values",
         )
         // Black (0,0,0) → RGB555 = 0
-        assertTrue(
-            values[0] == 0,
-            "First entry RGB8(0,0,0) must map to RGB555=0; got ${values[0]}",
-        )
+        assertTrue(values[0] == 0, "First entry RGB8(0,0,0) must map to RGB555=0; got ${values[0]}")
         // White (255,255,255) → RGB555 = 0x7FFF = 32767
         assertTrue(
             values[3] == 0x7FFF,
@@ -104,7 +105,8 @@ class PalettePolarityWarningTest {
             const palette_color_t player_palettes[4] = {
             	RGB8(255,128, 64), RGB8(  0,  0,  0), RGB8(248,248,248), RGB8(168,168,168)
             	};
-            """.trimIndent()
+            """
+                .trimIndent()
         )
 
         val values = parsePaletteRgb555Values(cFile, "player_palettes")
@@ -134,7 +136,8 @@ class PalettePolarityWarningTest {
             const palette_color_t ${invertedSymbol}[4] = {
             	RGB8(255,255,255), RGB8(192,192,192), RGB8( 64, 64, 64), RGB8(  0,  0,  0)
             	};
-            """.trimIndent()
+            """
+                .trimIndent()
         )
 
         // Simulate the BG WARNING logic: parse → checkPalettePolarity
@@ -169,11 +172,15 @@ class PalettePolarityWarningTest {
             const palette_color_t ${correctSymbol}[4] = {
             	RGB8(  0,  0,  0), RGB8( 64, 64, 64), RGB8(192,192,192), RGB8(255,255,255)
             	};
-            """.trimIndent()
+            """
+                .trimIndent()
         )
 
         val values = parsePaletteRgb555Values(outputC, correctSymbol)
-        assertNotNull(values, "parsePaletteRgb555Values must parse the corrected RGB8 palette array")
+        assertNotNull(
+            values,
+            "parsePaletteRgb555Values must parse the corrected RGB8 palette array",
+        )
         val polarity = checkPalettePolarity(sourcePng, values!!)
         assertFalse(
             polarity,
@@ -201,11 +208,15 @@ class PalettePolarityWarningTest {
             const palette_color_t ${spriteSymbol}[4] = {
             	RGB8(255,255,255), RGB8(192,192,192), RGB8( 64, 64, 64), RGB8(  0,  0,  0)
             	};
-            """.trimIndent()
+            """
+                .trimIndent()
         )
 
         val values = parsePaletteRgb555Values(outputC, spriteSymbol)
-        assertNotNull(values, "parsePaletteRgb555Values must parse the inverted RGB8 sprite palette")
+        assertNotNull(
+            values,
+            "parsePaletteRgb555Values must parse the inverted RGB8 sprite palette",
+        )
         val polarity = checkPalettePolarity(sourcePng, values!!)
         assertTrue(
             polarity,
@@ -229,11 +240,15 @@ class PalettePolarityWarningTest {
             const palette_color_t ${spriteSymbol}[4] = {
             	RGB8(  0,  0,  0), RGB8( 64, 64, 64), RGB8(192,192,192), RGB8(255,255,255)
             	};
-            """.trimIndent()
+            """
+                .trimIndent()
         )
 
         val values = parsePaletteRgb555Values(outputC, spriteSymbol)
-        assertNotNull(values, "parsePaletteRgb555Values must parse the corrected RGB8 sprite palette")
+        assertNotNull(
+            values,
+            "parsePaletteRgb555Values must parse the corrected RGB8 sprite palette",
+        )
         val polarity = checkPalettePolarity(sourcePng, values!!)
         assertFalse(
             polarity,
@@ -253,7 +268,12 @@ class PalettePolarityWarningTest {
 
     @Test
     fun `ConvertZoneTilesetsTask does not throw when BG palette is inverted (non-fatal)`() {
-        val gbdkDir = try { GbdkToolchain.find(null) } catch (_: Exception) { return }
+        val gbdkDir =
+            try {
+                GbdkToolchain.find(null)
+            } catch (_: Exception) {
+                return
+            }
         val png2asset = GbdkToolchain.getPng2asset(gbdkDir)
         if (!png2asset.exists()) return
 
@@ -280,19 +300,21 @@ class PalettePolarityWarningTest {
                 }
               ]
             }
-            """.trimIndent()
+            """
+                .trimIndent()
         )
 
         val cSourceDir = File(tempDir, "out").apply { mkdirs() }
         val project = ProjectBuilder.builder().withProjectDir(tempDir).build()
-        val task = project.tasks
-            .register("convertZoneTilesetsPolarity", ConvertZoneTilesetsTask::class.java) {
-                gbdkHome.set(gbdkDir.absolutePath)
-                assetDirectory.set(assetDir)
-                this.metadataFile.set(metadataFile)
-                this.cSourceDir.set(cSourceDir)
-            }
-            .get()
+        val task =
+            project.tasks
+                .register("convertZoneTilesetsPolarity", ConvertZoneTilesetsTask::class.java) {
+                    gbdkHome.set(gbdkDir.absolutePath)
+                    assetDirectory.set(assetDir)
+                    this.metadataFile.set(metadataFile)
+                    this.cSourceDir.set(cSourceDir)
+                }
+                .get()
 
         // Must NOT throw — the polarity WARNING is non-fatal (warn-not-fail).
         // Any GradleException or other exception would indicate a regression.
@@ -329,7 +351,12 @@ class PalettePolarityWarningTest {
 
     @Test
     fun `ConvertSpritesTask does not throw when OBJ palette is inverted (non-fatal)`() {
-        val gbdkDir = try { GbdkToolchain.find(null) } catch (_: Exception) { return }
+        val gbdkDir =
+            try {
+                GbdkToolchain.find(null)
+            } catch (_: Exception) {
+                return
+            }
         val png2asset = GbdkToolchain.getPng2asset(gbdkDir)
         if (!png2asset.exists()) return
 
@@ -359,20 +386,22 @@ class PalettePolarityWarningTest {
                 }
               ]
             }
-            """.trimIndent()
+            """
+                .trimIndent()
         )
 
         val outputDir = File(tempDir, "out").apply { mkdirs() }
         val project = ProjectBuilder.builder().withProjectDir(tempDir).build()
-        val task = project.tasks
-            .register("convertSpritesPolarity", ConvertSpritesTask::class.java) {
-                gbdkHome.set(gbdkDir.absolutePath)
-                assetDirectory.set(assetDir)
-                this.metadataFile.set(metadataFile)
-                cSourceDir.set(outputDir)
-                strictTransparency.set(false)
-            }
-            .get()
+        val task =
+            project.tasks
+                .register("convertSpritesPolarity", ConvertSpritesTask::class.java) {
+                    gbdkHome.set(gbdkDir.absolutePath)
+                    assetDirectory.set(assetDir)
+                    this.metadataFile.set(metadataFile)
+                    cSourceDir.set(outputDir)
+                    strictTransparency.set(false)
+                }
+                .get()
 
         // Must NOT throw — the polarity WARNING is non-fatal.
         var threw: Throwable? = null
@@ -402,19 +431,17 @@ class PalettePolarityWarningTest {
     // -------------------------------------------------------------------------
 
     /**
-     * Writes an indexed PNG with 4 entries in ascending luminance order (PLTE):
-     *   Index 0: black  RGB(0,0,0)       lum=0
-     *   Index 1: dark   RGB(64,64,64)    lum=64
-     *   Index 2: light  RGB(192,192,192) lum=192
-     *   Index 3: white  RGB(255,255,255) lum=255
+     * Writes an indexed PNG with 4 entries in ascending luminance order (PLTE): Index 0: black
+     * RGB(0,0,0) lum=0 Index 1: dark RGB(64,64,64) lum=64 Index 2: light RGB(192,192,192) lum=192
+     * Index 3: white RGB(255,255,255) lum=255
      *
-     * This is the "non-inverted source" fixture. An emitted palette that is the
-     * strict reverse of this PLTE will trigger checkPalettePolarity → true.
+     * This is the "non-inverted source" fixture. An emitted palette that is the strict reverse of
+     * this PLTE will trigger checkPalettePolarity → true.
      */
     private fun writeAscendingLumIndexedPng(name: String): File {
-        val reds   = byteArrayOf(0, 64, 192.toByte(), 255.toByte())
+        val reds = byteArrayOf(0, 64, 192.toByte(), 255.toByte())
         val greens = byteArrayOf(0, 64, 192.toByte(), 255.toByte())
-        val blues  = byteArrayOf(0, 64, 192.toByte(), 255.toByte())
+        val blues = byteArrayOf(0, 64, 192.toByte(), 255.toByte())
         val alphas = ByteArray(4) { 0xFF.toByte() }
         val cm = IndexColorModel(8, 4, reds, greens, blues, alphas)
         val img = BufferedImage(4, 1, BufferedImage.TYPE_BYTE_INDEXED, cm)
@@ -428,8 +455,8 @@ class PalettePolarityWarningTest {
     }
 
     /**
-     * Converts 8-bit RGB to GBC RGB555 packed integer.
-     * Layout: (b5 shl 10) or (g5 shl 5) or r5, where r5 = r8*31/255.
+     * Converts 8-bit RGB to GBC RGB555 packed integer. Layout: (b5 shl 10) or (g5 shl 5) or r5,
+     * where r5 = r8*31/255.
      */
     private fun rgb888ToRgb555(r8: Int, g8: Int, b8: Int): Int {
         val r5 = (r8 * 31) / 255
@@ -439,8 +466,8 @@ class PalettePolarityWarningTest {
     }
 
     /**
-     * Find a PNG in the platformer-template example directory.
-     * Mirrors the pattern in World1TilesetGrassEncodingTest.
+     * Find a PNG in the platformer-template example directory. Mirrors the pattern in
+     * World1TilesetGrassEncodingTest.
      */
     private fun findPlatformerTemplatePng(filename: String): File? {
         val rel = "gbkt-examples/platformer-template/res/graphics/$filename"
@@ -454,11 +481,11 @@ class PalettePolarityWarningTest {
     }
 
     /**
-     * Find elephant.png from the metasprites example directory via walk-up search.
-     * Mirrors [findPlatformerTemplatePng] — starts at the process working directory
-     * and walks up to 6 parent directories looking for the asset.
-     * Returns null when the asset is genuinely absent (e.g. a shallow checkout without
-     * the example subproject). The test returns early on null — it does NOT fail.
+     * Find elephant.png from the metasprites example directory via walk-up search. Mirrors
+     * [findPlatformerTemplatePng] — starts at the process working directory and walks up to 6
+     * parent directories looking for the asset. Returns null when the asset is genuinely absent
+     * (e.g. a shallow checkout without the example subproject). The test returns early on null — it
+     * does NOT fail.
      */
     private fun findElephantPng(): File? {
         val rel = "gbkt-examples/metasprites/res/sprites/elephant.png"

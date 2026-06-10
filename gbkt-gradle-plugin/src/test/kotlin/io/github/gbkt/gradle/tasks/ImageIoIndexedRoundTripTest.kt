@@ -43,11 +43,11 @@ import org.junit.jupiter.api.io.TempDir
  * A2 investigation: does `ImageIO.write(..., "PNG", ...)` on an `IndexColorModel`-backed
  * `BufferedImage` preserve indexed color-type 3, or upgrade it to RGBA?
  *
- * The test builds a 4-entry indexed palette, writes the image via ImageIO, and reads the
- * IHDR color-type byte at offset [PNG_COLOR_TYPE_OFFSET_SHARED] = 25.
+ * The test builds a 4-entry indexed palette, writes the image via ImageIO, and reads the IHDR
+ * color-type byte at offset [PNG_COLOR_TYPE_OFFSET_SHARED] = 25.
  *
- * **A2 verdict: HOLDS** — the JVM PNG encoder preserves indexed color-type 3.
- * Plan 03 may use `ImageIO.write` (Option i) for the pre-permuted PNG write step.
+ * **A2 verdict: HOLDS** — the JVM PNG encoder preserves indexed color-type 3. Plan 03 may use
+ * `ImageIO.write` (Option i) for the pre-permuted PNG write step.
  */
 class ImageIoIndexedRoundTripTest {
 
@@ -58,10 +58,11 @@ class ImageIoIndexedRoundTripTest {
         // Build a 4-color IndexColorModel (mimics the elephant compact remap result:
         // 0=transparent, 1=outline, 2=midtone, 3=body)
         val size = 4
-        val reds   = byteArrayOf(0x00, 0x07, 0x66, 0xE0.toByte())
+        val reds = byteArrayOf(0x00, 0x07, 0x66, 0xE0.toByte())
         val greens = byteArrayOf(0x00, 0x18, 0xC0.toByte(), 0xF8.toByte())
-        val blues  = byteArrayOf(0x00, 0x21, 0x6C, 0xCF.toByte())
-        val alphas = byteArrayOf(0x00, 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()) // index 0 = transparent
+        val blues = byteArrayOf(0x00, 0x21, 0x6C, 0xCF.toByte())
+        val alphas =
+            byteArrayOf(0x00, 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()) // index 0 = transparent
 
         val cm = IndexColorModel(8, size, reds, greens, blues, alphas)
         val img = BufferedImage(8, 8, BufferedImage.TYPE_BYTE_INDEXED, cm)
@@ -82,14 +83,15 @@ class ImageIoIndexedRoundTripTest {
         }
 
         // Read the IHDR color-type byte at offset 25 from the written file
-        val writtenColorType: Byte = outputFile.inputStream().buffered().use { stream ->
-            val header = ByteArray(PNG_HEADER_BYTES_SHARED)
-            val read = stream.read(header)
-            require(read == PNG_HEADER_BYTES_SHARED) {
-                "Written PNG header is too short ($read bytes) — unexpected ImageIO output"
+        val writtenColorType: Byte =
+            outputFile.inputStream().buffered().use { stream ->
+                val header = ByteArray(PNG_HEADER_BYTES_SHARED)
+                val read = stream.read(header)
+                require(read == PNG_HEADER_BYTES_SHARED) {
+                    "Written PNG header is too short ($read bytes) — unexpected ImageIO output"
+                }
+                header[PNG_COLOR_TYPE_OFFSET_SHARED]
             }
-            header[PNG_COLOR_TYPE_OFFSET_SHARED]
-        }
 
         // Assert that the color-type is 3 (indexed) — not 2 (RGB) or 6 (RGBA).
         //

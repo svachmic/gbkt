@@ -51,18 +51,17 @@ import org.json.JSONObject
  *
  * ## Locked png2asset flag set (Phase 12.8 D-02 revision — conditional)
  *
- * Base (always emitted): `<png> -o <output>.c -map -spr8x8 -bpp 2 -noflip`
- * Indexed-only (appended when [isIndexedPng] returns true): `-keep_palette_order`
+ * Base (always emitted): `<png> -o <output>.c -map -spr8x8 -bpp 2 -noflip` Indexed-only (appended
+ * when [isIndexedPng] returns true): `-keep_palette_order`
  *
  * The Plan 11.2-02 spike originally REMOVED `-keep_palette_order` after observing
- * `keep_palette_order only works with indexed png images` on an RGB test PNG. Phase 12.8
- * W3 re-scoped that finding: the rejection is RUNTIME-GUARDED via [isIndexedPng] so the
- * flag is emitted iff the PNG's IHDR color-type byte is `3` (indexed/colormap). Indexed
- * BG tilesets (`world1-tileset.png` / `world2-tileset.png` are 8-bit colormap per
- * `file(1)`) get the flag automatically per the Reference Makefile
- * (`platformer_template/Makefile:82`); RGB/RGBA inputs (banks/checker.png,
- * platformer-template title-screen.png + next-level.png) keep the original 8-flag set
- * and continue to compile cleanly.
+ * `keep_palette_order only works with indexed png images` on an RGB test PNG. Phase 12.8 W3
+ * re-scoped that finding: the rejection is RUNTIME-GUARDED via [isIndexedPng] so the flag is
+ * emitted iff the PNG's IHDR color-type byte is `3` (indexed/colormap). Indexed BG tilesets
+ * (`world1-tileset.png` / `world2-tileset.png` are 8-bit colormap per `file(1)`) get the flag
+ * automatically per the Reference Makefile (`platformer_template/Makefile:82`); RGB/RGBA inputs
+ * (banks/checker.png, platformer-template title-screen.png + next-level.png) keep the original
+ * 8-flag set and continue to compile cleanly.
  *
  * ## Output layout (D-B4 flat path)
  *
@@ -86,8 +85,8 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
     abstract val assetDirectory: DirectoryProperty
 
     /**
-     * The `game_metadata.json` file produced by GBDKPipeline.buildMetadataFile (Plan 01).
-     * Contains the `zoneTilesets` array driving this task.
+     * The `game_metadata.json` file produced by GBDKPipeline.buildMetadataFile (Plan 01). Contains
+     * the `zoneTilesets` array driving this task.
      */
     @get:InputFile
     @get:Optional
@@ -492,27 +491,27 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
 
     /**
      * Phase 12.8 W3: read the PNG IHDR color-type byte and return true iff the PNG is
-     * indexed/colormap (color-type `3`). Used to conditionally append `-keep_palette_order`
-     * to the png2asset invocation at [convertOneTileset]: indexed PNGs accept (and need) the
-     * flag to preserve PLTE chunk order; RGB/RGBA PNGs reject it with png2asset exit=1 and
+     * indexed/colormap (color-type `3`). Used to conditionally append `-keep_palette_order` to the
+     * png2asset invocation at [convertOneTileset]: indexed PNGs accept (and need) the flag to
+     * preserve PLTE chunk order; RGB/RGBA PNGs reject it with png2asset exit=1 and
      * `keep_palette_order only works with indexed png images`.
      *
      * PNG layout reference (`https://www.w3.org/TR/PNG/`):
-     * - Bytes 0..7  : signature `89 50 4E 47 0D 0A 1A 0A`
+     * - Bytes 0..7 : signature `89 50 4E 47 0D 0A 1A 0A`
      * - Bytes 8..11 : IHDR chunk length (always `00 00 00 0D` = 13 bytes)
      * - Bytes 12..15: IHDR chunk type `49 48 44 52` ("IHDR")
      * - Bytes 16..19: width (big-endian, unused here)
      * - Bytes 20..23: height (big-endian, unused here)
-     * - Byte  24    : bit depth
-     * - Byte  25    : **color type** (0=gray, 2=RGB, 3=indexed, 4=gray+alpha, 6=RGBA)
+     * - Byte 24 : bit depth
+     * - Byte 25 : **color type** (0=gray, 2=RGB, 3=indexed, 4=gray+alpha, 6=RGBA)
      *
      * Reads only the first 26 bytes. Returns false on any IO error, signature mismatch, or
      * truncated header — the caller treats false as "not safe to pass `-keep_palette_order`".
      *
-     * Visibility note: `internal` (not `private`) so the sibling test
-     * `IsIndexedPngTest` can exercise both branches with synthetic headers without resorting
-     * to reflection. Marked here because the @CacheableTask Gradle abstract base prohibits a
-     * cleaner top-level companion-object helper.
+     * Visibility note: `internal` (not `private`) so the sibling test `IsIndexedPngTest` can
+     * exercise both branches with synthetic headers without resorting to reflection. Marked here
+     * because the @CacheableTask Gradle abstract base prohibits a cleaner top-level
+     * companion-object helper.
      */
     internal fun isIndexedPng(file: File): Boolean =
         // Phase 12.9 D2a: delegates to the shared package-level isIndexedPngShared() helper
@@ -557,8 +556,8 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
 
     /**
      * Parse the palette array dimension from a `const palette_color_t <symbol>[N] ...` declaration
-     * in a png2asset-emitted .c file. Returns the integer dimension `N`, or `null` if the symbol
-     * is not found.
+     * in a png2asset-emitted .c file. Returns the integer dimension `N`, or `null` if the symbol is
+     * not found.
      *
      * Phase 12.9 D-03(b): analogous to [parseMapArrayBytes] but targets `palette_color_t` arrays
      * (emitted by png2asset when `-keep_palette_order` is active). The dimension `N` is then
@@ -568,16 +567,14 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
     private fun parsePaletteArrayDim(file: File, symbol: String): Int? {
         val text = file.readText()
         val pattern =
-            Regex(
-                """const\s+palette_color_t\s+${Regex.escape(symbol)}\s*\[\s*(\d+)\s*\]""",
-            )
+            Regex("""const\s+palette_color_t\s+${Regex.escape(symbol)}\s*\[\s*(\d+)\s*\]""")
         return pattern.find(text)?.groupValues?.get(1)?.toIntOrNull()
     }
 
     /**
      * Synthesize the `_zone_<sanitized>_tileset.h` header. Delegates to
-     * [synthesizeZoneTilesetHeader] (internal top-level function below the class) so tests can
-     * call the logic directly without GBDK / png2asset.
+     * [synthesizeZoneTilesetHeader] (internal top-level function below the class) so tests can call
+     * the logic directly without GBDK / png2asset.
      *
      * WR-03 fix: the emitted header now includes `#include <gb/cgb.h>` alongside `<stdint.h>` and
      * `<gbdk/platform.h>` — required for the `palette_color_t` typedef used by the palette extern.
@@ -590,7 +587,16 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
         tilemapPng: File,
         paletteArrayDim: Int,
         subPaletteCount: Int,
-    ) = synthesizeZoneTilesetHeader(sanitized, nativeStem, tileCount, outputH, tilemapPng, paletteArrayDim, subPaletteCount)
+    ) =
+        synthesizeZoneTilesetHeader(
+            sanitized,
+            nativeStem,
+            tileCount,
+            outputH,
+            tilemapPng,
+            paletteArrayDim,
+            subPaletteCount,
+        )
 
     companion object {
         /**
@@ -634,8 +640,8 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
  * Synthesize the `_zone_<sanitized>_tileset.h` header per RESEARCH §"Example 2".
  *
  * Internal top-level function (promoted from [ConvertZoneTilesetsTask] private method) so that
- * tests can call the header-generation logic directly without requiring GBDK / png2asset.
- * Mirrors the [generateSpriteHeader] and [buildPng2AssetArgs] top-level visibility patterns.
+ * tests can call the header-generation logic directly without requiring GBDK / png2asset. Mirrors
+ * the [generateSpriteHeader] and [buildPng2AssetArgs] top-level visibility patterns.
  *
  * Emits:
  * - `extern const uint8_t <nativeStem>_tiles[<tileCount> * 16];` — tile data extern
@@ -645,11 +651,11 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
  * - WIDTH/HEIGHT macros derived from real [tilemapPng] IHDR pixel dimensions (Phase 12.2 REQ-3)
  * - `extern const palette_color_t _zone_<sanitized>_tileset_palettes[...]` — palette extern
  *
- * **WR-03 fix:** `#include <gb/cgb.h>` is now included so the header is self-contained.
- * The `palette_color_t` typedef is defined in `<gb/cgb.h>`; without this include the header
- * relies on `<gbdk/platform.h>` transitively providing the typedef, which may not hold
- * in all GBDK configurations. [generateSpriteHeader] already includes this header for the
- * same reason — this fix makes the zone tileset header consistent.
+ * **WR-03 fix:** `#include <gb/cgb.h>` is now included so the header is self-contained. The
+ * `palette_color_t` typedef is defined in `<gb/cgb.h>`; without this include the header relies on
+ * `<gbdk/platform.h>` transitively providing the typedef, which may not hold in all GBDK
+ * configurations. [generateSpriteHeader] already includes this header for the same reason — this
+ * fix makes the zone tileset header consistent.
  */
 internal fun synthesizeZoneTilesetHeader(
     sanitized: String,
@@ -657,8 +663,8 @@ internal fun synthesizeZoneTilesetHeader(
     tileCount: Int,
     outputH: File,
     tilemapPng: File,
-    paletteArrayDim: Int,   // Phase 12.9 D-03(b): parsed from png2asset-emitted .c palette array
-    subPaletteCount: Int,   // Phase 12.9 D-03(c): paletteArrayDim / 4 (GBC: 4 colors per sub-palette)
+    paletteArrayDim: Int, // Phase 12.9 D-03(b): parsed from png2asset-emitted .c palette array
+    subPaletteCount: Int, // Phase 12.9 D-03(c): paletteArrayDim / 4 (GBC: 4 colors per sub-palette)
 ) {
     // Phase 12.2 D-01 + REQ-3: derive WIDTH/HEIGHT from the relevant PNG's pixel dimensions
     // divided by 8 (Game Boy tile size). tilemapPng is:
@@ -703,9 +709,7 @@ internal fun synthesizeZoneTilesetHeader(
         appendLine()
         appendLine("/* Tilemap byte array (Phase 12.2 D-01 two-path extraction) */")
         appendLine("extern const uint8_t _zone_${sanitized}_tilemap[$tilemapW * $tilemapH];")
-        appendLine(
-            "/* Tilemap dimensions in screen tiles (Phase 12.2 REQ-3): PNG pixels / 8. */"
-        )
+        appendLine("/* Tilemap dimensions in screen tiles (Phase 12.2 REQ-3): PNG pixels / 8. */")
         appendLine(
             "/* Resolves GBDKPipeline.buildSetupCurrentLevelFunctionIfNeeded's references to */"
         )
@@ -714,7 +718,9 @@ internal fun synthesizeZoneTilesetHeader(
         appendLine("#define _zone_${sanitized}_tilemap_HEIGHT $tilemapH")
         appendLine()
         appendLine("/* Phase 12.9 D-03(b)+(c): palette extern + sub-palette count macro */")
-        appendLine("extern const palette_color_t _zone_${sanitized}_tileset_palettes[$paletteArrayDim];")
+        appendLine(
+            "extern const palette_color_t _zone_${sanitized}_tileset_palettes[$paletteArrayDim];"
+        )
         appendLine("#define _zone_${sanitized}_tileset_PALETTE_COUNT $subPaletteCount")
         appendLine()
         appendLine("#endif /* $guard */")

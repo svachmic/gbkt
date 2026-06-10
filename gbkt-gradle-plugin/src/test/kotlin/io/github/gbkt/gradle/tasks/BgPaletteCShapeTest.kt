@@ -155,10 +155,11 @@ class BgPaletteCShapeTest {
         // The palette array line contains the first RGB8 entry immediately
         // after the '= {' opening. We locate the _palettes declaration block
         // and check the first RGB8 value in it.
-        val paletteBlockPattern = Regex(
-            """_zone_world1Area1Zone_tileset_palettes\s*\[\s*\d+\s*\]\s*=\s*\{([^}]*)""",
-            RegexOption.DOT_MATCHES_ALL,
-        )
+        val paletteBlockPattern =
+            Regex(
+                """_zone_world1Area1Zone_tileset_palettes\s*\[\s*\d+\s*\]\s*=\s*\{([^}]*)""",
+                RegexOption.DOT_MATCHES_ALL,
+            )
         val paletteBlock = paletteBlockPattern.find(cText)
         assertTrue(
             paletteBlock != null,

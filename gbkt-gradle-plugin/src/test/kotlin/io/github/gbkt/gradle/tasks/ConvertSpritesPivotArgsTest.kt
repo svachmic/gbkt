@@ -33,8 +33,7 @@ import org.junit.jupiter.api.io.TempDir
 
 class ConvertSpritesPivotArgsTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     // -------------------------------------------------------------------------
     // Test 1: pivot(32, 24) — frame-center pivot for 64x48 elephant frame
@@ -55,16 +54,17 @@ class ConvertSpritesPivotArgsTest {
         val outputC = File(tempDir, "out/sprites/elephant.c")
         outputC.parentFile.mkdirs()
 
-        val args = buildPng2AssetArgs(
-            pngFile = pngFile,
-            outputC = outputC,
-            spriteMode = SpriteMode.SPR8x8,
-            pivotX = 32,
-            pivotY = 24,
-            frameWidth = 64,
-            frameHeight = 48,
-            mirrorDedup = false,
-        )
+        val args =
+            buildPng2AssetArgs(
+                pngFile = pngFile,
+                outputC = outputC,
+                spriteMode = SpriteMode.SPR8x8,
+                pivotX = 32,
+                pivotY = 24,
+                frameWidth = 64,
+                frameHeight = 48,
+                mirrorDedup = false,
+            )
 
         val pxIdx = args.indexOf("-px")
         val pyIdx = args.indexOf("-py")
@@ -94,16 +94,17 @@ class ConvertSpritesPivotArgsTest {
         val outputC = File(tempDir, "out/sprites/tiger.c")
         outputC.parentFile.mkdirs()
 
-        val args = buildPng2AssetArgs(
-            pngFile = pngFile,
-            outputC = outputC,
-            spriteMode = SpriteMode.SPR8x8,
-            pivotX = 0,
-            pivotY = 0,
-            frameWidth = 64,
-            frameHeight = 48,
-            mirrorDedup = false,
-        )
+        val args =
+            buildPng2AssetArgs(
+                pngFile = pngFile,
+                outputC = outputC,
+                spriteMode = SpriteMode.SPR8x8,
+                pivotX = 0,
+                pivotY = 0,
+                frameWidth = 64,
+                frameHeight = 48,
+                mirrorDedup = false,
+            )
 
         val pxIdx = args.indexOf("-px")
         val pyIdx = args.indexOf("-py")

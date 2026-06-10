@@ -38,10 +38,9 @@ class MetaspriteSubPaletteRemapTest {
     private fun String.tokenCount(token: String): Int = split(token).size - 1
 
     /**
-     * An elephant.c-shaped fixture mirroring png2asset metasprite output: a tile-data
-     * array, per-frame METASPR_ITEM descriptor arrays carrying S_PAL(0) and S_PAL(1)
-     * indices, the _metasprite pointer array, and a _palettes[] array. N = 3 S_PAL(0),
-     * M = 2 S_PAL(1).
+     * An elephant.c-shaped fixture mirroring png2asset metasprite output: a tile-data array,
+     * per-frame METASPR_ITEM descriptor arrays carrying S_PAL(0) and S_PAL(1) indices, the
+     * _metasprite pointer array, and a _palettes[] array. N = 3 S_PAL(0), M = 2 S_PAL(1).
      */
     private fun elephantShapedFixture(): String =
         """
@@ -73,7 +72,8 @@ class MetaspriteSubPaletteRemapTest {
         const palette_color_t elephant_palettes[] = {
             RGB8(80,80,80), RGB8(160,160,160), RGB8(255,128,200), RGB8(0,0,0)
         };
-        """.trimIndent()
+        """
+            .trimIndent()
 
     // -------------------------------------------------------------------------
     // Test 1 — every S_PAL(1) becomes S_PAL(0); count invariant N+M preserved.
@@ -93,10 +93,16 @@ class MetaspriteSubPaletteRemapTest {
         remapMetaspriteSubPalette(outputC)
 
         val result = outputC.readText()
-        assertEquals(0, result.tokenCount("S_PAL(1)"),
-            "D-19: ZERO S_PAL(1) tokens must remain after remap")
-        assertEquals(n + m, result.tokenCount("S_PAL(0)"),
-            "every S_PAL(1) is remapped to S_PAL(0): expected ${n + m} S_PAL(0)")
+        assertEquals(
+            0,
+            result.tokenCount("S_PAL(1)"),
+            "D-19: ZERO S_PAL(1) tokens must remain after remap",
+        )
+        assertEquals(
+            n + m,
+            result.tokenCount("S_PAL(0)"),
+            "every S_PAL(1) is remapped to S_PAL(0): expected ${n + m} S_PAL(0)",
+        )
     }
 
     // -------------------------------------------------------------------------
@@ -119,9 +125,12 @@ class MetaspriteSubPaletteRemapTest {
         // tile bytes, METASPR_ITEM x/y/tile fields, pointer arrays, _palettes[]
         // all unchanged.
         val normalizedFixture = fixture.replace("S_PAL(1)", "S_PAL(0)")
-        assertEquals(normalizedFixture, result,
+        assertEquals(
+            normalizedFixture,
+            result,
             "remap must change ONLY the S_PAL(1)->S_PAL(0) token; the rest of the " +
-                "descriptor (tile data, x/y/tile, pointer arrays, _palettes) must be byte-identical")
+                "descriptor (tile data, x/y/tile, pointer arrays, _palettes) must be byte-identical",
+        )
     }
 
     // -------------------------------------------------------------------------
@@ -157,15 +166,19 @@ class MetaspriteSubPaletteRemapTest {
                 METASPR_ITEM(0, 8, 1, S_PAL(0)),
                 METASPR_TERM
             };
-            """.trimIndent()
+            """
+                .trimIndent()
         val outputC = File(tempDir, "sprites/paddle.c")
         outputC.parentFile.mkdirs()
         outputC.writeText(actorShaped)
 
         remapMetaspriteSubPalette(outputC)
 
-        assertEquals(actorShaped, outputC.readText(),
-            "a descriptor with no S_PAL(1) must be returned byte-identical")
+        assertEquals(
+            actorShaped,
+            outputC.readText(),
+            "a descriptor with no S_PAL(1) must be returned byte-identical",
+        )
         assertTrue(outputC.readText().tokenCount("S_PAL(1)") == 0)
     }
 }

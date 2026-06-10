@@ -315,14 +315,11 @@ class GenerateCTaskValidationTest {
     // =========================================================================
 
     /**
-     * Build a GameIR with two metasprites using the given sprite modes.
-     * Both metasprites have all other required fields set correctly so the
-     * per-metasprite checks pass and only the mixed-mode guard fires.
+     * Build a GameIR with two metasprites using the given sprite modes. Both metasprites have all
+     * other required fields set correctly so the per-metasprite checks pass and only the mixed-mode
+     * guard fires.
      */
-    private fun twoMetaspriteGameIR(
-        mode1: SpriteMode,
-        mode2: SpriteMode,
-    ): GameIR =
+    private fun twoMetaspriteGameIR(mode1: SpriteMode, mode2: SpriteMode): GameIR =
         GameIR(
             name = "MixedModeGame",
             metasprites =
