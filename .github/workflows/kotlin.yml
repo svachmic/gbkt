@@ -124,9 +124,12 @@ jobs:
         run: ./gradlew :publishConsumedModulesToMavenLocal --configure-on-demand
 
       - name: Build and test all modules
-        # Root `build` covers assemble + check (tests, detekt) for every subproject,
-        # including the example games; pluginTest runs the gbkt-gradle-plugin suite.
-        run: ./gradlew build pluginTest
+        # Root `build` covers assemble + tests for every subproject, including the example
+        # games; pluginTest runs the gbkt-gradle-plugin suite. Static analysis (detekt,
+        # spotless) is excluded here — it belongs to the code-quality job, so a lint
+        # finding never masquerades as a build/test failure. Local `./gradlew build`
+        # still runs the full check lifecycle.
+        run: ./gradlew build pluginTest -x detekt -x spotlessCheck
 
       - name: Aggregate coverage report
         # Merges per-module kover results into build/reports/kover/report.xml — the
@@ -177,14 +180,16 @@ jobs:
         uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
 
       - name: Publish library modules to mavenLocal
-        # spotlessCheck configures every project; configuring the examples compiles the
+        # Static analysis configures every project; configuring the examples compiles the
         # gbkt-gradle-plugin included build, which resolves gbkt SNAPSHOTs from mavenLocal.
         run: ./gradlew :publishConsumedModulesToMavenLocal --configure-on-demand
 
-      - name: Check formatting
-        # :gbkt-gradle-plugin:spotlessCheck is addressed explicitly — it is an included
-        # build, so the root spotlessCheck does not reach it.
-        run: ./gradlew spotlessCheck :gbkt-gradle-plugin:spotlessCheck
+      - name: Static analysis (detekt + spotless)
+        # All lint/format checks live in this job — the build job runs with -x detekt
+        # -x spotlessCheck. :gbkt-gradle-plugin:spotlessCheck is addressed explicitly
+        # (included build — root task names don't reach it); the plugin build does not
+        # apply detekt (tracked debt).
+        run: ./gradlew detekt spotlessCheck :gbkt-gradle-plugin:spotlessCheck
 
   version-consistency:
     runs-on: ubuntu-latest

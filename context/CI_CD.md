@@ -12,9 +12,13 @@ One sequenced `build` job plus two light parallel checks:
 
 | Job | What it does |
 |-----|-------------|
-| `build` | Sequenced on one runner so nothing is compiled twice: install GBDK-2020 (version + sha256 pinned, cached) → publish sandbox modules to mavenLocal (`publishConsumedModulesToMavenLocal`) → `./gradlew build pluginTest` (every module's assemble + tests + detekt, incl. examples and the gradle plugin) → `koverXmlReport` (merge per-module coverage) → `sonar` (SonarCloud scan reads the merged report) → ROM build smoke (`buildRom` for all 7 examples via lcc). Uploads test reports on failure. |
-| `code-quality` | Spotless formatting check — `spotlessCheck :gbkt-gradle-plugin:spotlessCheck` (the plugin is an included build, so it must be addressed explicitly) |
-| `version-consistency` | `checkVersionConsistency` — verifies all modules declare the same version |
+| `build` | Sequenced on one runner so nothing is compiled twice: install GBDK-2020 (version + sha256 pinned, cached) → publish sandbox modules to mavenLocal (`:publishConsumedModulesToMavenLocal --configure-on-demand`) → `./gradlew build pluginTest -x detekt -x spotlessCheck` (every module's assemble + tests, incl. examples and the gradle plugin; static analysis is excluded — it belongs to `code-quality`) → `koverXmlReport` (merge per-module coverage) → `sonar` (SonarCloud scan reads the merged report) → ROM build smoke (`buildRom` for all 7 examples via lcc). Uploads test reports on failure. |
+| `code-quality` | All static analysis: `detekt spotlessCheck :gbkt-gradle-plugin:spotlessCheck` (the plugin is an included build, so it must be addressed explicitly; it does not apply detekt — tracked debt) |
+| `version-consistency` | `:checkVersionConsistency --configure-on-demand` — verifies all modules declare the same version |
+
+**Job separation rule:** build/test failures and lint findings must never share a step. Detekt and spotless hook into Gradle's `check` lifecycle by default (so local `./gradlew build` stays strict), but CI excludes them from the build job via `-x` and runs them only in `code-quality`.
+
+**Cold-mavenLocal bootstrap rule:** configuring any example project compiles the gbkt-gradle-plugin included build, whose compile classpath resolves gbkt SNAPSHOTs from mavenLocal. Every job that triggers full project configuration must run `:publishConsumedModulesToMavenLocal --configure-on-demand` first — the rooted task path and the flag are both load-bearing (an unrooted task name makes Gradle configure every project while searching for it). Verify CI changes locally against a cold repository: `-Dmaven.repo.local=/tmp/empty-dir`.
 
 **Secrets:** `SONAR_TOKEN`, `GITHUB_TOKEN` (build job, Sonar step)
 
