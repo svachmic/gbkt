@@ -181,7 +181,7 @@ object CEmitter {
 
     private fun emitFunction(fn: CFunction, ltb: LineTrackingBuilder): String = buildString {
         // Signature
-        val static = if (fn.isStatic) "static " else ""
+        val static = staticPrefix(fn.isStatic)
         val returnType = emitType(fn.returnType)
         val params =
             if (fn.params.isEmpty()) {
@@ -365,7 +365,7 @@ object CEmitter {
 
     private fun emitVarDecl(stmt: CVarDecl, indent: Int): String {
         val extern = if (stmt.isExtern) "extern " else ""
-        val static = if (stmt.isStatic) "static " else ""
+        val static = staticPrefix(stmt.isStatic)
         val const = if (stmt.isConst) "const " else ""
         val type = emitType(stmt.type)
         val init = stmt.initializer?.let { " = ${emitExpr(it)}" } ?: ""
@@ -386,7 +386,7 @@ object CEmitter {
     private fun emitForInit(stmt: CStatement): String =
         when (stmt) {
             is CVarDecl -> {
-                val static = if (stmt.isStatic) "static " else ""
+                val static = staticPrefix(stmt.isStatic)
                 val const = if (stmt.isConst) "const " else ""
                 val type = emitType(stmt.type)
                 val init = stmt.initializer?.let { " = ${emitExpr(it)}" } ?: ""
@@ -485,4 +485,7 @@ object CEmitter {
 
     /** Returns [indent] repetitions of 4 spaces. */
     private fun pad(indent: Int): String = "    ".repeat(indent)
+
+    /** Returns the `static ` storage-class prefix when [isStatic] is set, empty otherwise. */
+    private fun staticPrefix(isStatic: Boolean): String = if (isStatic) "static " else ""
 }

@@ -8,6 +8,7 @@ package io.github.gbkt.analysis.passes
 
 import io.github.gbkt.analysis.AnalysisPass
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassOptimizationSummary
 import io.github.gbkt.analysis.PassResult
@@ -63,7 +64,7 @@ class DeadCodeEliminationPass : AnalysisPass {
             if (scene.id !in reachable) {
                 diagnostics +=
                     Diagnostic(
-                        id = "ANLZ-01",
+                        code = DiagnosticCode.SEMANTIC_INTEGRITY,
                         severity = Severity.INFO,
                         message =
                             "Scene '${scene.id}' is unreachable from start scene '$startScene'",

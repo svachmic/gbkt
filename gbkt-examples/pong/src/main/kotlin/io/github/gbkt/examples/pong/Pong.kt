@@ -11,6 +11,9 @@ import io.github.gbkt.core.ir.Cartridge
 import io.github.gbkt.core.ir.PositionDef
 import io.github.gbkt.core.ir.SoundPreset
 
+/** Scoreboard line showing both players' scores. */
+private const val SCORE_FORMAT = "P1:%d    P2:%d"
+
 /**
  * Pong game defined using the gbkt DSL.
  *
@@ -97,7 +100,7 @@ val pong =
                     // "GAME OVER"=9 → col 5, centered
                     print("GAME OVER", position = PositionDef(6, 5))
                     print(
-                        "P1:%d    P2:%d",
+                        SCORE_FORMAT,
                         p1Score.toExpr(),
                         p2Score.toExpr(),
                         position = PositionDef(5, 8),
@@ -130,7 +133,7 @@ val pong =
                     p2Score set 0
                     // Draw initial score header (Y=1 for padding from top edge)
                     print(
-                        "P1:%d    P2:%d",
+                        SCORE_FORMAT,
                         p1Score.toExpr(),
                         p2Score.toExpr(),
                         position = PositionDef(5, 1),
@@ -201,7 +204,7 @@ val pong =
                         // Visual feedback: flash sprites off/on, update score, reset ball
                         hideSprites()
                         print(
-                            "P1:%d    P2:%d",
+                            SCORE_FORMAT,
                             p1Score.toExpr(),
                             p2Score.toExpr(),
                             position = PositionDef(5, 1),
@@ -220,7 +223,7 @@ val pong =
                         playSound(scoreSfx)
                         hideSprites()
                         print(
-                            "P1:%d    P2:%d",
+                            SCORE_FORMAT,
                             p1Score.toExpr(),
                             p2Score.toExpr(),
                             position = PositionDef(5, 1),

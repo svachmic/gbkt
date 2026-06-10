@@ -513,23 +513,23 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
             "velocity" -> "(vx, vy)"
             "sprite" -> "(asset) { ... }"
             "hitbox" -> "(x, y, w, h)"
-            "combat" -> " { ... }"
-            "states" -> " { ... }"
-            "state" -> "(name) { ... }"
-            "tag" -> "(tagRef)"
+            "combat",
+            "states",
             "enter",
             "exit",
-            "tick" -> " { ... }"
+            "tick",
+            "regions",
+            "animations",
+            "box",
+            "portrait" -> " { ... }"
+            "state",
+            "page" -> "(name) { ... }"
+            "tag" -> "(tagRef)"
             "on" -> "(condition) { goto(...) }"
             "every" -> ".frame { ... }"
             "size" -> " = w x h"
             "palette",
             "paletteIndex" -> " = ..."
-            "regions",
-            "animations" -> " { ... }"
-            "box",
-            "portrait" -> " { ... }"
-            "page" -> "(name) { ... }"
             "flag" -> "(name)"
             else -> ""
         }

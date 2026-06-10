@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
+import io.github.gbkt.backend.gbdk.codegen.GBDKMacros
 import io.github.gbkt.backend.gbdk.codegen.ast.CArrayAccess
 import io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CBlock
@@ -866,7 +867,7 @@ object ScriptOpVisitor : ScriptOpVisitorI<CStatement> {
 
     override fun visitMenuHide(op: MenuHide): CStatement =
         // Simple window hide — menus are always on the window layer
-        CRawCode("HIDE_WIN;")
+        GBDKMacros.hideWin()
 
     // -------------------------------------------------------------------------
     // HudShow / HudHide: show/hide HUD panel

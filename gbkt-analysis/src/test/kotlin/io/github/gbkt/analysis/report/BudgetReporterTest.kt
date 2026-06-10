@@ -7,6 +7,7 @@
 package io.github.gbkt.analysis.report
 
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.FakeProfile
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.Severity
@@ -259,8 +260,16 @@ class BudgetReporterTest {
     fun `report ends with error slash warning summary line`() {
         val diagnostics =
             listOf(
-                Diagnostic(id = "ANLZ-01", severity = Severity.WARNING, message = "warning 1"),
-                Diagnostic(id = "ANLZ-01", severity = Severity.WARNING, message = "warning 2"),
+                Diagnostic(
+                    code = DiagnosticCode.SEMANTIC_INTEGRITY,
+                    severity = Severity.WARNING,
+                    message = "warning 1",
+                ),
+                Diagnostic(
+                    code = DiagnosticCode.SEMANTIC_INTEGRITY,
+                    severity = Severity.WARNING,
+                    message = "warning 2",
+                ),
             )
         val ctx = baseContext().copy(diagnostics = diagnostics)
 

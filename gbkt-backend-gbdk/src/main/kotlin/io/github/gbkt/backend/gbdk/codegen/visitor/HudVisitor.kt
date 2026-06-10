@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
+import io.github.gbkt.backend.gbdk.codegen.GBDKMacros
 import io.github.gbkt.backend.gbdk.codegen.ast.CArray
 import io.github.gbkt.backend.gbdk.codegen.ast.CArrayAccess
 import io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr
@@ -20,7 +21,6 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CIf
 import io.github.gbkt.backend.gbdk.codegen.ast.CLiteral
 import io.github.gbkt.backend.gbdk.codegen.ast.CParam
 import io.github.gbkt.backend.gbdk.codegen.ast.CPointer
-import io.github.gbkt.backend.gbdk.codegen.ast.CRawCode
 import io.github.gbkt.backend.gbdk.codegen.ast.CRawExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CReturn
 import io.github.gbkt.backend.gbdk.codegen.ast.CStatement
@@ -844,7 +844,7 @@ class HudVisitor(private val gameIR: GameIR) {
                 if (effectiveRenderOnWindow(hud)) {
                     val (_, baseY) = resolveHudPosition(hud)
                     add(CExprStatement(CCall("move_win", listOf(CLiteral(7), CLiteral(baseY * 8)))))
-                    add(CRawCode("SHOW_WIN;"))
+                    add(GBDKMacros.showWin())
                 }
             }
         return CFunction(name = "show_hud_$hudId", returnType = CVoid, body = body, bank = 0)

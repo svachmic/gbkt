@@ -284,7 +284,9 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
         object : MemoryAccess {
             override fun readByte(address: Int): Int = 0
 
-            override fun writeByte(address: Int, value: Int) {}
+            override fun writeByte(address: Int, value: Int) {
+                // No-op: zeroMemory only backs symbol-table inspection — writes are discarded.
+            }
         }
 
     val metadata = GameMetadata.fromJsonFile(metadataFile)

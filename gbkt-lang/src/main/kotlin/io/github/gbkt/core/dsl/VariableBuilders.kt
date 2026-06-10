@@ -623,14 +623,14 @@ data class ArrayVar(val name: String, val elementType: VarType, val arraySize: I
 
     operator fun set(index: AssignableVar, value: Expr) {
         ScriptBuilderContext.current?.arrayAssign(name, index.toExpr(), value)
-            ?: error("Array set called outside a ScriptBuilder block")
+            ?: error(ARRAY_SET_OUTSIDE_SCRIPT)
     }
 
     operator fun set(index: AssignableVar, value: Int) = set(index, Literal(value))
 
     operator fun set(index: Expr, value: Expr) {
         ScriptBuilderContext.current?.arrayAssign(name, index, value)
-            ?: error("Array set called outside a ScriptBuilder block")
+            ?: error(ARRAY_SET_OUTSIDE_SCRIPT)
     }
 
     operator fun set(index: Expr, value: Int) = set(index, Literal(value))
@@ -640,7 +640,7 @@ data class ArrayVar(val name: String, val elementType: VarType, val arraySize: I
             "Array bounds error: index $index out of bounds for array '$name' (size=$arraySize)"
         }
         ScriptBuilderContext.current?.arrayAssign(name, Literal(index), value)
-            ?: error("Array set called outside a ScriptBuilder block")
+            ?: error(ARRAY_SET_OUTSIDE_SCRIPT)
     }
 
     operator fun set(index: Int, value: Int) = set(index, Literal(value))
@@ -771,6 +771,11 @@ data class ArrayVar(val name: String, val elementType: VarType, val arraySize: I
         val loopBody = listOf(IfOp(condition, listOf(Assign(cntVar, Literal(1), AssignOp.ADD))))
         ctx.emit(ForOp(loopVar, Literal(0), Literal(arraySize - 1), loopBody))
         return VarRef(cntVar)
+    }
+
+    private companion object {
+        private const val ARRAY_SET_OUTSIDE_SCRIPT =
+            "Array set called outside a ScriptBuilder block"
     }
 }
 

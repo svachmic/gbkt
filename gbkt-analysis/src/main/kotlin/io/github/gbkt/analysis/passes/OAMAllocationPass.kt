@@ -8,6 +8,7 @@ package io.github.gbkt.analysis.passes
 
 import io.github.gbkt.analysis.AnalysisPass
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassResult
 import io.github.gbkt.analysis.Severity
@@ -65,7 +66,7 @@ class OAMAllocationPass : AnalysisPass {
             return PassResult.Failed(
                 listOf(
                     Diagnostic(
-                        id = "ANLZ-04",
+                        code = DiagnosticCode.OAM_CAPACITY,
                         severity = Severity.ERROR,
                         message =
                             "Game needs $totalOamEntries OAM entries for ${spriteActors.size} sprite-bearing " +
@@ -83,7 +84,7 @@ class OAMAllocationPass : AnalysisPass {
         if (totalOamEntries > context.config.oamWarningThreshold) {
             diagnostics.add(
                 Diagnostic(
-                    id = "ANLZ-04",
+                    code = DiagnosticCode.OAM_CAPACITY,
                     severity = Severity.WARNING,
                     message =
                         "Game needs $totalOamEntries OAM entries for ${spriteActors.size} sprite-bearing " +
@@ -102,7 +103,7 @@ class OAMAllocationPass : AnalysisPass {
             if (sceneSpritActorCount > maxPerScanline) {
                 diagnostics.add(
                     Diagnostic(
-                        id = "ANLZ-04",
+                        code = DiagnosticCode.OAM_CAPACITY,
                         severity = Severity.WARNING,
                         message =
                             "Scene '${scene.id}' has $sceneSpritActorCount sprite actors — may " +

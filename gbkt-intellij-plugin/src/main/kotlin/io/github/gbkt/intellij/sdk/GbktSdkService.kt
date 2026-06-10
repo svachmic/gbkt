@@ -36,6 +36,8 @@ class GbktSdkService(private val project: Project) {
 
     private val logger = Logger.getInstance(GbktSdkService::class.java)
 
+    private val userHome: String = System.getProperty("user.home")
+
     /** Currently configured GBDK-2020 path, or null if not configured. */
     var gbdkPath: Path? = null
         private set
@@ -86,8 +88,8 @@ class GbktSdkService(private val project: Project) {
             listOf(
                 "/opt/gbdk",
                 "/usr/local/gbdk",
-                System.getProperty("user.home") + "/gbdk",
-                System.getProperty("user.home") + "/gbdk-2020",
+                "$userHome/gbdk",
+                "$userHome/gbdk-2020",
                 "C:\\gbdk",
                 "C:\\gbdk-2020",
             )
@@ -139,7 +141,7 @@ class GbktSdkService(private val project: Project) {
         val sameboyPaths =
             listOf(
                 "/Applications/SameBoy.app/Contents/MacOS/SameBoy",
-                System.getProperty("user.home") + "/Applications/SameBoy.app/Contents/MacOS/SameBoy",
+                "$userHome/Applications/SameBoy.app/Contents/MacOS/SameBoy",
             )
         for (pathStr in sameboyPaths) {
             val path = Paths.get(pathStr)

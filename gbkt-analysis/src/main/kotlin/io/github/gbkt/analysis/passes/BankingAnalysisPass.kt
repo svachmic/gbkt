@@ -8,6 +8,7 @@ package io.github.gbkt.analysis.passes
 
 import io.github.gbkt.analysis.AnalysisPass
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassResult
 import io.github.gbkt.analysis.Severity
@@ -168,7 +169,7 @@ class BankingAnalysisPass : AnalysisPass {
         return PassResult.Failed(
             listOf(
                 Diagnostic(
-                    id = "ANLZ-03",
+                    code = DiagnosticCode.VRAM_CAPACITY,
                     severity = Severity.ERROR,
                     message =
                         "${cartridge.name} supports at most ${cartridge.maxRomBanks} ROM banks; " +
@@ -310,7 +311,7 @@ class BankingAnalysisPass : AnalysisPass {
         return PassResult.Failed(
             listOf(
                 Diagnostic(
-                    id = "ANLZ-12",
+                    code = DiagnosticCode.TILEMAP_BANK_OVERFLOW,
                     severity = Severity.ERROR,
                     message =
                         "Tilemap bank overflow: zones sum to $cumulative bytes " +
@@ -393,7 +394,7 @@ class BankingAnalysisPass : AnalysisPass {
             return PassResult.Failed(
                 listOf(
                     Diagnostic(
-                        id = "ANLZ-02",
+                        code = DiagnosticCode.BANK_CAPACITY,
                         severity = Severity.ERROR,
                         message =
                             "romBanks=$declaredRomBanks too small; banking analysis needs $derived. " +
@@ -409,7 +410,7 @@ class BankingAnalysisPass : AnalysisPass {
         return PassResult.Failed(
             listOf(
                 Diagnostic(
-                    id = "ANLZ-02",
+                    code = DiagnosticCode.BANK_CAPACITY,
                     severity = Severity.ERROR,
                     message =
                         "Bank overflow: cannot fit '${unit.id}' (${unit.estimatedBytes} bytes). " +
@@ -440,7 +441,7 @@ class BankingAnalysisPass : AnalysisPass {
                 val fillPercent = (fillRatio * 100).roundToInt()
                 diagnostics +=
                     Diagnostic(
-                        id = "ANLZ-02",
+                        code = DiagnosticCode.BANK_CAPACITY,
                         severity = Severity.WARNING,
                         message =
                             "Bank $bank is $fillPercent% full ($used / $bankCapacity bytes). " +

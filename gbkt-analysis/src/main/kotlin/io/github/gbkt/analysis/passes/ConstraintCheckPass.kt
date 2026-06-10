@@ -8,6 +8,7 @@ package io.github.gbkt.analysis.passes
 
 import io.github.gbkt.analysis.AnalysisPass
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassResult
 import io.github.gbkt.analysis.Severity
@@ -67,7 +68,7 @@ class ConstraintCheckPass : AnalysisPass {
             totalOamEntries >= config.oamErrorThreshold || totalOamEntries > maxSprites -> {
                 diagnostics +=
                     Diagnostic(
-                        id = "ANLZ-02",
+                        code = DiagnosticCode.BANK_CAPACITY,
                         severity = Severity.ERROR,
                         message =
                             "Game needs $totalOamEntries OAM entries for ${inventory.totalActors} actors " +
@@ -82,7 +83,7 @@ class ConstraintCheckPass : AnalysisPass {
             totalOamEntries >= config.oamWarningThreshold -> {
                 diagnostics +=
                     Diagnostic(
-                        id = "ANLZ-02",
+                        code = DiagnosticCode.BANK_CAPACITY,
                         severity = Severity.WARNING,
                         message =
                             "Game needs $totalOamEntries OAM entries for ${inventory.totalActors} actors " +
@@ -117,7 +118,7 @@ class ConstraintCheckPass : AnalysisPass {
             totalRamBytes > workRam -> {
                 diagnostics +=
                     Diagnostic(
-                        id = "ANLZ-03",
+                        code = DiagnosticCode.VRAM_CAPACITY,
                         severity = Severity.ERROR,
                         message =
                             "Variables and collections consume $totalRamBytes bytes of WRAM but " +
@@ -130,7 +131,7 @@ class ConstraintCheckPass : AnalysisPass {
             totalRamBytes > wramWarningBytes -> {
                 diagnostics +=
                     Diagnostic(
-                        id = "ANLZ-03",
+                        code = DiagnosticCode.VRAM_CAPACITY,
                         severity = Severity.WARNING,
                         message =
                             "Variables and collections consume $totalRamBytes bytes of WRAM " +

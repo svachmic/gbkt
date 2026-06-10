@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
+import io.github.gbkt.backend.gbdk.codegen.GBDKMacros
 import io.github.gbkt.backend.gbdk.codegen.ast.CArray
 import io.github.gbkt.backend.gbdk.codegen.ast.CArrayAccess
 import io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr
@@ -322,7 +323,7 @@ class GBDKSystemVisitor(
         val saveBody =
             buildList<CStatement> {
                 // ENABLE_RAM — GBDK macro, CRawCode exception
-                add(CRawCode("ENABLE_RAM;"))
+                add(GBDKMacros.enableRam())
                 // volatile UINT8 *sram = ...
                 add(buildSramPtrDecl())
                 // Write each non-transient variable to sram[idx]
@@ -385,7 +386,7 @@ class GBDKSystemVisitor(
                     )
                 }
                 // DISABLE_RAM — GBDK macro, CRawCode exception; ALWAYS last
-                add(CRawCode("DISABLE_RAM;"))
+                add(GBDKMacros.disableRam())
             }
 
         val saveGame =
@@ -402,7 +403,7 @@ class GBDKSystemVisitor(
         val loadBody =
             buildList<CStatement> {
                 // ENABLE_RAM — GBDK macro, CRawCode exception
-                add(CRawCode("ENABLE_RAM;"))
+                add(GBDKMacros.enableRam())
                 // volatile UINT8 *sram = ...
                 add(buildSramPtrDecl())
 
@@ -439,7 +440,7 @@ class GBDKSystemVisitor(
                     add(
                         CIf(
                             condition = checksumMismatch,
-                            thenBody = listOf(CRawCode("DISABLE_RAM;"), CReturn(null)),
+                            thenBody = listOf(GBDKMacros.disableRam(), CReturn(null)),
                         )
                     )
                 }
@@ -454,7 +455,7 @@ class GBDKSystemVisitor(
                 add(
                     CIf(
                         condition = sentinelMismatch,
-                        thenBody = listOf(CRawCode("DISABLE_RAM;"), CReturn(null)),
+                        thenBody = listOf(GBDKMacros.disableRam(), CReturn(null)),
                     )
                 )
 
@@ -471,7 +472,7 @@ class GBDKSystemVisitor(
                     )
                 }
                 // DISABLE_RAM — GBDK macro, CRawCode exception; ALWAYS last
-                add(CRawCode("DISABLE_RAM;"))
+                add(GBDKMacros.disableRam())
             }
 
         val loadGame =

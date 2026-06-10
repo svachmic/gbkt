@@ -87,7 +87,9 @@ interface GbEmulator {
      * Used by stop/teardown paths to preempt a runaway frame before falling back to the watchdog
      * timeout.
      */
-    fun requestCancellation() {}
+    fun requestCancellation() {
+        // No-op by default: emulators without a cooperative tick loop have nothing to cancel.
+    }
 }
 
 /**

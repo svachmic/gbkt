@@ -58,6 +58,6 @@ DefaultPipeline.create(
 
 ## Common Tasks
 - **Add a new pass:** Implement `AnalysisPass`, register it in `DefaultPipeline.create()` at the correct position
-- **Add a new diagnostic:** Create a `Diagnostic(id = "ANLZ-XX", severity, message)` in your pass, return via `ctx.withDiagnostics()`
+- **Add a new diagnostic:** Add an entry to the `DiagnosticCode` enum, create a `Diagnostic(code = DiagnosticCode.X, severity, message)` in your pass, return via `ctx.withDiagnostics()`. Custom passes (via `beforePasses`/`afterPasses`) may still use free-form string ids through the primary constructor.
 - **Adjust thresholds:** Modify defaults in `AnalysisConfig` or override per-game via `fromCartridgeConfig()`
 - **Skip an optimization pass:** Set `deadCodeEliminationEnabled`, `constantFoldingEnabled`, or `bitwiseOptimizationEnabled` to `false` in config

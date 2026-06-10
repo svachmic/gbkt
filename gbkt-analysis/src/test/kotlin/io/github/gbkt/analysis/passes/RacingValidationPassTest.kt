@@ -7,6 +7,7 @@
 package io.github.gbkt.analysis.passes
 
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.FakeProfile
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassResult
@@ -103,9 +104,10 @@ class RacingValidationPassTest {
         return GenericSystem(id = racingId, config = configMap)
     }
 
-    private fun firstDiag(diags: List<Diagnostic>, id: String): Diagnostic? = diags.firstOrNull {
-        it.id == id
-    }
+    private fun firstDiag(diags: List<Diagnostic>, code: DiagnosticCode): Diagnostic? =
+        diags.firstOrNull {
+            it.id == code.id
+        }
 
     private fun runPass(
         scenes: List<SceneIR> = emptyList(),
@@ -140,7 +142,7 @@ class RacingValidationPassTest {
         val result = runPass(actors = listOf(carActor), systems = listOf(sys))
 
         assertTrue(result is PassResult.Failed, "Expected PassResult.Failed for 2-waypoint polygon")
-        val diag = firstDiag(result.diagnostics, "ANLZ-RACING-01")
+        val diag = firstDiag(result.diagnostics, DiagnosticCode.RACING_TRACK_GEOMETRY)
         assertNotNull(diag, "Expected ANLZ-RACING-01 diagnostic for < 3 waypoints")
         assertEquals(Severity.ERROR, diag.severity)
     }
@@ -170,7 +172,7 @@ class RacingValidationPassTest {
         val result = runPass(actors = listOf(carActor), systems = listOf(sys))
 
         assertTrue(result is PassResult.Failed, "Expected PassResult.Failed for collinear polygon")
-        val diag = firstDiag(result.diagnostics, "ANLZ-RACING-01")
+        val diag = firstDiag(result.diagnostics, DiagnosticCode.RACING_TRACK_GEOMETRY)
         assertNotNull(diag, "Expected ANLZ-RACING-01 diagnostic for collinear waypoints")
         assertEquals(Severity.ERROR, diag.severity)
     }
@@ -200,7 +202,7 @@ class RacingValidationPassTest {
         val result = runPass(actors = listOf(carActor), systems = listOf(sys))
 
         assertTrue(result is PassResult.Failed, "Expected PassResult.Failed for zero-area polygon")
-        val diag = firstDiag(result.diagnostics, "ANLZ-RACING-01")
+        val diag = firstDiag(result.diagnostics, DiagnosticCode.RACING_TRACK_GEOMETRY)
         assertNotNull(diag, "Expected ANLZ-RACING-01 diagnostic for zero-area polygon")
         assertEquals(Severity.ERROR, diag.severity)
     }
@@ -234,7 +236,7 @@ class RacingValidationPassTest {
             result is PassResult.Success,
             "Expected PassResult.Success for valid square polygon, got ${describe(result)}",
         )
-        val diag = firstDiag(result.context.diagnostics, "ANLZ-RACING-01")
+        val diag = firstDiag(result.context.diagnostics, DiagnosticCode.RACING_TRACK_GEOMETRY)
         assertEquals(null, diag, "Expected NO ANLZ-RACING-01 diagnostic for valid square polygon")
     }
 
@@ -266,7 +268,7 @@ class RacingValidationPassTest {
         val result = runPass(systems = listOf(sys))
 
         assertTrue(result is PassResult.Failed, "Expected PassResult.Failed for missing player")
-        val diag = firstDiag(result.diagnostics, "ANLZ-RACING-02")
+        val diag = firstDiag(result.diagnostics, DiagnosticCode.RACING_PLAYER_MISSING)
         assertNotNull(diag, "Expected ANLZ-RACING-02 diagnostic for missing player binding")
         assertEquals(Severity.ERROR, diag.severity)
     }
@@ -301,7 +303,7 @@ class RacingValidationPassTest {
         val result = runPass(actors = emptyList(), systems = listOf(sys))
 
         assertTrue(result is PassResult.Failed, "Expected PassResult.Failed for missing actor")
-        val diag = firstDiag(result.diagnostics, "ANLZ-RACING-03")
+        val diag = firstDiag(result.diagnostics, DiagnosticCode.RACING_VEHICLE_ACTOR_UNRESOLVED)
         assertNotNull(diag, "Expected ANLZ-RACING-03 diagnostic for vehicle missing actor")
         assertEquals(Severity.ERROR, diag.severity)
     }
@@ -347,7 +349,7 @@ class RacingValidationPassTest {
             result is PassResult.Success,
             "Expected PassResult.Success (WARNING does not fail), got ${describe(result)}",
         )
-        val diag = firstDiag(result.context.diagnostics, "ANLZ-RACING-04")
+        val diag = firstDiag(result.context.diagnostics, DiagnosticCode.RACING_MANUAL_MOVEMENT)
         assertNotNull(diag, "Expected ANLZ-RACING-04 warning for hand-coded moveBy")
         assertEquals(Severity.WARNING, diag.severity)
     }
@@ -388,7 +390,7 @@ class RacingValidationPassTest {
             result is PassResult.Success,
             "Expected PassResult.Success (WARNING does not fail), got ${describe(result)}",
         )
-        val diag = firstDiag(result.context.diagnostics, "ANLZ-RACING-04")
+        val diag = firstDiag(result.context.diagnostics, DiagnosticCode.RACING_MANUAL_MOVEMENT)
         assertNotNull(diag, "Expected ANLZ-RACING-04 warning for direct _car_x assignment")
         assertEquals(Severity.WARNING, diag.severity)
     }
@@ -429,7 +431,8 @@ class RacingValidationPassTest {
             result is PassResult.Success,
             "Expected PassResult.Success (WARNING does not fail), got ${describe(result)}",
         )
-        val diag = firstDiag(result.context.diagnostics, "ANLZ-RACING-05")
+        val diag =
+            firstDiag(result.context.diagnostics, DiagnosticCode.RACING_CAMERA_FOLLOW_MISMATCH)
         assertNotNull(diag, "Expected ANLZ-RACING-05 warning for camera follow mismatch")
         assertEquals(Severity.WARNING, diag.severity)
     }

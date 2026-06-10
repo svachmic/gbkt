@@ -7,6 +7,7 @@
 package io.github.gbkt.analysis.passes
 
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.FakeProfile
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassResult
@@ -117,7 +118,7 @@ class BudgetAuditPassTest {
                     diagnostics =
                         listOf(
                             Diagnostic(
-                                id = "ANLZ-02",
+                                code = DiagnosticCode.BANK_CAPACITY,
                                 severity = Severity.ERROR,
                                 message = "Bank overflow detected by a previous pass",
                             )
@@ -132,9 +133,17 @@ class BudgetAuditPassTest {
     @Test
     fun `pass fails with all accumulated diagnostics on error`() {
         val errorDiag =
-            Diagnostic(id = "ANLZ-02", severity = Severity.ERROR, message = "Bank overflow")
+            Diagnostic(
+                code = DiagnosticCode.BANK_CAPACITY,
+                severity = Severity.ERROR,
+                message = "Bank overflow",
+            )
         val warnDiag =
-            Diagnostic(id = "ANLZ-04", severity = Severity.WARNING, message = "Near OAM limit")
+            Diagnostic(
+                code = DiagnosticCode.OAM_CAPACITY,
+                severity = Severity.WARNING,
+                message = "Near OAM limit",
+            )
         val ctx = makeBaseContext().copy(diagnostics = listOf(warnDiag, errorDiag))
 
         val result = pass.run(ctx)
@@ -154,12 +163,12 @@ class BudgetAuditPassTest {
                     diagnostics =
                         listOf(
                             Diagnostic(
-                                id = "ANLZ-04",
+                                code = DiagnosticCode.OAM_CAPACITY,
                                 severity = Severity.WARNING,
                                 message = "Near OAM limit",
                             ),
                             Diagnostic(
-                                id = "ANLZ-05",
+                                code = DiagnosticCode.RAM_CAPACITY,
                                 severity = Severity.WARNING,
                                 message = "Near WRAM limit",
                             ),

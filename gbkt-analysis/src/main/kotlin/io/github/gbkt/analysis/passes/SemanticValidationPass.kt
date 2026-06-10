@@ -8,6 +8,7 @@ package io.github.gbkt.analysis.passes
 
 import io.github.gbkt.analysis.AnalysisPass
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassResult
 import io.github.gbkt.analysis.Severity
@@ -80,7 +81,7 @@ class SemanticValidationPass : AnalysisPass {
             if (!seen.add(name)) {
                 diagnostics +=
                     Diagnostic(
-                        id = "ANLZ-01",
+                        code = DiagnosticCode.SEMANTIC_INTEGRITY,
                         severity = Severity.ERROR,
                         message =
                             "Duplicate $entityKind $fieldKind '$name' — each $entityKind " +
@@ -102,7 +103,7 @@ class SemanticValidationPass : AnalysisPass {
         if (game.startScene != null && game.startScene !in sceneIds) {
             diagnostics +=
                 Diagnostic(
-                    id = "ANLZ-01",
+                    code = DiagnosticCode.SEMANTIC_INTEGRITY,
                     severity = Severity.ERROR,
                     message =
                         "startScene '${game.startScene}' does not reference a known scene ID.",
@@ -124,7 +125,7 @@ class SemanticValidationPass : AnalysisPass {
                 if (actorId !in actorIds) {
                     diagnostics +=
                         Diagnostic(
-                            id = "ANLZ-01",
+                            code = DiagnosticCode.SEMANTIC_INTEGRITY,
                             severity = Severity.ERROR,
                             message =
                                 "Scene '${scene.id}' references actor '$actorId' which does " +
@@ -167,7 +168,7 @@ class SemanticValidationPass : AnalysisPass {
                 if (locations.isNotEmpty()) " (${locations.joinToString(", ")})" else ""
             diagnostics +=
                 Diagnostic(
-                    id = "ANLZ-05",
+                    code = DiagnosticCode.RAM_CAPACITY,
                     severity = Severity.WARNING,
                     message =
                         "$count raw() call${if (count > 1) "s" else ""} found — " +
@@ -199,7 +200,7 @@ class SemanticValidationPass : AnalysisPass {
         if (bgCount > 8) {
             diagnostics +=
                 Diagnostic(
-                    id = "ANLZ-07",
+                    code = DiagnosticCode.GBC_PALETTE_LIMIT,
                     severity = Severity.ERROR,
                     message =
                         "GBC hardware limit: game uses $bgCount BACKGROUND palettes but max is 8.",
@@ -213,7 +214,7 @@ class SemanticValidationPass : AnalysisPass {
         if (spriteCount > 8) {
             diagnostics +=
                 Diagnostic(
-                    id = "ANLZ-07",
+                    code = DiagnosticCode.GBC_PALETTE_LIMIT,
                     severity = Severity.ERROR,
                     message =
                         "GBC hardware limit: game uses $spriteCount SPRITE palettes but max is 8.",
@@ -242,7 +243,7 @@ class SemanticValidationPass : AnalysisPass {
             if (op is MusicPlay && op.fadeInFrames > 0) {
                 diagnostics +=
                     Diagnostic(
-                        id = "ANLZ-08",
+                        code = DiagnosticCode.AUDIO_FADE_UNSUPPORTED,
                         severity = Severity.WARNING,
                         message =
                             "MusicPlay for '${op.songId}' requests fadeIn=${op.fadeInFrames} " +
@@ -254,7 +255,7 @@ class SemanticValidationPass : AnalysisPass {
             if (op is MusicStop && op.fadeOutFrames > 0) {
                 diagnostics +=
                     Diagnostic(
-                        id = "ANLZ-08",
+                        code = DiagnosticCode.AUDIO_FADE_UNSUPPORTED,
                         severity = Severity.WARNING,
                         message =
                             "MusicStop requests fadeOut=${op.fadeOutFrames} " +

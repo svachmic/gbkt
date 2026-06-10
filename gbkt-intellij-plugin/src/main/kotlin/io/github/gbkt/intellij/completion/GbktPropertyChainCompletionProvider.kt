@@ -266,6 +266,12 @@ class GbktPropertyChainCompletionProvider : CompletionProvider<CompletionParamet
     }
 
     companion object {
+        /** Tail texts and signature fragments shared across the base-type property tables. */
+        private const val CURRENT_HP_TAIL = " - Current HP"
+        private const val MAX_HP_TAIL = " - Maximum HP"
+        private const val AMOUNT_PARAM = "(amount: Int)"
+        private const val TARGET_PARAM = "(target)"
+
         /** Maps property names to their nested types. */
         private val PROPERTY_TYPES =
             mapOf(
@@ -327,25 +333,25 @@ class GbktPropertyChainCompletionProvider : CompletionProvider<CompletionParamet
                         PropertySuggestion("stats", "Stats", " - Character stats"),
                         PropertySuggestion("level", "Int", " - Current level"),
                         PropertySuggestion("exp", "Int", " - Experience points"),
-                        PropertySuggestion("hp", "Int", " - Current HP"),
-                        PropertySuggestion("maxHp", "Int", " - Maximum HP"),
+                        PropertySuggestion("hp", "Int", CURRENT_HP_TAIL),
+                        PropertySuggestion("maxHp", "Int", MAX_HP_TAIL),
                         PropertySuggestion("sp", "Int", " - Current SP"),
                         PropertySuggestion("maxSp", "Int", " - Maximum SP"),
                         PropertySuggestion("isAlive", "Boolean", " - Is character alive"),
                         PropertySuggestion("levelUp", "Unit", "()", PropertyKind.METHOD),
-                        PropertySuggestion("heal", "Unit", "(amount: Int)", PropertyKind.METHOD),
-                        PropertySuggestion("damage", "Unit", "(amount: Int)", PropertyKind.METHOD),
+                        PropertySuggestion("heal", "Unit", AMOUNT_PARAM, PropertyKind.METHOD),
+                        PropertySuggestion("damage", "Unit", AMOUNT_PARAM, PropertyKind.METHOD),
                     ),
                 BaseType.MONSTER to
                     listOf(
                         PropertySuggestion("name", "String", " - Monster name"),
                         PropertySuggestion("tier", "MonsterTier", " - Monster tier"),
                         PropertySuggestion("stats", "Stats", " - Base stats"),
-                        PropertySuggestion("hp", "Int", " - Current HP"),
-                        PropertySuggestion("maxHp", "Int", " - Maximum HP"),
+                        PropertySuggestion("hp", "Int", CURRENT_HP_TAIL),
+                        PropertySuggestion("maxHp", "Int", MAX_HP_TAIL),
                         PropertySuggestion("isAlive", "Boolean", " - Is monster alive"),
                         PropertySuggestion("exp", "Int", " - Experience reward"),
-                        PropertySuggestion("damage", "Unit", "(amount: Int)", PropertyKind.METHOD),
+                        PropertySuggestion("damage", "Unit", AMOUNT_PARAM, PropertyKind.METHOD),
                         PropertySuggestion("flee", "Unit", "()", PropertyKind.METHOD),
                     ),
                 BaseType.ABILITY to
@@ -373,7 +379,7 @@ class GbktPropertyChainCompletionProvider : CompletionProvider<CompletionParamet
                         PropertySuggestion("slot", "EquipSlot", " - Equipment slot"),
                         PropertySuggestion("isConsumable", "Boolean", " - Is consumable"),
                         PropertySuggestion("isEquippable", "Boolean", " - Is equippable"),
-                        PropertySuggestion("use", "Unit", "(target)", PropertyKind.METHOD),
+                        PropertySuggestion("use", "Unit", TARGET_PARAM, PropertyKind.METHOD),
                     ),
                 BaseType.FLOOR to
                     listOf(
@@ -420,8 +426,8 @@ class GbktPropertyChainCompletionProvider : CompletionProvider<CompletionParamet
                         PropertySuggestion("stackMode", "StackMode", " - Stacking behavior"),
                         PropertySuggestion("isDebuff", "Boolean", " - Is debuff"),
                         PropertySuggestion("isBuff", "Boolean", " - Is buff"),
-                        PropertySuggestion("apply", "Unit", "(target)", PropertyKind.METHOD),
-                        PropertySuggestion("remove", "Unit", "(target)", PropertyKind.METHOD),
+                        PropertySuggestion("apply", "Unit", TARGET_PARAM, PropertyKind.METHOD),
+                        PropertySuggestion("remove", "Unit", TARGET_PARAM, PropertyKind.METHOD),
                     ),
                 BaseType.STATS to
                     listOf(
@@ -438,19 +444,14 @@ class GbktPropertyChainCompletionProvider : CompletionProvider<CompletionParamet
                     ),
                 BaseType.COMBAT to
                     listOf(
-                        PropertySuggestion("maxHp", "Int", " - Maximum HP"),
-                        PropertySuggestion("hp", "Int", " - Current HP"),
+                        PropertySuggestion("maxHp", "Int", MAX_HP_TAIL),
+                        PropertySuggestion("hp", "Int", CURRENT_HP_TAIL),
                         PropertySuggestion("attackPower", "Int", " - Attack power"),
                         PropertySuggestion("defense", "Int", " - Defense value"),
                         PropertySuggestion("team", "Team", " - Combat team"),
                         PropertySuggestion("isInvincible", "Boolean", " - Invincibility status"),
-                        PropertySuggestion(
-                            "takeDamage",
-                            "Unit",
-                            "(amount: Int)",
-                            PropertyKind.METHOD,
-                        ),
-                        PropertySuggestion("heal", "Unit", "(amount: Int)", PropertyKind.METHOD),
+                        PropertySuggestion("takeDamage", "Unit", AMOUNT_PARAM, PropertyKind.METHOD),
+                        PropertySuggestion("heal", "Unit", AMOUNT_PARAM, PropertyKind.METHOD),
                     ),
                 BaseType.CAMERA to
                     listOf(

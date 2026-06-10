@@ -19,7 +19,6 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -29,6 +28,9 @@ import kotlinx.serialization.json.putJsonObject
 
 /** Valid button names for MCP tool input. */
 private val VALID_BUTTONS = Button.entries.map { it.name.lowercase() }.toSet()
+
+/** Shared input-schema description for maxFrames parameters. */
+private const val MAX_FRAMES_DESCRIPTION = "Maximum frames to wait"
 
 /** Parses a button name string to a [Button], or null. */
 private fun parseButton(name: String): Button? =
@@ -41,6 +43,17 @@ internal fun errorResult(message: String): CallToolResult =
 /** Creates a success [CallToolResult] with a JSON text content. */
 internal fun jsonResult(json: String): CallToolResult =
     CallToolResult(content = listOf(TextContent(json)))
+
+/** Runs a tool handler on [Dispatchers.IO], converting any exception into an error result. */
+private suspend fun runTool(toolName: String, block: suspend () -> CallToolResult): CallToolResult =
+    withContext(Dispatchers.IO) {
+        try {
+            block()
+        } catch (e: Exception) {
+            System.err.println("MCP [$toolName] error: $e")
+            errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
+        }
+    }
 
 /**
  * Extracted handler logic for all 17 MCP tools.
@@ -56,51 +69,115 @@ internal object ToolHandlerLogic {
     /** Labels must be alphanumeric with hyphens/underscores only — no path traversal. */
     private val VALID_LABEL = Regex("^[a-zA-Z0-9_-]+$")
 
+    /** Signals an argument-validation failure; converted to an error result by [toolResult]. */
+    private class ToolArgException(override val message: String) : Exception(message)
+
+    /** Aborts the current handler with the given user-facing error message. */
+    private fun fail(message: String): Nothing = throw ToolArgException(message)
+
+    /** Runs [block], converting any [ToolArgException] thrown by [fail] into an error result. */
+    private inline fun toolResult(block: () -> CallToolResult): CallToolResult =
+        try {
+            block()
+        } catch (e: ToolArgException) {
+            errorResult(e.message)
+        }
+
+    /** Returns the arguments object, or fails with "Missing arguments". */
+    private fun requireArgs(args: JsonObject?): JsonObject = args ?: fail("Missing arguments")
+
+    /** Extracts a required string argument, or fails with "<name> is required". */
+    private fun JsonObject?.requireString(name: String): String =
+        this?.get(name)?.jsonPrimitive?.contentOrNull ?: fail("$name is required")
+
+    /** Extracts a required integer argument, or fails with "<name> is required". */
+    private fun JsonObject?.requireInt(name: String): Int =
+        this?.get(name)?.jsonPrimitive?.intOrNull ?: fail("$name is required")
+
+    /** Extracts a required frame-count argument, validating positivity and [MAX_FRAMES]. */
+    private fun JsonObject?.requireFrames(name: String = "maxFrames"): Int {
+        val frames = requireInt(name)
+        if (frames < 1) fail("$name must be positive")
+        if (frames > MAX_FRAMES) fail("$name ($frames) exceeds maximum ($MAX_FRAMES)")
+        return frames
+    }
+
+    /** Extracts a required label argument, validating it against [VALID_LABEL]. */
+    private fun JsonObject?.requireLabel(): String {
+        val label = requireString("label")
+        if (!VALID_LABEL.matches(label)) {
+            fail(
+                "Invalid label '$label'. " +
+                    "Labels must match ${VALID_LABEL.pattern} (no path separators or special characters)."
+            )
+        }
+        return label
+    }
+
+    /** Extracts a required address argument as hex ("0xNNNN") or decimal, in 0x0000..0xFFFF. */
+    private fun JsonObject?.requireAddress(): Int {
+        val addressHex = requireString("address")
+        val address =
+            try {
+                if (addressHex.startsWith("0x") || addressHex.startsWith("0X")) {
+                    addressHex.substring(2).toInt(16)
+                } else {
+                    addressHex.toInt()
+                }
+            } catch (e: NumberFormatException) {
+                fail("Invalid address format: '$addressHex' (expected 0xNNNN or decimal)")
+            }
+        if (address !in 0..0xFFFF) fail("address out of range (0x0000..0xFFFF)")
+        return address
+    }
+
     suspend fun handleStart(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        args ?: return errorResult("Missing arguments")
+        return toolResult {
+            val a = requireArgs(args)
 
-        val gameName = args["game"]?.jsonPrimitive?.content
-        val romPath = args["romFile"]?.jsonPrimitive?.content
-        val gbcMode = args["gbcMode"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: false
+            val gameName = a["game"]?.jsonPrimitive?.content
+            val romPath = a["romFile"]?.jsonPrimitive?.content
+            val gbcMode = a["gbcMode"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: false
 
-        // If game name is provided and romFile is not, use convention-based discovery
-        if (gameName != null && romPath == null) {
-            return withContext(Dispatchers.IO) {
-                try {
-                    val result = session.startByName(gameName, gbcMode)
-                    val meta = result.metadata
-                    val summary = buildJsonObject {
-                        put("started", true)
-                        if (meta != null) {
-                            put("metadata", meta.toJsonObject())
+            // If game name is provided and romFile is not, use convention-based discovery
+            if (gameName != null && romPath == null) {
+                return withContext(Dispatchers.IO) {
+                    try {
+                        val result = session.startByName(gameName, gbcMode)
+                        val meta = result.metadata
+                        val summary = buildJsonObject {
+                            put("started", true)
+                            if (meta != null) {
+                                put("metadata", meta.toJsonObject())
+                            }
                         }
+                        jsonResult(summary.toString())
+                    } catch (e: IllegalStateException) {
+                        errorResult(e.message ?: "Failed to start game '$gameName'")
                     }
-                    jsonResult(summary.toString())
-                } catch (e: IllegalStateException) {
-                    errorResult(e.message ?: "Failed to start game '$gameName'")
                 }
             }
-        }
 
-        // Otherwise, romFile is required
-        if (romPath == null) {
-            return errorResult("romFile or game is required")
-        }
-        val romFile = File(romPath)
-        if (!romFile.exists()) return errorResult("ROM file not found: $romPath")
-
-        val symFile = args["symFile"]?.jsonPrimitive?.content?.let { File(it) }
-        val metadataFile = args["metadataFile"]?.jsonPrimitive?.content?.let { File(it) }
-
-        val result = session.start(romFile, symFile, metadataFile, gbcMode)
-        val meta = result.metadata
-        val summary = buildJsonObject {
-            put("started", true)
-            if (meta != null) {
-                put("metadata", meta.toJsonObject())
+            // Otherwise, romFile is required
+            if (romPath == null) {
+                return errorResult("romFile or game is required")
             }
+            val romFile = File(romPath)
+            if (!romFile.exists()) return errorResult("ROM file not found: $romPath")
+
+            val symFile = a["symFile"]?.jsonPrimitive?.content?.let { File(it) }
+            val metadataFile = a["metadataFile"]?.jsonPrimitive?.content?.let { File(it) }
+
+            val result = session.start(romFile, symFile, metadataFile, gbcMode)
+            val meta = result.metadata
+            val summary = buildJsonObject {
+                put("started", true)
+                if (meta != null) {
+                    put("metadata", meta.toJsonObject())
+                }
+            }
+            jsonResult(summary.toString())
         }
-        return jsonResult(summary.toString())
     }
 
     suspend fun handleStop(session: McpEmulatorSession): CallToolResult {
@@ -132,58 +209,48 @@ internal object ToolHandlerLogic {
         return jsonResult(obs.toJsonObject().toString())
     }
 
-    suspend fun handlePress(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        args ?: return errorResult("Missing arguments")
-        val buttonName =
-            args["button"]?.jsonPrimitive?.contentOrNull ?: return errorResult("button is required")
-        val button =
-            parseButton(buttonName)
-                ?: return errorResult("Invalid button '$buttonName'. Valid: $VALID_BUTTONS")
-        val frames = args["frames"]?.jsonPrimitive?.intOrNull ?: 1
-        if (frames < 1) return errorResult("frames must be positive")
-        if (frames > MAX_FRAMES) return errorResult("frames exceeds maximum")
-        val obs = session.press(button, frames)
-        return jsonResult(obs.toJsonObject().toString())
-    }
+    suspend fun handlePress(session: McpEmulatorSession, args: JsonObject?): CallToolResult =
+        toolResult {
+            val a = requireArgs(args)
+            val buttonName = a.requireString("button")
+            val button =
+                parseButton(buttonName)
+                    ?: fail("Invalid button '$buttonName'. Valid: $VALID_BUTTONS")
+            val frames = a["frames"]?.jsonPrimitive?.intOrNull ?: 1
+            if (frames < 1) fail("frames must be positive")
+            if (frames > MAX_FRAMES) fail("frames exceeds maximum")
+            val obs = session.press(button, frames)
+            jsonResult(obs.toJsonObject().toString())
+        }
 
     suspend fun handleObserve(session: McpEmulatorSession): CallToolResult {
         val obs = session.observe()
         return jsonResult(obs.toJsonObject().toString())
     }
 
-    suspend fun handleWaitForScene(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        args ?: return errorResult("Missing arguments")
-        val scene = args["scene"]?.jsonPrimitive?.content ?: return errorResult("scene is required")
-        val maxFrames =
-            args["maxFrames"]?.jsonPrimitive?.int ?: return errorResult("maxFrames is required")
-        if (maxFrames < 1) return errorResult("maxFrames must be positive")
-        if (maxFrames > MAX_FRAMES) {
-            return errorResult("maxFrames ($maxFrames) exceeds maximum ($MAX_FRAMES)")
-        }
+    suspend fun handleWaitForScene(session: McpEmulatorSession, args: JsonObject?): CallToolResult =
+        toolResult {
+            val a = requireArgs(args)
+            val scene = a.requireString("scene")
+            val maxFrames = a.requireFrames()
 
-        val result = session.waitForScene(scene, maxFrames)
-        val json = buildJsonObject {
-            put("met", result.met)
-            put("framesElapsed", result.framesElapsed)
-            put("observation", result.observation.toJsonObject())
+            val result = session.waitForScene(scene, maxFrames)
+            val json = buildJsonObject {
+                put("met", result.met)
+                put("framesElapsed", result.framesElapsed)
+                put("observation", result.observation.toJsonObject())
+            }
+            jsonResult(json.toString())
         }
-        return jsonResult(json.toString())
-    }
 
     suspend fun handleWaitForVariable(
         session: McpEmulatorSession,
         args: JsonObject?,
-    ): CallToolResult {
-        args ?: return errorResult("Missing arguments")
-        val name = args["name"]?.jsonPrimitive?.content ?: return errorResult("name is required")
-        val expected =
-            args["expected"]?.jsonPrimitive?.int ?: return errorResult("expected is required")
-        val maxFrames =
-            args["maxFrames"]?.jsonPrimitive?.int ?: return errorResult("maxFrames is required")
-        if (maxFrames < 1) return errorResult("maxFrames must be positive")
-        if (maxFrames > MAX_FRAMES) {
-            return errorResult("maxFrames ($maxFrames) exceeds maximum ($MAX_FRAMES)")
-        }
+    ): CallToolResult = toolResult {
+        val a = requireArgs(args)
+        val name = a.requireString("name")
+        val expected = a.requireInt("expected")
+        val maxFrames = a.requireFrames()
 
         val result = session.waitForVariable(name, expected, maxFrames)
         val json = buildJsonObject {
@@ -191,21 +258,16 @@ internal object ToolHandlerLogic {
             put("framesElapsed", result.framesElapsed)
             put("observation", result.observation.toJsonObject())
         }
-        return jsonResult(json.toString())
+        jsonResult(json.toString())
     }
 
     suspend fun handleWaitUntilText(
         session: McpEmulatorSession,
         args: JsonObject?,
-    ): CallToolResult {
-        args ?: return errorResult("Missing arguments")
-        val text = args["text"]?.jsonPrimitive?.content ?: return errorResult("text is required")
-        val maxFrames =
-            args["maxFrames"]?.jsonPrimitive?.int ?: return errorResult("maxFrames is required")
-        if (maxFrames < 1) return errorResult("maxFrames must be positive")
-        if (maxFrames > MAX_FRAMES) {
-            return errorResult("maxFrames ($maxFrames) exceeds maximum ($MAX_FRAMES)")
-        }
+    ): CallToolResult = toolResult {
+        val a = requireArgs(args)
+        val text = a.requireString("text")
+        val maxFrames = a.requireFrames()
 
         val result = session.waitForText(text, maxFrames)
         val json = buildJsonObject {
@@ -213,119 +275,80 @@ internal object ToolHandlerLogic {
             put("framesElapsed", result.framesElapsed)
             put("observation", result.observation.toJsonObject())
         }
-        return jsonResult(json.toString())
+        jsonResult(json.toString())
     }
 
-    suspend fun handleReadVariable(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        val name =
-            args?.get("name")?.jsonPrimitive?.content ?: return errorResult("name is required")
-        val result = session.readVariable(name)
-        val json = buildJsonObject {
-            put("name", result.name)
-            put("value", result.value)
+    suspend fun handleReadVariable(session: McpEmulatorSession, args: JsonObject?): CallToolResult =
+        toolResult {
+            val name = args.requireString("name")
+            val result = session.readVariable(name)
+            val json = buildJsonObject {
+                put("name", result.name)
+                put("value", result.value)
+            }
+            jsonResult(json.toString())
         }
-        return jsonResult(json.toString())
-    }
 
     suspend fun handleWriteVariable(
         session: McpEmulatorSession,
         args: JsonObject?,
-    ): CallToolResult {
-        args ?: return errorResult("Missing arguments")
-        val name = args["name"]?.jsonPrimitive?.content ?: return errorResult("name is required")
-        val value = args["value"]?.jsonPrimitive?.int ?: return errorResult("value is required")
+    ): CallToolResult = toolResult {
+        val a = requireArgs(args)
+        val name = a.requireString("name")
+        val value = a.requireInt("value")
         val success = session.writeVariable(name, value)
         val json = buildJsonObject { put("success", success) }
-        return jsonResult(json.toString())
+        jsonResult(json.toString())
     }
 
-    suspend fun handleReadMemory(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        args ?: return errorResult("Missing arguments")
-        val addressHex =
-            args["address"]?.jsonPrimitive?.contentOrNull
-                ?: return errorResult("address is required")
-        val address =
-            try {
-                if (addressHex.startsWith("0x") || addressHex.startsWith("0X")) {
-                    addressHex.substring(2).toInt(16)
-                } else {
-                    addressHex.toInt()
-                }
-            } catch (e: NumberFormatException) {
-                return errorResult(
-                    "Invalid address format: '$addressHex' (expected 0xNNNN or decimal)"
+    suspend fun handleReadMemory(session: McpEmulatorSession, args: JsonObject?): CallToolResult =
+        toolResult {
+            val a = requireArgs(args)
+            val address = a.requireAddress()
+            val count = (a["count"]?.jsonPrimitive?.intOrNull ?: 1).coerceIn(1, 256)
+            val endAddress = address + count - 1
+            if (endAddress > 0xFFFF) {
+                fail(
+                    "address + count - 1 (0x${"%04X".format(endAddress)}) exceeds 0xFFFF. " +
+                        "Reduce count or use a lower start address."
                 )
             }
-        if (address !in 0..0xFFFF) {
-            return errorResult("address out of range (0x0000..0xFFFF)")
+            val bytes = session.readMemory(address, count)
+            val json = buildJsonObject {
+                put("address", "0x%04X".format(address))
+                put("count", count)
+                put("bytes", buildJsonArray { bytes.forEach { add("0x%02X".format(it and 0xFF)) } })
+            }
+            jsonResult(json.toString())
         }
-        val count = (args["count"]?.jsonPrimitive?.intOrNull ?: 1).coerceIn(1, 256)
-        val endAddress = address + count - 1
-        if (endAddress > 0xFFFF) {
-            return errorResult(
-                "address + count - 1 (0x${"%04X".format(endAddress)}) exceeds 0xFFFF. " +
-                    "Reduce count or use a lower start address."
-            )
-        }
-        val bytes = session.readMemory(address, count)
-        val json = buildJsonObject {
-            put("address", "0x%04X".format(address))
-            put("count", count)
-            put("bytes", buildJsonArray { bytes.forEach { add("0x%02X".format(it and 0xFF)) } })
-        }
-        return jsonResult(json.toString())
-    }
 
-    suspend fun handleWriteMemory(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        args ?: return errorResult("Missing arguments")
-        val addressHex =
-            args["address"]?.jsonPrimitive?.contentOrNull
-                ?: return errorResult("address is required")
-        val address =
-            try {
-                if (addressHex.startsWith("0x") || addressHex.startsWith("0X")) {
-                    addressHex.substring(2).toInt(16)
-                } else {
-                    addressHex.toInt()
-                }
-            } catch (e: NumberFormatException) {
-                return errorResult(
-                    "Invalid address format: '$addressHex' (expected 0xNNNN or decimal)"
+    suspend fun handleWriteMemory(session: McpEmulatorSession, args: JsonObject?): CallToolResult =
+        toolResult {
+            val a = requireArgs(args)
+            val address = a.requireAddress()
+            val value = a.requireInt("value")
+            if (value !in 0..255) {
+                fail(
+                    "value $value is out of range (0..255). " +
+                        "emulator_write_memory writes exactly one byte."
                 )
             }
-        if (address !in 0..0xFFFF) {
-            return errorResult("address out of range (0x0000..0xFFFF)")
+            session.writeMemory(address, value)
+            val json = buildJsonObject {
+                put("success", true)
+                put("address", "0x%04X".format(address))
+                put("value", "0x%02X".format(value))
+            }
+            jsonResult(json.toString())
         }
-        val value =
-            args["value"]?.jsonPrimitive?.intOrNull ?: return errorResult("value is required")
-        if (value !in 0..255) {
-            return errorResult(
-                "value $value is out of range (0..255). " +
-                    "emulator_write_memory writes exactly one byte."
-            )
-        }
-        session.writeMemory(address, value)
-        val json = buildJsonObject {
-            put("success", true)
-            put("address", "0x%04X".format(address))
-            put("value", "0x%02X".format(value))
-        }
-        return jsonResult(json.toString())
-    }
 
-    suspend fun handleScreenshot(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        val label =
-            args?.get("label")?.jsonPrimitive?.content ?: return errorResult("label is required")
-        if (!VALID_LABEL.matches(label)) {
-            return errorResult(
-                "Invalid label '$label'. " +
-                    "Labels must match ${VALID_LABEL.pattern} (no path separators or special characters)."
-            )
+    suspend fun handleScreenshot(session: McpEmulatorSession, args: JsonObject?): CallToolResult =
+        toolResult {
+            val label = args.requireLabel()
+            val file = session.screenshot(label)
+            val json = buildJsonObject { put("filePath", file.absolutePath) }
+            jsonResult(json.toString())
         }
-        val file = session.screenshot(label)
-        val json = buildJsonObject { put("filePath", file.absolutePath) }
-        return jsonResult(json.toString())
-    }
 
     fun handleDescribeGame(session: McpEmulatorSession): CallToolResult {
         val meta = session.describeGame()
@@ -336,60 +359,51 @@ internal object ToolHandlerLogic {
         }
     }
 
-    suspend fun handleSaveState(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        args ?: return errorResult("Missing arguments")
-        val label = args["label"]?.jsonPrimitive?.content ?: return errorResult("label is required")
-        if (!VALID_LABEL.matches(label)) {
-            return errorResult(
-                "Invalid label '$label'. " +
-                    "Labels must match ${VALID_LABEL.pattern} (no path separators or special characters)."
-            )
-        }
-        return withContext(Dispatchers.IO) {
-            val result = session.saveState(label)
-            jsonResult(result.toString())
-        }
-    }
-
-    suspend fun handleLoadState(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        args ?: return errorResult("Missing arguments")
-        val label = args["label"]?.jsonPrimitive?.content ?: return errorResult("label is required")
-        if (!VALID_LABEL.matches(label)) {
-            return errorResult(
-                "Invalid label '$label'. " +
-                    "Labels must match ${VALID_LABEL.pattern} (no path separators or special characters)."
-            )
-        }
-        return withContext(Dispatchers.IO) {
-            val result = session.loadState(label)
-            jsonResult(result.toString())
-        }
-    }
-
-    suspend fun handleAssert(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        args ?: return errorResult("Missing arguments")
-        val checksArray = args["checks"]?.jsonArray ?: return errorResult("checks is required")
-
-        val checks = mutableListOf<AssertCheck>()
-        for (element in checksArray) {
-            val obj = element.jsonObject
-            val type =
-                obj["type"]?.jsonPrimitive?.content
-                    ?: return errorResult("Each check must have a 'type' field")
-            val checkArgs = mutableMapOf<String, Any>()
-            for ((k, v) in obj) {
-                if (k != "type") {
-                    checkArgs[k] = v.jsonPrimitive.content
-                }
+    suspend fun handleSaveState(session: McpEmulatorSession, args: JsonObject?): CallToolResult =
+        toolResult {
+            val a = requireArgs(args)
+            val label = a.requireLabel()
+            withContext(Dispatchers.IO) {
+                val result = session.saveState(label)
+                jsonResult(result.toString())
             }
-            checks.add(AssertCheck(type, checkArgs))
         }
 
-        return withContext(Dispatchers.IO) {
-            val result = session.batchAssert(checks)
-            jsonResult(result.toString())
+    suspend fun handleLoadState(session: McpEmulatorSession, args: JsonObject?): CallToolResult =
+        toolResult {
+            val a = requireArgs(args)
+            val label = a.requireLabel()
+            withContext(Dispatchers.IO) {
+                val result = session.loadState(label)
+                jsonResult(result.toString())
+            }
         }
-    }
+
+    suspend fun handleAssert(session: McpEmulatorSession, args: JsonObject?): CallToolResult =
+        toolResult {
+            val a = requireArgs(args)
+            val checksArray = a["checks"]?.jsonArray ?: fail("checks is required")
+
+            val checks = mutableListOf<AssertCheck>()
+            for (element in checksArray) {
+                val obj = element.jsonObject
+                val type =
+                    obj["type"]?.jsonPrimitive?.content
+                        ?: fail("Each check must have a 'type' field")
+                val checkArgs = mutableMapOf<String, Any>()
+                for ((k, v) in obj) {
+                    if (k != "type") {
+                        checkArgs[k] = v.jsonPrimitive.content
+                    }
+                }
+                checks.add(AssertCheck(type, checkArgs))
+            }
+
+            withContext(Dispatchers.IO) {
+                val result = session.batchAssert(checks)
+                jsonResult(result.toString())
+            }
+        }
 
     suspend fun handleGetPlaybook(session: McpEmulatorSession): CallToolResult {
         return withContext(Dispatchers.IO) {
@@ -449,14 +463,7 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 required = emptyList(),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleStart(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_start] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
-        }
+        runTool("emulator_start") { ToolHandlerLogic.handleStart(session, request.arguments) }
     }
 
     addTool(
@@ -464,14 +471,7 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
         description = "Stop the current emulator session.",
         inputSchema = ToolSchema(properties = buildJsonObject {}, required = emptyList()),
     ) { _ ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleStop(session)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_stop] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
-        }
+        runTool("emulator_stop") { ToolHandlerLogic.handleStop(session) }
     }
 
     addTool(
@@ -498,14 +498,7 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 required = emptyList(),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleStep(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_step] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
-        }
+        runTool("emulator_step") { ToolHandlerLogic.handleStep(session, request.arguments) }
     }
 
     addTool(
@@ -537,14 +530,7 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 required = listOf("button"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handlePress(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_press] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
-        }
+        runTool("emulator_press") { ToolHandlerLogic.handlePress(session, request.arguments) }
     }
 
     addTool(
@@ -553,14 +539,7 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
             "Get the current game state without advancing frames. Returns cached observation or steps 1 frame.",
         inputSchema = ToolSchema(properties = buildJsonObject {}, required = emptyList()),
     ) { _ ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleObserve(session)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_observe] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
-        }
+        runTool("emulator_observe") { ToolHandlerLogic.handleObserve(session) }
     }
 
     addTool(
@@ -577,19 +556,14 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                         }
                         putJsonObject("maxFrames") {
                             put("type", "integer")
-                            put("description", "Maximum frames to wait")
+                            put("description", MAX_FRAMES_DESCRIPTION)
                         }
                     },
                 required = listOf("scene", "maxFrames"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleWaitForScene(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_wait_for_scene] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
+        runTool("emulator_wait_for_scene") {
+            ToolHandlerLogic.handleWaitForScene(session, request.arguments)
         }
     }
 
@@ -611,19 +585,14 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                         }
                         putJsonObject("maxFrames") {
                             put("type", "integer")
-                            put("description", "Maximum frames to wait")
+                            put("description", MAX_FRAMES_DESCRIPTION)
                         }
                     },
                 required = listOf("name", "expected", "maxFrames"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleWaitForVariable(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_wait_for_variable] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
+        runTool("emulator_wait_for_variable") {
+            ToolHandlerLogic.handleWaitForVariable(session, request.arguments)
         }
     }
 
@@ -640,19 +609,14 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                         }
                         putJsonObject("maxFrames") {
                             put("type", "integer")
-                            put("description", "Maximum frames to wait")
+                            put("description", MAX_FRAMES_DESCRIPTION)
                         }
                     },
                 required = listOf("text", "maxFrames"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleWaitUntilText(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_wait_until_text] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
+        runTool("emulator_wait_until_text") {
+            ToolHandlerLogic.handleWaitUntilText(session, request.arguments)
         }
     }
 
@@ -671,13 +635,8 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 required = listOf("name"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleReadVariable(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_read_variable] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
+        runTool("emulator_read_variable") {
+            ToolHandlerLogic.handleReadVariable(session, request.arguments)
         }
     }
 
@@ -700,13 +659,8 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 required = listOf("name", "value"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleWriteVariable(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_write_variable] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
+        runTool("emulator_write_variable") {
+            ToolHandlerLogic.handleWriteVariable(session, request.arguments)
         }
     }
 
@@ -725,13 +679,8 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 required = listOf("label"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleScreenshot(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_screenshot] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
+        runTool("emulator_screenshot") {
+            ToolHandlerLogic.handleScreenshot(session, request.arguments)
         }
     }
 
@@ -742,14 +691,7 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 "texts, terminal scenes, per-scene controls, and scene transition graph.",
         inputSchema = ToolSchema(properties = buildJsonObject {}, required = emptyList()),
     ) { _ ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleDescribeGame(session)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_describe_game] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
-        }
+        runTool("emulator_describe_game") { ToolHandlerLogic.handleDescribeGame(session) }
     }
 
     addTool(
@@ -769,13 +711,8 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 required = listOf("label"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleSaveState(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_save_state] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
+        runTool("emulator_save_state") {
+            ToolHandlerLogic.handleSaveState(session, request.arguments)
         }
     }
 
@@ -796,13 +733,8 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 required = listOf("label"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleLoadState(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_load_state] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
+        runTool("emulator_load_state") {
+            ToolHandlerLogic.handleLoadState(session, request.arguments)
         }
     }
 
@@ -838,14 +770,7 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 required = listOf("checks"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleAssert(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_assert] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
-        }
+        runTool("emulator_assert") { ToolHandlerLogic.handleAssert(session, request.arguments) }
     }
 
     addTool(
@@ -855,14 +780,7 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 "Returns the file content and path, or null if not found.",
         inputSchema = ToolSchema(properties = buildJsonObject {}, required = emptyList()),
     ) { _ ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleGetPlaybook(session)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_get_playbook] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
-        }
+        runTool("emulator_get_playbook") { ToolHandlerLogic.handleGetPlaybook(session) }
     }
 
     addTool(
@@ -890,13 +808,8 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 required = listOf("address"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleReadMemory(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_read_memory] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
+        runTool("emulator_read_memory") {
+            ToolHandlerLogic.handleReadMemory(session, request.arguments)
         }
     }
 
@@ -928,13 +841,8 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 required = listOf("address", "value"),
             ),
     ) { request ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleWriteMemory(session, request.arguments)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_write_memory] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
+        runTool("emulator_write_memory") {
+            ToolHandlerLogic.handleWriteMemory(session, request.arguments)
         }
     }
 
@@ -945,13 +853,6 @@ fun Server.registerEmulatorTools(session: McpEmulatorSession) {
                 "Scans both standalone (build/gbkt/output/) and multi-game (gbkt-examples/) layouts.",
         inputSchema = ToolSchema(properties = buildJsonObject {}, required = emptyList()),
     ) { _ ->
-        withContext(Dispatchers.IO) {
-            try {
-                ToolHandlerLogic.handleListGames(session)
-            } catch (e: Exception) {
-                System.err.println("MCP [emulator_list_games] error: $e")
-                errorResult("${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
-            }
-        }
+        runTool("emulator_list_games") { ToolHandlerLogic.handleListGames(session) }
     }
 }

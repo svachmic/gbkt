@@ -8,6 +8,7 @@ package io.github.gbkt.analysis.passes
 
 import io.github.gbkt.analysis.AnalysisPass
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassResult
 import io.github.gbkt.analysis.Severity
@@ -63,7 +64,7 @@ class VRAMLayoutPass : AnalysisPass {
                 ?: return PassResult.Failed(
                     listOf(
                         Diagnostic(
-                            id = "ANLZ-03",
+                            code = DiagnosticCode.VRAM_CAPACITY,
                             severity = Severity.ERROR,
                             message =
                                 "VRAMLayoutPass requires a non-null ResourceInventory on PassContext. " +
@@ -105,7 +106,7 @@ class VRAMLayoutPass : AnalysisPass {
             } else if (totalUsed > context.config.vramTileWarningThreshold) {
                 diagnostics.add(
                     Diagnostic(
-                        id = "ANLZ-03",
+                        code = DiagnosticCode.VRAM_CAPACITY,
                         severity = Severity.WARNING,
                         message =
                             "Scene '${scene.id}' uses $totalUsed / $TOTAL_VRAM_TILES VRAM tiles " +
@@ -244,7 +245,7 @@ class VRAMLayoutPass : AnalysisPass {
                 .trimEnd()
 
         return Diagnostic(
-            id = "ANLZ-03",
+            code = DiagnosticCode.VRAM_CAPACITY,
             severity = Severity.ERROR,
             message =
                 "Scene '${scene.id}' requires $total VRAM tiles but the Game Boy limit is " +

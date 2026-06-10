@@ -13,6 +13,15 @@ import io.github.gbkt.core.ir.IconDisplayMode
 import io.github.gbkt.core.ir.PositionDef
 import io.github.gbkt.core.ir.SoundPreset
 
+/** Prompt shown on the title and end screens. */
+private const val PRESS_START_TEXT = "PRESS START"
+
+/** HUD line showing the current score and remaining lives. */
+private const val HUD_FORMAT = "SCORE:%d  LIVES:%d"
+
+/** One row of 10 bricks drawn as characters on the BG layer. */
+private const val BRICK_ROW = "##########"
+
 /**
  * Breakout game defined using the gbkt DSL.
  *
@@ -122,7 +131,7 @@ val breakout =
                     clear()
                     print("YOU WIN!", position = PositionDef(6, 6))
                     print("SCORE: %d", score.toExpr(), position = PositionDef(6, 9))
-                    print("PRESS START", position = PositionDef(5, 13))
+                    print(PRESS_START_TEXT, position = PositionDef(5, 13))
                 }
                 // Navigate to title — uses forward-declared titleRef (SceneRef)
                 frame { whenever(buttons.start.pressed) { navigate(titleRef) } }
@@ -139,7 +148,7 @@ val breakout =
                     clear()
                     print("GAME OVER", position = PositionDef(6, 6))
                     print("SCORE: %d", score.toExpr(), position = PositionDef(6, 9))
-                    print("PRESS START", position = PositionDef(5, 13))
+                    print(PRESS_START_TEXT, position = PositionDef(5, 13))
                 }
                 // Navigate to title — uses forward-declared titleRef (SceneRef)
                 frame { whenever(buttons.start.pressed) { navigate(titleRef) } }
@@ -170,16 +179,11 @@ val breakout =
                         bidx += 1
                     }
                     // Draw HUD at top
-                    print(
-                        "SCORE:%d  LIVES:%d",
-                        score.toExpr(),
-                        lives.toExpr(),
-                        position = PositionDef(2, 1),
-                    )
+                    print(HUD_FORMAT, score.toExpr(), lives.toExpr(), position = PositionDef(2, 1))
                     // Draw 3 rows of 10 bricks (rows 3, 4, 5 on the tile grid)
-                    print("##########", position = PositionDef(5, 3))
-                    print("##########", position = PositionDef(5, 4))
-                    print("##########", position = PositionDef(5, 5))
+                    print(BRICK_ROW, position = PositionDef(5, 3))
+                    print(BRICK_ROW, position = PositionDef(5, 4))
+                    print(BRICK_ROW, position = PositionDef(5, 5))
                 }
                 frame {
                     // Paddle movement — type-safe d-pad API (clamped to screen: 0..136)
@@ -222,7 +226,7 @@ val breakout =
                         playSound(loseSfx)
                         // Update HUD
                         print(
-                            "SCORE:%d  LIVES:%d",
+                            HUD_FORMAT,
                             score.toExpr(),
                             lives.toExpr(),
                             position = PositionDef(2, 1),
@@ -261,7 +265,7 @@ val breakout =
                                     ballDy *= -1
                                     playSound(hitSfx)
                                     print(
-                                        "SCORE:%d  LIVES:%d",
+                                        HUD_FORMAT,
                                         score.toExpr(),
                                         lives.toExpr(),
                                         position = PositionDef(2, 1),
@@ -290,7 +294,7 @@ val breakout =
                     clear()
                     // GB screen: 20 cols. "BREAKOUT"=8 → col 6
                     print("BREAKOUT", position = PositionDef(6, 6))
-                    print("PRESS START", position = PositionDef(5, 10))
+                    print(PRESS_START_TEXT, position = PositionDef(5, 10))
                 }
                 frame { whenever(buttons.start.pressed) { navigate(gameScene) } }
             }

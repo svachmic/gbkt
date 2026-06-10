@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
+import io.github.gbkt.backend.gbdk.codegen.GBDKMacros
 import io.github.gbkt.backend.gbdk.codegen.ast.CArray
 import io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CBlock
@@ -529,7 +530,7 @@ class DialogVisitor(private val gameIR: GameIR) {
         // 1. Position and show window layer
         // GBDK hardware: move_win(7, boxY * 8) — 7px left offset is GBDK window convention
         body += CExprStatement(CCall("move_win", listOf(CLiteral(7), CLiteral(def.boxY * 8))))
-        body += CRawCode("SHOW_WIN;")
+        body += GBDKMacros.showWin()
 
         // 2. Border drawing (before text)
         when (def.border) {
@@ -745,7 +746,7 @@ class DialogVisitor(private val gameIR: GameIR) {
         body += paginationLoop
 
         // 6. Hide window and portrait
-        body += CRawCode("HIDE_WIN;")
+        body += GBDKMacros.hideWin()
         if (hasPortrait) {
             // Hide portrait by moving off-screen (position 0, 0 in OAM)
             body +=

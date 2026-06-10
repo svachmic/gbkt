@@ -83,81 +83,97 @@ class GbktKeywordCompletionProvider : CompletionProvider<CompletionParameters>()
         }
     }
 
-    private fun getTailText(keyword: String): String {
-        return when (keyword) {
-            "gbGame" -> " { ... }"
-            "scene" -> "(name) { ... }"
-            "entity" -> " { ... }"
-            "dialog" -> "(name) { ... }"
-            "camera" -> "(name) { ... }"
-            "stats" -> " { ... }"
-            "flags" -> " { ... }"
-            "u8Var",
-            "u16Var",
-            "i8Var",
-            "i16Var" -> "(initial)"
-            "u8Array",
-            "u16Array",
-            "i8Array",
-            "i16Array" -> "(size, initial)"
-            "monster" -> " { ... }"
-            "ability" -> " { ... }"
-            "item" -> " { ... }"
-            "floor" -> " { ... }"
-            "encounterTable" -> "(id) { ... }"
-            "whenever" -> "(condition) { ... }"
-            "branch" -> " { ... }"
-            "repeat" -> "(times) { ... }"
-            else -> ""
-        }
-    }
+    private fun getTailText(keyword: String): String = KEYWORD_TEMPLATES[keyword]?.tailText ?: ""
 
     private fun insertKeywordTemplate(
         ctx: com.intellij.codeInsight.completion.InsertionContext,
         keyword: String,
     ) {
+        val template = KEYWORD_TEMPLATES[keyword] ?: return
         val editor = ctx.editor
-        val document = editor.document
 
-        val template =
-            when (keyword) {
-                "gbGame" -> " {\n    \n}"
-                "scene" -> "(\"name\") {\n    \n}"
-                "entity" -> " {\n    \n}"
-                "dialog" -> "(\"name\") {\n    \n}"
-                "camera" -> "(\"main\") {\n    \n}"
-                "stats" -> " {\n    \n}"
-                "flags" -> " {\n    \n}"
-                "u8Var",
-                "u16Var",
-                "i8Var",
-                "i16Var" -> "(0)"
-                "u8Array",
-                "u16Array",
-                "i8Array",
-                "i16Array" -> "(10, 0)"
-                "monster" -> " {\n    \n}"
-                "ability" -> " {\n    \n}"
-                "item" -> " {\n    \n}"
-                "floor" -> " {\n    \n}"
-                "encounterTable" -> "(\"id\") {\n    \n}"
-                "whenever" -> "() {\n    \n}"
-                "branch" -> " {\n    \n}"
-                "repeat" -> "(1) {\n    \n}"
-                else -> return
-            }
+        editor.document.insertString(ctx.tailOffset, template.insertion)
 
-        document.insertString(ctx.tailOffset, template)
-
-        // Position caret inside the block or at the parameter
         val caretOffset =
-            when (keyword) {
-                "scene",
-                "dialog",
-                "encounterTable" -> ctx.tailOffset + 2 // Inside quotes
-                "whenever" -> ctx.tailOffset + 1 // Inside parentheses
-                else -> ctx.tailOffset + template.indexOf('\n') + 5 // Inside block
+            when (template.caretTarget) {
+                CaretTarget.INSIDE_QUOTES -> ctx.tailOffset + 2
+                CaretTarget.INSIDE_PARENS -> ctx.tailOffset + 1
+                CaretTarget.INSIDE_BLOCK -> ctx.tailOffset + template.insertion.indexOf('\n') + 5
             }
         editor.caretModel.moveToOffset(caretOffset)
+    }
+
+    /** Where the caret lands after a keyword template has been inserted. */
+    private enum class CaretTarget {
+        /** Between the quotes of the template's string argument, e.g. `("name")`. */
+        INSIDE_QUOTES,
+        /** Just inside the opening parenthesis, e.g. `()`. */
+        INSIDE_PARENS,
+        /** On the indented blank line of the inserted block (or after a value argument). */
+        INSIDE_BLOCK,
+    }
+
+    /** Couples the popup tail text with the snippet inserted when the keyword is selected. */
+    private data class KeywordTemplate(
+        val tailText: String,
+        val insertion: String,
+        val caretTarget: CaretTarget = CaretTarget.INSIDE_BLOCK,
+    )
+
+    companion object {
+        private const val BLOCK_TAIL = " { ... }"
+        private const val NAMED_BLOCK_TAIL = "(name) { ... }"
+        private const val BLOCK_BODY = " {\n    \n}"
+
+        /** Keywords that open a plain `{ ... }` block. */
+        private val BLOCK_TEMPLATE = KeywordTemplate(BLOCK_TAIL, BLOCK_BODY)
+
+        /** Keywords that take a quoted name argument before their block. */
+        private val NAMED_BLOCK_TEMPLATE =
+            KeywordTemplate(NAMED_BLOCK_TAIL, "(\"name\")$BLOCK_BODY", CaretTarget.INSIDE_QUOTES)
+
+        /** Scalar variable declarations, e.g. `u8Var(0)`. */
+        private val VAR_TEMPLATE = KeywordTemplate("(initial)", "(0)")
+
+        /** Array variable declarations, e.g. `u8Array(10, 0)`. */
+        private val ARRAY_TEMPLATE = KeywordTemplate("(size, initial)", "(10, 0)")
+
+        /** Tail text and insertion snippet for every keyword that supports template insertion. */
+        private val KEYWORD_TEMPLATES: Map<String, KeywordTemplate> =
+            mapOf(
+                "gbGame" to BLOCK_TEMPLATE,
+                "scene" to NAMED_BLOCK_TEMPLATE,
+                "entity" to BLOCK_TEMPLATE,
+                "dialog" to NAMED_BLOCK_TEMPLATE,
+                "camera" to KeywordTemplate(NAMED_BLOCK_TAIL, "(\"main\")$BLOCK_BODY"),
+                "stats" to BLOCK_TEMPLATE,
+                "flags" to BLOCK_TEMPLATE,
+                "u8Var" to VAR_TEMPLATE,
+                "u16Var" to VAR_TEMPLATE,
+                "i8Var" to VAR_TEMPLATE,
+                "i16Var" to VAR_TEMPLATE,
+                "u8Array" to ARRAY_TEMPLATE,
+                "u16Array" to ARRAY_TEMPLATE,
+                "i8Array" to ARRAY_TEMPLATE,
+                "i16Array" to ARRAY_TEMPLATE,
+                "monster" to BLOCK_TEMPLATE,
+                "ability" to BLOCK_TEMPLATE,
+                "item" to BLOCK_TEMPLATE,
+                "floor" to BLOCK_TEMPLATE,
+                "encounterTable" to
+                    KeywordTemplate(
+                        "(id) { ... }",
+                        "(\"id\")$BLOCK_BODY",
+                        CaretTarget.INSIDE_QUOTES,
+                    ),
+                "whenever" to
+                    KeywordTemplate(
+                        "(condition) { ... }",
+                        "()$BLOCK_BODY",
+                        CaretTarget.INSIDE_PARENS,
+                    ),
+                "branch" to BLOCK_TEMPLATE,
+                "repeat" to KeywordTemplate("(times) { ... }", "(1)$BLOCK_BODY"),
+            )
     }
 }

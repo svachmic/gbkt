@@ -8,6 +8,7 @@ package io.github.gbkt.analysis.passes
 
 import io.github.gbkt.analysis.AnalysisPass
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassResult
 import io.github.gbkt.analysis.Severity
@@ -123,7 +124,7 @@ class RacingValidationPass : AnalysisPass {
         if (points.size < 3) {
             diagnostics +=
                 Diagnostic(
-                    id = "ANLZ-RACING-01",
+                    code = DiagnosticCode.RACING_TRACK_GEOMETRY,
                     severity = Severity.ERROR,
                     message =
                         "racing '$racingId' polygon has only ${points.size} waypoint" +
@@ -138,7 +139,7 @@ class RacingValidationPass : AnalysisPass {
         if (allCollinear(points)) {
             diagnostics +=
                 Diagnostic(
-                    id = "ANLZ-RACING-01",
+                    code = DiagnosticCode.RACING_TRACK_GEOMETRY,
                     severity = Severity.ERROR,
                     message =
                         "racing '$racingId' waypoints are collinear — polygon must enclose " +
@@ -154,7 +155,7 @@ class RacingValidationPass : AnalysisPass {
         if (signedAreaTwice(points) == 0L) {
             diagnostics +=
                 Diagnostic(
-                    id = "ANLZ-RACING-01",
+                    code = DiagnosticCode.RACING_TRACK_GEOMETRY,
                     severity = Severity.ERROR,
                     message =
                         "racing '$racingId' polygon encloses zero area — waypoints may be " +
@@ -218,7 +219,7 @@ class RacingValidationPass : AnalysisPass {
         if (playerVehicleId == null) {
             diagnostics +=
                 Diagnostic(
-                    id = "ANLZ-RACING-02",
+                    code = DiagnosticCode.RACING_PLAYER_MISSING,
                     severity = Severity.ERROR,
                     message =
                         "racing '$racingId' is missing player(...) — every race needs a player " +
@@ -261,7 +262,7 @@ class RacingValidationPass : AnalysisPass {
         ) {
             diagnostics +=
                 Diagnostic(
-                    id = "ANLZ-RACING-03",
+                    code = DiagnosticCode.RACING_VEHICLE_ACTOR_UNRESOLVED,
                     severity = Severity.ERROR,
                     message =
                         "racing '${ctx.racingId}' GenericSystem missing required " +
@@ -316,7 +317,7 @@ class RacingValidationPass : AnalysisPass {
             // ANLZ-RACING-03 if it ever happens (e.g., a hand-built fixture).
             diagnostics +=
                 Diagnostic(
-                    id = "ANLZ-RACING-03",
+                    code = DiagnosticCode.RACING_VEHICLE_ACTOR_UNRESOLVED,
                     severity = Severity.ERROR,
                     message =
                         "vehicle '$vehicleId' referenced by racing '$racingId' is not registered",
@@ -332,7 +333,7 @@ class RacingValidationPass : AnalysisPass {
         if (actorId == null || actorId !in actorIds) {
             diagnostics +=
                 Diagnostic(
-                    id = "ANLZ-RACING-03",
+                    code = DiagnosticCode.RACING_VEHICLE_ACTOR_UNRESOLVED,
                     severity = Severity.ERROR,
                     message =
                         "vehicle '$vehicleId' references actor '${actorId ?: "(unbound)"}' " +
@@ -372,7 +373,7 @@ class RacingValidationPass : AnalysisPass {
             if (hit && emitted.add(scene.id)) {
                 diagnostics +=
                     Diagnostic(
-                        id = "ANLZ-RACING-04",
+                        code = DiagnosticCode.RACING_MANUAL_MOVEMENT,
                         severity = Severity.WARNING,
                         message =
                             "scene '${scene.id}' frame block writes the bound player actor " +
@@ -403,7 +404,7 @@ class RacingValidationPass : AnalysisPass {
             if (followId != null && followId != playerActorId) {
                 diagnostics +=
                     Diagnostic(
-                        id = "ANLZ-RACING-05",
+                        code = DiagnosticCode.RACING_CAMERA_FOLLOW_MISMATCH,
                         severity = Severity.WARNING,
                         message =
                             "camera '${system.id}' follows actor '$followId' but racing " +

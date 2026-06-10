@@ -860,7 +860,7 @@ class GBDKPipeline {
                 CFile(
                     name = "zone_bank$bankNum.c",
                     bank = bankNum,
-                    includes = listOf("\"game.h\""),
+                    includes = listOf(GBDKIncludes.GAME_H),
                     variables = tileArrays,
                 )
             }
@@ -1436,13 +1436,15 @@ class GBDKPipeline {
         val spriteIncludes = (actorSpriteIncludes + metaspriteSpriteIncludes).distinct()
 
         // Add hUGEDriver.h when any scene uses music ScriptOps (A2)
-        val hUGEInclude = if (soundVisitor.hasMusicOps()) listOf("<hUGEDriver.h>") else emptyList()
+        val hUGEInclude =
+            if (soundVisitor.hasMusicOps()) listOf(GBDKIncludes.HUGE_DRIVER_H) else emptyList()
         // Add <gb/cgb.h> when GBC palettes are defined — provides palette_color_t and set_*_palette
-        val cgbHomeInclude = if (gameIR.palettes.isNotEmpty()) listOf("<gb/cgb.h>") else emptyList()
+        val cgbHomeInclude =
+            if (gameIR.palettes.isNotEmpty()) listOf(GBDKIncludes.CGB_H) else emptyList()
         // Add <gbdk/metasprites.h> when metasprites are present — provides move_metasprite_*()
         // and the metasprite descriptor types. Pitfall 4 mitigation: linker error without this.
         val metaspriteInclude =
-            if (gameIR.metasprites.isNotEmpty()) listOf("<gbdk/metasprites.h>") else emptyList()
+            if (gameIR.metasprites.isNotEmpty()) listOf(GBDKIncludes.METASPRITES_H) else emptyList()
 
         // Phase 12.1 Plan 03 (Defect 3): main.c needs the per-zone tileset headers so that
         // `setup_current_level`'s references to `_zone_<id>_tilemap_WIDTH` / `_HEIGHT`
@@ -1462,7 +1464,7 @@ class GBDKPipeline {
                 .distinct()
 
         val allIncludes =
-            listOf("<gb/gb.h>", "<stdio.h>", "<stdlib.h>", "<gbdk/console.h>", "\"game.h\"") +
+            GBDKIncludes.homeFileBase() +
                 hUGEInclude +
                 cgbHomeInclude +
                 metaspriteInclude +
@@ -1703,7 +1705,7 @@ class GBDKPipeline {
         // Add <gb/cgb.h> when any scene script uses SetPalette (GBC color palette ops).
         // Without this include, set_bkg_palette() and set_sprite_palette() are implicitly
         // declared and reject the 3-parameter form required by GBDK's GBC API.
-        val cgbInclude = if (gameIR.hasPaletteOps()) listOf("<gb/cgb.h>") else emptyList()
+        val cgbInclude = if (gameIR.hasPaletteOps()) listOf(GBDKIncludes.CGB_H) else emptyList()
 
         // Plan 10.1-06 (CR-02 / SEED-009): per-bank `<gbdk/metasprites.h>` conditional include.
         // Phase 10 Plan 10 added the header unconditionally to main.c, but scene frame
@@ -1721,7 +1723,7 @@ class GBDKPipeline {
                 scene.frameOps.any { it is io.github.gbkt.core.ir.MoveMetasprite }
             }
         val metaspriteInclude =
-            if (needsMetasprites) listOf("<gbdk/metasprites.h>") else emptyList()
+            if (needsMetasprites) listOf(GBDKIncludes.METASPRITES_H) else emptyList()
 
         // Phase 11.2 (D-B3, D-B4): #include for each zone tileset header consumed by a scene
         // in this CFile. One zone per unique zoneRef across all scenes; header-guards make
@@ -1744,10 +1746,7 @@ class GBDKPipeline {
             name = "bank1.c",
             bank = fileBank,
             includes =
-                listOf("<stdio.h>", "<gbdk/console.h>", "\"game.h\"") +
-                    cgbInclude +
-                    metaspriteInclude +
-                    zoneTilesetIncludes,
+                GBDKIncludes.sceneFileBase() + cgbInclude + metaspriteInclude + zoneTilesetIncludes,
             defines = tilesetDefines,
             functions = sceneFunctions,
         )
@@ -3042,7 +3041,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
 
         // Include <gb/cgb.h> in game.h when palettes are present — provides palette_color_t.
         val cgbHeaderInclude =
-            if (gameIR.palettes.isNotEmpty()) listOf("<gb/cgb.h>") else emptyList()
+            if (gameIR.palettes.isNotEmpty()) listOf(GBDKIncludes.CGB_H) else emptyList()
 
         // Include <gbdk/metasprites.h> in game.h when metasprites are present — provides the
         // `metasprite_t` typedef. Without it, SDCC fails to parse the
@@ -3053,7 +3052,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         // for DEF-10.1-09-A — surfaced by Plan 09's ROM-build smoke test, defect introduced
         // by Plan 07's extern emission without paired include.
         val metaspriteHeaderInclude =
-            if (gameIR.metasprites.isNotEmpty()) listOf("<gbdk/metasprites.h>") else emptyList()
+            if (gameIR.metasprites.isNotEmpty()) listOf(GBDKIncludes.METASPRITES_H) else emptyList()
 
         // Forward declarations for external functions called via CallOp in zone object scripts
         // and scene scripts. SDCC does not support implicit declarations with arguments (error
@@ -3165,10 +3164,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
             name = "game.h",
             bank = 0,
             isHeader = true,
-            includes =
-                listOf("<gb/gb.h>", "<stdio.h>", "<gbdk/console.h>") +
-                    cgbHeaderInclude +
-                    metaspriteHeaderInclude,
+            includes = GBDKIncludes.headerFileBase() + cgbHeaderInclude + metaspriteHeaderInclude,
             defines = sceneEnum + combatStateDefines,
             variables =
                 allExterns + actorPoolExterns + rpgCombatHelperExterns + homeGlobalAutoExterns,

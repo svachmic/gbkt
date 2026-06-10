@@ -8,6 +8,7 @@ package io.github.gbkt.analysis.passes
 
 import io.github.gbkt.analysis.AnalysisPass
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassOptimizationSummary
 import io.github.gbkt.analysis.PassResult
@@ -186,7 +187,7 @@ class BitwiseOptimizationPass : AnalysisPass {
             "Optimized x${fromOp} to x${toOp} (power-of-2 constant; assumes unsigned operand)"
         rewriteDiagnostics +=
             Diagnostic(
-                id = "OPT-01",
+                code = DiagnosticCode.BITWISE_REWRITE,
                 severity = Severity.INFO,
                 message = message,
                 location = original.sourceLocation?.let { "line ${it.line}" },

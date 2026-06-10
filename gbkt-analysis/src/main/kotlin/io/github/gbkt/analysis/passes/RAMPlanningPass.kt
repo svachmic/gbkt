@@ -8,6 +8,7 @@ package io.github.gbkt.analysis.passes
 
 import io.github.gbkt.analysis.AnalysisPass
 import io.github.gbkt.analysis.Diagnostic
+import io.github.gbkt.analysis.DiagnosticCode
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassResult
 import io.github.gbkt.analysis.RAMLayout
@@ -81,7 +82,7 @@ class RAMPlanningPass : AnalysisPass {
             return PassResult.Failed(
                 listOf(
                     Diagnostic(
-                        id = "ANLZ-05",
+                        code = DiagnosticCode.RAM_CAPACITY,
                         severity = Severity.ERROR,
                         message =
                             "WRAM overflow: $totalWram bytes required but only $workRam bytes " +
@@ -101,7 +102,7 @@ class RAMPlanningPass : AnalysisPass {
         if (totalWram > wramWarningBytes) {
             diagnostics.add(
                 Diagnostic(
-                    id = "ANLZ-05",
+                    code = DiagnosticCode.RAM_CAPACITY,
                     severity = Severity.WARNING,
                     message =
                         "WRAM usage at ${totalWram * 100 / workRam}% ($totalWram / $workRam bytes). " +

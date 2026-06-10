@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.backend.gbdk.codegen.visitor
 
+import io.github.gbkt.backend.gbdk.codegen.GBDKMacros
 import io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CBreak
 import io.github.gbkt.backend.gbdk.codegen.ast.CCall
@@ -121,7 +122,7 @@ class MenuVisitor(private val gameIR: GameIR) {
         // ---- Window layer setup ----
         if (menuRenderOnWindow) {
             body += CExprStatement(CCall("move_win", listOf(CLiteral(7), CLiteral(menuY * 8))))
-            body += CRawCode("SHOW_WIN;")
+            body += GBDKMacros.showWin()
         }
 
         // ---- Sprite cursor: load tile into dedicated sprite slot ----
@@ -521,14 +522,14 @@ class MenuVisitor(private val gameIR: GameIR) {
         if (menuParentId != null) {
             val parentSanitized = menuParentId.replace('-', '_').replace(' ', '_')
             if (menuRenderOnWindow) {
-                cancelBody += CRawCode("HIDE_WIN;")
+                cancelBody += GBDKMacros.hideWin()
             }
             cancelBody += CExprStatement(CCall("show_menu_$parentSanitized", emptyList()))
             cancelBody += CReturn(CLiteral(0xFF))
         } else {
             // No parent: return cancel sentinel
             if (menuRenderOnWindow) {
-                cancelBody += CRawCode("HIDE_WIN;")
+                cancelBody += GBDKMacros.hideWin()
             }
             cancelBody += CReturn(CLiteral(0xFF))
         }
@@ -549,7 +550,7 @@ class MenuVisitor(private val gameIR: GameIR) {
 
         // ---- Hide window on close (after loop exits via J_A) ----
         if (menuRenderOnWindow) {
-            body += CRawCode("HIDE_WIN;")
+            body += GBDKMacros.hideWin()
         }
 
         // ---- Return selection ----
