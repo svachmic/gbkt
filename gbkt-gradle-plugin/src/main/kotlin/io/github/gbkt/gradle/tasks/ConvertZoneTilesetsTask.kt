@@ -210,16 +210,15 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
             // NEVER derive from the tileset PNG — tilemap PNG reflects the real level layout.
             // When no tilemap PNG is present (tileset-only zone), derivedDims is null and
             // resolveZoneSize falls back to 20×18.
-            val derivedDims: Pair<Int, Int>? =
-                tilemapPngFile?.let { png ->
-                    val img =
-                        ImageIO.read(png)
-                            ?: error(
-                                "Zone $zoneId tilemap PNG could not be decoded for size derivation " +
-                                    "at ${png.absolutePath}"
-                            )
-                    (img.width / 8) to (img.height / 8)
-                }
+            val derivedDims: Pair<Int, Int>? = tilemapPngFile?.let { png ->
+                val img =
+                    ImageIO.read(png)
+                        ?: error(
+                            "Zone $zoneId tilemap PNG could not be decoded for size derivation " +
+                                "at ${png.absolutePath}"
+                        )
+                (img.width / 8) to (img.height / 8)
+            }
             val (finalW, finalH) = resolveZoneSize(explicitSize, derivedDims)
 
             convertOneTileset(
@@ -328,12 +327,11 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
         val args = if (isIndexedPng(pngFile)) baseArgs + listOf("-keep_palette_order") else baseArgs
 
         logger.lifecycle("  Converting zone $zoneId: ${pngFile.name} -> ${outputC.name}")
-        val result =
-            execOperations.exec {
-                executable = png2assetExe.absolutePath
-                setArgs(args)
-                isIgnoreExitValue = true
-            }
+        val result = execOperations.exec {
+            executable = png2assetExe.absolutePath
+            setArgs(args)
+            isIgnoreExitValue = true
+        }
 
         if (result.exitValue != 0) {
             error(
@@ -420,12 +418,11 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
                 logger.lifecycle(
                     "  Tilemap extraction zone $zoneId: ${tilemapPngFile.name} -> ${tmpRaw.name}"
                 )
-                val tilemapResult =
-                    execOperations.exec {
-                        executable = png2assetExe.absolutePath
-                        setArgs(tilemapArgs)
-                        isIgnoreExitValue = true
-                    }
+                val tilemapResult = execOperations.exec {
+                    executable = png2assetExe.absolutePath
+                    setArgs(tilemapArgs)
+                    isIgnoreExitValue = true
+                }
                 if (tilemapResult.exitValue != 0) {
                     error(
                         "png2asset (tilemap) failed for zone $zoneId (PNG ${tilemapPngFile.absolutePath}); " +

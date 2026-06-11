@@ -148,11 +148,10 @@ object ErrorEnhancer {
         sb.appendLine()
 
         // Group errors by DSL location key
-        val grouped =
-            enhancedErrors.groupBy { enhanced ->
-                val loc = enhanced.kotlinLocation
-                if (loc != null) "${loc.kotlinFile}:${loc.kotlinLine}" else "(unmapped)"
-            }
+        val grouped = enhancedErrors.groupBy { enhanced ->
+            val loc = enhanced.kotlinLocation
+            if (loc != null) "${loc.kotlinFile}:${loc.kotlinLine}" else "(unmapped)"
+        }
 
         // Render mapped groups first, then unmapped
         val mappedGroups = grouped.filter { (key, _) -> key != "(unmapped)" }

@@ -754,7 +754,9 @@ class GBDKSystemVisitor(
                                                         CLiteral(threshold),
                                                     ),
                                                 thenBody =
-                                                    onLowOps.map { op -> ScriptOpVisitor.visit(op) },
+                                                    onLowOps.map { op ->
+                                                        ScriptOpVisitor.visit(op)
+                                                    },
                                             )
                                         )
                                     }
@@ -1339,7 +1341,11 @@ class GBDKSystemVisitor(
                                                 CBinaryExpr(
                                                     CVar("px"),
                                                     "<",
-                                                    CBinaryExpr(CVar("ex"), "+", CLiteral(tileSize)),
+                                                    CBinaryExpr(
+                                                        CVar("ex"),
+                                                        "+",
+                                                        CLiteral(tileSize),
+                                                    ),
                                                 ),
                                                 "&&",
                                                 CBinaryExpr(
@@ -1357,7 +1363,11 @@ class GBDKSystemVisitor(
                                                 CBinaryExpr(
                                                     CVar("py"),
                                                     "<",
-                                                    CBinaryExpr(CVar("ey"), "+", CLiteral(tileSize)),
+                                                    CBinaryExpr(
+                                                        CVar("ey"),
+                                                        "+",
+                                                        CLiteral(tileSize),
+                                                    ),
                                                 ),
                                                 "&&",
                                                 CBinaryExpr(
@@ -2004,7 +2014,8 @@ class GBDKSystemVisitor(
                     add(
                         CSwitch(
                             expr = CVar("zone_id"),
-                            cases = tileLoadCases + CSwitchCase(value = null, body = listOf(CBreak)),
+                            cases =
+                                tileLoadCases + CSwitchCase(value = null, body = listOf(CBreak)),
                         )
                     )
                 }
@@ -5632,7 +5643,9 @@ class GBDKSystemVisitor(
                                                     CBinaryExpr(
                                                         xA,
                                                         "-",
-                                                        CLiteral(massB / totalMass.coerceAtLeast(1)),
+                                                        CLiteral(
+                                                            massB / totalMass.coerceAtLeast(1)
+                                                        ),
                                                     ),
                                                 )
                                             ),
@@ -5643,7 +5656,9 @@ class GBDKSystemVisitor(
                                                     CBinaryExpr(
                                                         xB,
                                                         "+",
-                                                        CLiteral(massA / totalMass.coerceAtLeast(1)),
+                                                        CLiteral(
+                                                            massA / totalMass.coerceAtLeast(1)
+                                                        ),
                                                     ),
                                                 )
                                             ),
@@ -5657,7 +5672,9 @@ class GBDKSystemVisitor(
                                                     CBinaryExpr(
                                                         xA,
                                                         "+",
-                                                        CLiteral(massB / totalMass.coerceAtLeast(1)),
+                                                        CLiteral(
+                                                            massB / totalMass.coerceAtLeast(1)
+                                                        ),
                                                     ),
                                                 )
                                             ),
@@ -5668,7 +5685,9 @@ class GBDKSystemVisitor(
                                                     CBinaryExpr(
                                                         xB,
                                                         "-",
-                                                        CLiteral(massA / totalMass.coerceAtLeast(1)),
+                                                        CLiteral(
+                                                            massA / totalMass.coerceAtLeast(1)
+                                                        ),
                                                     ),
                                                 )
                                             ),

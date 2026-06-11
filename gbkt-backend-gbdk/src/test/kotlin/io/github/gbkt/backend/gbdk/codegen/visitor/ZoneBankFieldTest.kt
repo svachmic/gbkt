@@ -109,7 +109,11 @@ class ZoneBankFieldTest {
             "Zone 'area1' auto-allocated to bank 2: _bkg_tiles_load_banked must use bank literal 2u " +
                 "in gameplay_enter (bank1.c). allocateZoneBanks starts at tilemapBankStart=2. " +
                 "Relevant _bkg_tiles_load_banked lines:\n" +
-                bank1C.lines().filter { "_bkg_tiles_load_banked" in it }.take(10).joinToString("\n"),
+                bank1C
+                    .lines()
+                    .filter { "_bkg_tiles_load_banked" in it }
+                    .take(10)
+                    .joinToString("\n"),
         )
     }
 
@@ -134,7 +138,11 @@ class ZoneBankFieldTest {
             "Zone 'area1' with bankOverride=3: _bkg_tiles_load_banked must use bank literal 3u. " +
                 "Verifies that changing the allocated bank changes the emitted literal. " +
                 "Relevant _bkg_tiles_load_banked lines:\n" +
-                bank1C.lines().filter { "_bkg_tiles_load_banked" in it }.take(10).joinToString("\n"),
+                bank1C
+                    .lines()
+                    .filter { "_bkg_tiles_load_banked" in it }
+                    .take(10)
+                    .joinToString("\n"),
         )
     }
 
@@ -185,7 +193,11 @@ class ZoneBankFieldTest {
                 "SceneIR.allocatedZoneBank field populated by pipeline (D-01). " +
                 "Expected literal '2u', allocateZoneBanks returned $expectedBank. " +
                 "Relevant lines:\n" +
-                bank1C.lines().filter { "_bkg_tiles_load_banked" in it }.take(10).joinToString("\n"),
+                bank1C
+                    .lines()
+                    .filter { "_bkg_tiles_load_banked" in it }
+                    .take(10)
+                    .joinToString("\n"),
         )
     }
 
@@ -221,7 +233,11 @@ class ZoneBankFieldTest {
                 bank1C.contains("_bkg_tiles_load_banked(5u ,"),
             "bankOverride=5: emitted literal must be 5u (single-source via allocatedZoneBank field). " +
                 "Relevant lines:\n" +
-                bank1C.lines().filter { "_bkg_tiles_load_banked" in it }.take(10).joinToString("\n"),
+                bank1C
+                    .lines()
+                    .filter { "_bkg_tiles_load_banked" in it }
+                    .take(10)
+                    .joinToString("\n"),
         )
     }
 }

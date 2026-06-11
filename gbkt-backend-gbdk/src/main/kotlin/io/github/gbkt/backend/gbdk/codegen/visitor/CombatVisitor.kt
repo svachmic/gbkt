@@ -860,7 +860,9 @@ class CombatVisitor(private val gameIR: GameIR) {
                                                                             "spawn_monster_from_pool",
                                                                             listOf(
                                                                                 CVar("_pw_i"),
-                                                                                CVar("_pw_pool_idx"),
+                                                                                CVar(
+                                                                                    "_pw_pool_idx"
+                                                                                ),
                                                                             ),
                                                                         )
                                                                     )
@@ -883,7 +885,10 @@ class CombatVisitor(private val gameIR: GameIR) {
                                 CSwitchCase(
                                     value = null,
                                     body =
-                                        listOf(CComment("No scripted wave for this number"), CBreak),
+                                        listOf(
+                                            CComment("No scripted wave for this number"),
+                                            CBreak,
+                                        ),
                                 )
                             )
                         }
@@ -1186,7 +1191,10 @@ class CombatVisitor(private val gameIR: GameIR) {
                                             CBinaryExpr(
                                                 CArrayAccess(
                                                     CVar("_combat_${id}_agl"),
-                                                    CArrayAccess(CVar("_turn_order_$id"), CVar("j")),
+                                                    CArrayAccess(
+                                                        CVar("_turn_order_$id"),
+                                                        CVar("j"),
+                                                    ),
                                                 ),
                                                 "<",
                                                 CVar("key_agl"),
@@ -1201,7 +1209,10 @@ class CombatVisitor(private val gameIR: GameIR) {
                                                         CBinaryExpr(CVar("j"), "+", CLiteral(1)),
                                                     ),
                                                     "=",
-                                                    CArrayAccess(CVar("_turn_order_$id"), CVar("j")),
+                                                    CArrayAccess(
+                                                        CVar("_turn_order_$id"),
+                                                        CVar("j"),
+                                                    ),
                                                 )
                                             ),
                                             CExprStatement(
@@ -2553,7 +2564,8 @@ class CombatVisitor(private val gameIR: GameIR) {
                                                                                 ">",
                                                                                 CVar("radius"),
                                                                             ),
-                                                                        thenBody = listOf(CContinue),
+                                                                        thenBody =
+                                                                            listOf(CContinue),
                                                                     ),
                                                                     // Compute target coords (as
                                                                     // unsigned via cast)
@@ -2596,7 +2608,8 @@ class CombatVisitor(private val gameIR: GameIR) {
                                                                                     CLiteral(h),
                                                                                 ),
                                                                             ),
-                                                                        thenBody = listOf(CContinue),
+                                                                        thenBody =
+                                                                            listOf(CContinue),
                                                                     ),
                                                                     CExprStatement(
                                                                         CBinaryExpr(
@@ -2697,7 +2710,8 @@ class CombatVisitor(private val gameIR: GameIR) {
                                                                                     CLiteral(h),
                                                                                 ),
                                                                             ),
-                                                                        thenBody = listOf(CContinue),
+                                                                        thenBody =
+                                                                            listOf(CContinue),
                                                                     ),
                                                                     CExprStatement(
                                                                         CBinaryExpr(

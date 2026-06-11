@@ -90,14 +90,20 @@ class WR02MetaspriteExternTest {
             gameH.contains("extern const metasprite_t* const sprite_elephant_frames[];"),
             "game.h MUST contain extern decl for `sprite_elephant_frames` " +
                 "(WR-02). Generated extern lines:\n" +
-                gameH.lines().filter { it.contains("extern const metasprite_t") }.joinToString("\n"),
+                gameH
+                    .lines()
+                    .filter { it.contains("extern const metasprite_t") }
+                    .joinToString("\n"),
         )
 
         assertTrue(
             gameH.contains("extern const metasprite_t* const sprite_tiger_frames[];"),
             "game.h MUST contain extern decl for `sprite_tiger_frames` " +
                 "(WR-02). Generated extern lines:\n" +
-                gameH.lines().filter { it.contains("extern const metasprite_t") }.joinToString("\n"),
+                gameH
+                    .lines()
+                    .filter { it.contains("extern const metasprite_t") }
+                    .joinToString("\n"),
         )
 
         // Exactly one extern per metasprite — no duplicates.
@@ -108,7 +114,10 @@ class WR02MetaspriteExternTest {
             externCount,
             "Expected exactly 2 metasprite extern lines (one per MetaspriteIR), got " +
                 "$externCount. Generated extern lines:\n" +
-                gameH.lines().filter { it.contains("extern const metasprite_t") }.joinToString("\n"),
+                gameH
+                    .lines()
+                    .filter { it.contains("extern const metasprite_t") }
+                    .joinToString("\n"),
         )
     }
 
@@ -133,7 +142,10 @@ class WR02MetaspriteExternTest {
             "game.h MUST NOT emit metasprite extern decls when " +
                 "gameIR.metasprites is empty (regression guard against unconditional " +
                 "emission). Generated extern lines:\n" +
-                gameH.lines().filter { it.contains("extern const metasprite_t") }.joinToString("\n"),
+                gameH
+                    .lines()
+                    .filter { it.contains("extern const metasprite_t") }
+                    .joinToString("\n"),
         )
     }
 }

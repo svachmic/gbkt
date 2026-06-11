@@ -335,11 +335,10 @@ abstract class ProcessAssetsTask @Inject constructor(private val execOperations:
             return
         }
 
-        val result =
-            execOperations.exec {
-                commandLine(uge2cPath, file.absolutePath, "-o", outputC.absolutePath)
-                isIgnoreExitValue = true
-            }
+        val result = execOperations.exec {
+            commandLine(uge2cPath, file.absolutePath, "-o", outputC.absolutePath)
+            isIgnoreExitValue = true
+        }
 
         if (result.exitValue != 0) {
             logger.error("uge2c failed for '${file.name}' with exit code ${result.exitValue}")

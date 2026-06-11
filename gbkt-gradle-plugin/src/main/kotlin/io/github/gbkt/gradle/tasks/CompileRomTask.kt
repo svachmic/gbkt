@@ -181,17 +181,16 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
         val stderr = ByteArrayOutputStream()
 
         try {
-            val result =
-                execOperations.exec {
-                    executable = lcc.absolutePath
-                    setArgs(args)
-                    standardOutput = stdout
-                    errorOutput = stderr
-                    isIgnoreExitValue = true
+            val result = execOperations.exec {
+                executable = lcc.absolutePath
+                setArgs(args)
+                standardOutput = stdout
+                errorOutput = stderr
+                isIgnoreExitValue = true
 
-                    // Set GBDK environment
-                    environment["GBDK_DIR"] = gbdkDir.absolutePath
-                }
+                // Set GBDK environment
+                environment["GBDK_DIR"] = gbdkDir.absolutePath
+            }
 
             val stdoutText = stdout.toString().trim()
             val stderrText = stderr.toString().trim()

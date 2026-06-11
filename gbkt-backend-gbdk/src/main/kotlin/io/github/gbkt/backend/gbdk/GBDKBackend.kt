@@ -7,6 +7,7 @@
 package io.github.gbkt.backend.gbdk
 
 import io.github.gbkt.analysis.DefaultPipeline
+import io.github.gbkt.analysis.OptimizationReport
 import io.github.gbkt.analysis.PassContext
 import io.github.gbkt.analysis.PassOptimizationSummary
 import io.github.gbkt.analysis.PassResult
@@ -18,6 +19,7 @@ import io.github.gbkt.backend.api.GenerationOptions
 import io.github.gbkt.backend.api.GenerationResult
 import io.github.gbkt.backend.api.ValidationResult
 import io.github.gbkt.backend.gbdk.codegen.pipeline.GBDKPipeline
+import io.github.gbkt.backend.gbdk.codegen.postprocess.COutputOptimizationSummary
 import io.github.gbkt.backend.gbdk.codegen.postprocess.COutputOptimizer
 import io.github.gbkt.backend.gbdk.profiles.GameBoyColorProfile
 import io.github.gbkt.core.AssetManifest
@@ -127,27 +129,7 @@ class GBDKBackend(override val profile: TargetProfile = GameBoyColorProfile) : C
             val (optimizedFiles, cOutputSummary) = optimizer.optimize(output.files)
 
             // 4a. Append C-output summary to optimization report if any deduplication occurred
-            var report = annotatedContext.optimizationReport
-            if (cOutputSummary.constantArraysDeduped > 0) {
-                report =
-                    report.withSummary(
-                        PassOptimizationSummary(
-                            passName = "SharedConstantTables",
-                            itemsRemoved = cOutputSummary.constantArraysDeduped,
-                            details = cOutputSummary.details.filter { "constant" in it.lowercase() },
-                        )
-                    )
-            }
-            if (cOutputSummary.functionsDeduped > 0) {
-                report =
-                    report.withSummary(
-                        PassOptimizationSummary(
-                            passName = "FunctionDeduplication",
-                            itemsRemoved = cOutputSummary.functionsDeduped,
-                            details = cOutputSummary.details.filter { "function" in it.lowercase() },
-                        )
-                    )
-            }
+            val report = appendCOutputSummaries(annotatedContext.optimizationReport, cOutputSummary)
 
             // 4b. Write updated report to disk if outputDirectory was set and report changed
             if (
@@ -171,6 +153,38 @@ class GBDKBackend(override val profile: TargetProfile = GameBoyColorProfile) : C
         } catch (e: Exception) {
             GenerationResult.failed(e.message ?: "code generation failed")
         }
+    }
+
+    /**
+     * Appends per-pass summaries for the C-output optimizations (shared constant tables, function
+     * deduplication) to the optimization report when any deduplication occurred.
+     */
+    private fun appendCOutputSummaries(
+        report: OptimizationReport,
+        cOutputSummary: COutputOptimizationSummary,
+    ): OptimizationReport {
+        var updated = report
+        if (cOutputSummary.constantArraysDeduped > 0) {
+            updated =
+                updated.withSummary(
+                    PassOptimizationSummary(
+                        passName = "SharedConstantTables",
+                        itemsRemoved = cOutputSummary.constantArraysDeduped,
+                        details = cOutputSummary.details.filter { "constant" in it.lowercase() },
+                    )
+                )
+        }
+        if (cOutputSummary.functionsDeduped > 0) {
+            updated =
+                updated.withSummary(
+                    PassOptimizationSummary(
+                        passName = "FunctionDeduplication",
+                        itemsRemoved = cOutputSummary.functionsDeduped,
+                        details = cOutputSummary.details.filter { "function" in it.lowercase() },
+                    )
+                )
+        }
+        return updated
     }
 
     /**

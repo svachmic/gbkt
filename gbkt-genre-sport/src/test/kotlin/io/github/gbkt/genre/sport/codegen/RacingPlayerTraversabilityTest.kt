@@ -159,7 +159,8 @@ class RacingPlayerTraversabilityTest {
             listOf(
                 "UP" to 30, // (80, 80) → ~(80, 29) — enters top corridor, hits top wall
                 "LEFT" to 30, // ~(80, 29) → ~(26, 29) — enters top-left corner
-                "DOWN" to 30, // corner escape attempt — single-center: frozen; 4-corner: moves ~24px
+                "DOWN" to
+                    30, // corner escape attempt — single-center: frozen; 4-corner: moves ~24px
             )
         val transcript =
             simulatePlayerCardinal(

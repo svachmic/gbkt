@@ -334,13 +334,12 @@ abstract class BudgetReportWorkAction : WorkAction<BudgetReportParams> {
         // 10. budgetReport: String? (default null)
 
         // Try the 3-param primary variant or the synthetic constructor
-        val exact =
-            constructors.find {
-                it.parameterCount == 3 &&
-                    it.parameterTypes[0] == gameIrClass &&
-                    it.parameterTypes[1] == targetProfileClass &&
-                    it.parameterTypes[2] == analysisConfigClass
-            }
+        val exact = constructors.find {
+            it.parameterCount == 3 &&
+                it.parameterTypes[0] == gameIrClass &&
+                it.parameterTypes[1] == targetProfileClass &&
+                it.parameterTypes[2] == analysisConfigClass
+        }
         if (exact != null) {
             return exact.newInstance(gameIR, profile, analysisConfig)
         }

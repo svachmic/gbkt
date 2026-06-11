@@ -96,5 +96,6 @@ data class GameIR(
     val puzzleObjects: List<PuzzleObjectIR> = emptyList(), // interactive puzzle world objects
     val collisionGroups: List<CollisionGroupIR> =
         emptyList(), // NPC-NPC collision group declarations
-    val collisionRules: List<CollisionRuleIR> = emptyList(), // NPC-NPC collision rules with response
+    val collisionRules: List<CollisionRuleIR> =
+        emptyList(), // NPC-NPC collision rules with response
 )

@@ -20,7 +20,7 @@ spotless {
     kotlin {
         target("src/**/*.kt")
         licenseHeader(licenseHeader)
-        ktfmt().kotlinlangStyle()
+        ktfmt("0.63").kotlinlangStyle()
         trimTrailingWhitespace()
         endWithNewline()
     }

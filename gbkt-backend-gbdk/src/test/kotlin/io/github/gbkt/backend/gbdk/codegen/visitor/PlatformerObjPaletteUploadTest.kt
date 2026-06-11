@@ -247,7 +247,10 @@ class PlatformerObjPaletteUploadTest {
             buildGameNoSpritePalette(
                 listOf(
                     proceduralMetasprite("npc"),
-                    assetDrivenMetasprite("player", "sprites/player-character-gbapduck-sprites.png"),
+                    assetDrivenMetasprite(
+                        "player",
+                        "sprites/player-character-gbapduck-sprites.png",
+                    ),
                 )
             )
 

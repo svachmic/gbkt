@@ -152,7 +152,8 @@ class CombatHooksCodegenTest {
             CombatEngineSystem(
                 id = HOOKS_COMBAT_ID,
                 onVictoryOps = listOf(NavigateTo("victory")),
-                combatHooks = mapOf(CombatHookPoint.ON_VICTORY to listOf(NavigateTo("pre_victory"))),
+                combatHooks =
+                    mapOf(CombatHookPoint.ON_VICTORY to listOf(NavigateTo("pre_victory"))),
             )
         val gameIR =
             buildHooksGameIR(system)
@@ -261,7 +262,8 @@ class CombatHooksCodegenTest {
         val system =
             CombatEngineSystem(
                 id = HOOKS_COMBAT_ID,
-                combatHooks = mapOf(CombatHookPoint.BEFORE_TURN to listOf(NavigateTo("turn_start"))),
+                combatHooks =
+                    mapOf(CombatHookPoint.BEFORE_TURN to listOf(NavigateTo("turn_start"))),
             )
         val gameIR =
             buildHooksGameIR(system)

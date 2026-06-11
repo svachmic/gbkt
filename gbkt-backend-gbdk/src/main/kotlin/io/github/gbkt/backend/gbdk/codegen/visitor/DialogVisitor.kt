@@ -618,7 +618,11 @@ class DialogVisitor(private val gameIR: GameIR) {
                 CExprStatement(
                     CCall(
                         "move_sprite",
-                        listOf(CLiteral(portraitSpriteId), CLiteral(portraitX), CLiteral(portraitY)),
+                        listOf(
+                            CLiteral(portraitSpriteId),
+                            CLiteral(portraitX),
+                            CLiteral(portraitY),
+                        ),
                     )
                 )
         }

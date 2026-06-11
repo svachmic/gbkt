@@ -401,14 +401,18 @@ class PlatformerVisitor : GenreSystemVisitor {
                     CIf(
                         condition = CCall("button_held", listOf(CVar("J_LEFT"))),
                         thenBody =
-                            listOf(CExprStatement(CBinaryExpr(CVar("_plat_vx"), "-=", CLiteral(1)))),
+                            listOf(
+                                CExprStatement(CBinaryExpr(CVar("_plat_vx"), "-=", CLiteral(1)))
+                            ),
                     )
                 )
                 add(
                     CIf(
                         condition = CCall("button_held", listOf(CVar("J_RIGHT"))),
                         thenBody =
-                            listOf(CExprStatement(CBinaryExpr(CVar("_plat_vx"), "+=", CLiteral(1)))),
+                            listOf(
+                                CExprStatement(CBinaryExpr(CVar("_plat_vx"), "+=", CLiteral(1)))
+                            ),
                     )
                 )
                 add(CBlankLine)
@@ -1867,7 +1871,9 @@ class PlatformerVisitor : GenreSystemVisitor {
                                                                         ),
                                                                         CLiteral(0),
                                                                         CLiteral(1),
-                                                                        CVar("DEVICE_SCREEN_HEIGHT"),
+                                                                        CVar(
+                                                                            "DEVICE_SCREEN_HEIGHT"
+                                                                        ),
                                                                     ),
                                                                 )
                                                             )
