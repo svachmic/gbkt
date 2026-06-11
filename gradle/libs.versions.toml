@@ -3,7 +3,7 @@ json = "20251224"
 # Formatter shared by every spotless block, including the gbkt-gradle-plugin composite
 # build (which imports this catalog through its own settings.gradle.kts).
 ktfmt = "0.63"
-kotest = "5.9.1"
+kotest = "6.1.11"
 coroutines = "1.9.0"
 coffeegb = "1.6.0"
 junit4 = "4.13.2"
