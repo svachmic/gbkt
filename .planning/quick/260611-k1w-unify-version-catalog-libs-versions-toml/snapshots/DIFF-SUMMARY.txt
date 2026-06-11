@@ -1,0 +1,74 @@
+DIFF SUMMARY — version catalog unification (260611-k1w)
+Generated: 2026-06-11
+
+=============================================================================
+DIFF 1: Module resolution (dependencies.txt) — EMPTY (PASS)
+=============================================================================
+No module dependency coordinates changed. Identical-version invariant holds:
+- junit-bom 5.11.4 matches all existing inline platform("org.junit:junit-bom:5.11.4") pins
+- org.json:json 20251224 matches the existing libs.json entry (no coordinate change)
+- All other library versions unchanged from the catalog
+
+Result: diff returns exit 0 (files identical after filtering non-deterministic lines)
+
+=============================================================================
+DIFF 2: Root buildEnvironment — EMPTY (PASS)
+=============================================================================
+No plugin version changed in the root build classpath.
+kotlin-jvm, spotless, detekt, sonarqube, kover all resolve at the same versions
+as previously declared in pluginManagement.plugins { ... }.
+
+=============================================================================
+DIFF 3: IntelliJ buildEnvironment — EMPTY (PASS)
+=============================================================================
+org.jetbrains.intellij.platform 2.10.5 unchanged.
+
+=============================================================================
+DIFF 4: Composite buildEnvironment — EMPTY (PASS)
+=============================================================================
+spotless 8.6.0 and plugin-publish 1.3.1 unchanged.
+The composite build now resolves both via its catalog import
+(gbkt-gradle-plugin/settings.gradle.kts: from(files("../gradle/libs.versions.toml"))).
+
+=============================================================================
+DIFF 5: MCP server buildEnvironment — SINGLE INTENDED BUMP (PASS)
+=============================================================================
+ONLY CHANGE: org.jetbrains.kotlin.plugin.serialization 2.3.0 -> 2.3.20
+All 15 changed lines are org.jetbrains.kotlin.* transitives of that single bump.
+No other coordinate changed.
+
+This is the INTENDED fix: the serialization compiler plugin was lagging behind
+the Kotlin compiler (2.3.20) by using a hardcoded version "2.3.0". By pointing
+both kotlin-jvm and kotlin-serialization at the same version.ref = "kotlin" in
+the catalog, the serialization plugin now matches the Kotlin compiler version.
+
+Raw diff:
+11,25c11,25
+< +--- org.jetbrains.kotlin.plugin.serialization:...:2.3.0
+< |    \--- org.jetbrains.kotlin:kotlin-serialization:2.3.0
+< |         +--- org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.3.0
+< |         |    +--- ...kotlin-gradle-plugins-bom:2.3.0
+< |         |    |    (all constraints at 2.3.0)
+< |         |    +--- kotlin-gradle-plugin-annotations:2.3.0
+< |         |    +--- kotlin-native-utils:2.3.0
+< |         |    |    \--- kotlin-util-io:2.3.0
+< |         |    +--- kotlin-tooling-core:2.3.0
+< |         |    \--- kotlin-build-tools-api:2.3.0
+< |         \--- kotlin-gradle-plugins-bom:2.3.0 (*)
+---
+> (same tree, all versions 2.3.20)
+
+=============================================================================
+LEFTOVER GREP GATES — ALL PASS
+=============================================================================
+Gate 1: grep -rn 'kotlin("jvm")' --include='*.gradle.kts' | grep -v /build/ -> 0 lines
+Gate 2: grep -rnE 'kotlin\("(jvm|plugin\.serialization)"\)' ... -> 0 lines
+Gate 3: grep -rnE 'version "[0-9]' --include='*.gradle.kts' ... -> 0 lines
+
+=============================================================================
+BUILD STATUS
+=============================================================================
+./gradlew build                       -> BUILD SUCCESSFUL
+./gradlew -p gbkt-gradle-plugin build -> BUILD SUCCESSFUL
+  (after fixing pre-existing validatePlugins failure:
+   12 Gradle plugin task classes were missing @DisableCachingByDefault annotations)
