@@ -380,7 +380,8 @@ class RacingValidationPassTest {
         val scene =
             SceneIR(
                 id = "race",
-                frameOps = listOf(Assign(target = "_car_x", value = Literal(64), op = AssignOp.SET)),
+                frameOps =
+                    listOf(Assign(target = "_car_x", value = Literal(64), op = AssignOp.SET)),
             )
 
         val result =

@@ -102,7 +102,10 @@ class SaveSystemCodegenTest {
                 name = "Test",
                 config = CartridgeConfig(),
                 variables =
-                    listOf(VariableDef("score", VarType.U8, 0), VariableDef("lives", VarType.U8, 3)),
+                    listOf(
+                        VariableDef("score", VarType.U8, 0),
+                        VariableDef("lives", VarType.U8, 3),
+                    ),
             )
         val visitor = GBDKSystemVisitor(gameIR)
         val system = SaveSystem(id = "save")
@@ -384,7 +387,10 @@ class SaveSystemCodegenTest {
                 name = "Test",
                 config = CartridgeConfig(),
                 variables =
-                    listOf(VariableDef("score", VarType.U8, 0), VariableDef("lives", VarType.U8, 3)),
+                    listOf(
+                        VariableDef("score", VarType.U8, 0),
+                        VariableDef("lives", VarType.U8, 3),
+                    ),
             )
         val visitor = GBDKSystemVisitor(gameIR)
         val system = SaveSystem(id = "save")

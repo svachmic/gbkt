@@ -40,7 +40,8 @@ class GameIRSerializerTest {
                                 ),
                         )
                     ),
-                variables = listOf(VariableDef(name = "score", type = VarType.U8, initialValue = 0)),
+                variables =
+                    listOf(VariableDef(name = "score", type = VarType.U8, initialValue = 0)),
             )
 
         val json = GameIRSerializer.toJson(game)

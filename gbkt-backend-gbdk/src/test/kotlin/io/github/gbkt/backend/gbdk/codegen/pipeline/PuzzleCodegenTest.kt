@@ -428,7 +428,8 @@ class PuzzleCodegenTest {
                 name = "TestGame",
                 config = CartridgeConfig(),
                 scenes = listOf(scene),
-                puzzleObjects = listOf(SwitchObjectIR(id = "hiddenSw", x = 0, y = 0, hidden = true)),
+                puzzleObjects =
+                    listOf(SwitchObjectIR(id = "hiddenSw", x = 0, y = 0, hidden = true)),
             )
         val bank1C = pipeline.generate(game).files["bank1.c"] ?: error("bank1.c not generated")
 

@@ -3,7 +3,7 @@ plugins {
     `java-gradle-plugin`
     `maven-publish`
     signing
-    id("com.diffplug.spotless") version "8.1.0"
+    id("com.diffplug.spotless") version "8.6.0"
     id("com.gradle.plugin-publish") version "1.3.1"
 }
 
@@ -20,7 +20,7 @@ spotless {
     kotlin {
         target("src/**/*.kt")
         licenseHeader(licenseHeader)
-        ktfmt().kotlinlangStyle()
+        ktfmt(libs.versions.ktfmt.get()).kotlinlangStyle()
         trimTrailingWhitespace()
         endWithNewline()
     }

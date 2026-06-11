@@ -158,7 +158,11 @@ object dpad {
             TernaryExpr(
                 CallExpr("dpad_held", listOf(VarRef("J_UP"))),
                 Literal(-1),
-                TernaryExpr(CallExpr("dpad_held", listOf(VarRef("J_DOWN"))), Literal(1), Literal(0)),
+                TernaryExpr(
+                    CallExpr("dpad_held", listOf(VarRef("J_DOWN"))),
+                    Literal(1),
+                    Literal(0),
+                ),
             )
 }
 

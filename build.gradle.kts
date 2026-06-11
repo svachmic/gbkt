@@ -166,7 +166,7 @@ subprojects {
             kotlin {
                 target("src/**/*.kt")
                 licenseHeader(licenseHeader)
-                ktfmt("0.62").kotlinlangStyle()
+                ktfmt(libs.versions.ktfmt.get()).kotlinlangStyle()
                 trimTrailingWhitespace()
                 endWithNewline()
             }
@@ -190,7 +190,7 @@ subprojects {
             kotlin {
                 target("src/**/*.kt")
                 licenseHeader(licenseHeader)
-                ktfmt("0.62").kotlinlangStyle()
+                ktfmt(libs.versions.ktfmt.get()).kotlinlangStyle()
                 trimTrailingWhitespace()
                 endWithNewline()
             }

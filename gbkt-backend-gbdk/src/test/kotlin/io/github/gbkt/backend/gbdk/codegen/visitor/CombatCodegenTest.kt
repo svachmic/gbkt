@@ -369,7 +369,9 @@ class CombatCodegenTest {
             CombatEngineSystem(
                 id = DEFAULT_COMBAT_ID,
                 stateHierarchy =
-                    mapOf(CombatStateId("PLAYER_TURN") to listOf(CombatStateId("SELECTING_TARGET"))),
+                    mapOf(
+                        CombatStateId("PLAYER_TURN") to listOf(CombatStateId("SELECTING_TARGET"))
+                    ),
             )
         val gameIR = buildCombatGameIR(system)
         val output = pipeline.generate(gameIR)
@@ -393,7 +395,9 @@ class CombatCodegenTest {
             CombatEngineSystem(
                 id = DEFAULT_COMBAT_ID,
                 stateHierarchy =
-                    mapOf(CombatStateId("PLAYER_TURN") to listOf(CombatStateId("SELECTING_TARGET"))),
+                    mapOf(
+                        CombatStateId("PLAYER_TURN") to listOf(CombatStateId("SELECTING_TARGET"))
+                    ),
             )
         val gameIR = buildCombatGameIR(system)
         val output = pipeline.generate(gameIR)

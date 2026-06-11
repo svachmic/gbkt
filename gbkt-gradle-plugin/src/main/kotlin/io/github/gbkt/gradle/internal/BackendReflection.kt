@@ -168,8 +168,9 @@ class ValidationResultWrapper(private val result: Any) {
     /** Throw a GradleException if validation failed. */
     fun throwIfInvalid() {
         if (!isValid) {
-            val errorMessages =
-                errors.mapIndexed { i, e -> "  ${i + 1}. [${e.category ?: ""}] ${e.message}" }
+            val errorMessages = errors.mapIndexed { i, e ->
+                "  ${i + 1}. [${e.category ?: ""}] ${e.message}"
+            }
             throw GradleException(
                 "Game validation failed with ${errors.size} error(s):\n${errorMessages.joinToString("\n")}"
             )

@@ -69,7 +69,8 @@ class MovementAnimationCodegenTest {
             ActorIR(
                 id = "player",
                 position = PositionDef(80, 72),
-                movementConfig = MovementConfig(style = MovementStyle.GRID, speed = 8, tileSize = 8),
+                movementConfig =
+                    MovementConfig(style = MovementStyle.GRID, speed = 8, tileSize = 8),
             )
 
         val functions = ActorVisitor.generateMovementFunction(actor)

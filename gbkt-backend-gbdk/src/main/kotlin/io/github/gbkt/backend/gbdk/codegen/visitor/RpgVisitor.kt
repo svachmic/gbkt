@@ -2767,7 +2767,8 @@ class RpgVisitor(private val gameIR: GameIR) {
             returnType = CVoid,
             params = emptyList(),
             body = body,
-            sectionComment = "Action RPG: per-frame update (cooldown, i-frames, ATB, stamina regen)",
+            sectionComment =
+                "Action RPG: per-frame update (cooldown, i-frames, ATB, stamina regen)",
         )
     }
 

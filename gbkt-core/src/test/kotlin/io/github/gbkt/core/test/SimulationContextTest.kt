@@ -270,7 +270,8 @@ class SimulationContextTest {
                                                 BinaryOp.AND,
                                                 Literal(0x10),
                                             ),
-                                        then = listOf(Assign("holdCount", Literal(1), AssignOp.ADD)),
+                                        then =
+                                            listOf(Assign("holdCount", Literal(1), AssignOp.ADD)),
                                     )
                                 ),
                         )

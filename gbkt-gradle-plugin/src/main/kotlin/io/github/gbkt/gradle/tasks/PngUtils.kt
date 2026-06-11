@@ -310,16 +310,15 @@ internal fun checkPalettePolarity(sourcePng: File, emittedRgb555Values: List<Int
             }
 
         // Step 3: Compute Rec.601 luminance for each emitted RGB555 value.
-        val emittedLum =
-            emittedRgb555Values.map { v ->
-                val r5 = v and 0x1F
-                val g5 = (v shr 5) and 0x1F
-                val b5 = (v shr 10) and 0x1F
-                val r8 = r5 * 255 / 31
-                val g8 = g5 * 255 / 31
-                val b8 = b5 * 255 / 31
-                0.299 * r8 + 0.587 * g8 + 0.114 * b8
-            }
+        val emittedLum = emittedRgb555Values.map { v ->
+            val r5 = v and 0x1F
+            val g5 = (v shr 5) and 0x1F
+            val b5 = (v shr 10) and 0x1F
+            val r8 = r5 * 255 / 31
+            val g8 = g5 * 255 / 31
+            val b8 = b5 * 255 / 31
+            0.299 * r8 + 0.587 * g8 + 0.114 * b8
+        }
 
         // Step 4: Per-sub-palette Spearman ranking (Req 1 — revives dead flat-ranking guard).
         // Iterate 4-entry GBC sub-palette groups. Return true if ANY group is strictly inverted.
