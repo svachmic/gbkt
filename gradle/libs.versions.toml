@@ -1,5 +1,5 @@
 [versions]
-json = "20251224"
+json = "20260522"
 # Formatter shared by every spotless block, including the gbkt-gradle-plugin composite
 # build (which imports this catalog through its own settings.gradle.kts).
 ktfmt = "0.63"
