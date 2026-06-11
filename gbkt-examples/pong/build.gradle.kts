@@ -4,7 +4,7 @@
  * Demonstrates: entities, input, collision, variables
  */
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
     id("io.github.gbkt")
 }
 

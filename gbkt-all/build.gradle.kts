@@ -18,7 +18,7 @@
  * This module has no source files — it is a pure dependency aggregator.
  */
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
 }
 
 kotlin {

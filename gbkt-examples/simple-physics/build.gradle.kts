@@ -4,7 +4,7 @@
  * Demonstrates: i16Var, signed comparison, sub-pixel physics (12.4 fixed-point), D-pad/A input
  */
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
     id("io.github.gbkt")
 }
 

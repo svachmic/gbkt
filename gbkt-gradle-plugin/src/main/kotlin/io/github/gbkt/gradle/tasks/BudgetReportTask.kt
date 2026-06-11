@@ -15,6 +15,7 @@ import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
@@ -31,6 +32,9 @@ import org.gradle.workers.WorkerExecutor
  * Uses classloader isolation (same pattern as GenerateCTask) so the analysis classes are loaded
  * from the user's runtime classpath, which includes gbkt-analysis.
  */
+@DisableCachingByDefault(
+    because = "Budget report task always re-runs to reflect current ROM/RAM state"
+)
 abstract class BudgetReportTask @Inject constructor(private val workerExecutor: WorkerExecutor) :
     DefaultTask() {
 

@@ -19,6 +19,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Gradle task that saves (and optionally loads) emulator state checkpoints for ROM testing.
@@ -43,6 +44,10 @@ import org.gradle.api.tasks.TaskAction
  * ./gradlew saveState --frames=60 --load-state-file=build/gbkt/states/checkpoint.gbst --state-file=build/gbkt/states/checkpoint2.gbst
  * ```
  */
+@DisableCachingByDefault(
+    because =
+        "Save state task captures live emulator memory — caching would produce stale snapshots"
+)
 abstract class SaveStateTask : DefaultTask() {
 
     /** ROM file to run. Must exist at task execution time. */

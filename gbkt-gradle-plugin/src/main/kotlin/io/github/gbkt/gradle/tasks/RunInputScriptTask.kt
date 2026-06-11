@@ -19,6 +19,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Gradle task that executes an input script against a ROM in the headless embedded emulator.
@@ -48,6 +49,9 @@ import org.gradle.api.tasks.TaskAction
  * ./gradlew runScript --script=scripts/pong_test.txt
  * ```
  */
+@DisableCachingByDefault(
+    because = "Input script task drives live emulator interaction — cannot be cached"
+)
 abstract class RunInputScriptTask : DefaultTask() {
 
     /** ROM file to run. Must exist at task execution time. */

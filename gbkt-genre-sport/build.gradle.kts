@@ -18,7 +18,7 @@
  * IR nodes from genre-specific domain types. No new sealed IR subtypes created.
  */
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
     id("gbkt.publishing")
 }
 

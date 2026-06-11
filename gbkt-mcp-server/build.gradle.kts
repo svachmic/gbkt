@@ -6,9 +6,9 @@
  */
 
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.serialization") version "2.3.0"
-    id("com.gradleup.shadow") version "9.0.0-beta12"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.shadow)
     application
 }
 
@@ -44,8 +44,8 @@ dependencies {
 
     // Test dependencies
     testImplementation(kotlin("test"))
-    testImplementation(platform("org.junit:junit-bom:5.11.4"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.mcp.coroutines.test)
 }
 

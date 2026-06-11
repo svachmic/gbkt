@@ -20,6 +20,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Gradle task that captures a screenshot from a ROM after running a configurable number of frames.
@@ -35,6 +36,7 @@ import org.gradle.api.tasks.TaskAction
  * The screenshot is written to the configured [screenshotDir] (default: `build/gbkt/screenshots`).
  * The output path is logged to `logger.lifecycle` for agent consumption.
  */
+@DisableCachingByDefault(because = "Screenshot capture always runs against live emulator output")
 abstract class CaptureScreenshotTask : DefaultTask() {
 
     /** ROM file to run. Must exist at task execution time. */

@@ -18,8 +18,8 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
     id("java")
-    kotlin("jvm")
-    id("org.jetbrains.intellij.platform") version "2.10.5"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.intellij.platform)
 }
 
 group = "io.github.gbkt"
