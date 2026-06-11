@@ -12,7 +12,7 @@
  *      .planning/phases/10.1-metasprites-surplus-codegen-defects-inserted/10.1-CONTEXT.md
  */
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
     id("io.github.gbkt")
 }
 

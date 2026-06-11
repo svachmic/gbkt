@@ -6,7 +6,7 @@
  */
 
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
     application
     id("gbkt.publishing")
 }

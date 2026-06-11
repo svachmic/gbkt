@@ -4,7 +4,7 @@
  * Demonstrates: multiple scenes, menus, entity pools, status bar, sound
  */
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
     id("io.github.gbkt")
 }
 

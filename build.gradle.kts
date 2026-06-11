@@ -1,9 +1,9 @@
 plugins {
-    kotlin("jvm") apply false
-    id("com.diffplug.spotless") apply false
-    id("io.gitlab.arturbosch.detekt") apply false
-    id("org.sonarqube")
-    id("org.jetbrains.kotlinx.kover")
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.spotless) apply false
+    alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.sonarqube)
+    alias(libs.plugins.kover)
 }
 
 val gbktVersion: String by project

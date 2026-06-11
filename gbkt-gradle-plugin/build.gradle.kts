@@ -3,8 +3,8 @@ plugins {
     `java-gradle-plugin`
     `maven-publish`
     signing
-    id("com.diffplug.spotless") version "8.6.0"
-    id("com.gradle.plugin-publish") version "1.3.1"
+    alias(libs.plugins.spotless)
+    alias(libs.plugins.plugin.publish)
 }
 
 val licenseHeader = """
@@ -49,7 +49,7 @@ dependencies {
     compileOnly("io.github.gbkt:gbkt-backend-api:$gbktVersion-SNAPSHOT")
 
     // JSON parsing for source map loading
-    implementation("org.json:json:20251224")
+    implementation(libs.json)
 
     // Test dependencies
     // Note: gbkt-gradle-plugin uses JUnit 5 directly because GradleTestKit integration tests
@@ -57,9 +57,9 @@ dependencies {
     // consistency; the explicit junit-jupiter dep satisfies the JUnit 5 API import requirement.
     testImplementation(gradleTestKit())
     testImplementation(kotlin("test"))
-    testImplementation(platform("org.junit:junit-bom:5.11.4"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
     // Backend needed for integration tests (ServiceLoader discovery via withPluginClasspath)
     testImplementation("io.github.gbkt:gbkt-backend-api:$gbktVersion-SNAPSHOT")
     testImplementation("io.github.gbkt:gbkt-backend-gbdk:$gbktVersion-SNAPSHOT")

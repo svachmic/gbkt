@@ -6,7 +6,7 @@
  */
 
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
 }
 
 group = "io.github.gbkt"
@@ -22,13 +22,13 @@ dependencies {
     api(project(":gbkt-emulator"))
 
     // JUnit5 extension API — compileOnly so consumers bring their own JUnit5 version
-    compileOnly(platform("org.junit:junit-bom:5.11.4"))
-    compileOnly("org.junit.jupiter:junit-jupiter-api")
+    compileOnly(platform(libs.junit.bom))
+    compileOnly(libs.junit.jupiter.api)
 
     // Test dependencies
-    testImplementation(platform("org.junit:junit-bom:5.11.4"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api")
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testImplementation(kotlin("test"))
 }
 
