@@ -16,7 +16,7 @@ kotlinx-io = "0.7.0"
 slf4j = "2.0.17"
 # Plugin versions — single bump point for each tool
 kotlin = "2.3.20"
-junit = "5.11.4"
+junit = "6.1.0"
 spotless = "8.6.0"
 detekt = "1.23.8"
 sonarqube = "7.3.1.8318"
