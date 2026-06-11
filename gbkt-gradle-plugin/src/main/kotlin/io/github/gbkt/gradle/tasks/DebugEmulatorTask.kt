@@ -21,6 +21,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Task that launches the embedded Coffee-GB emulator with full debug tooling enabled.
@@ -42,6 +43,9 @@ import org.gradle.api.tasks.TaskAction
  * tail -f build/gbkt/logs/debug.log
  * ```
  */
+@DisableCachingByDefault(
+    because = "Emulator launch opens an interactive window — cannot be cached or replayed"
+)
 abstract class DebugEmulatorTask : DefaultTask() {
 
     @get:InputFile

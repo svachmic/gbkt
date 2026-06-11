@@ -14,6 +14,7 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import org.json.JSONObject
 import org.json.JSONTokener
 
@@ -26,6 +27,9 @@ import org.json.JSONTokener
  * - `.claude/mcp_servers.json` — MCP server config (merged, not replaced)
  * - `.claude/.gbkt-version` — version marker for staleness detection
  */
+@DisableCachingByDefault(
+    because = "Claude setup task modifies project config files — cannot be cached"
+)
 abstract class SetupClaudeTask @Inject constructor() : DefaultTask() {
 
     @get:Internal abstract val pluginVersion: Property<String>

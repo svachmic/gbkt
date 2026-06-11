@@ -18,6 +18,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Gradle task that reads a named DSL variable from a running ROM after N frames.
@@ -37,6 +38,9 @@ import org.gradle.api.tasks.TaskAction
  * A sym file must be provided for variable name resolution; without it, variable names cannot be
  * resolved and the task will log a warning.
  */
+@DisableCachingByDefault(
+    because = "Variable read task reads live emulator state — caching would return stale values"
+)
 abstract class ReadVariableTask : DefaultTask() {
 
     /** ROM file to run. Must exist at task execution time. */

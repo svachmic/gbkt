@@ -18,6 +18,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Task that runs a ROM in the headless embedded Coffee-GB emulator for automated CI testing.
@@ -32,6 +33,9 @@ import org.gradle.api.tasks.TaskAction
  *
  * The task depends on `buildRom` so the ROM is always up to date before testing.
  */
+@DisableCachingByDefault(
+    because = "Emulator test task runs live against ROM — caching would suppress test re-runs"
+)
 abstract class EmulatorTestTask : DefaultTask() {
 
     /** ROM file to test. Must exist at task execution time. */
