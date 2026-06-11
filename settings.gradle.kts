@@ -6,7 +6,7 @@ pluginManagement {
         id("com.diffplug.spotless") version "8.6.0"
         id("io.gitlab.arturbosch.detekt") version "1.23.8"
         id("org.sonarqube") version "7.3.1.8318"
-        id("org.jetbrains.kotlinx.kover") version "0.9.4"
+        id("org.jetbrains.kotlinx.kover") version "0.9.8"
         id("com.gradle.plugin-publish") version "1.3.1"
     }
     repositories {

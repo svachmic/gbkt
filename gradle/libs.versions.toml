@@ -4,15 +4,15 @@ json = "20251224"
 # build (which imports this catalog through its own settings.gradle.kts).
 ktfmt = "0.63"
 kotest = "5.9.1"
-coroutines = "1.9.0"
+coroutines = "1.11.0"
 coffeegb = "1.6.0"
 junit4 = "4.13.2"
 mcp-sdk = "0.9.0"
 # gbkt-mcp-server pins a newer coroutines line than the shared `coroutines` version used by
 # gbkt-core tests. Kept separate to preserve exact resolution; unify when convenient.
-coroutines-mcp = "1.10.1"
-serialization-json = "1.8.1"
-kotlinx-io = "0.7.0"
+coroutines-mcp = "1.11.0"
+serialization-json = "1.11.0"
+kotlinx-io = "0.9.0"
 slf4j = "2.0.17"
 
 [libraries]
