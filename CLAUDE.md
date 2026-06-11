@@ -10,8 +10,8 @@ See [context/ARCHITECTURE.md](context/ARCHITECTURE.md) for the full pipeline, mo
 
 ## Tech Stack
 
-- **Kotlin**: 2.3.0
-- **Gradle**: 9.0
+- **Kotlin**: 2.3.20
+- **Gradle**: 9.5.1
 - **JVM Target**: 21
 
 ## Build & Run

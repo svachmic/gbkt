@@ -6,8 +6,8 @@ gbkt (Game Boy Kotlin) is a DSL framework that compiles Kotlin code to GBDK-comp
 **Pipeline:** Kotlin DSL → IR (Intermediate Representation) → C Code Generation
 
 ## Tech Stack
-- **Language:** Kotlin 2.3.0
-- **Build:** Gradle 9.0
+- **Language:** Kotlin 2.3.20
+- **Build:** Gradle 9.5.1
 - **JVM Target:** 21
 - **Target Platform:** Game Boy / GBC via GBDK-2020
 

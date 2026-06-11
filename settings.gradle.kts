@@ -2,7 +2,7 @@ rootProject.name = "gbkt"
 
 pluginManagement {
     plugins {
-        kotlin("jvm") version "2.3.0"
+        kotlin("jvm") version "2.3.20"
         id("com.diffplug.spotless") version "8.1.0"
         id("io.gitlab.arturbosch.detekt") version "1.23.8"
         id("org.sonarqube") version "7.2.2.6593"
