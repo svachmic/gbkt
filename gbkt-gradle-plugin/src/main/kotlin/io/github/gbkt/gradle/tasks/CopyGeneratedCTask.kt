@@ -12,6 +12,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Task that copies generated C files to a user-accessible location.
@@ -31,6 +32,9 @@ import org.gradle.api.tasks.*
  * }
  * ```
  */
+@DisableCachingByDefault(
+    because = "File copy tasks are not worth caching — inputs are already cached by generateC"
+)
 abstract class CopyGeneratedCTask @Inject constructor() : DefaultTask() {
 
     /** The source directory containing generated C files. */

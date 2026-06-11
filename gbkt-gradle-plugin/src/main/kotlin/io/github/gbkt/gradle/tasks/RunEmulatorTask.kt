@@ -21,6 +21,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Task that launches the embedded Coffee-GB emulator with the built ROM.
@@ -32,6 +33,9 @@ import org.gradle.api.tasks.TaskAction
  * inspector. The Gradle task returns immediately after launching the window; the JVM stays alive
  * while the window is open.
  */
+@DisableCachingByDefault(
+    because = "Emulator launch opens an interactive window — cannot be cached or replayed"
+)
 abstract class RunEmulatorTask : DefaultTask() {
 
     /** ROM file to run in the emulator. */

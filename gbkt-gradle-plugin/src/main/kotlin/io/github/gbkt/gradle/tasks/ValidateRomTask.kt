@@ -18,6 +18,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Task that validates a ROM boots without crashing using mGBA's Lua scripting interface.
@@ -33,6 +34,9 @@ import org.gradle.api.tasks.TaskAction
  *
  * The task is opt-in — buildRom does NOT depend on it. Run it explicitly for CI validation.
  */
+@DisableCachingByDefault(
+    because = "ROM validation runs live emulator checks — caching would suppress re-validation"
+)
 abstract class ValidateRomTask : DefaultTask() {
 
     /** ROM file to validate. */

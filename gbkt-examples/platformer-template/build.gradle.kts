@@ -6,7 +6,7 @@
  * 3-level substrate with level-switch.
  */
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
     id("io.github.gbkt")
 }
 

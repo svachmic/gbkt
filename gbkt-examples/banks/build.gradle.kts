@@ -5,7 +5,7 @@
  * cross-bank scene navigation, SRAM persistence via SaveDataBuilder.
  */
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
     id("io.github.gbkt")
 }
 

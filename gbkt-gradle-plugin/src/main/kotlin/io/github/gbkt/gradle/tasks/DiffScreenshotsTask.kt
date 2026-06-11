@@ -16,6 +16,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Gradle task that performs a pixel-level screenshot comparison between two PNG files.
@@ -37,6 +38,10 @@ import org.gradle.api.tasks.TaskAction
  * A tolerance of 0.05 allows up to 5% of pixels to differ (useful for anti-aliasing or minor
  * rendering variation). Default tolerance is 0.0 (pixel-perfect match required).
  */
+@DisableCachingByDefault(
+    because =
+        "Screenshot diff compares live files — caching the comparison result would hide regressions"
+)
 abstract class DiffScreenshotsTask : DefaultTask() {
 
     /** Reference (expected) PNG file to compare against. */

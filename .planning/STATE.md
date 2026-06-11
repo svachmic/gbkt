@@ -5,7 +5,7 @@ milestone_name: MVP — Compiler Pipeline Rebuild
 status: Awaiting next milestone
 stopped_at: v0.1.0 milestone shipped and archived
 last_updated: "2026-06-09T15:52:30.144Z"
-last_activity: 2026-06-09 — Milestone v0.1.0 completed and archived
+last_activity: 2026-06-11 — Completed quick task 260611-k1w: unify version catalog across all Gradle build scripts
 progress:
   total_phases: 71
   completed_phases: 56
@@ -57,7 +57,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 Phase: Milestone v0.1.0 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-06-09 — Milestone v0.1.0 completed and archived
+Last activity: 2026-06-11 — Completed quick task 260611-k1w: unify version catalog (libs.versions.toml) across all Gradle build scripts
 
 ### Bisect state as of Plan 06d complete
 
@@ -958,6 +958,7 @@ None yet.
 | 2026-05-21 | [detekt-gbkt-analysis-cleanup](quick/20260521-detekt-gbkt-analysis-cleanup/SUMMARY.md) | AC-6 detekt half closed. 12 atomic commits across 6 modules + 2 examples. Global detekt EXIT 0. |
 | 2026-05-21 | [07.4-35-track-synthesizer-circuit-shape](phases/07.4-sport-genre-codegen-fix-inserted/07.4-35-SUMMARY.md) | GAP-TRACK-NOT-RENDERED-AS-CIRCUIT closed inline (user override of route-to-phase rule). TrackSynthesizer Bresenham + Chebyshev thickening. JVM + codegen + runtime all GREEN; mismatch_count 55→0. Commit `8d4c56e2` + evidence files 14-18. |
 | 2026-06-05 | [260605-eqr-fix-three-test-infra-issues](quick/260605-eqr-fix-three-test-infra-issues-convertzonet/260605-eqr-SUMMARY.md) | Test-suite triage follow-up: 13/15 failures were stale-mavenLocal noise, not bugs. Item 1: hoisted zone-scoped tilemap-PNG guard in ConvertZoneTilesetsTask (real 13.4 regression, 11/11 green). Item 2: new `pluginTest` root task republishes 7 consumed SNAPSHOT modules before plugin tests (local-dev durable fix; CI already publishes). Item 3: generateC `whenever{}` failure was a fixture forward-reference NPE, not a `syncOutputDir` bug. Full plugin suite 138/138; `pluginTest` BUILD SUCCESSFUL. Commits `0c9a5679`, `c512064b`, `5378fdea`. |
+| 2026-06-11 | [260611-k1w-unify-version-catalog](quick/260611-k1w-unify-version-catalog-libs-versions-toml/260611-k1w-SUMMARY.md) | Verified (5/5). Full `[plugins]` migration to `gradle/libs.versions.toml` (9 plugins incl. kotlin/spotless/detekt/sonarqube/kover/plugin-publish/shadow/intellij-platform); JUnit BOM de-inlined (6 sites, 4 modules); `org.json:json` hardcode → `libs.json`; pluginManagement version pins removed (repositories + includeBuild retained). Serialization plugin drift fixed 2.3.0→2.3.20 via shared `kotlin` version.ref — proven the ONLY resolution change by before/after `dependencies` (byte-identical) + `buildEnvironment` diffs. Bonus: pre-existing `validatePlugins` red cleared (`@DisableCachingByDefault` on 12 plugin task classes). Branch `chore/unify-version-catalog`, commits `365dd19d`, `11ed1541`. |
 
 ## Session Continuity
 
