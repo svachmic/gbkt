@@ -63,7 +63,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 16-08-PLAN.md — Batch visual review gate (binding human checkpoint, D-08) + verdict lock
+- [x] 16-08-PLAN.md — Batch visual review gate (binding human checkpoint, D-08) + verdict lock
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -151,7 +151,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
-| 16. Seed Triage | v0.1.1 | 5/10 | In Progress|  |
+| 16. Seed Triage | v0.1.1 | 8/10 | In Progress|  |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 0/TBD | Not started | - |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 0/TBD | Not started | - |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
