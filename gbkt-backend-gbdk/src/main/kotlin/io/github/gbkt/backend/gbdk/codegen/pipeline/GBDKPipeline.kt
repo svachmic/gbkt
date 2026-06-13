@@ -1150,26 +1150,8 @@ class GBDKPipeline {
         val systemFunctions = buildSystemFunctions(gameIR, bankAllocation)
 
         // Plan 07.4-30 / D-N-SWITCHROM-RESTORE: HOME-bank wrapper for cross-bank set_bkg_tiles.
-        // Emitted only when the game has a sport_racing GenericSystem AND at least one zone is
-        // allocated to a bank > 1. The helper allows BANKED scene-enter functions (bank1.c) to
-        // safely call set_bkg_tiles for data in another bank without corrupting the instruction
-        // stream. The extra hasSportRacing guard prevents emitting SWITCH_ROM into main.c for
-        // non-racing games that happen to have zones allocated to bank 2 (e.g. dungeon games),
-        // which would break ZoneTilemapBankingTest and unrelated genre pipelines.
         // See buildBkgTilesLoadBankedHelper() for the full rationale.
-        val hasSportRacing =
-            gameIR.systems.filterIsInstance<GenericSystem>().any {
-                (it.config["type"] as? String) == "sport_racing"
-            }
-        // SEED-014 (Phase 11.1 D-01): un-gate from sport_racing-only to also admit games with
-        // scene-to-zone binder DSL.
-        val hasZoneSceneBinder = gameIR.scenes.any { it.zoneRefs.isNotEmpty() }
-        val crossBankHelper: List<CFunction> =
-            if ((hasSportRacing || hasZoneSceneBinder) && bankAllocation.values.any { it > 1 }) {
-                listOf(buildBkgTilesLoadBankedHelper())
-            } else {
-                emptyList()
-            }
+        val crossBankHelper = buildCrossBankHelperList(gameIR, bankAllocation)
 
         // Struct typedef declarations — emitted as CTypedef before collection data.
         // Each StructDef produces: typedef struct { <field declarations> } <name>;
@@ -1189,37 +1171,8 @@ class GBDKPipeline {
                 fixedSlots = gameIR.fixedSlots,
             )
         // GBC palette data arrays — one `const palette_color_t {name}_pal[4]` per palette.
-        // set_bkg_palette() and set_sprite_palette() require these as arguments.
-        // Emitted as a raw section because palette_color_t is a GBDK typedef (uint16_t),
-        // and we do not have a typed CArray element type for it in our C AST.
-        //
-        // Plan 10.1-22 (DEF-10.1-13-C / 4TH LAYER): for GBC-targeted games, additionally emit
-        // `_gbkt_default_bg_pal[4] = {0x7FFF, 0x56B5, 0x294A, 0x0000}` — the DMG-equivalent
-        // BG palette (white, lt-gray, dk-gray, black). The constant matches the documented
-        // intent of `cgb_compatibility()` / `set_default_palette()` but writes EXPLICITLY via
-        // BCPS/BCPD (`set_bkg_palette()` in main() — Plan 22 fix Site 2) rather than relying
-        // on cgb_compatibility's slot-0 path, which (per d-v3-visual-finding-v2.md) only reaches
-        // BGP_REG on Coffee-GB → leaves BG palette RAM at Java zero-init = all-black render.
-        // Emitted unconditionally for any non-DMG target (gbkt always writes BG slot 0 to a
-        // safe default so the first GBC composited frame never reads zero palette RAM).
-        val gbktDefaultBgPalRaw =
-            if (gameIR.config.gbcTarget != GbcTarget.DMG) {
-                "const palette_color_t _gbkt_default_bg_pal[4] = {0x7FFF, 0x56B5, 0x294A, 0x0000};"
-            } else {
-                null
-            }
-
-        val paletteDataRaw =
-            buildList {
-                    gameIR.palettes.forEach { palette ->
-                        add(
-                            "const palette_color_t ${palette.name}_pal[4] = {${palette.toCArrayLiteral()}};"
-                        )
-                    }
-                    if (gbktDefaultBgPalRaw != null) add(gbktDefaultBgPalRaw)
-                }
-                .joinToString("\n")
-                .takeIf { it.isNotEmpty() }
+        // See buildPaletteDataRaw() for the full rationale (Plan 10.1-22 / D-08 / SEED-014).
+        val paletteDataRaw = buildPaletteDataRaw(gameIR)
 
         // Metasprite descriptor arrays — sprite_metasprite_N[] per-frame OAM descriptor arrays
         // and sprite_metasprites[] pointer table. Required by move_metasprite_*() call sites
@@ -1281,41 +1234,25 @@ class GBDKPipeline {
         // metasprites-stress, banks, racer).
         val levelSpawnTablesRaw = buildLevelSpawnTablesIfNeeded(gameIR)
 
-        val allRawSections = buildList {
-            if (collectionDataRaw.isNotEmpty()) add(collectionDataRaw)
-            if (collectionFunctionsRaw.isNotEmpty()) add(collectionFunctionsRaw)
-            if (paletteDataRaw != null) add(paletteDataRaw)
-            if (metaspriteDescriptorRaw != null) add(metaspriteDescriptorRaw)
-            if (isTileSolidHelperRaw != null) add(isTileSolidHelperRaw)
-            if (bkgSetLevelSubmapHelperRaw != null) add(bkgSetLevelSubmapHelperRaw)
-            if (levelSpawnTablesRaw != null) add(levelSpawnTablesRaw)
-            if (setupCurrentLevelFunctionRaw != null) add(setupCurrentLevelFunctionRaw)
-        }
+        val allRawSections =
+            buildHomeFileRawSections(
+                collectionDataRaw,
+                collectionFunctionsRaw,
+                paletteDataRaw,
+                metaspriteDescriptorRaw,
+                isTileSolidHelperRaw,
+                bkgSetLevelSubmapHelperRaw,
+                levelSpawnTablesRaw,
+                setupCurrentLevelFunctionRaw,
+            )
 
         // Tile collision system — const arrays + lookup functions (HOME-bank)
         // G2: Scenes with collisionData emit map_<scene>_collision[] and _map_collision_<scene>()
         val collisionVisitor = CollisionVisitor(gameIR)
         val (collisionArrays, collisionFunctionsRaw) = collisionVisitor.buildCollisionCodegen()
 
-        // When exploration systems exist but no scenes have collision data, generate a stub
-        // _map_collision(x, y) that always returns 0 (no collision). The exploration movement
-        // function calls _map_collision() for walkability checks.
-        val hasExplorationSystem =
-            gameIR.systems.any { it is io.github.gbkt.core.ir.ExplorationSystem }
-        val collisionFunctions =
-            if (collisionFunctionsRaw.isEmpty() && hasExplorationSystem) {
-                listOf(
-                    CFunction(
-                        name = "_map_collision",
-                        returnType = CU8,
-                        params = listOf(CParam("x", CU8), CParam("y", CU8)),
-                        body = listOf(CReturn(CLiteral(0))),
-                        sectionComment = "Stub collision — no scenes have collision data",
-                    )
-                )
-            } else {
-                collisionFunctionsRaw
-            }
+        // When exploration systems exist but no scenes have collision data, a stub is generated.
+        val collisionFunctions = buildCollisionFunctionsWithFallback(gameIR, collisionFunctionsRaw)
 
         // Puzzle object state variables and interaction check functions
         val systemVisitor = GBDKSystemVisitor(gameIR, bankAllocation)
@@ -1325,21 +1262,8 @@ class GBDKPipeline {
         // _pool_<id>_oam[])
         val actorPoolStateVars = GBDKSystemVisitor.buildActorPoolStateVars(gameIR)
 
-        // Zone tilemap defines — TILESET_<ID> constants (tile arrays are in banked CFiles)
-        // When bankAllocation is provided (banking mode), tile arrays live in zone_bankN.c files.
-        // When empty (legacy/no-zone mode), we still need backward-compat zone arrays in home.
-        val zoneDefines: List<CDefine>
-        val zoneArrays: List<CVarDecl>
-        if (bankAllocation.isEmpty() && gameIR.zones.isNotEmpty()) {
-            // Legacy path: no banking configured, put tile arrays in HOME bank
-            val (arrays, defines) = buildZoneData(gameIR)
-            zoneArrays = arrays
-            zoneDefines = defines
-        } else {
-            // Banking path: tile arrays are in zone_bankN.c files, only emit defines here
-            zoneArrays = emptyList()
-            zoneDefines = buildZoneDefines(gameIR)
-        }
+        // Zone tilemap defines + arrays — banking vs. legacy path dispatched in helper.
+        val (zoneDefines, zoneArrays) = buildZoneDefsForHome(gameIR, bankAllocation)
 
         // Inventory system: item catalog constants, container globals, PRNG global
         val inventoryItemConstants = buildItemCatalog(gameIR)
@@ -1416,124 +1340,14 @@ class GBDKPipeline {
         // main() function
         val mainFn = buildMainFunction(gameIR)
 
-        // #include directives for sprite asset headers
-        // For each actor with a sprite asset reference, include its generated header.
-        val actorSpriteIncludes =
-            gameIR.actors
-                .mapNotNull { actor -> actor.sprite?.assetRef?.path }
-                .distinct()
-                .map { path ->
-                    // Convert "sprites/paddle.png" → "sprites/paddle.h"
-                    val headerPath = path.substringBeforeLast('.') + ".h"
-                    "\"$headerPath\""
-                }
-        // #include directives for metasprite tile data headers.
-        // Convention (PHASE-13): "sprites/<metaspriteId>.h" — derived from metasprite id until
-        // MetaspriteBuilder.sprite() is implemented. ConvertSpritesTask will run png2asset on the
-        // corresponding "sprites/<id>.png" asset to produce the tile data C array.
-        // The include triggers the asset pipeline wiring for the tile data array "<id>_tiles".
-        val metaspriteSpriteIncludes = gameIR.metasprites.map { ms -> "\"sprites/${ms.id}.h\"" }
-        val spriteIncludes = (actorSpriteIncludes + metaspriteSpriteIncludes).distinct()
+        // All #include directives for main.c (base, sound, palette, metasprite, sprite assets,
+        // zone tileset headers). See buildAllHomeFileIncludes() for full rationale.
+        val allIncludes = buildAllHomeFileIncludes(gameIR, soundVisitor)
 
-        // Add hUGEDriver.h when any scene uses music ScriptOps (A2)
-        val hUGEInclude =
-            if (soundVisitor.hasMusicOps()) listOf(GBDKIncludes.HUGE_DRIVER_H) else emptyList()
-        // Add <gb/cgb.h> when GBC palettes are defined — provides palette_color_t and set_*_palette
-        val cgbHomeInclude =
-            if (gameIR.palettes.isNotEmpty()) listOf(GBDKIncludes.CGB_H) else emptyList()
-        // Add <gbdk/metasprites.h> when metasprites are present — provides move_metasprite_*()
-        // and the metasprite descriptor types. Pitfall 4 mitigation: linker error without this.
-        val metaspriteInclude =
-            if (gameIR.metasprites.isNotEmpty()) listOf(GBDKIncludes.METASPRITES_H) else emptyList()
-
-        // Phase 12.1 Plan 03 (Defect 3): main.c needs the per-zone tileset headers so that
-        // `setup_current_level`'s references to `_zone_<id>_tilemap_WIDTH` / `_HEIGHT`
-        // (preprocessor
-        // macros emitted by ConvertZoneTilesetsTask.synthesizeHeader) resolve at SDCC compile time.
-        // Mirrors `buildSceneFile`'s zoneTilesetIncludes pattern (line ~1556) — one #include per
-        // unique zone with a tilesetPath. Header guards make duplicates safe; distinct() keeps the
-        // include list clean. Plan 12.1-01 documented this as Plan 12.1-03's "header-wiring
-        // territory" (Rule 4 architectural boundary) in its SUMMARY decisions list.
-        val homeZoneTilesetIncludes =
-            gameIR.zones
-                .filter { it.tilesetPath != null }
-                .map { zone ->
-                    val sanitized = zone.id.replace('-', '_').replace(' ', '_')
-                    "\"_zone_${sanitized}_tileset.h\""
-                }
-                .distinct()
-
-        val allIncludes =
-            GBDKIncludes.homeFileBase() +
-                hUGEInclude +
-                cgbHomeInclude +
-                metaspriteInclude +
-                spriteIncludes +
-                homeZoneTilesetIncludes
-
-        // MENU_CURSOR_SPRITE_ID #define — emitted when any menu uses a sprite cursor
-        val menuCursorDefines =
-            if (gameIR.menus.any { it.cursorSprite != null }) {
-                listOf(CDefine("MENU_CURSOR_SPRITE_ID", "${MenuVisitor.MENU_CURSOR_SPRITE_ID}"))
-            } else {
-                emptyList()
-            }
-
-        // MIXER_GROUP_* #define constants — emitted when any audio_mixer GenericSystem exists
-        @Suppress("UNCHECKED_CAST")
-        val audioMixerDefines =
-            gameIR.systems
-                .filterIsInstance<GenericSystem>()
-                .filter { it.config["type"] == "audio_mixer" }
-                .flatMap { system ->
-                    val groups =
-                        (system.config["groups"] as? List<ChannelGroupDef>)
-                            ?: listOf(
-                                ChannelGroupDef("music", setOf(1, 2), 7, 0),
-                                ChannelGroupDef("sfx", setOf(3, 4), 7, 1),
-                                ChannelGroupDef("ui", setOf(3), 7, 2),
-                            )
-                    groups.mapIndexed { idx, group ->
-                        CDefine("MIXER_GROUP_${group.name.uppercase()}", "$idx")
-                    }
-                }
-
-        // Entity collision #define constants — emitted when any actor has non-PASSTHROUGH config
-        val entityCollisionDefines = run {
-            val explorationSystem =
-                gameIR.systems
-                    .filterIsInstance<io.github.gbkt.core.ir.ExplorationSystem>()
-                    .firstOrNull()
-            if (explorationSystem != null) {
-                val collisionActors =
-                    gameIR.actors.filter {
-                        val ec = it.entityCollision
-                        ec != null && ec.mode != EntityCollisionMode.PASSTHROUGH
-                    }
-                if (collisionActors.isNotEmpty()) {
-                    listOf(
-                        CDefine("MAX_ENTITIES", "${collisionActors.size}"),
-                        CDefine("MAP_SIZE", "129"),
-                    )
-                } else emptyList()
-            } else emptyList()
-        }
-
-        // ATB #define constants: ATB_BASE_RATE and ATB_MAX_GAUGE
-        // Emitted once when any CombatEngineSystem with combatType==ATB exists.
-        // ATB_BASE_RATE: base gauge fill per frame (before agility modifier)
-        // ATB_MAX_GAUGE: maximum gauge value (clamp threshold)
-        val atbDefines =
-            gameIR.systems
-                .filterIsInstance<CombatEngineSystem>()
-                .firstOrNull { it.combatType == io.github.gbkt.core.ir.CombatType.ATB }
-                ?.let { atbSystem ->
-                    val cfg = atbSystem.atbConfig
-                    listOf(
-                        CDefine("ATB_BASE_RATE", "${cfg?.baseGaugeFillRate ?: 4}"),
-                        CDefine("ATB_MAX_GAUGE", "${cfg?.maxGauge ?: 255}"),
-                    )
-                } ?: emptyList()
+        val menuCursorDefines = buildMenuCursorDefinesForHome(gameIR)
+        val audioMixerDefines = buildAudioMixerDefinesForHome(gameIR)
+        val entityCollisionDefines = buildEntityCollisionDefinesForHome(gameIR)
+        val atbDefines = buildAtbDefinesForHome(gameIR)
 
         // Combat state #define constants — _COMBAT_STATE_INIT=0, _COMBAT_STATE_PLAYER_TURN=1, etc.
         val combatStateDefines = buildCombatStateDefines(gameIR)
@@ -1583,6 +1397,230 @@ class GBDKPipeline {
                     listOf(navigateFn, mainFn),
         )
     }
+
+    // =========================================================================
+    // buildHomeFile extracted helpers
+    // =========================================================================
+
+    /**
+     * Emits the HOME-bank wrapper for cross-bank set_bkg_tiles when needed.
+     *
+     * Required for sport_racing games and scene-to-zone binder games whose tile arrays are
+     * allocated to bank > 1 (Plan 07.4-30 / SEED-014 / Phase 11.1 D-01).
+     */
+    private fun buildCrossBankHelperList(
+        gameIR: GameIR,
+        bankAllocation: Map<String, Int>,
+    ): List<CFunction> {
+        val hasSportRacing =
+            gameIR.systems.filterIsInstance<GenericSystem>().any {
+                (it.config["type"] as? String) == "sport_racing"
+            }
+        // SEED-014 (Phase 11.1 D-01): un-gate from sport_racing-only to also admit games with
+        // scene-to-zone binder DSL.
+        val hasZoneSceneBinder = gameIR.scenes.any { it.zoneRefs.isNotEmpty() }
+        return if ((hasSportRacing || hasZoneSceneBinder) && bankAllocation.values.any { it > 1 }) {
+            listOf(buildBkgTilesLoadBankedHelper())
+        } else {
+            emptyList()
+        }
+    }
+
+    /**
+     * Builds the GBC palette raw-C section for main.c.
+     *
+     * Emits `const palette_color_t {name}_pal[4]` for each palette, and appends
+     * `_gbkt_default_bg_pal[4]` for any non-DMG target (Plan 10.1-22 / D-08).
+     */
+    private fun buildPaletteDataRaw(gameIR: GameIR): String? {
+        val gbktDefaultBgPalRaw =
+            if (gameIR.config.gbcTarget != GbcTarget.DMG) {
+                "const palette_color_t _gbkt_default_bg_pal[4] = {0x7FFF, 0x56B5, 0x294A, 0x0000};"
+            } else {
+                null
+            }
+        return buildList {
+                gameIR.palettes.forEach { palette ->
+                    add(
+                        "const palette_color_t ${palette.name}_pal[4] = {${palette.toCArrayLiteral()}};"
+                    )
+                }
+                if (gbktDefaultBgPalRaw != null) add(gbktDefaultBgPalRaw)
+            }
+            .joinToString("\n")
+            .takeIf { it.isNotEmpty() }
+    }
+
+    /**
+     * Assembles the ordered list of raw C sections for main.c.
+     *
+     * All sections are optional (null or empty = omitted). Order is fixed: collection data →
+     * collection functions → palettes → metasprite descriptors → is_tile_solid helper →
+     * _bkg_set_level_submap helper → level spawn tables → setup_current_level function.
+     */
+    private fun buildHomeFileRawSections(
+        collectionDataRaw: String,
+        collectionFunctionsRaw: String,
+        paletteDataRaw: String?,
+        metaspriteDescriptorRaw: String?,
+        isTileSolidHelperRaw: String?,
+        bkgSetLevelSubmapHelperRaw: String?,
+        levelSpawnTablesRaw: String?,
+        setupCurrentLevelFunctionRaw: String?,
+    ): List<String> = buildList {
+        if (collectionDataRaw.isNotEmpty()) add(collectionDataRaw)
+        if (collectionFunctionsRaw.isNotEmpty()) add(collectionFunctionsRaw)
+        if (paletteDataRaw != null) add(paletteDataRaw)
+        if (metaspriteDescriptorRaw != null) add(metaspriteDescriptorRaw)
+        if (isTileSolidHelperRaw != null) add(isTileSolidHelperRaw)
+        if (bkgSetLevelSubmapHelperRaw != null) add(bkgSetLevelSubmapHelperRaw)
+        if (levelSpawnTablesRaw != null) add(levelSpawnTablesRaw)
+        if (setupCurrentLevelFunctionRaw != null) add(setupCurrentLevelFunctionRaw)
+    }
+
+    /**
+     * Returns collision functions for HOME bank; generates a stub when exploration systems exist
+     * but no scenes have collision data (so the movement system always has a callable target).
+     */
+    private fun buildCollisionFunctionsWithFallback(
+        gameIR: GameIR,
+        collisionFunctionsRaw: List<CFunction>,
+    ): List<CFunction> {
+        val hasExplorationSystem =
+            gameIR.systems.any { it is io.github.gbkt.core.ir.ExplorationSystem }
+        return if (collisionFunctionsRaw.isEmpty() && hasExplorationSystem) {
+            listOf(
+                CFunction(
+                    name = "_map_collision",
+                    returnType = CU8,
+                    params = listOf(CParam("x", CU8), CParam("y", CU8)),
+                    body = listOf(CReturn(CLiteral(0))),
+                    sectionComment = "Stub collision — no scenes have collision data",
+                )
+            )
+        } else {
+            collisionFunctionsRaw
+        }
+    }
+
+    /**
+     * Returns zone defines and zone arrays for the HOME file.
+     *
+     * Banking path (bankAllocation non-empty): tile arrays live in zone_bankN.c — emit defines
+     * only. Legacy path (bankAllocation empty + zones present): emit both arrays and defines in
+     * HOME.
+     */
+    private fun buildZoneDefsForHome(
+        gameIR: GameIR,
+        bankAllocation: Map<String, Int>,
+    ): Pair<List<CDefine>, List<CVarDecl>> =
+        if (bankAllocation.isEmpty() && gameIR.zones.isNotEmpty()) {
+            val (arrays, defines) = buildZoneData(gameIR)
+            Pair(defines, arrays)
+        } else {
+            Pair(buildZoneDefines(gameIR), emptyList())
+        }
+
+    /**
+     * Assembles all #include directives for main.c.
+     *
+     * Order: base GBDK headers → hUGEDriver (music) → CGB palette → metasprite → sprite asset
+     * headers → zone tileset headers.
+     */
+    private fun buildAllHomeFileIncludes(gameIR: GameIR, soundVisitor: SoundVisitor): List<String> {
+        val hUGEInclude =
+            if (soundVisitor.hasMusicOps()) listOf(GBDKIncludes.HUGE_DRIVER_H) else emptyList()
+        val cgbHomeInclude =
+            if (gameIR.palettes.isNotEmpty()) listOf(GBDKIncludes.CGB_H) else emptyList()
+        val metaspriteInclude =
+            if (gameIR.metasprites.isNotEmpty()) listOf(GBDKIncludes.METASPRITES_H) else emptyList()
+        val actorSpriteIncludes =
+            gameIR.actors
+                .mapNotNull { actor -> actor.sprite?.assetRef?.path }
+                .distinct()
+                .map { path -> "\"${path.substringBeforeLast('.')}.h\"" }
+        val metaspriteSpriteIncludes = gameIR.metasprites.map { ms -> "\"sprites/${ms.id}.h\"" }
+        val spriteIncludes = (actorSpriteIncludes + metaspriteSpriteIncludes).distinct()
+        val homeZoneTilesetIncludes =
+            gameIR.zones
+                .filter { it.tilesetPath != null }
+                .map { zone ->
+                    val sanitized = zone.id.replace('-', '_').replace(' ', '_')
+                    "\"_zone_${sanitized}_tileset.h\""
+                }
+                .distinct()
+        return GBDKIncludes.homeFileBase() +
+            hUGEInclude +
+            cgbHomeInclude +
+            metaspriteInclude +
+            spriteIncludes +
+            homeZoneTilesetIncludes
+    }
+
+    /** MENU_CURSOR_SPRITE_ID #define — emitted when any menu uses a sprite cursor. */
+    private fun buildMenuCursorDefinesForHome(gameIR: GameIR): List<CDefine> =
+        if (gameIR.menus.any { it.cursorSprite != null }) {
+            listOf(CDefine("MENU_CURSOR_SPRITE_ID", "${MenuVisitor.MENU_CURSOR_SPRITE_ID}"))
+        } else {
+            emptyList()
+        }
+
+    /** MIXER_GROUP_* #define constants — emitted when any audio_mixer GenericSystem exists. */
+    @Suppress("UNCHECKED_CAST")
+    private fun buildAudioMixerDefinesForHome(gameIR: GameIR): List<CDefine> =
+        gameIR.systems
+            .filterIsInstance<GenericSystem>()
+            .filter { it.config["type"] == "audio_mixer" }
+            .flatMap { system ->
+                val groups =
+                    (system.config["groups"] as? List<ChannelGroupDef>)
+                        ?: listOf(
+                            ChannelGroupDef("music", setOf(1, 2), 7, 0),
+                            ChannelGroupDef("sfx", setOf(3, 4), 7, 1),
+                            ChannelGroupDef("ui", setOf(3), 7, 2),
+                        )
+                groups.mapIndexed { idx, group ->
+                    CDefine("MIXER_GROUP_${group.name.uppercase()}", "$idx")
+                }
+            }
+
+    /**
+     * Entity collision #define constants (MAX_ENTITIES, MAP_SIZE) — emitted when an exploration
+     * system exists and at least one actor has non-PASSTHROUGH entity collision config.
+     */
+    private fun buildEntityCollisionDefinesForHome(gameIR: GameIR): List<CDefine> {
+        val explorationSystem =
+            gameIR.systems
+                .filterIsInstance<io.github.gbkt.core.ir.ExplorationSystem>()
+                .firstOrNull()
+        if (explorationSystem == null) return emptyList()
+        val collisionActors =
+            gameIR.actors.filter {
+                val ec = it.entityCollision
+                ec != null && ec.mode != EntityCollisionMode.PASSTHROUGH
+            }
+        return if (collisionActors.isNotEmpty()) {
+            listOf(CDefine("MAX_ENTITIES", "${collisionActors.size}"), CDefine("MAP_SIZE", "129"))
+        } else {
+            emptyList()
+        }
+    }
+
+    /**
+     * ATB #define constants (ATB_BASE_RATE, ATB_MAX_GAUGE) — emitted once when any
+     * CombatEngineSystem with combatType==ATB exists.
+     */
+    private fun buildAtbDefinesForHome(gameIR: GameIR): List<CDefine> =
+        gameIR.systems
+            .filterIsInstance<CombatEngineSystem>()
+            .firstOrNull { it.combatType == io.github.gbkt.core.ir.CombatType.ATB }
+            ?.let { atbSystem ->
+                val cfg = atbSystem.atbConfig
+                listOf(
+                    CDefine("ATB_BASE_RATE", "${cfg?.baseGaugeFillRate ?: 4}"),
+                    CDefine("ATB_MAX_GAUGE", "${cfg?.maxGauge ?: 255}"),
+                )
+            } ?: emptyList()
 
     // =========================================================================
     // bank1.c — Scene functions (bank 1 or scene-assigned bank)
