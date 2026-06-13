@@ -568,13 +568,16 @@ All other claims are VERIFIED via live SonarCloud API and codebase grep.
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`batchAssert` in McpEmulatorSession.kt (N-01, cc=74)** — Is this a flat assertion-type dispatch or complex nested logic? If flat dispatch, it's a NOSONAR candidate (counts against the ≤5 budget). Executor should inspect before deciding.
+   - **RESOLVED:** Plan 18-08 Task 3 inspects `batchAssert` before deciding EXTRACT-METHOD vs NOSONAR (inspect-first directive; NOSONAR path accounted against the ≤5 budget).
 
 2. **Ghost issues cleanup timing** — The 23 ghost issues in `commonMain`/`jvmMain` files will auto-close only when a SonarCloud scan runs on the new commit. The Phase 18 success criterion is "0 OPEN findings" — if a scan doesn't run in CI (e.g., GBDK not available for ROM builds, CI gate skipped), ghost issues may persist in the Sonar UI. Planner should add a "trigger SonarCloud scan" task as a wave-close gate.
+   - **RESOLVED:** Plan 18-27 Task 2 triggers the SonarCloud scan as a blocking human-verify checkpoint (the SONAR-01 terminal S3776=0 gate).
 
 3. **CONTRIBUTING.md exact section placement** — Current sections: Getting Started, Project Structure, Kotlin Style Guide (10 sub-sections), DSL Authoring Guidelines (4 sub-sections), Organizing Large Games (3 patterns), Code Review Checklist, Questions. Best fit for "Deprecation Convention" is between "DSL Authoring Guidelines" and "Organizing Large Games" — but "Code Review Checklist" is another reasonable home. Planner/implementor can decide.
+   - **RESOLVED:** Implementor discretion per CONTEXT.md "Claude's Discretion" — either placement (before Organizing Large Games, or before Code Review Checklist) is acceptable.
 
 ---
 
