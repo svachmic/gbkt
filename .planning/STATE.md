@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: planning
-last_updated: "2026-06-12T09:38:23.518Z"
+status: roadmap_created
+last_updated: "2026-06-12T10:00:00.000Z"
 last_activity: 2026-06-12
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** The framework automatically manages Game Boy hardware resources (VRAM, banking, OAM, RAM) so the developer writes only declarative Kotlin DSL — like Jetpack Compose for Game Boy.
-**Current focus:** Planning next milestone (v0.1.0 shipped 2026-06-09)
+**Current focus:** Phase 16 — Seed Triage (roadmap created 2026-06-12)
 
 ## Deferred Items
 
@@ -53,10 +53,13 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 16 of 21 (Seed Triage) — first phase of v0.1.1
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-12 — Milestone v0.1.1 started
+Status: Ready to plan (roadmap created)
+Last activity: 2026-06-12 — Roadmap created (Phases 16–21, 20/20 requirements mapped)
+
+Resume signal: /gsd-plan-phase 16 (Seed Triage — gates all codegen fix phases)
+Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable
 
 ### Bisect state as of Plan 06d complete
 

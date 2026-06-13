@@ -82,32 +82,32 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRIAGE-01 | — | Pending |
-| TRIAGE-02 | — | Pending |
-| TRIAGE-03 | — | Pending |
-| DOCS-01 | — | Pending |
-| DOCS-02 | — | Pending |
-| DOCS-03 | — | Pending |
-| DEPR-01 | — | Pending |
-| DEPR-02 | — | Pending |
-| DEPR-03 | — | Pending |
-| QUAL-01 | — | Pending |
-| QUAL-02 | — | Pending |
-| QUAL-03 | — | Pending |
-| SONAR-01 | — | Pending |
-| SONAR-02 | — | Pending |
-| FIX-01 | — | Pending |
-| FIX-02 | — | Pending |
-| FIX-03 | — | Pending |
-| FIX-04 | — | Pending |
-| FIX-05 | — | Pending |
-| FIX-06 | — | Pending |
+| TRIAGE-01 | Phase 16 | Pending |
+| TRIAGE-02 | Phase 16 | Pending |
+| TRIAGE-03 | Phase 16 | Pending |
+| DOCS-01 | Phase 17 | Pending |
+| DOCS-02 | Phase 17 | Pending |
+| DOCS-03 | Phase 17 | Pending |
+| DEPR-01 | Phase 18 | Pending |
+| DEPR-02 | Phase 18 | Pending |
+| DEPR-03 | Phase 18 | Pending |
+| QUAL-01 | Phase 17 | Pending |
+| QUAL-02 | Phase 17 | Pending |
+| QUAL-03 | Phase 17 | Pending |
+| SONAR-01 | Phase 18 | Pending |
+| SONAR-02 | Phase 18 | Pending |
+| FIX-01 | Phase 19 | Pending |
+| FIX-02 | Phase 19 | Pending |
+| FIX-03 | Phase 20 | Pending |
+| FIX-04 | Phase 20 | Pending |
+| FIX-05 | Phase 21 | Pending |
+| FIX-06 | Phase 21 | Pending |
 
 **Coverage:**
 - v0.1.1 requirements: 20 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 20 ⚠️ (filled by roadmap creation)
+- Mapped to phases: 20/20 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-12*
-*Last updated: 2026-06-12 after initial definition*
+*Last updated: 2026-06-12 after roadmap creation (Phases 16–21)*
