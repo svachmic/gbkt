@@ -5,7 +5,7 @@ created: 2026-06-03
 source: phase-13.2-regression-gate
 status: pending
 priority: medium
-resolves_phase: 13.3
+resolves_phase: 19
 scope: gbkt-examples/metasprites/src/test/resources/baseline/elephant.c.baseline
 ---
 
