@@ -25,7 +25,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **DEPR-01**: `whenever`/`runIf` duplication is unified — the redundant API is removed and all in-tree usages migrated (exact semantics decided at discuss-phase per SEED-023)
 - [x] **DEPR-02**: The deprecated `combatIsInState` String overload is removed with all in-tree usages migrated (SEED-025)
-- [ ] **DEPR-03**: The gbkt deprecation/removal convention is documented in CONTRIBUTING.md
+- [x] **DEPR-03**: The gbkt deprecation/removal convention is documented in CONTRIBUTING.md
 
 ### Quality Cleanup (QUAL — continues v0.1.0 numbering)
 
@@ -111,7 +111,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-03 | Phase 17 | Complete |
 | DEPR-01 | Phase 18 | Complete |
 | DEPR-02 | Phase 18 | Complete |
-| DEPR-03 | Phase 18 | Pending |
+| DEPR-03 | Phase 18 | Complete |
 | QUAL-01 | Phase 17 | Complete |
 | QUAL-02 | Phase 17 | Complete |
 | QUAL-03 | Phase 17 | Complete |
