@@ -81,6 +81,7 @@ class BitwiseOptimizationPass : AnalysisPass {
      *
      * For [BinaryExpr] nodes with a power-of-2 literal right operand, applies the appropriate
      * bitwise rewrite. Sub-expressions are always optimized recursively first (bottom-up).
+     * Delegates per-op rewrites to focused private helpers to stay below the S3776 threshold.
      */
     fun optimizeExpr(expr: Expr): Expr {
         // Non-BinaryExpr: recurse into children via shared helper
@@ -99,44 +100,66 @@ class BitwiseOptimizationPass : AnalysisPass {
         if (!rightIsPow2 && !(leftIsPow2 && rebuiltExpr.op == BinaryOp.MUL)) return rebuiltExpr
 
         return when (rebuiltExpr.op) {
-            BinaryOp.MUL -> {
-                // Pick whichever side has the power-of-2 constant (prefer right)
-                // The cast below is NOT redundant: K2 cannot smart-cast optimizedLeft to Literal
-                // from the compound leftIsPow2/rightIsPow2 guards (Sonar S6531 false positive).
-                val n =
-                    if (rightIsPow2) (optimizedRight as Literal).value
-                    else (optimizedLeft as Literal).value
-                val other = if (rightIsPow2) optimizedLeft else optimizedRight
-                val shift = log2(n)
-                val rewritten =
-                    rebuiltExpr.copy(left = other, op = BinaryOp.SHL, right = Literal(shift))
-                emitRewriteDiagnostic("*$n", "<<$shift", rebuiltExpr)
-                rewritten
-            }
-            BinaryOp.DIV -> {
-                val n = (optimizedRight as Literal).value
-                if (isMaybeSigned(optimizedLeft)) {
-                    rebuiltExpr
-                } else {
-                    val shift = log2(n)
-                    val rewritten = rebuiltExpr.copy(op = BinaryOp.SHR, right = Literal(shift))
-                    emitRewriteDiagnostic("/$n", ">>$shift", rebuiltExpr)
-                    rewritten
-                }
-            }
-            BinaryOp.MOD -> {
-                val n = (optimizedRight as Literal).value
-                if (isMaybeSigned(optimizedLeft)) {
-                    rebuiltExpr
-                } else {
-                    val mask = n - 1
-                    val rewritten = rebuiltExpr.copy(op = BinaryOp.AND, right = Literal(mask))
-                    emitRewriteDiagnostic("%$n", "&$mask", rebuiltExpr)
-                    rewritten
-                }
-            }
+            BinaryOp.MUL -> optimizeMul(rebuiltExpr, optimizedLeft, optimizedRight, rightIsPow2)
+            BinaryOp.DIV -> optimizeDiv(rebuiltExpr, optimizedLeft, optimizedRight)
+            BinaryOp.MOD -> optimizeMod(rebuiltExpr, optimizedLeft, optimizedRight)
             else -> rebuiltExpr
         }
+    }
+
+    /**
+     * Rewrites `x * N` (N is a power of 2) to `x << log2(N)`.
+     *
+     * Handles commutativity: accepts a power-of-2 constant on either side; [rightIsPow2] signals
+     * which side holds the constant so the correct operand is selected as the shift amount.
+     */
+    private fun optimizeMul(
+        expr: BinaryExpr,
+        optimizedLeft: Expr,
+        optimizedRight: Expr,
+        rightIsPow2: Boolean,
+    ): Expr {
+        // Pick whichever side has the power-of-2 constant (prefer right)
+        // The cast below is NOT redundant: K2 cannot smart-cast optimizedLeft to Literal
+        // from the compound leftIsPow2/rightIsPow2 guards (Sonar S6531 false positive).
+        val n =
+            if (rightIsPow2) (optimizedRight as Literal).value
+            else (optimizedLeft as Literal).value
+        val other = if (rightIsPow2) optimizedLeft else optimizedRight
+        val shift = log2(n)
+        val rewritten = expr.copy(left = other, op = BinaryOp.SHL, right = Literal(shift))
+        emitRewriteDiagnostic("*$n", "<<$shift", expr)
+        return rewritten
+    }
+
+    /**
+     * Rewrites `x / N` (N is a power of 2, x is unsigned) to `x >> log2(N)`.
+     *
+     * Skipped when [isMaybeSigned] returns true for the dividend to avoid incorrect results for
+     * negative values.
+     */
+    private fun optimizeDiv(expr: BinaryExpr, optimizedLeft: Expr, optimizedRight: Expr): Expr {
+        val n = (optimizedRight as Literal).value
+        if (isMaybeSigned(optimizedLeft)) return expr
+        val shift = log2(n)
+        val rewritten = expr.copy(op = BinaryOp.SHR, right = Literal(shift))
+        emitRewriteDiagnostic("/$n", ">>$shift", expr)
+        return rewritten
+    }
+
+    /**
+     * Rewrites `x % N` (N is a power of 2, x is unsigned) to `x & (N - 1)`.
+     *
+     * Skipped when [isMaybeSigned] returns true for the dividend to avoid incorrect results for
+     * negative values.
+     */
+    private fun optimizeMod(expr: BinaryExpr, optimizedLeft: Expr, optimizedRight: Expr): Expr {
+        val n = (optimizedRight as Literal).value
+        if (isMaybeSigned(optimizedLeft)) return expr
+        val mask = n - 1
+        val rewritten = expr.copy(op = BinaryOp.AND, right = Literal(mask))
+        emitRewriteDiagnostic("%$n", "&$mask", expr)
+        return rewritten
     }
 
     // -------------------------------------------------------------------------
