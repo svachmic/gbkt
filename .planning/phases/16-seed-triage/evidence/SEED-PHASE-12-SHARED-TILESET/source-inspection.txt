@@ -1,0 +1,56 @@
+SEED-PHASE-12-SHARED-TILESET — ConvertZoneTilesetsTask shared-tileset deduplication
+Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+Inspection date: 2026-06-12
+Tool: grep for dedup in ConvertZoneTilesetsTask + MultiTilesetAllocationTest inspection
+
+== FINDING 1: NO DEDUP CODE IN ConvertZoneTilesetsTask ==
+
+File: gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/ConvertZoneTilesetsTask.kt
+grep for "dedup\|sharedTileset\|contentHash\|content.*hash":
+  Line 42: code comment only — "png2asset's dedup)" (refers to png2asset's INTERNAL tile dedup,
+           not the cross-zone tileset dedup described in this seed)
+  Line 299: code comment — "D-C3: visual tile count cap (worst-case; png2asset's dedup may shrink)"
+  Line 396: code comment — "bytes ... into the shared writer below."
+  Line 602: code comment about visual tile cap enforcement
+
+No implementation of content-hash grouping, SharedTilesetRef, or cross-zone symbol aliasing.
+ConvertZoneTilesetsTask still invokes png2asset ONCE PER ZONE (option (a) accepted duplication).
+
+== FINDING 2: MultiTilesetAllocationTest CONFIRMS DUPLICATION IS PRESENT ==
+
+File: gbkt-backend-gbdk/src/test/kotlin/.../MultiTilesetAllocationTest.kt
+  Line 36: "for dedup work (SEED-PHASE-12-SHARED-TILESET — created by Plan 12-26"
+  Line 45: "2. Shared-tileset duplication GAP DOCUMENTATION — the two zones that..."
+  Line 71-75: "DOCUMENTED GAP — RESEARCH §D-15 recommendation (a): accept duplication for Phase 12;
+               Plan 12-26 creates SEED-PHASE-12-SHARED-TILESET.md for Phase 13 dedup work. This test
+               asserts the gap EXISTS today (so a future dedup fix lands)"
+  Lines 178-279: The test currently ASSERTS DUPLICATION EXISTS — uses assertNotEquals to confirm
+                 _zone_world1Area1Zone_tileset and _zone_world1Area2Zone_tileset are distinct symbols
+                 carrying the same tile payload.
+  Line 266-279: "duplication gap. SEED-PHASE-12-SHARED-TILESET (created at phase close)...
+                 when the dedup fix lands, this assertion will flip to assertEquals..."
+
+The canary test confirms option (a) is still in effect: duplication present, no dedup fix landed.
+
+== FINDING 3: ROM SIZE WITHIN 2× THRESHOLD ==
+
+Substrate ROM size: 65536 bytes (64 KB = 4 banks × 16 KB)
+(From substrate-buildrom-report.txt: platformer-template uses MBC5_RAM_BATTERY, 4 banks)
+The 2× threshold (relative to upstream reference) has not been exceeded. Per the seed, option (a)
+was chosen precisely because the ratio stayed within 2× (RESEARCH §D-15).
+
+== VERDICT: RE-DEFERRED ==
+
+RATIONALE (D-10 evidence bar — citing Serena + test + substrate artifact):
+  ConvertZoneTilesetsTask contains no dedup implementation (grep confirms no contentHash, no
+  SharedTilesetRef, no cross-zone symbol aliasing).
+  MultiTilesetAllocationTest.kt explicitly asserts duplication EXISTS and is the documented canary
+  for when dedup lands — it has not been updated, meaning the fix has not landed.
+  The current ROM size (64 KB) is within the acceptable 2× threshold per Phase 12 decision.
+  The seed's three revival conditions (new port with ROM pressure, Phase 13 pull, MultiTileset
+  test flip) have not been met.
+
+  Option (a) "accept duplication" was the explicitly chosen Phase 12 decision. No new port has
+  surfaced the ROM-size pressure that would justify implementing option (b).
+
+TARGET: .planning/backlog/v0.2.0/ (future dedup when ROM size pressure triggers)

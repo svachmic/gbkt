@@ -1,0 +1,36 @@
+SEED-PHASE-12-ONE-WAY-TILE — oneWayThreshold(M) ONE_WAY tile-collision extension
+Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+Inspection date: 2026-06-12
+Serena tool: mcp__serena__find_symbol oneWayThreshold
+
+== FINDING: oneWayThreshold SYMBOL DOES NOT EXIST ==
+
+Serena search: find_symbol "oneWayThreshold"
+Result: [] (empty — no symbol found anywhere in the codebase)
+
+Supporting grep cross-check:
+  grep for "oneWayThreshold\|ONE_WAY\|TILE_ONE_WAY" across all *.kt files: zero matches.
+
+The symbol described in SEED-PHASE-12-ONE-WAY-TILE has never been implemented:
+  - PlatformerBuilders.kt: no oneWayThreshold() method
+  - PlatformerPhysicsConfig.kt: no oneWayThreshold field
+  - PlatformerVisitor.kt: no tile_classify() / ONE_WAY arm
+  - GBDKPipelineV2.kt: no _current_level_one_way_threshold global
+
+No example exercises one-way tiles. The platformer-template substrate uses only SOLID + PASSABLE
+classification (solidThreshold only). The upstream GBDK reference is also solid-only.
+
+== VERDICT: RE-DEFERRED ==
+
+RATIONALE (D-10 evidence bar — citing Serena result):
+  The oneWayThreshold symbol does not exist at HEAD (Serena find_symbol → empty result).
+  No example in the codebase exercises ONE_WAY tile behavior (no trigger exists today).
+  The upstream GBDK platformer_template reference does not use one-way tiles.
+  The seed's own revival conditions require: "A new platformer port that USES the upstream
+  oneWayThreshold pattern" — no such port exists yet.
+
+  This is NOT scope reduction: the feature is an explicit future extension.
+  Deferring until a triggering port surfaces is the documented decision (Phase 12 CONTEXT.md §D-13b).
+  Implementing it without a concrete port would mean designing the DSL surface without validation.
+
+TARGET: .planning/backlog/v0.2.0/ (future platformer-port trigger)

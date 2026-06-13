@@ -1,0 +1,55 @@
+SEED-ZONE-MAGIC-STRING-DELEGATE-MIGRATION — zone(id: String) magic-string violation
+Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+Inspection date: 2026-06-12
+Serena tool: mcp__serena__find_symbol ZoneDelegate + grep for zone(id:
+
+== FINDING: PRIMARY VIOLATION FIXED; SECONDARY PickupBuilder VIOLATION REMAINS ==
+
+--- PRIMARY: GameBuilder.zone(id: String) ---
+
+ORIGINAL VIOLATION (per seed): gbkt-lang/src/main/kotlin/.../GameBuilder.kt:480
+  fun zone(id: String, block: ZoneBuilder.() -> Unit): ZoneRef
+
+CURRENT STATE at HEAD:
+  File: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/WorldBuilders.kt
+  Line 1046: fun zone(block: ZoneBuilder.() -> Unit): ZoneDelegate = ZoneDelegate(block)
+    ← DELEGATE FORM, no id: String parameter.
+
+  File: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/WorldBuilders.kt
+  Symbol: ZoneDelegate class (Serena body_location start_line=975, end_line=1027)
+    ← ZoneDelegate class exists implementing PropertyDelegateProvider pattern.
+
+  GameBuilder.kt: no fun zone(...) definition — only registerZone(zone: ZoneIR) internal method.
+
+  Example usage (platformer-template): val world1Area1Zone by zone { ... }  (delegate form)
+  Example usage (banks):               val playZone by zone { ... }         (delegate form)
+
+  CONCLUSION: The primary GameBuilder.zone(id: String) violation has been FIXED.
+  The delegate migration was completed (most likely during Phase 13 framework-primitives work).
+
+--- SECONDARY: PickupBuilder.zone(id: String, ...) ---
+
+  File: gbkt-engine/src/main/kotlin/io/github/gbkt/core/pickup/PickupBuilder.kt
+  Line 229: fun zone(id: String, pickupId: String, block: PickupZoneBuilder.() -> Unit = {})
+    ← magic-string violation in the PickupBuilder namespace (SEPARATE from GameBuilder)
+
+  This is the "Related" violation cited in the seed:
+  "gbkt-engine/.../pickup/PickupBuilder.kt:229 — zone(id: String, pickupId: String, ...) is a
+  SEPARATE zone() overload in the PickupBuilder namespace; it has the SAME magic-string violation
+  pattern and should be audited together"
+
+== VERDICT: CONFIRMED-OPEN ==
+
+The primary GameBuilder.zone(id: String) violation was FIXED (ZoneDelegate implemented,
+examples migrated to delegate form). However, the PickupBuilder.zone(id: String, pickupId: String)
+violation cited as "Related" in the seed remains at HEAD. The seed stated this "should be audited
+together" with the GameBuilder migration.
+
+Since the seed's scope explicitly included both call sites, and one remains unresolved,
+the seed is CONFIRMED-OPEN for the PickupBuilder.zone(id: String) violation.
+
+Note: The primary GameBuilder violation fixed represents partial progress; only the PickupBuilder
+violation now remains.
+
+ROUTING: Phase 21 FIX-06 (DSL/tooling misc cluster)
+SCOPE: Only PickupBuilder.zone(id: String, pickupId: String) at gbkt-engine/.../PickupBuilder.kt:229
