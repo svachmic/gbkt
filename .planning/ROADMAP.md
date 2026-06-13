@@ -90,7 +90,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 **Wave 1**
 
 - [x] 17-01-PLAN.md — DSL_REFERENCE accuracy audit evidence (13 sections, per-method, source-cited) + full-doc triage sweep
-- [ ] 17-02-PLAN.md — Screen-constant single source of truth: TargetProfiles.GAME_BOY_SCREEN preset + GameBoyConstants derivation
+- [x] 17-02-PLAN.md — Screen-constant single source of truth: TargetProfiles.GAME_BOY_SCREEN preset + GameBoyConstants derivation
 - [ ] 17-03-PLAN.md — Re-enable 4 detekt rules (targeted) + commit violation inventory
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -193,7 +193,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 |-------|-----------|----------------|--------|-----------|
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
-| 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 1/12 | In Progress|  |
+| 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 2/12 | In Progress|  |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 0/TBD | Not started | - |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |

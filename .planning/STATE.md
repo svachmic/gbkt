@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Phase 17 context gathered
-last_updated: "2026-06-12T19:09:33.451Z"
+stopped_at: Completed 17-02-PLAN.md
+last_updated: "2026-06-12T19:13:40.022Z"
 last_activity: 2026-06-12 -- Phase 17 execution started
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 22
-  completed_plans: 11
+  completed_plans: 12
   percent: 17
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 17 (docs-reconciliation-and-quality-cleanup) — EXECUTING
-Plan: 2 of 12
+Plan: 3 of 12
 Status: Ready to execute
 Last activity: 2026-06-12 -- Phase 17 execution started
 
@@ -390,6 +390,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 16-seed-triage P08 | 2min | 1 tasks | 2 files |
 | Phase 16-seed-triage P09 | 5 | 2 tasks | 45 files |
 | Phase 17 P01 | 7 | 2 tasks | 1 files |
+| Phase 17 P02 | 1 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -886,6 +887,7 @@ Recent decisions affecting current work:
 - [Phase ?]: D-08 passed: 10 visual seeds human-reviewed and locked by Michal Svacha on 2026-06-12
 - [Phase ?]: SEED-004 override: user confirmed elephant renders correctly (VERIFIED-ALREADY-FIXED), overriding agent-proposed CONFIRMED-OPEN
 - [Phase ?]: Visual cluster final split: 8 VERIFIED-ALREADY-FIXED + 2 CONFIRMED-OPEN (spawn-polish, sub-pixel-offset); cluster-visual.md locked for Plan 09 merge
+- [Phase ?]: TargetProfiles.GAME_BOY_SCREEN added as canonical single-source-of-truth for 160x144 Game Boy screen dimensions; GameBoyConstants const val dropped to val for derivation chain
 
 ### Pending Todos
 
@@ -981,8 +983,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-12T19:09:33.445Z
-Stopped at: Phase 17 context gathered
+Last session: 2026-06-12T19:13:40.016Z
+Stopped at: Completed 17-02-PLAN.md
 
 ## Operator Next Steps
 
