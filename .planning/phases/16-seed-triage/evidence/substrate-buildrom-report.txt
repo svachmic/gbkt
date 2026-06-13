@@ -1,0 +1,48 @@
+# Substrate Build Report — Phase 16 Seed Triage (W1)
+#
+# Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+# Build date: 2026-06-12
+# Gradle invocation: ONE serial ./gradlew command (all 7 clean+buildRom targets chained)
+# Command: ./gradlew :gbkt-examples:pong:clean :gbkt-examples:pong:buildRom \
+#            :gbkt-examples:breakout:clean :gbkt-examples:breakout:buildRom \
+#            :gbkt-examples:simple-physics:clean :gbkt-examples:simple-physics:buildRom \
+#            :gbkt-examples:metasprites:clean :gbkt-examples:metasprites:buildRom \
+#            :gbkt-examples:metasprites-stress:clean :gbkt-examples:metasprites-stress:buildRom \
+#            :gbkt-examples:banks:clean :gbkt-examples:banks:buildRom \
+#            :gbkt-examples:platformer-template:clean :gbkt-examples:platformer-template:buildRom
+
+# Result: BUILD SUCCESSFUL in 27s (93 actionable tasks: 68 executed, 25 up-to-date)
+
+# Per-example results:
+# ─────────────────────────────────────────────────────────────────────
+
+pong                  PASS*   gbkt-examples/pong/build/gbkt/output/pong.gb (32 KB)
+                              NOTE: pong.gb hash is non-deterministic (sdcc/lcc toolchain pre-existing)
+                              — never investigate hash drift; record as PASS* per project convention
+
+breakout              PASS    gbkt-examples/breakout/build/gbkt/output/breakout.gb (32 KB)
+                              2 banks (bank 1 highest), MBC5
+
+simple-physics        PASS    gbkt-examples/simple-physics/build/gbkt/output/simple-physics.gb (32 KB)
+                              1 bank, ROM_ONLY (no banking)
+
+metasprites           PASS    gbkt-examples/metasprites/build/gbkt/output/metasprites.gb (32 KB)
+                              1 bank, ROM_ONLY; gbcMode=COMPATIBLE
+                              NOTE: elephant.png transparent color at palette index 4 (index != 0);
+                              framework routed to GB OBJ index 0 (warning, not error)
+
+metasprites-stress    PASS    gbkt-examples/metasprites-stress/build/gbkt/output/metasprites-stress.gb (32 KB)
+                              2 banks (bank 1 highest), MBC5; gbcMode=COMPATIBLE
+                              NOTE: elephant.png + tiger.png transparent color at index 4 (same warning)
+
+banks                 PASS    gbkt-examples/banks/build/gbkt/output/banks.gb (64 KB)
+                              4 banks (bank 2 highest), MBC5_RAM_BATTERY; 2 RAM banks
+
+platformer-template   PASS    gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb (64 KB)
+                              4 banks (bank 2 highest), MBC1; gbcMode=COMPATIBLE
+                              5 zone tilesets converted (world1Area1Zone, world1Area2Zone, world2Area1Zone,
+                              _screen_title, _screen_nextLevelScene); 17 source files compiled
+
+# Post-substrate action:
+# ./gradlew :gbkt-mcp-server:shadowJar — PASS
+# MCP shadow JAR rebuilt: gbkt-mcp-server/build/libs/gbkt-mcp-server-0.1.0-SNAPSHOT-all.jar
