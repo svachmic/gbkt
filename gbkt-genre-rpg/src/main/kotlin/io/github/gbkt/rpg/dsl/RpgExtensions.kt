@@ -55,12 +55,20 @@ import io.github.gbkt.rpg.domain.StatusEffectDef
 internal object RpgRegistry {
     private val holder = ThreadLocal<MutableMap<String, Any>>()
 
-    /** Returns the current registry map, initializing it if needed. */
+    /**
+     * Returns the current registry map, initializing it if needed.
+     *
+     * On first initialization in a given `game { }` scope, registers [clear] as a teardown hook
+     * with [GameBuilderContext] so that stale character/monster entries do not leak across `game{}`
+     * builds on the same thread (Gradle daemon / JUnit test runner reuse).
+     */
     private fun current(): MutableMap<String, Any> {
         return holder.get()
             ?: run {
                 val map = mutableMapOf<String, Any>()
                 holder.set(map)
+                // Register teardown so clear() is called when the enclosing game{} lambda finishes.
+                io.github.gbkt.core.dsl.GameBuilderContext.addTeardownHook(::clear)
                 map
             }
     }
@@ -73,6 +81,17 @@ internal object RpgRegistry {
     /** Registers a monster definition by ID. */
     fun registerMonster(def: MonsterDef) {
         current()["monster:${def.id}"] = def
+    }
+
+    /**
+     * Clears the thread-local registry.
+     *
+     * Called automatically on `game { }` teardown via [io.github.gbkt.core.dsl.GameBuilderContext]
+     * to prevent stale character/monster entries from leaking into subsequent `game { }` invocations
+     * on the same thread (e.g., in Gradle daemon or JUnit test suites).
+     */
+    fun clear() {
+        holder.remove()
     }
 }
 

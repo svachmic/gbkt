@@ -48,6 +48,20 @@ object GameBuilderContext {
     private val holder = ThreadLocal<GameBuilder?>()
     private val transientHolder = ThreadLocal<MutableSet<String>>()
 
+    /**
+     * Thread-local list of teardown hooks registered by genre modules (e.g., RpgRegistry.clear()).
+     *
+     * Hooks are invoked in [with]'s `finally` block after the game builder lambda returns, before the
+     * previous context is restored. This allows genre packages (which depend on [GameBuilderContext]
+     * indirectly through gbkt-core) to clean up thread-local state without creating a circular
+     * module dependency: `gbkt-lang` does not know about `gbkt-genre-rpg`, but genre packages can
+     * call [addTeardownHook] to register their cleanup actions.
+     *
+     * Hooks are scoped to the outermost `game { }` call — nested `with()` calls (if any) share the
+     * same hook list and only invoke it on the final `finally` restoration.
+     */
+    private val teardownHooksHolder = ThreadLocal<MutableList<() -> Unit>>()
+
     val current: GameBuilder?
         get() = holder.get()
 
@@ -60,16 +74,40 @@ object GameBuilderContext {
         transientHolder.get()?.add(name)
     }
 
+    /**
+     * Registers a teardown hook to be called after the current `game { }` lambda completes.
+     *
+     * Genre modules call this during their own initialization (e.g., from the first extension
+     * function call on [GameBuilder]) to register cleanup for their thread-local state. The hook is
+     * guaranteed to run in the `finally` block of [with], even if the builder lambda throws.
+     *
+     * If called outside a `game { }` context (no active [with]), the hook is silently ignored.
+     */
+    fun addTeardownHook(hook: () -> Unit) {
+        teardownHooksHolder.get()?.add(hook)
+    }
+
     fun <T> with(builder: GameBuilder, block: () -> T): T {
         val previous = holder.get()
         val previousTransient = transientHolder.get()
+        val previousHooks = teardownHooksHolder.get()
         holder.set(builder)
         transientHolder.set(mutableSetOf())
+        teardownHooksHolder.set(mutableListOf())
         return try {
             block()
         } finally {
+            // Invoke all registered teardown hooks before restoring the previous context.
+            teardownHooksHolder.get()?.forEach { hook ->
+                try {
+                    hook()
+                } catch (_: Exception) {
+                    // Hooks must not propagate exceptions — teardown is best-effort.
+                }
+            }
             holder.set(previous)
             transientHolder.set(previousTransient)
+            teardownHooksHolder.set(previousHooks)
         }
     }
 }

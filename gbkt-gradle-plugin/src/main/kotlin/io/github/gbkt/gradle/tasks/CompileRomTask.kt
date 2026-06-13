@@ -282,6 +282,13 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
             }
         }
 
+        // Fallback: gbkt-build.properties was not written (generateC skipped or stale build).
+        // Emit a warning so the developer knows the MBC type is guessed, not read from DSL config.
+        logger.warn(
+            "gbkt-build.properties not found — MBC5 is assumed for banking. " +
+                "Run generateC first, or declare `config { cartridge(Cartridge.MBC5) }` in your game DSL to silence this."
+        )
+
         // Fallback: derive from RAM banks configuration
         val hasRam = ramBanks.getOrElse(0) > 0
         return if (hasRam) "0x1B" else "0x19" // MBC5+RAM+Battery or MBC5
