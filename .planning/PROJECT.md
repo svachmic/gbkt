@@ -1139,6 +1139,8 @@ See `.planning/MILESTONES.md` and `.planning/milestones/v0.1.0-ROADMAP.md` for t
 
 **Goal:** Drain the v0.1.0 deferred-debt backlog — every seed gets a terminal disposition (fixed, verified-closed, or explicitly re-routed), the docs tell the truth, and static-analysis debt is burned down.
 
+**Progress:** Phase 16 (Seed Triage) complete 2026-06-12 — all 47 entries (44 seeds + 3 folded todos) terminally dispositioned against substrate SHA `8cef3dbc`: 24 verified-already-fixed (archived), 10 re-deferred to v0.2.0 backlog, 10 confirmed-open remaining in `.planning/seeds/` as the live fix queue for Phases 19–21. D-08 binding visual review passed (10 verdicts human-locked).
+
 **Target features:**
 - Seed triage & closure — all 44 seeds end fixed, closed-with-evidence, or re-deferred with an explicit v0.2.0 disposition; `.planning/seeds/` is empty at milestone close. Stale status hints (written before Phases 12.6–13.8 shipped) must be re-verified against current master, not trusted.
 - Deprecation removals pulled forward — SEED-023 (whenever/runIf unification) and SEED-025 (remove deprecated combat String overload) land in v0.1.1
@@ -1219,7 +1221,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-12 — milestone v0.1.1 Hardening started (seed-backlog drain, deprecation removals 023/025, DSL_REFERENCE reconciliation, QUAL-01..03, Sonar S3776 burn-down).*
+*Last updated: 2026-06-12 — Phase 16 (Seed Triage) complete: 47/47 dispositions final, TRIAGE.md canonical, 10 confirmed-open seeds queued for Phases 19–21.*
 
 *Prior: 2026-06-09 after v0.1.0 milestone — MVP Compiler Pipeline Rebuild shipped (66 phases, 652 plans, 887 tasks; full-green release gate satisfied via Phase 15). Prior: 2026-06-03 after Phase 13.2 (framework primitives — delegate ergonomics + variable/control-flow) completion — 7/7 plans shipped, verifier 6/6 success criteria passed. Phase 13.2 removed the delegate-ceremony tax and the hand-rolled variable/frame-logic patterns: a uniform single-use `delegateUsed` guard across all five delegate types with one `@file:Suppress` per example file replacing 18 per-site suppresses (Req #12 + carried-in WR-06); `runIf`/`unless`/`orElse` single-frame conditional aliases over `IfOp` (Req #2); `i16FixedVar`/`toPixel`/`subpixel` fixed-point sub-pixel abstraction (Req #3); `easeToZero` decay primitive (Req #8); and `u8Var(wrapAt = N)` declarative wrap with mask vs compare-reset emission (Req #9). Four audited example ports migrated; full `:gbkt-lang:test` 292/0; SimplePhysics D-12 byte-identical codegen oracle GREEN; D-18 ROM sweep 8/8 buildRom EXIT 0 (pong PASS*). Code review surfaced 1 BLOCKER in the phase's own new code — fixed in-phase: CR-01 (i16FixedVar `fractionalBits` not flowing to `toPixel`, RED→GREEN, commits e24fc345/c205be1b). Five advisory items filed as backlog todos: W1–W4 (wrapAt=0, wrapAt-decrement asymmetry, orElse-after-wrap-guard, easeToZero by>1) and a pre-existing metasprites byte-identity baseline staleness (Phase 12.8, not a 13.2 regression). Resume target: Phase 13 parent (next decimal is 13.3 — metasprite, sprite & color). Advisory items still open from 13.1-REVIEW.md: WR-01, WR-03, WR-07.*
 
