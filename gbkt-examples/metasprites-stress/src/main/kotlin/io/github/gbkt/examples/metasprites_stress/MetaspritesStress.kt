@@ -48,7 +48,7 @@ val metaspritesStress =
             cartridge(Cartridge.MBC5)
             // 4 banks — multi-bank ROM forces banked codegen path even when scenes are
             // small (defensive against future BankingAnalysisPass fast-path changes).
-            romBanks = 4
+            romBanks(4)
             // GBC_COMPATIBLE — matches sibling :metasprites example for parity; not
             // strictly required for the defects this ROM exercises.
             target(GbcTarget.GBC_COMPATIBLE)

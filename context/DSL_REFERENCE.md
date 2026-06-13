@@ -1026,6 +1026,18 @@ val inventoryMenu = menu("inventory") {
 
 Configure cartridge hardware, ROM banking, and SRAM inside the `config { }` block.
 
+`ConfigBuilder` uses a **function-setter convention** — all fields are set via function calls, not
+property assignments. Source: `gbkt-lang/.../dsl/SystemBuilders.kt` (`ConfigBuilder`).
+
+```kotlin
+config {
+    cartridge(Cartridge.MBC5_RAM_BATTERY)   // fun cartridge(type: Cartridge)
+    romBanks(8)                             // fun romBanks(count: Int) — usually omit (auto-derived)
+    ramBanks(2)                             // fun ramBanks(count: Int)
+    target(GbcTarget.GBC_COMPATIBLE)        // fun target(mode: GbcTarget)
+}
+```
+
 ### Cartridge Type
 
 Select the cartridge hardware using the `Cartridge` enum. The enum owns the MBC hardware byte —
@@ -1034,7 +1046,7 @@ no string magic values needed.
 ```kotlin
 val myGame = game("MyGame") {
     config {
-        cartridge(Cartridge.MBC5_RAM_BATTERY)  // typed — replaces cartridge = "MBC5_RAM_BATTERY"
+        cartridge(Cartridge.MBC5_RAM_BATTERY)
         target(GbcTarget.GBC_COMPATIBLE)        // GBC palette support
     }
 }
@@ -1076,7 +1088,7 @@ Set romBanks >= 6 or remove romBanks to auto-derive.
 ```kotlin
 config {
     cartridge(Cartridge.MBC1)
-    romBanks = 8   // advanced override — must be >= derived count
+    romBanks(8)   // advanced override — must be >= derived count
 }
 ```
 
@@ -1089,7 +1101,7 @@ present; the DSL value is the single source of truth.
 ```kotlin
 config {
     cartridge(Cartridge.MBC5_RAM_BATTERY)
-    ramBanks = 2   // 2 × 8 KB SRAM banks
+    ramBanks(2)   // 2 × 8 KB SRAM banks
 }
 ```
 
@@ -1099,7 +1111,7 @@ config {
 val myGame = game("MyGame") {
     config {
         cartridge(Cartridge.MBC5_RAM_BATTERY)
-        ramBanks = 2
+        ramBanks(2)
         target(GbcTarget.GBC_COMPATIBLE)
         // romBanks omitted — auto-derived by BankingAnalysisPass
     }

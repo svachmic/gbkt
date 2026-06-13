@@ -32,7 +32,7 @@ val banks =
     game("Banks") {
         config {
             cartridge(Cartridge.MBC5_RAM_BATTERY)
-            ramBanks = 2
+            ramBanks(2)
         }
 
         // Non-transient u8; written by SaveDataBuilder into SRAM slot offset 0 per

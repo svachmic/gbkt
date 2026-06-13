@@ -177,8 +177,8 @@ class CrossBankZoneTilemapAccessTest {
     private fun buildRacerLikeIR() =
         game("CrossBankZoneFixture") {
                 config {
-                    cartridge = Cartridge.ROM_ONLY
-                    romBanks = 2
+                    cartridge(Cartridge.ROM_ONLY)
+                    romBanks(2)
                 }
                 val car by actor {
                     position(80, 80)

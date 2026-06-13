@@ -57,8 +57,8 @@ class ScreenClearSceneAwareTest {
         val gameIR =
             game("ScreenClearTilesetFixture") {
                     config {
-                        cartridge = Cartridge.ROM_ONLY
-                        romBanks = 2
+                        cartridge(Cartridge.ROM_ONLY)
+                        romBanks(2)
                     }
                     val zoneScene =
                         scene("zone") {

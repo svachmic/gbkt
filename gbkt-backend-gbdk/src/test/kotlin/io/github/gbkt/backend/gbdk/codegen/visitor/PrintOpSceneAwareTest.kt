@@ -58,8 +58,8 @@ class PrintOpSceneAwareTest {
         val gameIR =
             game("PrintOpTilesetFixture") {
                     config {
-                        cartridge = Cartridge.ROM_ONLY
-                        romBanks = 2
+                        cartridge(Cartridge.ROM_ONLY)
+                        romBanks(2)
                     }
                     val zoneScene =
                         scene("zone") {
@@ -113,8 +113,8 @@ class PrintOpSceneAwareTest {
         val gameIR =
             game("RacerLikePrintFixture") {
                     config {
-                        cartridge = Cartridge.ROM_ONLY
-                        romBanks = 2
+                        cartridge(Cartridge.ROM_ONLY)
+                        romBanks(2)
                     }
                     val car by actor {
                         position(80, 80)
@@ -223,8 +223,8 @@ class PrintOpSceneAwareTest {
         val gameIR =
             game("PrintOpTitleFixture") {
                     config {
-                        cartridge = Cartridge.ROM_ONLY
-                        romBanks = 2
+                        cartridge(Cartridge.ROM_ONLY)
+                        romBanks(2)
                     }
                     val titleScene =
                         scene("title") {

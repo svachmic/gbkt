@@ -23,8 +23,8 @@ val complexGame =
     gbGame("ComplexGame") {
         // Configuration
         config {
-            cartridge = Cartridge.ROM_ONLY
-            romBanks = 2
+            cartridge(Cartridge.ROM_ONLY)
+            romBanks(2)
             gbcSupport = true
             gbcMode = GBCMode.COMPATIBLE
         }

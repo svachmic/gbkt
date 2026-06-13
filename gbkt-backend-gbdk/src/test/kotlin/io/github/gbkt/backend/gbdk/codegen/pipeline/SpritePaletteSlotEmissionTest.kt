@@ -63,8 +63,8 @@ private fun extractFunctionBodyForSlotTest(source: String, signature: String): S
 private fun buildFourPaletteGame() =
     game("FourPaletteTest") {
             config {
-                cartridge = Cartridge.ROM_ONLY
-                romBanks = 2
+                cartridge(Cartridge.ROM_ONLY)
+                romBanks(2)
                 target(GbcTarget.GBC_COMPATIBLE)
             }
 
@@ -163,8 +163,8 @@ class SpritePaletteSlotEmissionTest {
         val gameIR =
             game("SinglePaletteTest") {
                     config {
-                        cartridge = Cartridge.ROM_ONLY
-                        romBanks = 2
+                        cartridge(Cartridge.ROM_ONLY)
+                        romBanks(2)
                         target(GbcTarget.GBC_COMPATIBLE)
                     }
                     val hero by spritePalette {

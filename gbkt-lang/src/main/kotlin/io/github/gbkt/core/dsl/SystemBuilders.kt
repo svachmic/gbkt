@@ -526,25 +526,71 @@ class SoundRegistersBuilder {
  * Builder for cartridge hardware configuration.
  *
  * Maps to [io.github.gbkt.core.ir.CartridgeConfig].
+ *
+ * All fields use the function-setter convention. Usage:
+ * ```kotlin
+ * config {
+ *     cartridge(Cartridge.MBC5_RAM_BATTERY)
+ *     ramBanks(2)
+ *     target(GbcTarget.GBC_COMPATIBLE)
+ *     // romBanks omitted — auto-derived by BankingAnalysisPass
+ * }
+ * ```
  */
 @GbktDsl
 class ConfigBuilder {
-    /** Cartridge hardware type. Defaults to [Cartridge.ROM_ONLY]. */
-    var cartridge: Cartridge = Cartridge.ROM_ONLY
-
-    /** Number of ROM banks. Null means derive automatically from BankingAnalysisPass (D-05). */
-    var romBanks: Int? = null
-
-    /** Number of RAM banks. */
-    var ramBanks: Int = 0
+    private var _cartridge: Cartridge = Cartridge.ROM_ONLY
+    private var _romBanks: Int? = null
+    private var _ramBanks: Int = 0
+    private var _gbcTarget: GbcTarget = GbcTarget.DMG
 
     /**
-     * GBC compatibility target — controls GBDK compiler flags via gbkt-build.properties.
+     * Sets the cartridge hardware type.
      *
-     * Defaults to [GbcTarget.DMG] (classic grayscale). Set to [GbcTarget.GBC_COMPATIBLE] for games
-     * that run on both DMG and GBC, or [GbcTarget.GBC_ONLY] for GBC-exclusive games.
+     * Usage:
+     * ```kotlin
+     * config {
+     *     cartridge(Cartridge.MBC5_RAM_BATTERY)
+     * }
+     * ```
      */
-    var gbcTarget: GbcTarget = GbcTarget.DMG
+    fun cartridge(type: Cartridge) {
+        _cartridge = type
+    }
+
+    /**
+     * Overrides the auto-derived ROM bank count. Omit in most games — gbkt derives the correct
+     * count from [io.github.gbkt.analysis.BankingAnalysisPass].
+     *
+     * Must be at least as large as the derived count; setting it below the analysis result is a
+     * hard build error with an actionable message.
+     *
+     * Usage:
+     * ```kotlin
+     * config {
+     *     cartridge(Cartridge.MBC1)
+     *     romBanks(8)   // advanced override — must be >= derived count
+     * }
+     * ```
+     */
+    fun romBanks(count: Int) {
+        _romBanks = count
+    }
+
+    /**
+     * Sets the number of SRAM banks.
+     *
+     * Usage:
+     * ```kotlin
+     * config {
+     *     cartridge(Cartridge.MBC5_RAM_BATTERY)
+     *     ramBanks(2)   // 2 × 8 KB SRAM banks
+     * }
+     * ```
+     */
+    fun ramBanks(count: Int) {
+        _ramBanks = count
+    }
 
     /**
      * Sets the GBC compatibility target mode.
@@ -558,29 +604,15 @@ class ConfigBuilder {
      * ```
      */
     fun target(mode: GbcTarget) {
-        gbcTarget = mode
-    }
-
-    /**
-     * Sets the cartridge hardware type.
-     *
-     * Usage:
-     * ```kotlin
-     * config {
-     *     cartridge(Cartridge.MBC5_RAM_BATTERY)
-     * }
-     * ```
-     */
-    fun cartridge(type: Cartridge) {
-        this.cartridge = type
+        _gbcTarget = mode
     }
 
     internal fun build() =
         io.github.gbkt.core.ir.CartridgeConfig(
-            cartridge = cartridge,
-            romBanks = romBanks,
-            ramBanks = ramBanks,
-            gbcTarget = gbcTarget,
+            cartridge = _cartridge,
+            romBanks = _romBanks,
+            ramBanks = _ramBanks,
+            gbcTarget = _gbcTarget,
         )
 }
 

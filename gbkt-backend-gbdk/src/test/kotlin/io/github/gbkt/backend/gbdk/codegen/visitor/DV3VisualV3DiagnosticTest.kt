@@ -109,8 +109,8 @@ private fun extractFunctionBodyForDv3V3(source: String, signature: String): Stri
 private fun buildDv3V3GbcGame() =
     game("Dv3VisualV3Test") {
             config {
-                cartridge = Cartridge.ROM_ONLY
-                romBanks = 2
+                cartridge(Cartridge.ROM_ONLY)
+                romBanks(2)
                 target(GbcTarget.GBC_COMPATIBLE)
             }
 

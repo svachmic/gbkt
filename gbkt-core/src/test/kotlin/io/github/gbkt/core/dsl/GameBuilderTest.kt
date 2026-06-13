@@ -281,8 +281,8 @@ class GameBuilderTest {
         val ir =
             game("TestGame") {
                     config {
-                        cartridge = Cartridge.ROM_ONLY
-                        romBanks = 2
+                        cartridge(Cartridge.ROM_ONLY)
+                        romBanks(2)
                     }
                     val gameScene = scene("game") { enter {} }
                     start = gameScene
