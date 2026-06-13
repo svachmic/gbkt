@@ -12,6 +12,7 @@ import io.github.gbkt.emulator.agent.GameMetadata
 import io.github.gbkt.emulator.agent.StepAgent
 import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.Assumptions
 
@@ -114,7 +115,11 @@ class Phase19VisualEvidenceTest {
             // GBC mode needs 30 boot frames (not 10) — CGB PPU init takes extra time.
             agent.stepN(30)
 
-            agent.waitForScene("play", 120)
+            val playObs = agent.waitForScene("play", 120)
+            assertTrue(
+                playObs.scene == "play",
+                "Timed out waiting for play scene after stepN(30) — got: ${playObs.scene}",
+            )
 
             // SEED-004: elephant tiles uncorrupted on a clean boot frame
             val seed004 = captureAndRename(agent, "seed004-boot", "SEED-004/screenshot.png")
@@ -161,7 +166,11 @@ class Phase19VisualEvidenceTest {
             // GBC mode needs 30 boot frames — CGB PPU init takes extra time.
             agent.stepN(30)
 
-            agent.waitForScene("play", 120)
+            val playObs = agent.waitForScene("play", 120)
+            assertTrue(
+                playObs.scene == "play",
+                "Timed out waiting for play scene after stepN(30) — got: ${playObs.scene}",
+            )
 
             // First cycle: 4 A presses → rot=4 (subpal=1 pink)
             // Press 1: rot 0 → 1
@@ -199,6 +208,16 @@ class Phase19VisualEvidenceTest {
             // Wait 2 extra frames for GBC PPU to flush the new palette to screen
             agent.step(emptySet())
             agent.step(emptySet())
+
+            // Confirm rot==8 before capture — if any A-press was missed, fail here rather than
+            // silently capturing a wrong-state frame (mirrors MetaspriteUatTest.behavior3 idiom).
+            val rot = agent.readVariable("rot")
+            assertEquals(
+                8,
+                rot,
+                "rot must be 8 at SEED-006/013 capture (subpal=cyan); got: $rot — " +
+                    "check edge-detection release frames",
+            )
 
             // SEED-006: subPalette global correctly set before moveMetasprite() — cyan visible
             val seed006 = captureAndRename(agent, "seed006-subpalette", "SEED-006/screenshot.png")
