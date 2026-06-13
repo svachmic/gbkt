@@ -3716,10 +3716,12 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
      * This matches what [io.github.gbkt.core.dsl.ScriptBuilder.setFlag] emits
      * (`Assign("_flag_$flagName", ...)`) and what [GBDKSystemVisitor] references.
      */
-    private fun buildFlagVarDecls(gameIR: GameIR): List<CVarDecl> {
-        val decls = mutableListOf<CVarDecl>()
+    private fun buildFlagVarDecls(gameIR: GameIR): List<CVarDecl> =
+        buildGlobalFlagVarDecls(gameIR) + buildZoneObjectInlineFlagVarDecls(gameIR)
 
-        // Flags declared in GlobalFlagsIR pages (via flags { page(...) { flag("name") } })
+    /** Flag vars from [GlobalFlagsIR] pages (via `flags { page(...) { flag("name") } }`). */
+    private fun buildGlobalFlagVarDecls(gameIR: GameIR): List<CVarDecl> {
+        val decls = mutableListOf<CVarDecl>()
         for (flagsIR in gameIR.flags) {
             for (page in flagsIR.pages) {
                 for (flagName in page.flags) {
@@ -3728,10 +3730,17 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                 }
             }
         }
+        return decls
+    }
 
-        // Inline flags on zone objects — usedFlagId and visibleFlagId (NpcObjectIR).
-        // These are ad-hoc flags not registered in any GlobalFlagsIR page but referenced as
-        // `_flag_{id}` by GBDKSystemVisitor.buildNpcHandlerFunction / buildChestHandlerFunction.
+    /**
+     * Inline flag vars on zone objects — `usedFlagId` and `visibleFlagId` ([NpcObjectIR]).
+     *
+     * Ad-hoc flags not registered in any [GlobalFlagsIR] page but referenced as `_flag_{id}` by
+     * [GBDKSystemVisitor.buildNpcHandlerFunction] / `buildChestHandlerFunction`.
+     */
+    private fun buildZoneObjectInlineFlagVarDecls(gameIR: GameIR): List<CVarDecl> {
+        val decls = mutableListOf<CVarDecl>()
         for (zone in gameIR.zones) {
             for (obj in zone.objects) {
                 val usedFlag = obj.usedFlagId
@@ -3748,7 +3757,6 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                 }
             }
         }
-
         return decls
     }
 
