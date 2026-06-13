@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 18-17-PLAN.md
-last_updated: "2026-06-13T12:29:39.211Z"
+stopped_at: Completed 18-20-PLAN.md
+last_updated: "2026-06-13T12:34:00.000Z"
 last_activity: 2026-06-13
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 49
-  completed_plans: 41
+  completed_plans: 42
   percent: 33
 ---
 
@@ -55,8 +55,8 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
-Plan: 19 of 27
-Status: Ready to execute
+Plan: 20 of 27 (COMPLETE)
+Status: Ready for Plan 21
 Last activity: 2026-06-13
 
 Resume signal: /gsd-execute-phase 17 (Docs + QUAL) or /gsd-execute-phase 18 (DEPR + SONAR) — both parallel-capable with each other; Phase 19 depends on Phase 16
@@ -135,6 +135,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 
 | Phase/Plan | Duration | Tasks | Files |
 |------------|----------|-------|-------|
+| Phase 18 P20 | 3 min | 2 tasks | 1 file |
 | Phase 18 P16 | 4 min | 2 tasks | 1 file |
 | Phase 02 P04 | 12 min | 2 tasks | 5 files |
 | Phase 03-asset-pipeline-and-jvm-test-runner P01 | 6 | 2 tasks | 10 files |
@@ -422,6 +423,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- Plan 18-20: E-11/E-14 S3776 cleared via value-returning extract-method (buildZoneOnExitSwitch, buildEdgeAutoPositionSwitch, buildEncounterRollStatements, buildEncounterEntryGuard); GBDKSystemVisitor.kt S3776 = 0; byte-identity ROM sweep green
 - Plan 10.2-07: Fix shape Option B (Order-Tweaked) chosen for DEF-10.1-13-C 5th layer — swap addAll(hoistedBgFillCheckerboardStatements) before addAll(allSpriteDataLoads) in GBDKPipelineV2.kt mainBody buildList; mechanism = LCDC.4=1 shared $8000-$97FF VRAM, last-write wins, Plan 22 emit order corrupted sprite tile 0; all 5 locked tests preserved; RED test at commit 20691a7d
 - UAT_GUIDE.md created with 3 real Phase 07 debugging walkthroughs; emulator_press documented with frames+1 semantics; variable type range table added; UAT-02 requirement satisfied
 - scrollAware defaults to false on all VramTextVerifier methods to preserve backward compatibility; WINDOW layer is always unaffected by scroll registers (GB hardware behavior)
