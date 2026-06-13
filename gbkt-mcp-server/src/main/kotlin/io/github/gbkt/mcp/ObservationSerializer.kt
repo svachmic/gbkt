@@ -19,50 +19,43 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 /** Converts an [Observation] to a [JsonObject] suitable for MCP tool results. */
-fun Observation.toJsonObject(): JsonObject = buildJsonObject {
-    put("frame", frame)
-    put("scene", scene)
-    put("isTerminal", isTerminal)
-    put(
-        "variables",
-        buildJsonObject {
-            for ((k, v) in variables) {
-                put(k, v)
-            }
-        },
-    )
-    put(
-        "sprites",
-        buildJsonArray {
-            for (sprite in sprites) {
-                add(sprite.toJsonObject())
-            }
-        },
-    )
-    put(
-        "actors",
-        buildJsonArray {
-            for (actor in actors) {
-                add(actor.toJsonObject())
-            }
-        },
-    )
-    put(
-        "bgText",
-        buildJsonArray { for (row in bgText) add(kotlinx.serialization.json.JsonPrimitive(row)) },
-    )
-    put(
-        "winText",
-        buildJsonArray { for (row in winText) add(kotlinx.serialization.json.JsonPrimitive(row)) },
-    )
-    put(
-        "newLogEntries",
-        buildJsonArray {
-            for (entry in newLogEntries) {
-                add(entry.toJsonObject())
-            }
-        },
-    )
+fun Observation.toJsonObject(): JsonObject {
+    val obs = this
+    return buildJsonObject {
+        put("frame", frame)
+        put("scene", scene)
+        put("isTerminal", isTerminal)
+        put("variables", obs.buildVariablesObject())
+        put("sprites", obs.buildSpritesArray())
+        put("actors", obs.buildActorsArray())
+        put("bgText", obs.buildBgTextArray())
+        put("winText", obs.buildWinTextArray())
+        put("newLogEntries", obs.buildNewLogEntriesArray())
+    }
+}
+
+private fun Observation.buildVariablesObject(): JsonObject = buildJsonObject {
+    for ((k, v) in variables) put(k, v)
+}
+
+private fun Observation.buildSpritesArray(): JsonArray = buildJsonArray {
+    for (sprite in sprites) add(sprite.toJsonObject())
+}
+
+private fun Observation.buildActorsArray(): JsonArray = buildJsonArray {
+    for (actor in actors) add(actor.toJsonObject())
+}
+
+private fun Observation.buildBgTextArray(): JsonArray = buildJsonArray {
+    for (row in bgText) add(JsonPrimitive(row))
+}
+
+private fun Observation.buildWinTextArray(): JsonArray = buildJsonArray {
+    for (row in winText) add(JsonPrimitive(row))
+}
+
+private fun Observation.buildNewLogEntriesArray(): JsonArray = buildJsonArray {
+    for (entry in newLogEntries) add(entry.toJsonObject())
 }
 
 private fun SpriteEntry.toJsonObject(): JsonObject = buildJsonObject {
