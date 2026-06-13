@@ -60,11 +60,11 @@ object PlatformerTemplate : Template {
         |    scene("gameplay") {
         |        every.frame {
         |            // Horizontal movement
-        |            whenever(button.left.isPressed) { player.x -= moveSpeed }
-        |            whenever(button.right.isPressed) { player.x += moveSpeed }
+        |            runIf(button.left.isPressed) { player.x -= moveSpeed }
+        |            runIf(button.right.isPressed) { player.x += moveSpeed }
         |
         |            // Jump when on ground
-        |            whenever(button.a.justPressed and (onGround isEqual 1)) {
+        |            runIf(button.a.justPressed and (onGround isEqual 1)) {
         |                velocityY set jumpForce
         |                onGround set 0
         |            }
@@ -73,21 +73,21 @@ object PlatformerTemplate : Template {
         |            velocityY += gravity
         |
         |            // Cap falling speed
-        |            whenever(velocityY isAbove 6) { velocityY set 6 }
+        |            runIf(velocityY isAbove 6) { velocityY set 6 }
         |
         |            // Apply vertical velocity
         |            player.y += velocityY
         |
         |            // Simple ground collision
-        |            whenever(player.y isAbove (groundY - 16)) {
+        |            runIf(player.y isAbove (groundY - 16)) {
         |                player.y set (groundY - 16)
         |                velocityY set 0
         |                onGround set 1
         |            }
         |
         |            // Screen bounds
-        |            whenever(player.x isBelow 0) { player.x set 0 }
-        |            whenever(player.x isAbove 152) { player.x set 152 }
+        |            runIf(player.x isBelow 0) { player.x set 0 }
+        |            runIf(player.x isAbove 152) { player.x set 152 }
         |        }
         |    }
         |

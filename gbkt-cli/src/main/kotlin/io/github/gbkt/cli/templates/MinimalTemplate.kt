@@ -39,10 +39,10 @@ object MinimalTemplate : Template {
         |        // Handle input every frame
         |        every.frame {
         |            // Move player with D-pad
-        |            whenever(button.left.isPressed) { player.x -= 1 }
-        |            whenever(button.right.isPressed) { player.x += 1 }
-        |            whenever(button.up.isPressed) { player.y -= 1 }
-        |            whenever(button.down.isPressed) { player.y += 1 }
+        |            runIf(button.left.isPressed) { player.x -= 1 }
+        |            runIf(button.right.isPressed) { player.x += 1 }
+        |            runIf(button.up.isPressed) { player.y -= 1 }
+        |            runIf(button.down.isPressed) { player.y += 1 }
         |        }
         |    }
         |
