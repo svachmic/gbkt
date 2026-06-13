@@ -487,46 +487,60 @@ class GBDKPipeline {
      */
     private fun extractControls(game: GameIR): Map<String, List<ControlMapping>> {
         val result = linkedMapOf<String, LinkedHashSet<ControlMapping>>()
+        for (scene in game.scenes) {
+            walkOps(scene.id, scene.enterOps, result)
+            walkOps(scene.id, scene.frameOps, result)
+            walkOps(scene.id, scene.exitOps, result)
+        }
+        return result.mapValues { it.value.toList() }
+    }
 
-        fun walkOps(sceneId: String, ops: List<ScriptOp>) {
-            for (op in ops) {
-                when (op) {
-                    is IfOp -> {
-                        val condition = op.condition
-                        if (condition is CallExpr) {
-                            val interactionType = INPUT_FUNCTION_TYPES[condition.function]
-                            if (interactionType != null) {
-                                val arg = condition.args.firstOrNull()
-                                if (arg is VarRef) {
-                                    val buttonName = GBDK_BUTTON_NAMES[arg.name]
-                                    if (buttonName != null) {
-                                        result
-                                            .getOrPut(sceneId) { linkedSetOf() }
-                                            .add(ControlMapping(buttonName, interactionType))
-                                    }
+    /**
+     * Recursively walks [ops] and collects [ControlMapping]s into [result].
+     *
+     * Descends depth-first into [IfOp] branches, [WhileOp], [ForOp], [FadeOp], [PoolDestroyActor]
+     * death-callbacks, and [PoolForEachActive] bodies. For each [IfOp] whose condition is a
+     * [CallExpr] matching an input-function name (`dpad_held`, `dpad_pressed`, `button_held`,
+     * `button_pressed`), extracts the button from the first arg and records a [ControlMapping]
+     * under [sceneId].
+     *
+     * Promoted from a local function inside [extractControls] to reduce cognitive complexity of the
+     * outer function (SonarCloud S3776 E-13 / E-19).
+     */
+    private fun walkOps(
+        sceneId: String,
+        ops: List<ScriptOp>,
+        result: LinkedHashMap<String, LinkedHashSet<ControlMapping>>,
+    ) {
+        for (op in ops) {
+            when (op) {
+                is IfOp -> {
+                    val condition = op.condition
+                    if (condition is CallExpr) {
+                        val interactionType = INPUT_FUNCTION_TYPES[condition.function]
+                        if (interactionType != null) {
+                            val arg = condition.args.firstOrNull()
+                            if (arg is VarRef) {
+                                val buttonName = GBDK_BUTTON_NAMES[arg.name]
+                                if (buttonName != null) {
+                                    result
+                                        .getOrPut(sceneId) { linkedSetOf() }
+                                        .add(ControlMapping(buttonName, interactionType))
                                 }
                             }
                         }
-                        walkOps(sceneId, op.then)
-                        walkOps(sceneId, op.otherwise)
                     }
-                    is WhileOp -> walkOps(sceneId, op.body)
-                    is ForOp -> walkOps(sceneId, op.body)
-                    is FadeOp -> walkOps(sceneId, op.after)
-                    is PoolDestroyActor -> walkOps(sceneId, op.deathCallbackOps)
-                    is PoolForEachActive -> walkOps(sceneId, op.body)
-                    else -> {}
+                    walkOps(sceneId, op.then, result)
+                    walkOps(sceneId, op.otherwise, result)
                 }
+                is WhileOp -> walkOps(sceneId, op.body, result)
+                is ForOp -> walkOps(sceneId, op.body, result)
+                is FadeOp -> walkOps(sceneId, op.after, result)
+                is PoolDestroyActor -> walkOps(sceneId, op.deathCallbackOps, result)
+                is PoolForEachActive -> walkOps(sceneId, op.body, result)
+                else -> {}
             }
         }
-
-        for (scene in game.scenes) {
-            walkOps(scene.id, scene.enterOps)
-            walkOps(scene.id, scene.frameOps)
-            walkOps(scene.id, scene.exitOps)
-        }
-
-        return result.mapValues { it.value.toList() }
     }
 
     /**
