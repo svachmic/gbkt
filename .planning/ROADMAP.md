@@ -147,7 +147,7 @@ Plans:
 **Wave 1**
 
 - [x] 18-01-PLAN.md — DEPR-01 code: remove whenever, relocate pool-collision runIf overload, migrate all call sites
-- [ ] 18-02-PLAN.md — DEPR-01 docs: migrate whenever→runIf in context/DSL_REFERENCE.md
+- [x] 18-02-PLAN.md — DEPR-01 docs: migrate whenever→runIf in context/DSL_REFERENCE.md
 - [ ] 18-03-PLAN.md — DEPR-02: remove combatIsInState(String) overload + migrate sole test site
 - [ ] 18-04-PLAN.md — DEPR-03 CONTRIBUTING deprecation convention + new root CHANGELOG.md (D-09)
 - [ ] 18-05-PLAN.md — SEED-027: GBC bitsPerPixel 4→2 + KDoc narrowing (D-07)
@@ -282,7 +282,7 @@ Plans:
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 12/12 | Complete   | 2026-06-12 |
-| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 1/27 | In Progress|  |
+| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 2/27 | In Progress|  |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |
