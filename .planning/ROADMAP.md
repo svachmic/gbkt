@@ -105,7 +105,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 17-07-PLAN.md — Composite-build detekt bridge + delete baseline wiring + whole-repo detekt green
+- [x] 17-07-PLAN.md — Composite-build detekt bridge + delete baseline wiring + whole-repo detekt green
 - [ ] 17-09-PLAN.md — Rewrite sections 5-9 (Pools, Tweening, Camera, Camera Transitions, Physics) implemented-only
 
 **Wave 5** *(blocked on Wave 4 completion)*
@@ -193,7 +193,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 |-------|-----------|----------------|--------|-----------|
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
-| 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 7/12 | In Progress|  |
+| 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 8/12 | In Progress|  |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 0/TBD | Not started | - |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
