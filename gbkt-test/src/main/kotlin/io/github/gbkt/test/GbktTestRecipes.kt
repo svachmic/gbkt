@@ -349,6 +349,7 @@ private fun verifySceneHeaderConsistency(metadata: GameMetadata, gameHeader: Fil
 }
 
 /** Checks scene count, expected scene names, expected actors, OAM counts, and total OAM. */
+@Suppress("ThrowsCount") // Test verification helper: each throw is a distinct assertion failure.
 private fun verifySceneExpectations(metadata: GameMetadata, expectation: MetadataExpectation) {
     val actualSceneCount = metadata.scenes.sceneNames.size
     if (actualSceneCount != expectation.expectedSceneCount) {
