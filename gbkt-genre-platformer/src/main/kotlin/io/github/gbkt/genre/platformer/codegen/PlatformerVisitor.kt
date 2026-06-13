@@ -37,6 +37,7 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CVar
 import io.github.gbkt.backend.gbdk.codegen.ast.CVarDecl
 import io.github.gbkt.backend.gbdk.codegen.ast.CVoid
 import io.github.gbkt.backend.gbdk.codegen.ast.CWhile
+import io.github.gbkt.backend.gbdk.profiles.GameBoyConstants
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.GenericSystem
 import io.github.gbkt.core.ir.IfOp
@@ -1983,9 +1984,9 @@ class PlatformerVisitor : GenreSystemVisitor {
                     CVar("_cam_x"),
                     "=",
                     CBinaryExpr(
-                        CBinaryExpr(CVar("_cam_target_x"), "/", CLiteral(160)),
+                        CBinaryExpr(CVar("_cam_target_x"), "/", CLiteral(GameBoyConstants.SCREEN_WIDTH)),
                         "*",
-                        CLiteral(160),
+                        CLiteral(GameBoyConstants.SCREEN_WIDTH),
                     ),
                 )
             )
@@ -1997,9 +1998,9 @@ class PlatformerVisitor : GenreSystemVisitor {
                     CVar("_cam_y"),
                     "=",
                     CBinaryExpr(
-                        CBinaryExpr(CVar("_cam_target_y"), "/", CLiteral(144)),
+                        CBinaryExpr(CVar("_cam_target_y"), "/", CLiteral(GameBoyConstants.SCREEN_HEIGHT)),
                         "*",
-                        CLiteral(144),
+                        CLiteral(GameBoyConstants.SCREEN_HEIGHT),
                     ),
                 )
             )

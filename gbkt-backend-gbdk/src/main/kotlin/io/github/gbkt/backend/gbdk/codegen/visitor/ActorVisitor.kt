@@ -34,6 +34,7 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CUnaryExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CVar
 import io.github.gbkt.backend.gbdk.codegen.ast.CVarDecl
 import io.github.gbkt.backend.gbdk.codegen.ast.CVoid
+import io.github.gbkt.backend.gbdk.profiles.GameBoyConstants
 import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.DiagonalMode
 import io.github.gbkt.core.ir.FixedPointMode
@@ -465,7 +466,7 @@ object ActorVisitor {
                             CBinaryExpr(
                                 CCall("dpad_held", listOf(CVar("J_DOWN"))),
                                 "&&",
-                                CBinaryExpr(yVar, "<", CLiteral(144 - speed)),
+                                CBinaryExpr(yVar, "<", CLiteral(GameBoyConstants.SCREEN_HEIGHT - speed)),
                             ),
                         thenBody = listOf(CExprStatement(CBinaryExpr(yVar, "+=", CLiteral(speed)))),
                     )
@@ -487,7 +488,7 @@ object ActorVisitor {
                             CBinaryExpr(
                                 CCall("dpad_held", listOf(CVar("J_RIGHT"))),
                                 "&&",
-                                CBinaryExpr(xVar, "<", CLiteral(160 - speed)),
+                                CBinaryExpr(xVar, "<", CLiteral(GameBoyConstants.SCREEN_WIDTH - speed)),
                             ),
                         thenBody = listOf(CExprStatement(CBinaryExpr(xVar, "+=", CLiteral(speed)))),
                     )

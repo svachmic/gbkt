@@ -39,6 +39,7 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CVar
 import io.github.gbkt.backend.gbdk.codegen.ast.CVarDecl
 import io.github.gbkt.backend.gbdk.codegen.ast.CVoid
 import io.github.gbkt.backend.gbdk.codegen.ast.CWhile
+import io.github.gbkt.backend.gbdk.profiles.GameBoyConstants
 import io.github.gbkt.core.dsl.ChannelGroupDef
 import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.ActorPoolIR
@@ -169,8 +170,8 @@ class GBDKSystemVisitor(
                         // literal flows into a CTernary that ultimately casts to UINT8, producing
                         // SCX/SCY = 248/etc. (wraparound) and scrolling the BG off-screen.
                         // See 07.4-UAT.md secondary issue 1 (racer 19x19 zone → maxX = -8 → 248).
-                        val maxX = kotlin.math.max(0, boundsWidth - 160)
-                        val maxY = kotlin.math.max(0, boundsHeight - 144)
+                        val maxX = kotlin.math.max(0, boundsWidth - GameBoyConstants.SCREEN_WIDTH)
+                        val maxY = kotlin.math.max(0, boundsHeight - GameBoyConstants.SCREEN_HEIGHT)
 
                         // _camera_x = (UINT8)(rawX < 0 ? 0 : (rawX > maxX ? maxX : rawX))
                         val clampX =
