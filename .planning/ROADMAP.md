@@ -86,7 +86,19 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
   4. All 160/144 magic-pixel literals are replaced by `ScreenSpec.WIDTH` / `ScreenSpec.HEIGHT` constants
   5. The in-scope set of remaining magic-pixel literals is fully enumerated and eliminated; intentional hardware constants are documented as exempt
 
-**Plans**: TBD
+**Plans**: 12 plans
+- [ ] 17-01-PLAN.md — DSL_REFERENCE accuracy audit evidence (13 sections, per-method, source-cited) + full-doc triage sweep
+- [ ] 17-02-PLAN.md — Screen-constant single source of truth: TargetProfiles.GAME_BOY_SCREEN preset + GameBoyConstants derivation
+- [ ] 17-03-PLAN.md — Re-enable 4 detekt rules (targeted) + commit violation inventory
+- [ ] 17-04-PLAN.md — Archive 12 FEAT-*.md backlog seeds (verbatim + provenance) + expand REQUIREMENTS FEAT-XX
+- [ ] 17-05-PLAN.md — Replace 8 in-scope 160/144 literals + ROM byte-identity smoke + exemption table + D-06 seed
+- [ ] 17-06-PLAN.md — Fix detekt violations to zero (real fixes or rationale-commented excludes; no baseline)
+- [ ] 17-07-PLAN.md — Composite-build detekt bridge + delete baseline wiring + whole-repo detekt green
+- [ ] 17-08-PLAN.md — DOCS-03 fixes + rewrite sections 1-4 (State Machine, Dialog, Menu, Save) implemented-only
+- [ ] 17-09-PLAN.md — Rewrite sections 5-9 (Pools, Tweening, Camera, Camera Transitions, Physics) implemented-only
+- [ ] 17-10-PLAN.md — Rewrite sections 10-13 (Pathfinding, Testing, Battle, Inventory); zero caveats remain
+- [ ] 17-11-PLAN.md — Folded todos: ConfigBuilder setter unify + config{} docs + MBC5 warning + RpgRegistry.clear()
+- [ ] 17-12-PLAN.md — Cross-doc consistency pass (D-16) + backfill FEAT-* removal-commit provenance
 
 ### Phase 18: Deprecation Removals and Sonar Burn-down
 
