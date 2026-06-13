@@ -2963,23 +2963,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         // Extern declarations for banked zone tile arrays
         // When zones are allocated to non-zero banks, their tile arrays need extern declarations
         // in game.h so that zone_load_X() functions in main.c can reference them.
-        val zoneTileExterns =
-            gameIR.zones
-                .filter { zone -> (bankAllocation[zone.id] ?: 0) > 0 }
-                .map { zone ->
-                    val zoneSanitized = zone.id.replace('-', '_').replace(' ', '_')
-                    val tileData = zone.tileData
-                    val arraySize = if (tileData.isEmpty()) 1 else tileData.size
-                    CVarDecl(
-                        name = "_zone_${zoneSanitized}_tiles",
-                        type =
-                            io.github.gbkt.backend.gbdk.codegen.ast.CArray(
-                                io.github.gbkt.backend.gbdk.codegen.ast.CConst(CU8),
-                                arraySize,
-                            ),
-                        isExtern = true,
-                    )
-                }
+        val zoneTileExterns = buildZoneTileExterns(gameIR, bankAllocation)
 
         val allExterns =
             actorExterns +
@@ -2994,57 +2978,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         // Extern declarations for actor pool state variables (_pool_<id>_active[],
         // _pool_<id>_x[], _pool_<id>_y[], _pool_<id>_oam[])
         // Mirrors GBDKSystemVisitor.buildActorPoolStateVars() structure for extern visibility.
-        val actorPoolExterns =
-            gameIR.actorPools.flatMap { pool ->
-                val id = pool.id.replace('-', '_').replace(' ', '_')
-                val maxSize = pool.config.maxSize
-                buildList {
-                    add(
-                        CVarDecl(
-                            name = "_pool_${id}_active",
-                            type = CArray(CU8, maxSize),
-                            isExtern = true,
-                        )
-                    )
-                    add(
-                        CVarDecl(
-                            name = "_pool_${id}_x",
-                            type = CArray(CU8, maxSize),
-                            isExtern = true,
-                        )
-                    )
-                    add(
-                        CVarDecl(
-                            name = "_pool_${id}_y",
-                            type = CArray(CU8, maxSize),
-                            isExtern = true,
-                        )
-                    )
-                    add(
-                        CVarDecl(
-                            name = "_pool_${id}_oam",
-                            type = CArray(CU8, maxSize),
-                            isExtern = true,
-                        )
-                    )
-                    for (prop in pool.instanceProperties) {
-                        val elemType =
-                            when (prop.type) {
-                                VarType.U8,
-                                VarType.U16 -> CU8
-                                VarType.I8,
-                                VarType.I16 -> CI8
-                            }
-                        add(
-                            CVarDecl(
-                                name = "_pool_${id}_${prop.name}",
-                                type = CArray(elemType, maxSize),
-                                isExtern = true,
-                            )
-                        )
-                    }
-                }
-            }
+        val actorPoolExterns = buildActorPoolExterns(gameIR)
 
         // Extern declarations for RPG combat helper variables
         // Referenced by RpgVisitor.generateUseAbilityFunction() and generateTargetingStatement()
@@ -3159,54 +3093,11 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                 }
             }
 
-        // Phase 12 D-12a — is_tile_solid() forward declaration for cross-bank callers.
-        // The helper itself is emitted as a rawSection in main.c (because of the NONBANKED
-        // keyword, which the typed C AST does not model). Auto-prototype extraction (which
-        // pulls from homeFile.functions) therefore does NOT cover it. Emit a manual prototype
-        // here so banked scene code (bank1.c includes game.h) can call is_tile_solid() —
-        // wired by Plan 12-11 (5-point AABB probe) in PlatformerVisitor.
-        // Gated on the same predicate as the helper itself; null when tilemap collision is off.
-        val isTileSolidPrototypeRaw =
-            if (gameUsesTilemapCollision(gameIR)) {
-                "UINT8 is_tile_solid(UINT16 world_x, UINT16 world_y) NONBANKED;"
-            } else {
-                null
-            }
-
-        // Phase 12 D-13 — _bkg_set_level_submap_banked() forward declaration for cross-bank
-        // callers. Same justification as is_tile_solid above: emitted as rawSection in main.c
-        // (NONBANKED keyword), so auto-prototype extraction skips it; emit a manual prototype
-        // here so the platformer column-scroll codegen (Plan 12-11) can call across banks.
-        val bkgSetLevelSubmapPrototypeRaw =
-            if (gameUsesTilemapCollision(gameIR)) {
-                "void _bkg_set_level_submap_banked(UINT8 x, UINT8 y, UINT8 w, UINT8 h) NONBANKED;"
-            } else {
-                null
-            }
-
-        // Phase 12 D-02 / D-08 anchor 5 — setup_current_level() forward declaration (Plan 12-17
-        // Task 2). Same justification as is_tile_solid + _bkg_set_level_submap_banked above:
-        // emitted as rawSection in main.c (NONBANKED keyword), so auto-prototype extraction skips
-        // it; emit a manual prototype here so the main() level-switch guard (also in main.c) AND
-        // future scene-enter call sites (e.g. gameplayScene.enter calling setup_current_level on
-        // first activation) can reference it. Same gate as the function itself: tilemap-collision
-        // + presence of a nextLevel-conventional scene id. We use `gameUsesTilemapCollision` as
-        // the simple gate here — the prototype is harmless if setup_current_level is omitted
-        // (just an unused extern); the matching omission is the gate on the function body itself.
-        val setupCurrentLevelPrototypeRaw =
-            if (
-                gameUsesTilemapCollision(gameIR) &&
-                    gameIR.zones.any { z ->
-                        val l = z.id.lowercase()
-                        !l.contains("title") &&
-                            !l.contains("nextlevel") &&
-                            !l.contains("next_level")
-                    }
-            ) {
-                "void setup_current_level(void) NONBANKED;"
-            } else {
-                null
-            }
+        // NONBANKED helper prototypes (is_tile_solid, _bkg_set_level_submap_banked,
+        // setup_current_level). These helpers are emitted as rawSections in main.c and are
+        // therefore not covered by auto-prototype extraction from homeFile.functions.
+        // Extracted to reduce cognitive complexity of buildHeaderFile (SonarCloud S3776 E-15).
+        val nonBankedPrototypesRaw = buildNonBankedPrototypesRaw(gameIR)
 
         // isHeader=true wraps content in #ifndef GAME_H / #define GAME_H / #endif include guard.
         // Scene defines are inside the guard so #pragma bank is not emitted (bank=0 for header).
@@ -3219,15 +3110,125 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
             variables =
                 allExterns + actorPoolExterns + rpgCombatHelperExterns + homeGlobalAutoExterns,
             rawSections =
-                listOfNotNull(
-                    paletteExternRaw,
-                    callOpForwardDecls,
-                    isTileSolidPrototypeRaw,
-                    bkgSetLevelSubmapPrototypeRaw,
-                    setupCurrentLevelPrototypeRaw,
-                ) + metaspriteAutoExterns,
+                listOfNotNull(paletteExternRaw, callOpForwardDecls) +
+                    nonBankedPrototypesRaw +
+                    metaspriteAutoExterns,
             functions = sceneFunctionPrototypes + homeFunctionPrototypes + collectionPrototypes,
         )
+    }
+
+    // =========================================================================
+    // buildHeaderFile sub-builders (E-15 extract-method decomposition)
+    // =========================================================================
+
+    /**
+     * Extern declarations for banked zone tile arrays.
+     *
+     * When zones are allocated to non-zero banks, their tile arrays need extern declarations in
+     * `game.h` so that `zone_load_X()` functions in `main.c` can reference them.
+     */
+    private fun buildZoneTileExterns(
+        gameIR: GameIR,
+        bankAllocation: Map<String, Int>,
+    ): List<CVarDecl> =
+        gameIR.zones
+            .filter { zone -> (bankAllocation[zone.id] ?: 0) > 0 }
+            .map { zone ->
+                val zoneSanitized = zone.id.replace('-', '_').replace(' ', '_')
+                val tileData = zone.tileData
+                val arraySize = if (tileData.isEmpty()) 1 else tileData.size
+                CVarDecl(
+                    name = "_zone_${zoneSanitized}_tiles",
+                    type =
+                        io.github.gbkt.backend.gbdk.codegen.ast.CArray(
+                            io.github.gbkt.backend.gbdk.codegen.ast.CConst(CU8),
+                            arraySize,
+                        ),
+                    isExtern = true,
+                )
+            }
+
+    /**
+     * Extern declarations for actor pool state variables.
+     *
+     * Emits `_pool_<id>_active[]`, `_pool_<id>_x[]`, `_pool_<id>_y[]`, `_pool_<id>_oam[]`, and one
+     * entry per [ActorPoolIR.instanceProperties]. Mirrors
+     * [GBDKSystemVisitor.buildActorPoolStateVars] structure for extern visibility.
+     */
+    private fun buildActorPoolExterns(gameIR: GameIR): List<CVarDecl> =
+        gameIR.actorPools.flatMap { pool ->
+            val id = pool.id.replace('-', '_').replace(' ', '_')
+            val maxSize = pool.config.maxSize
+            buildList {
+                add(
+                    CVarDecl(
+                        name = "_pool_${id}_active",
+                        type = CArray(CU8, maxSize),
+                        isExtern = true,
+                    )
+                )
+                add(CVarDecl(name = "_pool_${id}_x", type = CArray(CU8, maxSize), isExtern = true))
+                add(CVarDecl(name = "_pool_${id}_y", type = CArray(CU8, maxSize), isExtern = true))
+                add(
+                    CVarDecl(name = "_pool_${id}_oam", type = CArray(CU8, maxSize), isExtern = true)
+                )
+                for (prop in pool.instanceProperties) {
+                    val elemType =
+                        when (prop.type) {
+                            VarType.U8,
+                            VarType.U16 -> CU8
+                            VarType.I8,
+                            VarType.I16 -> CI8
+                        }
+                    add(
+                        CVarDecl(
+                            name = "_pool_${id}_${prop.name}",
+                            type = CArray(elemType, maxSize),
+                            isExtern = true,
+                        )
+                    )
+                }
+            }
+        }
+
+    /**
+     * NONBANKED function prototypes for `game.h`.
+     *
+     * Returns forward declarations for `is_tile_solid`, `_bkg_set_level_submap_banked`, and
+     * `setup_current_level`. These helpers are emitted via `rawSections` in `main.c` using the
+     * `NONBANKED` keyword (not modelled in the typed C AST), so auto-prototype extraction from
+     * `homeFile.functions` does not cover them. Manual prototypes here give banked scene code
+     * (`bank1.c` includes `game.h`) cross-bank visibility.
+     *
+     * Returns only the applicable prototypes (null-filtered). Order is preserved: `is_tile_solid` →
+     * `_bkg_set_level_submap_banked` → `setup_current_level`.
+     */
+    private fun buildNonBankedPrototypesRaw(gameIR: GameIR): List<String> {
+        // Phase 12 D-12a / D-13 / D-02-D-08-anchor-5: gated on tilemap-collision presence.
+        val usesTilemapCollision = gameUsesTilemapCollision(gameIR)
+        val isTileSolid =
+            if (usesTilemapCollision)
+                "UINT8 is_tile_solid(UINT16 world_x, UINT16 world_y) NONBANKED;"
+            else null
+        val bkgSetLevelSubmap =
+            if (usesTilemapCollision)
+                "void _bkg_set_level_submap_banked(UINT8 x, UINT8 y, UINT8 w, UINT8 h) NONBANKED;"
+            else null
+        val setupCurrentLevel =
+            if (
+                usesTilemapCollision &&
+                    gameIR.zones.any { z ->
+                        val l = z.id.lowercase()
+                        !l.contains("title") &&
+                            !l.contains("nextlevel") &&
+                            !l.contains("next_level")
+                    }
+            ) {
+                "void setup_current_level(void) NONBANKED;"
+            } else {
+                null
+            }
+        return listOfNotNull(isTileSolid, bkgSetLevelSubmap, setupCurrentLevel)
     }
 
     // =========================================================================
