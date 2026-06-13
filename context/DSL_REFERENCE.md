@@ -74,15 +74,15 @@ var spdY by i16Var(0)
 
 ### Ease Toward Zero (easeToZero)
 
-Replaces the hand-rolled two-`whenever` deceleration ladder. Emits two `IfOp` nodes —
+Replaces the hand-rolled two-`runIf` deceleration ladder. Emits two `IfOp` nodes —
 byte-identical to the ladder pattern (Pitfall 3: two separate checks, not one if-else).
 
 ```kotlin
 // --- BEFORE (hand-rolled) ---
-whenever(spdY isBelow 0) { spdY++ }
-whenever(spdY isAbove 0) { spdY-- }
-whenever(spdX isBelow 0) { spdX++ }
-whenever(spdX isAbove 0) { spdX-- }
+runIf(spdY isBelow 0) { spdY++ }
+runIf(spdY isAbove 0) { spdY-- }
+runIf(spdX isBelow 0) { spdX++ }
+runIf(spdX isAbove 0) { spdX-- }
 
 // --- AFTER (idiomatic) ---
 spdY.easeToZero()        // default: by = 1
@@ -103,11 +103,11 @@ are byte-identical to the hand-rolled patterns (D-15).
 var idx by u8Var(0)
 var rot by u8Var(0)
 // ... later in frame { }:
-whenever(buttons.b.pressed) {
+runIf(buttons.b.pressed) {
     idx++
-    whenever(idx isAtLeast NUM_FRAMES) { idx set 0 }   // compare-reset
+    runIf(idx isAtLeast NUM_FRAMES) { idx set 0 }   // compare-reset
 }
-whenever(buttons.a.pressed) {
+runIf(buttons.a.pressed) {
     rot++
     rot set (rot and 0xF)                               // bitmask wrap
 }
@@ -116,8 +116,8 @@ whenever(buttons.a.pressed) {
 var idx by u8Var(0, wrapAt = NUM_FRAMES)  // non-power-of-two: compare-reset emitted after idx++
 var rot by u8Var(0, wrapAt = 16)          // power-of-two: bitmask AND 15 emitted after rot++
 // ... later in frame { }:
-whenever(buttons.b.pressed) { idx++ }  // guard auto-emitted; no explicit wrap line
-whenever(buttons.a.pressed) { rot++ }  // guard auto-emitted; no explicit wrap line
+runIf(buttons.b.pressed) { idx++ }  // guard auto-emitted; no explicit wrap line
+runIf(buttons.a.pressed) { rot++ }  // guard auto-emitted; no explicit wrap line
 ```
 
 ## Arrays
@@ -131,7 +131,7 @@ val tiles by u8Array(16, "tile") // explicit C name override
 
 // Bracket read — returns Expr for use in conditions and expressions
 val b = bricks[bidx]             // bidx is AssignableVar
-whenever(bricks[i] isEqualTo 1) { ... }
+runIf(bricks[i] isEqualTo 1) { ... }
 
 // Bracket write — emits ArrayAssign op into active ScriptBuilder
 bricks[bidx] = 0                 // set to literal
@@ -147,25 +147,25 @@ val n = bricks.size              // Int, use in forOp bounds
 
 ## Readable Comparisons
 
-Comparison functions return `Expr` for use in `whenever()`, `ifOp()`, and `whileOp()` conditions.
+Comparison functions return `Expr` for use in `runIf()`, `ifOp()`, and `whileOp()` conditions.
 
 ```kotlin
 // Infix comparison functions (all return Expr)
-whenever(score isEqualTo 0) { /* ... */ }
-whenever(player.y isAbove 16) { /* ... */ }
-whenever(ball.x isBelow 4) { /* ... */ }
-whenever(score isAtLeast 100) { /* ... */ }
-whenever(lives isAtMost 3) { /* ... */ }
-whenever(hp isNotEqualTo 0) { /* ... */ }
+runIf(score isEqualTo 0) { /* ... */ }
+runIf(player.y isAbove 16) { /* ... */ }
+runIf(ball.x isBelow 4) { /* ... */ }
+runIf(score isAtLeast 100) { /* ... */ }
+runIf(lives isAtMost 3) { /* ... */ }
+runIf(hp isNotEqualTo 0) { /* ... */ }
 
 // Cross-type comparisons (AssignableVar vs Int, Expr vs ActorPropertyRef, etc.)
-whenever(ball.y isAtLeast paddle.y) { ... }          // two ActorPropertyRefs
-whenever((paddle.y + 8) isAbove ball.y) { ... }      // Expr vs ActorPropertyRef
-whenever(score isAbove 0) { ... }                    // AssignableVar vs Int
+runIf(ball.y isAtLeast paddle.y) { ... }          // two ActorPropertyRefs
+runIf((paddle.y + 8) isAbove ball.y) { ... }      // Expr vs ActorPropertyRef
+runIf(score isAbove 0) { ... }                    // AssignableVar vs Int
 
 // Logical operators (infix — && and || cannot be overloaded in Kotlin)
-whenever((hp isAbove 0) logicalAnd (torchLevel isAbove 0)) { ... }
-whenever((x isAbove 0) logicalOr (y isAbove 0)) { ... }
+runIf((hp isAbove 0) logicalAnd (torchLevel isAbove 0)) { ... }
+runIf((x isAbove 0) logicalOr (y isAbove 0)) { ... }
 ```
 
 ## Text Rendering DSL
@@ -228,17 +228,17 @@ ball.y set 72               // direct assignment
 ball.visible set false      // boolean set (false → 0)
 
 // Typed comparisons on actor properties
-whenever(ball.x isAbove 160) { ballDx set -1 }
-whenever(ball.y isBelow 16) { ballDy set 1 }
-whenever(ball.y isAtLeast paddle.y) { ... }      // ActorPropertyRef vs ActorPropertyRef
+runIf(ball.x isAbove 160) { ballDx set -1 }
+runIf(ball.y isBelow 16) { ballDy set 1 }
+runIf(ball.y isAtLeast paddle.y) { ... }      // ActorPropertyRef vs ActorPropertyRef
 
 // Teleport (emits SetPosition op)
 ball.moveTo(80, 72)
 
 // Collision detection — emits inline AABB overlap test in C
 // Requires both actors to have hitbox() defined in their sprite {} block
-whenever(ball.collides(paddle)) { ballDy set -1 }
-whenever(ball.collides(wall)) { ballDx set -1 }
+runIf(ball.collides(paddle)) { ballDy set -1 }
+runIf(ball.collides(wall)) { ballDx set -1 }
 
 // Movement helpers
 moveBy(player, 2, 0)       // relative move using ActorRef
@@ -270,10 +270,10 @@ val player by actor {
 // Access position directly on the actor (inside enter/frame blocks)
 player.x += 2                   // Move right
 player.y set 100                // Set Y position
-whenever(player.x isAbove 160) { player.x set 0 }  // Wrap around
+runIf(player.x isAbove 160) { player.x set 0 }  // Wrap around
 
 // Collision detection — requires hitbox() on both actors
-whenever(player.collides(obstacle)) {
+runIf(player.collides(obstacle)) {
     navigate(gameoverScene)
 }
 ```
@@ -297,7 +297,7 @@ val player by actor {
 }
 
 // Programmatic transitions from script blocks
-whenever(buttons.a.pressed) { setAnimationState(player, "attack") }
+runIf(buttons.a.pressed) { setAnimationState(player, "attack") }
 
 // Play a named animation on an actor (by id)
 animate("player", "walk")
@@ -391,7 +391,7 @@ val player by actor {
 }
 
 // Manual transition from any script block (enter/frame/exit)
-whenever(buttons.a.pressed) { setAnimationState(player, "jump") }
+runIf(buttons.a.pressed) { setAnimationState(player, "jump") }
 ```
 
 State transitions happen automatically when a `transition` condition becomes true.
@@ -400,14 +400,14 @@ State transitions happen automatically when a `transition` condition becomes tru
 ## Control Flow
 
 ```kotlin
-// whenever() — conditional block, runs if condition is true each frame
-whenever(buttons.a.pressed) {
+// runIf() — conditional block, runs if condition is true each frame
+runIf(buttons.a.pressed) {
     playerVelY set 8
 }
 
 // Nested conditions — both must be true
-whenever(isJumping isEqualTo 1) {
-    whenever(playerVelY isAbove 0) {
+runIf(isJumping isEqualTo 1) {
+    runIf(playerVelY isAbove 0) {
         playerY -= 2
     }
 }
@@ -424,23 +424,21 @@ whileOp(i isBelow 30) {
 }
 ```
 
-## Single-Frame Conditionals (runIf / unless / orElse)
+## Conditional Logic (runIf / unless / orElse)
 
-Use `runIf` / `unless` for single-frame conditional logic (one-shot checks), not reactive
-event triggers. `whenever()` should be used at the top level for input/state reactive triggers.
-Nested `whenever` calls are the anti-pattern — use `runIf` instead (D-08 / Req #2).
+Use `runIf` / `unless` for all conditional logic — both frame-level reactive triggers
+(top-level in a `frame {}` block) and one-shot checks nested inside other blocks.
 
 ```kotlin
-// --- BEFORE (nested whenever — anti-pattern for single-frame logic) ---
-whenever(dpad.right.held) {
-    spdX += ACCEL
-    whenever(spdX isAbove MAX_SPEED) { spdX set MAX_SPEED }   // semantically `if`, not reactive
+// runIf — conditional block, runs if condition is true
+runIf(buttons.a.pressed) {
+    playerVelY set 8
 }
 
-// --- AFTER (idiomatic: runIf for single-frame clamp) ---
-whenever(dpad.right.held) {
+// Nested runIf — idiomatic; inner block runs only when both conditions are true
+runIf(dpad.right.held) {
     spdX += ACCEL
-    runIf(spdX isAbove MAX_SPEED) { spdX set MAX_SPEED }      // clear intent: one-shot check
+    runIf(spdX isAbove MAX_SPEED) { spdX set MAX_SPEED }   // clamp speed
 }
 
 // unless — negated condition (runs if condition is FALSE)
@@ -449,10 +447,6 @@ unless(hp isAbove 0) { navigate(gameoverScene) }
 // orElse — chained else branch after runIf
 runIf(hp isAbove 0) { hp -= damage }
     .orElse { navigate(gameoverScene) }
-
-// D-08 rule: top-level reactive triggers stay as whenever()
-whenever(buttons.a.pressed) { ... }    // KEEP whenever — reactive input trigger
-whenever(dpad.left.held) { ... }       // KEEP whenever — reactive input trigger
 ```
 
 ## Input API
@@ -461,31 +455,31 @@ The type-safe input API uses typed objects instead of magic strings.
 
 ```kotlin
 // D-pad — .held (continuous), .pressed (rising edge), .released (falling edge)
-whenever(dpad.up.held) { player.y -= 2 }
-whenever(dpad.down.held) { player.y += 2 }
-whenever(dpad.left.held) { player.x -= 2 }
-whenever(dpad.right.held) { player.x += 2 }
+runIf(dpad.up.held) { player.y -= 2 }
+runIf(dpad.down.held) { player.y += 2 }
+runIf(dpad.left.held) { player.x -= 2 }
+runIf(dpad.right.held) { player.x += 2 }
 
 // D-pad edge-triggered (rising edge, one frame only)
-whenever(dpad.up.pressed) { jump() }
-whenever(dpad.left.released) { stopSlide() }
+runIf(dpad.up.pressed) { jump() }
+runIf(dpad.left.released) { stopSlide() }
 
 // D-pad special
-whenever(dpad.any) { stepCount += 1 }   // any direction held
-whenever(dpad.none) { idle() }          // no direction held
+runIf(dpad.any) { stepCount += 1 }   // any direction held
+runIf(dpad.none) { idle() }          // no direction held
 
 // Buttons — .held, .pressed, .released
-whenever(buttons.a.pressed) { shoot() }
-whenever(buttons.b.pressed) { navigate(titleScene) }   // SceneRef — type-safe
-whenever(buttons.start.pressed) { navigate(pauseScene) }
-whenever(buttons.select.held) { showMap() }
+runIf(buttons.a.pressed) { shoot() }
+runIf(buttons.b.pressed) { navigate(titleScene) }   // SceneRef — type-safe
+runIf(buttons.start.pressed) { navigate(pauseScene) }
+runIf(buttons.select.held) { showMap() }
 
 // Axis helpers (returns Expr: -1, 0, or 1)
 player.x += dpad.x * 2                 // horizontal axis
 player.y += dpad.y * 2                 // vertical axis
 
 // Logical combinations
-whenever(dpad.up.held logicalAnd buttons.b.held) { fastMove() }
+runIf(dpad.up.held logicalAnd buttons.b.held) { fastMove() }
 
 // DEPRECATED (do not use in new game code):
 // dpadHeld("up")          →  dpad.up.held
@@ -562,7 +556,7 @@ val titleScene = scene("title") {
         //   hide_sprites_range, move_bkg(0,0), fill_bkg_rect, then _bkg_tiles_load_banked
     }
     frame {
-        whenever(buttons.start.pressed) { navigate(gameplayScene) }
+        runIf(buttons.start.pressed) { navigate(gameplayScene) }
     }
 }
 
@@ -570,7 +564,7 @@ val titleScene = scene("title") {
 val nextLevelScene = scene("nextlevel") {
     screen(asset("graphics/next-level.png"))   // auto-centers; no size() needed
     frame {
-        whenever(buttons.start.pressed) { navigate(gameplayScene) }
+        runIf(buttons.start.pressed) { navigate(gameplayScene) }
     }
 }
 ```
@@ -659,7 +653,7 @@ val playScene = scene("play") {
     enter { showSprites(); bindCurrentLevel() }
     frame {
         // game logic …
-        whenever(buttons.start.pressed) { navigate(titleScene) }
+        runIf(buttons.start.pressed) { navigate(titleScene) }
     }
     // No exit { } needed — play_exit BANKED is auto-synthesized in bank1.c
 }
@@ -716,20 +710,20 @@ val gameoverScene = scene("gameover") {
     }
     frame {
         // titleScene defined below — use SceneRef("title") as a forward reference
-        whenever(buttons.start.pressed) { navigate(SceneRef("title")) }
+        runIf(buttons.start.pressed) { navigate(SceneRef("title")) }
     }
 }
 
 val gameScene = scene("game") {
     enter { showSprites() }
     frame {
-        whenever(lives isEqualTo 0) { navigate(gameoverScene) }  // SceneRef — type-safe
+        runIf(lives isEqualTo 0) { navigate(gameoverScene) }  // SceneRef — type-safe
     }
 }
 
 val titleScene = scene("title") {
     enter { print("PRESS START", position = PositionDef(5, 12)) }
-    frame { whenever(buttons.start.pressed) { navigate(gameScene) } }
+    frame { runIf(buttons.start.pressed) { navigate(gameScene) } }
 }
 
 // Set the start scene — assign the SceneRef directly (no .id accessor)
@@ -746,7 +740,7 @@ in navigation — it is an explicit forward-reference, not an unvalidated magic 
 are validated at build time against the registered scene set.
 
 **`navigate(sceneRef)` vs `SceneRef("id")`:** Use a captured `val` (`navigate(titleScene)`)
-whenever the target is defined above the current scene. Use `SceneRef("id")` only for forward
+when the target is defined above the current scene. Use `SceneRef("id")` only for forward
 references where the target is defined later.
 
 **`start = sceneRef`:** Assign the `SceneRef` val directly — no `.id` accessor. Assigning an
@@ -916,7 +910,7 @@ Config is function-style (not property-style). Source: `UIBuilders.kt` (`DialogB
 // say() uses the default dialog box at the bottom of the screen
 gameplayScene = scene("gameplay") {
     frame {
-        whenever(gotItem isEqualTo 1) {
+        runIf(gotItem isEqualTo 1) {
             say("You found a key!")
             gotItem set 0
         }
@@ -1122,7 +1116,7 @@ val myGame = game("MyGame") {
     scene("gameplay") {
         frame {
             // Trigger the save system by typed ref (not a magic string)
-            whenever(buttons.select.pressed) { triggerSystem(saves) }
+            runIf(buttons.select.pressed) { triggerSystem(saves) }
         }
     }
 }
@@ -1144,7 +1138,7 @@ side effect of `provideDelegate`; this will be resolved globally in a future pha
 @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
 
 // Trigger from a scene frame via typed ref (not triggerSystem("saves"))
-whenever(buttons.select.pressed) { triggerSystem(saves) }
+runIf(buttons.select.pressed) { triggerSystem(saves) }
 ```
 
 > **Cartridge requirement:** `saveData` requires a persistent SRAM cartridge such as
@@ -1177,7 +1171,7 @@ var frameCounter by u8Var(0, transient = true)
 // Trigger save/load from a scene
 scene("gameplay") {
     frame {
-        whenever(buttons.select.pressed) { triggerSystem(saves) }
+        runIf(buttons.select.pressed) { triggerSystem(saves) }
     }
 }
 ```
@@ -1211,16 +1205,16 @@ gameplayScene = scene("gameplay") {
     enter {
         // Acquire the next free slot; returns 0xFF if pool is full
         val slot = projectiles.acquire()
-        whenever(slot.exists) {
+        runIf(slot.exists) {
             slot["x"] set player.x
             slot["y"] set player.y
         }
     }
 
     frame {
-        whenever(buttons.b.pressed) {
+        runIf(buttons.b.pressed) {
             val slot = freeSlots.acquire()
-            whenever(slot.exists) {
+            runIf(slot.exists) {
                 // slot.index is the raw slot index Expr
             }
         }
@@ -1235,12 +1229,12 @@ gameplayScene = scene("gameplay") {
 
 ```kotlin
 // Check whether at least one free slot is available
-whenever(projectiles.hasSpace) {
+runIf(projectiles.hasSpace) {
     // spawn something
 }
 
 // Read active count (number of allocated slots, 0–capacity)
-whenever(projectiles.activeCount isEqualTo 0) {
+runIf(projectiles.activeCount isEqualTo 0) {
     // all slots free
 }
 ```
@@ -1337,7 +1331,7 @@ gameplayScene = scene("gameplay") {
 
     frame {
         // Shake on hit
-        whenever(hitDetected) {
+        runIf(hitDetected) {
             cameraOp(CameraAction.SHAKE, mapOf("intensity" to 4, "duration" to 10))
         }
     }
@@ -1385,7 +1379,7 @@ gameplayScene = scene("gameplay") {
     }
 
     frame {
-        whenever(buttons.start.pressed) {
+        runIf(buttons.start.pressed) {
             // Fade out, then navigate (continuation runs after fade completes)
             fade(fadeIn = false, frames = 30) {
                 navigate(menuScene)
@@ -1438,7 +1432,7 @@ gameplayScene = scene("gameplay") {
         physicsUpdate(player)
 
         // Floor collision (game-specific — not part of physicsUpdate)
-        whenever(player.y isAbove 136) {
+        runIf(player.y isAbove 136) {
             player.y set 136
             player.vy set 0
         }
@@ -1493,7 +1487,7 @@ gameplayScene = scene("gameplay") {
         physicsUpdate(ball)
 
         // Bounce off floor
-        whenever(ball.y isAbove 136) {
+        runIf(ball.y isAbove 136) {
             ball.y set 136
             ball.vy set (ball.vy * -1)  // negate VY manually; bounce() affects collision response
         }
@@ -1544,7 +1538,7 @@ gameplayScene = scene("gameplay") {
     frame {
         // pathfindStep: move `enemy` one A* step toward `player`
         // Call every frame (or every N frames to reduce CPU load)
-        whenever((frameCount and 7) isEqualTo 0) {
+        runIf((frameCount and 7) isEqualTo 0) {
             pathfindStep(enemy, player)
         }
 
@@ -1650,8 +1644,8 @@ hero.stats.hp -= 10                    // Take damage
 hero.stats.hp set hero.stats.maxHp     // Full heal
 
 // Check conditions
-whenever(hero.stats.hp isBelow 20) { showLowHealthWarning() }
-whenever(hero.stats.sp isAtLeast fireball.cost) { enableFireball() }
+runIf(hero.stats.hp isBelow 20) { showLowHealthWarning() }
+runIf(hero.stats.sp isAtLeast fireball.cost) { enableFireball() }
 ```
 
 ### Custom Stats
@@ -1737,7 +1731,7 @@ val combat = simpleBattle("combat") {
 scene("battle") {
     frame {
         battleUpdate(combat)
-        whenever(combatIsInState(CombatStates.VICTORY, combat)) {
+        runIf(combatIsInState(CombatStates.VICTORY, combat)) {
             // handle victory UI, etc.
         }
     }
@@ -2418,7 +2412,7 @@ gameFlags["story"]["acceptedQuest"] = true
 gameFlags.clear("story", "metElder")
 
 // Check flags
-whenever(gameFlags.isSet("story", "metElder")) {
+runIf(gameFlags.isSet("story", "metElder")) {
     showElderDialogue()
 }
 
