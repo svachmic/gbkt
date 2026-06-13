@@ -503,20 +503,8 @@ class GBDKPipeline {
         for (op in ops) {
             when (op) {
                 is IfOp -> {
-                    val condition = op.condition
-                    if (condition is CallExpr) {
-                        val interactionType = INPUT_FUNCTION_TYPES[condition.function]
-                        if (interactionType != null) {
-                            val arg = condition.args.firstOrNull()
-                            if (arg is VarRef) {
-                                val buttonName = GBDK_BUTTON_NAMES[arg.name]
-                                if (buttonName != null) {
-                                    result
-                                        .getOrPut(sceneId) { linkedSetOf() }
-                                        .add(ControlMapping(buttonName, interactionType))
-                                }
-                            }
-                        }
+                    extractControlMappingFromIfOp(op)?.let { mapping ->
+                        result.getOrPut(sceneId) { linkedSetOf() }.add(mapping)
                     }
                     walkOps(sceneId, op.then, result)
                     walkOps(sceneId, op.otherwise, result)
@@ -529,6 +517,23 @@ class GBDKPipeline {
                 else -> {}
             }
         }
+    }
+
+    /**
+     * Extracts a [ControlMapping] from an [IfOp] whose condition is a recognized input [CallExpr].
+     *
+     * Returns null when the condition is not a [CallExpr], when the function name is not in
+     * [INPUT_FUNCTION_TYPES], when the first argument is not a [VarRef], or when the button name is
+     * not in [GBDK_BUTTON_NAMES].
+     *
+     * Extracted from [walkOps] to flatten nesting (SonarCloud S3776 18-28).
+     */
+    private fun extractControlMappingFromIfOp(op: IfOp): ControlMapping? {
+        val condition = op.condition as? CallExpr ?: return null
+        val interactionType = INPUT_FUNCTION_TYPES[condition.function] ?: return null
+        val arg = condition.args.firstOrNull() as? VarRef ?: return null
+        val buttonName = GBDK_BUTTON_NAMES[arg.name] ?: return null
+        return ControlMapping(buttonName, interactionType)
     }
 
     /**
