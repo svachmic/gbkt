@@ -4,13 +4,13 @@ milestone: v0.1.1
 milestone_name: Hardening
 status: executing
 stopped_at: Phase 18 context gathered
-last_updated: "2026-06-13T08:45:11.213Z"
-last_activity: 2026-06-12 -- Phase 17 Plan 06 complete (detekt zero violations, QUAL-01 closed)
+last_updated: "2026-06-13T09:52:10.722Z"
+last_activity: 2026-06-13 -- Phase 18 execution started
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 22
-  completed_plans: 22
+  total_plans: 49
+  completed_plans: 23
   percent: 33
 ---
 
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** The framework automatically manages Game Boy hardware resources (VRAM, banking, OAM, RAM) so the developer writes only declarative Kotlin DSL — like Jetpack Compose for Game Boy.
-**Current focus:** Phase 17 — docs-reconciliation-and-quality-cleanup
+**Current focus:** Phase 18 — deprecation-removals-and-sonar-burn-down
 
 ## Deferred Items
 
@@ -54,10 +54,10 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 17 (docs-reconciliation-and-quality-cleanup) — EXECUTING
-Plan: 12 of 12
+Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
+Plan: 2 of 27
 Status: Ready to execute
-Last activity: 2026-06-12 -- Phase 17 Plan 06 complete (detekt zero violations, QUAL-01 closed)
+Last activity: 2026-06-13 -- Phase 18 execution started
 
 Resume signal: /gsd-execute-phase 17 (Docs + QUAL) or /gsd-execute-phase 18 (DEPR + SONAR) — both parallel-capable with each other; Phase 19 depends on Phase 16
 Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable; Phase 19 (Metasprite Fixes) now unblocked
@@ -905,6 +905,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Physics (#9) rewritten: per-actor gravity(n)/velocity/bounce/maxFallSpeed/platformerMode() + physicsUpdate()
 - [Phase ?]: All 13 stale-API sections rewritten across plans 17-08/09/10
 - [Phase ?]: D-16 cross-doc pass: zero stale-API references in any non-DSL_REFERENCE doc; FEAT-* provenance D-11 complete with real removal-commit hashes
+- [Phase ?]: D-01: Hard-remove whenever with no @Deprecated grace — pool-collision overload relocated to runIf, all 80+ call sites migrated in same atomic wave
 
 ### Pending Todos
 
@@ -1000,7 +1001,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-13T07:21:30.622Z
+Last session: 2026-06-13T09:51:54.010Z
 Stopped at: Phase 18 context gathered
 
 ## Operator Next Steps
