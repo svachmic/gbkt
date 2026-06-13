@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 17-02-PLAN.md
-last_updated: "2026-06-12T20:30:26.160Z"
+stopped_at: Completed 17-09-PLAN.md
+last_updated: "2026-06-12T20:37:50.407Z"
 last_activity: 2026-06-12 -- Phase 17 Plan 06 complete (detekt zero violations, QUAL-01 closed)
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 22
-  completed_plans: 18
+  completed_plans: 19
   percent: 17
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 17 (docs-reconciliation-and-quality-cleanup) — EXECUTING
-Plan: 9 of 12
+Plan: 10 of 12
 Status: Ready to execute
 Last activity: 2026-06-12 -- Phase 17 Plan 06 complete (detekt zero violations, QUAL-01 closed)
 
@@ -396,6 +396,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 17 P05 | 6 | 3 tasks | 5 files |
 | Phase 17 P08 | 4 | 2 tasks | 1 files |
 | Phase 17 P07 | 10 | 2 tasks | 5 files |
+| Phase 17 P09 | 5min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -895,6 +896,10 @@ Recent decisions affecting current work:
 - [Phase ?]: TargetProfiles.GAME_BOY_SCREEN added as canonical single-source-of-truth for 160x144 Game Boy screen dimensions; GameBoyConstants const val dropped to val for derivation chain
 - [Phase ?]: MagicNumber ignoreNumbers=[0,1,2,3,4,8,16] covers idiomatic tile/bit values; expand if dry-run in 17-06 forces it
 - [Phase ?]: detekt.yml D-01 complexity blocks preserved byte-unchanged for Phase 18 S3776 work (LongMethod/TooManyFunctions/LongParameterList/LargeClass)
+- [Phase ?]: Entity Pools (#5) replaced with accurate data-pool API (pool delegate variants + acquire/free/hasSpace/activeCount)
+- [Phase ?]: Tweening section (#6) removed entirely — tween()/Easing.* absent (FEAT-TWEENING.md archive)
+- [Phase ?]: Camera System (#7) rewritten with CameraBuilder config + cameraOp(CameraAction.*) table
+- [Phase ?]: Physics (#9) rewritten: per-actor gravity(n)/velocity/bounce/maxFallSpeed/platformerMode() + physicsUpdate()
 
 ### Pending Todos
 
@@ -990,8 +995,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-12T20:30:26.153Z
-Stopped at: Completed 17-02-PLAN.md
+Last session: 2026-06-12T20:37:50.401Z
+Stopped at: Completed 17-09-PLAN.md
 
 ## Operator Next Steps
 
