@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 16-06-PLAN.md — DSL/tooling cluster triage (3 VERIFIED-ALREADY-FIXED, 1 RE-DEFERRED, 2 CONFIRMED-OPEN Phase 18, 2 CONFIRMED-OPEN Phase 21)
-last_updated: "2026-06-12T15:10:00.000Z"
-last_activity: 2026-06-12 -- Phase 16 Plan 06 complete (DSL/tooling cluster: SEED-002/003/012/020/023/025/026 + TODO-triggersystem dispositioned; cluster-dsl.md draft ready)
+stopped_at: Completed 16-07-PLAN.md — platformer/zone source cluster triage (1 VERIFIED-ALREADY-FIXED, 3 RE-DEFERRED, 5 CONFIRMED-OPEN Phase 21)
+last_updated: "2026-06-12T16:00:00.000Z"
+last_activity: 2026-06-12 -- Phase 16 Plan 07 complete (platformer/zone source cluster: SEED-017/021/022/ZONE-MAGIC-STRING/ONE-WAY-TILE/PER-ZONE-BANKS/SHARED-TILESET/SPAWN-CLARITY/AUTO-EMISSION-GAPS dispositioned; cluster-platformer-source.md draft ready)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 10
-  completed_plans: 6
+  completed_plans: 7
   percent: 0
 ---
 
@@ -55,9 +55,9 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 16 (seed-triage) — EXECUTING
-Plan: 6 of 10
+Plan: 7 of 10
 Status: Ready to execute
-Last activity: 2026-06-12 -- Phase 16 Plan 06 complete (DSL/tooling cluster: SEED-002/003/012/020/023/025/026 + TODO-triggersystem dispositioned; cluster-dsl.md draft ready)
+Last activity: 2026-06-12 -- Phase 16 Plan 07 complete (platformer/zone source cluster: SEED-017/021/022/ZONE-MAGIC-STRING/ONE-WAY-TILE/PER-ZONE-BANKS/SHARED-TILESET/SPAWN-CLARITY/AUTO-EMISSION-GAPS dispositioned; cluster-platformer-source.md draft ready)
 
 Resume signal: /gsd-plan-phase 16 (Seed Triage — gates all codegen fix phases)
 Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable
