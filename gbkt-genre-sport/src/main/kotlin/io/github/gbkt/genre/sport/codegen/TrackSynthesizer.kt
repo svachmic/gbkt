@@ -170,52 +170,81 @@ internal object TrackSynthesizer {
         val inside = Array(mapHeight) { BooleanArray(mapWidth) }
         val n = waypoints.size
         for (y in 0 until mapHeight) {
-            val intersections = mutableListOf<Int>()
-            for (i in 0 until n) {
-                val a = waypoints[i]
-                val b = waypoints[(i + 1) % n]
-                val y0 = a.tileY
-                val y1 = b.tileY
-                val x0 = a.tileX
-                val x1 = b.tileX
-                // Pitfall 5 fix #2: skip horizontal edges entirely.
-                if (y0 == y1) continue
-                val ymin = min(y0, y1)
-                val ymax = max(y0, y1)
-                // Pitfall 5 fix #1: HALF-open interval ymin <= y < ymax. The
-                // upper-y vertex does NOT count for that edge's y-row, so a
-                // shared vertex contributes exactly one intersection across
-                // its two adjoining edges (avoids double-counting).
-                if (y < ymin || y >= ymax) continue
-                // Integer-rational x-intersection: x = x0 + (x1-x0)*(y-y0)/(y1-y0).
-                // Use Int math; the division is exact only when (x1-x0)*(y-y0)
-                // is divisible by (y1-y0), but we want the floor for fill
-                // purposes. Java's Int division truncates toward zero — for
-                // positive denominators this matches floor when the dividend
-                // is positive; we use Math.floorDiv to be safe across signs.
-                val dx = x1 - x0
-                val dy = y1 - y0
-                val xIntersect = x0 + Math.floorDiv(dx * (y - y0), dy)
-                intersections += xIntersect
-            }
+            val intersections = collectScanlineIntersections(waypoints, n, y)
             if (intersections.size < 2) continue
-            intersections.sort()
-            // Even-odd fill between successive pairs. Drop the trailing odd
-            // intersection if any (numerical edge case).
-            val pairCount = intersections.size and 1.inv()
-            var k = 0
-            while (k < pairCount) {
-                val xStart = max(0, intersections[k])
-                val xEnd = min(mapWidth, intersections[k + 1])
-                var x = xStart
-                while (x < xEnd) {
-                    inside[y][x] = true
-                    x++
-                }
-                k += 2
-            }
+            fillScanlineSpans(inside, y, intersections, mapWidth)
         }
         return inside
+    }
+
+    /**
+     * Collect sorted x-intersection positions for scanline [y] against the waypoint polygon.
+     * Returns a sorted list; the caller must check size >= 2 before filling spans.
+     *
+     * Pitfall 5 fixes applied:
+     * - Horizontal edges are skipped entirely (fix #2).
+     * - Half-open interval [ymin, ymax) avoids double-counting shared vertices (fix #1).
+     * - Math.floorDiv for safe floor division across sign boundaries.
+     */
+    private fun collectScanlineIntersections(
+        waypoints: List<WaypointDef>,
+        n: Int,
+        y: Int,
+    ): List<Int> {
+        val intersections = mutableListOf<Int>()
+        for (i in 0 until n) {
+            val a = waypoints[i]
+            val b = waypoints[(i + 1) % n]
+            val y0 = a.tileY
+            val y1 = b.tileY
+            val x0 = a.tileX
+            val x1 = b.tileX
+            // Pitfall 5 fix #2: skip horizontal edges entirely.
+            if (y0 == y1) continue
+            val ymin = min(y0, y1)
+            val ymax = max(y0, y1)
+            // Pitfall 5 fix #1: HALF-open interval ymin <= y < ymax. The
+            // upper-y vertex does NOT count for that edge's y-row, so a
+            // shared vertex contributes exactly one intersection across
+            // its two adjoining edges (avoids double-counting).
+            if (y < ymin || y >= ymax) continue
+            // Integer-rational x-intersection: x = x0 + (x1-x0)*(y-y0)/(y1-y0).
+            // Use Int math; the division is exact only when (x1-x0)*(y-y0)
+            // is divisible by (y1-y0), but we want the floor for fill
+            // purposes. Java's Int division truncates toward zero — for
+            // positive denominators this matches floor when the dividend
+            // is positive; we use Math.floorDiv to be safe across signs.
+            val dx = x1 - x0
+            val dy = y1 - y0
+            val xIntersect = x0 + Math.floorDiv(dx * (y - y0), dy)
+            intersections += xIntersect
+        }
+        intersections.sort()
+        return intersections
+    }
+
+    /**
+     * Fill even-odd spans into [inside] for scanline [y] from sorted [intersections]. Drops any
+     * trailing odd intersection (numerical edge case).
+     */
+    private fun fillScanlineSpans(
+        inside: Array<BooleanArray>,
+        y: Int,
+        intersections: List<Int>,
+        mapWidth: Int,
+    ) {
+        val pairCount = intersections.size and 1.inv()
+        var k = 0
+        while (k < pairCount) {
+            val xStart = max(0, intersections[k])
+            val xEnd = min(mapWidth, intersections[k + 1])
+            var x = xStart
+            while (x < xEnd) {
+                inside[y][x] = true
+                x++
+            }
+            k += 2
+        }
     }
 
     // -------------------------------------------------------------------------
