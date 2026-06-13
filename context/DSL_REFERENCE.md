@@ -1175,81 +1175,46 @@ scene("gameplay") {
 
 ## Entity Pools
 
-Entity pools manage collections of similar entities (bullets, particles, enemies) with lifecycle management.
+Entity pools manage fixed-capacity arrays of data elements (slot indices, struct values, primitive counters). The pool DSL is a data-pool — it tracks allocation state and provides slot access, not entity lifecycle hooks.
 
-> **Stale-API caveat:** the entity-pool DSL below does not match the current codebase. The
-> implemented `pool(...)` builders (in `gbkt-lang/.../dsl/CollectionBuilders.kt`) are data
-> pools — `pool(elementType, capacity)` / `pool(structDef, capacity)` — without sprite or
-> lifecycle blocks. Cross-check before relying on this section.
+### Pool Declaration
 
-### Pool Definition
+Declare a pool with the `by pool(...)` delegate inside a `game { }` block. Three overloads are available:
 
 ```kotlin
-val bullets = pool("bullet", size = 8) {
-    position(0, 0)                    // Each entity has x, y position
-    velocity(0, 0)                    // Optional: velX, velY (signed)
+// Primitive pool — each slot holds a single UINT8 value
+val freeSlots by pool(VarType.U8, 16)
 
-    sprite(asset("sprites/bullet.png")) {
-        size(4, 4)
-        hitbox(0, 0, 4, 4)
-    }
+// CollElementType pool — explicit type wrapper
+val entities by pool(CollElementType.Primitive(VarType.U8), 8)
 
-    // Per-entity custom state
-    state {
-        val timer by u8Var()          // Creates bullet_0_timer, bullet_1_timer, etc.
-        val damage by u8Var(10)       // With default value
-    }
-
-    // Lifecycle hooks
-    onSpawn {
-        play("fly")
-        timer set 120                 // 2 seconds at 60fps
-    }
-
-    onFrame {
-        y -= 4                        // Move up
-        timer -= 1
-    }
-
-    // Auto-despawn conditions (entity despawns when ANY is true)
-    despawnWhen {
-        y isBelow 8                   // Off-screen top
-        timer isEqualTo 0             // Timer expired
-        isAnimationComplete           // One-shot animation finished
-    }
-
-    onDespawn {
-        hide()
-    }
-}
+// Struct pool — each slot holds a user-defined struct
+val projectiles by pool(projectileDef, 16)  // projectileDef: StructDef
 ```
 
-### Spawning Entities
+### Acquiring and Releasing Slots
 
 ```kotlin
 gameplayScene = scene("gameplay") {
+    enter {
+        // Acquire the next free slot; returns 0xFF if pool is full
+        val slot = projectiles.acquire()
+        whenever(slot.exists) {
+            slot["x"] set player.x
+            slot["y"] set player.y
+        }
+    }
+
     frame {
-        bullets.update()              // REQUIRED: Updates all active entities
-
-        whenever(buttons.a.pressed) {
-            // Simple spawn with init block
-            bullets.spawn {
-                x set player.x
-                y set player.y
-            }
-
-            // Spawn at position (shorthand)
-            bullets.spawnAt(player.x, player.y) {
-                this["damage"] set 20 // Access custom state
-            }
-
-            // Try spawn with fallback
-            bullets.trySpawn {
-                x set player.x
-            } orElse {
-                // Pool full - handle gracefully
+        whenever(buttons.b.pressed) {
+            val slot = freeSlots.acquire()
+            whenever(slot.exists) {
+                // slot.index is the raw slot index Expr
             }
         }
+
+        // Release slot back to the free list
+        freeSlots.free(someIndexExpr)
     }
 }
 ```
@@ -1257,150 +1222,34 @@ gameplayScene = scene("gameplay") {
 ### Pool Queries
 
 ```kotlin
-// Check active count
-whenever(bullets.activeCount isEqualTo 0) {
-    // No bullets active
+// Check whether at least one free slot is available
+whenever(projectiles.hasSpace) {
+    // spawn something
 }
 
-// Check if pool has space
-whenever(bullets.hasSpace) {
-    bullets.spawn { /* ... */ }
-}
-
-// Check if pool is full
-whenever(bullets.isFull) {
-    // Show "MAX" indicator
+// Read active count (number of allocated slots, 0–capacity)
+whenever(projectiles.activeCount isEqualTo 0) {
+    // all slots free
 }
 ```
 
-### Iterating Active Entities
+### Iterating Over Slots
 
 ```kotlin
-bullets.forEachActive {
-    // 'this' is the current entity scope
-    whenever(collidesWith(enemy)) {
-        enemy.takeDamage(this["damage"])
-        despawn()
-    }
-}
-```
-
-### Bulk Operations
-
-```kotlin
-bullets.despawnAll()                  // Clear all bullets
-
-bullets.despawnWhere { x isAbove 160 } // Conditional bulk despawn
-```
-
-### Lifecycle Scope Properties
-
-Inside `onSpawn`, `onFrame`, `onDespawn`, and `spawn` blocks:
-
-```kotlin
-// Position
-x                    // AssignableExpr for X position
-y                    // AssignableExpr for Y position
-
-// Velocity (if velocity() was called)
-velX                 // AssignableExpr for X velocity
-velY                 // AssignableExpr for Y velocity
-
-// Sprite operations
-play("animation")    // Play animation
-show()               // Show sprite
-hide()               // Hide sprite
-
-// Custom state (from state {} block)
-this["timer"]        // Access custom field
-this["damage"]       // Access custom field
-
-// Index
-index                // Current entity's pool index (0..size-1)
-
-// Lifecycle control
-despawn()            // Return this entity to pool
-
-// Animation state
-isAnimationComplete  // Condition: current animation finished
-isPlaying("name")    // Condition: specific animation playing
-```
-
-### Generated C Code
-
-For a pool with size 4, the generated code includes:
-- Per-entity static variables (unrolled for performance)
-- Pointer arrays for indexed access
-- `spawn()`, `despawn()`, `update()` functions
-- Active count tracking
-
-## Tweening/Easing
-
-Smooth value interpolation for animations, UI effects, and transitions.
-
-> **Stale-API caveat:** the `tween()` function and `Easing` enum below do not exist in the
-> current codebase. Cross-check `gbkt-lang/.../dsl/ScriptBuilder.kt` before relying on this
-> section.
-
-### Basic Tweening
-
-```kotlin
-// Tween a sprite position from 0 to 100 over 60 frames
-tween(player.x, from = 0, to = 100, duration = 60.frames, easing = Easing.EASE_OUT)
-
-// Tween a variable
-tween(fadeAlpha, from = 0, to = 255, duration = 30.frames, easing = Easing.LINEAR)
-
-// Tween with expression values
-tween(enemy.x, from = Expr(startX), to = Expr(targetX), duration = 120.frames)
-```
-
-### Easing Functions
-
-```kotlin
-// Basic easing
-Easing.LINEAR          // Constant speed
-Easing.EASE_IN         // Start slow, end fast
-Easing.EASE_OUT        // Start fast, end slow (default)
-Easing.EASE_IN_OUT     // Slow at both ends
-Easing.EASE_OUT_IN     // Fast at both ends
-
-// Quadratic (t²)
-Easing.EASE_IN_QUAD
-Easing.EASE_OUT_QUAD
-Easing.EASE_IN_OUT_QUAD
-
-// Cubic (t³)
-Easing.EASE_IN_CUBIC
-Easing.EASE_OUT_CUBIC
-Easing.EASE_IN_OUT_CUBIC
-
-// Special effects
-Easing.EASE_OUT_BOUNCE  // Bouncy landing
-Easing.EASE_OUT_ELASTIC // Springy overshoot
-```
-
-### How It Works
-
-- Pre-computed 256-entry lookup tables for each easing function
-- Only tables for used easing types are generated (saves ROM space)
-- Supports both increasing and decreasing tweens (signed math)
-- Maximum 16 concurrent tweens (configurable via `MAX_TWEENS`)
-
-### Usage in Scenes
-
-```kotlin
-introScene = scene("intro") {
-    enter {
-        // Slide title in from left
-        tween(titleX, from = -80, to = 80, duration = 45.frames, easing = Easing.EASE_OUT_BOUNCE)
+frame {
+    // forEach iterates over all capacity slots (0..capacity-1)
+    projectiles.forEach { element ->
+        // element is the struct Expr for slot i
+        // guard with active flag if needed via your own tracking variable
     }
 
-    frame {
-        // Tweens update automatically
-    }
+    // Direct index access
+    val first = projectiles[0]   // Expr for slot 0
+    val nth   = projectiles[n]   // Expr for slot n (n: Expr)
 }
 ```
+
+**Note:** `pool(...)` is a data-pool — it provides slot allocation tracking and struct field access. Sprite rendering, per-entity frame callbacks, and lifecycle hooks (`onSpawn`/`onDespawn`) are not part of this API.
 
 ## Tilemap Collision
 
@@ -1563,120 +1412,101 @@ camera.setPosition(100, 50)
 
 ## Physics
 
-gbkt provides a complete physics system for platformers and action games with gravity, friction, collision response, and gravity zones.
+gbkt provides per-actor physics for platformers: gravity, velocity, bounce, and fall-speed clamping. Physics is configured in the actor's `physics { }` block and applied each frame with `physicsUpdate(actor)`.
 
-> **Stale-API caveat:** the implemented per-actor `physics { }` block (in
-> `gbkt-lang/.../dsl/ActorBuilder.kt`) is function-style — `gravity(n)`, `friction(n)`,
-> `velocity(dx, dy)`, `bounce(coefficient)`, `maxFallSpeed(n)`, `platformerMode()` — driven by
-> `physicsUpdate(...)` in the frame loop. The property-style snippets, global
-> `physics { }` world, `tag()`, and `gravityZone()` below are not implemented.
+### Per-Actor Physics Configuration
 
-### Entity Physics Component
-
-Add physics to individual entities for gravity, friction, and velocity clamping:
+Add a `physics { }` block inside any `actor { }` definition. All methods are function-style:
 
 ```kotlin
 val player by actor {
     position(80, 72)
-    velocity(0, 0)  // REQUIRED for physics
 
     physics {
-        gravity = 0.5f    // Applied to velocityY each frame (0.5 = normal platformer)
-        friction = 0.9f   // Multiplied to velocityX each frame (0.9 = normal)
-        maxVelocity = 4 to 8  // Clamp velocityX to ±4, velocityY to ±8
-        mass = 1.0f       // For collision response (heavier = harder to push)
+        velocity(0, 0)          // Initial VX, VY in pixels/frame (signed)
+        gravity(1)              // Pixels/frame² added to VY each frame (positive = down)
+        bounce(0.5f)            // Bounce coefficient on collision (0.0 = no bounce, 1.0 = full)
+        maxFallSpeed(8)         // Maximum downward velocity in pixels/frame
+        platformerMode()        // Enable platformer gravity (Y axis only); default = off
     }
 }
+```
 
-// Apply physics in frame loop
+**Gravity values (pixels/frame²):**
+- `0` = No gravity (space, top-down)
+- `1` = Normal platformer gravity
+- `2` = Heavy gravity
+- `-1` = Reverse gravity (floats upward)
+
+### Applying Physics Each Frame
+
+Call `physicsUpdate(actor)` in the scene's `frame { }` block. This applies gravity to VY, clamps to `maxFallSpeed`, and moves the actor by its current velocity:
+
+```kotlin
 gameplayScene = scene("gameplay") {
     frame {
-        player.applyPhysics()  // Applies gravity, friction, clamping
+        physicsUpdate(player)
+
+        // Floor collision (game-specific — not part of physicsUpdate)
+        whenever(player.y isAbove 136) {
+            player.y set 136
+            player.vy set 0
+        }
     }
 }
 ```
 
-**Gravity values:**
-- `0.0f` = No gravity (space, swimming)
-- `0.25f` = Light gravity (floating/moon)
-- `0.5f` = Normal platformer gravity
-- `1.0f` = Heavy gravity
+### Platformer Mode
 
-**Friction values:**
-- `1.0f` = No friction (ice, space)
-- `0.9f` = Normal friction
-- `0.8f` = High friction (sticky surfaces)
-- `0.0f` = Instant stop
-
-### Physics World (Global Physics)
-
-For games with global physics rules and automatic collision response:
+Enables gravity on the Y axis only. Combine with `movement { }` for horizontal input handling:
 
 ```kotlin
-val physicsWorld = physics {
-    gravity = 0.5f
-    friction = 0.9f
-    bounce = 0.3f  // Collision bounce coefficient (0.0-1.0)
-}
+val hero by actor {
+    position(80, 72)
 
-// Enable collision response between tagged entities
-val playerTag = tag("player")
-val enemyTag = tag("enemy")
+    movement {
+        speed(2)
+    }
+
+    physics {
+        velocity(0, 0)
+        gravity(1)
+        maxFallSpeed(8)
+        platformerMode()
+    }
+}
 
 gameplayScene = scene("gameplay") {
-    enter {
-        physicsWorld.collide(playerTag, enemyTag)  // Auto-bounce on collision
-    }
-
     frame {
-        physicsWorld.update()  // Update all physics
+        physicsUpdate(hero)
     }
 }
 ```
 
-### Gravity Zones
+### Bounce
 
-Define rectangular areas with custom gravity:
-
-```kotlin
-val physicsWorld = physics {
-    gravity = 0.5f
-
-    // Water area with reduced gravity
-    gravityZone(x = 0, y = 100, width = 160, height = 44) {
-        gravity = 0.1f  // Slow fall in water
-    }
-
-    // Zero-gravity space section
-    gravityZone(x = 100, y = 0, width = 60, height = 100) {
-        gravity = 0f
-    }
-
-    // Reverse gravity zone
-    gravityZone(x = 0, y = 50, width = 50, height = 50) {
-        gravity = -0.3f  // Float upward
-    }
-}
-```
-
-### Per-Entity Friction Override
-
-Make entities act as friction surfaces (ice, mud, etc.):
+Use `bounce(coefficient)` to make an entity bounce off surfaces. The coefficient is a Float (0.0–1.0); it is stored internally as a UINT8 (coefficient × 256):
 
 ```kotlin
-val icePlatform by actor {
-    position(0, 100)
+val ball by actor {
+    position(80, 72)
+
     physics {
-        friction = 0.99f  // Very slippery
-        useLocalFriction = true  // Use this instead of global friction
+        velocity(1, -2)
+        gravity(0)
+        bounce(0.8f)    // 80% energy retained on each bounce
     }
 }
 
-val mudPatch by actor {
-    position(50, 100)
-    physics {
-        friction = 0.7f  // Very sticky
-        useLocalFriction = true
+gameplayScene = scene("gameplay") {
+    frame {
+        physicsUpdate(ball)
+
+        // Bounce off floor
+        whenever(ball.y isAbove 136) {
+            ball.y set 136
+            ball.vy set (ball.vy * -1)  // negate VY manually; bounce() affects collision response
+        }
     }
 }
 ```
