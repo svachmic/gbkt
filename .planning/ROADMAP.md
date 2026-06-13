@@ -87,18 +87,42 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
   5. The in-scope set of remaining magic-pixel literals is fully enumerated and eliminated; intentional hardware constants are documented as exempt
 
 **Plans**: 12 plans
+**Wave 1**
+
 - [ ] 17-01-PLAN.md — DSL_REFERENCE accuracy audit evidence (13 sections, per-method, source-cited) + full-doc triage sweep
 - [ ] 17-02-PLAN.md — Screen-constant single source of truth: TargetProfiles.GAME_BOY_SCREEN preset + GameBoyConstants derivation
 - [ ] 17-03-PLAN.md — Re-enable 4 detekt rules (targeted) + commit violation inventory
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 17-04-PLAN.md — Archive 12 FEAT-*.md backlog seeds (verbatim + provenance) + expand REQUIREMENTS FEAT-XX
 - [ ] 17-05-PLAN.md — Replace 8 in-scope 160/144 literals + ROM byte-identity smoke + exemption table + D-06 seed
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 17-06-PLAN.md — Fix detekt violations to zero (real fixes or rationale-commented excludes; no baseline)
-- [ ] 17-07-PLAN.md — Composite-build detekt bridge + delete baseline wiring + whole-repo detekt green
 - [ ] 17-08-PLAN.md — DOCS-03 fixes + rewrite sections 1-4 (State Machine, Dialog, Menu, Save) implemented-only
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 17-07-PLAN.md — Composite-build detekt bridge + delete baseline wiring + whole-repo detekt green
 - [ ] 17-09-PLAN.md — Rewrite sections 5-9 (Pools, Tweening, Camera, Camera Transitions, Physics) implemented-only
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 17-10-PLAN.md — Rewrite sections 10-13 (Pathfinding, Testing, Battle, Inventory); zero caveats remain
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 17-11-PLAN.md — Folded todos: ConfigBuilder setter unify + config{} docs + MBC5 warning + RpgRegistry.clear()
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
 - [ ] 17-12-PLAN.md — Cross-doc consistency pass (D-16) + backfill FEAT-* removal-commit provenance
+
+**Cross-cutting constraints:**
+
+- Every rewritten snippet is lifted/adapted from in-tree code that compiles today (D-14)
 
 ### Phase 18: Deprecation Removals and Sonar Burn-down
 
