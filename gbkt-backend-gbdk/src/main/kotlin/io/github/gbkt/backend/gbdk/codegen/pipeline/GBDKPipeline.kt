@@ -4659,22 +4659,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                     )
                 }
 
-        // Call start scene enter (via trampoline if banked).
-        // Use sceneHasEnterContent so zone-only start scenes (no user enter block but bound zone)
-        // still get their initial enter call from main() — same rationale as
-        // buildTrampolinesForScene.
-        val startSceneId = gameIR.startScene
-        val startEnterCall =
-            if (
-                startSceneId != null &&
-                    gameIR.scenes.any { it.id == startSceneId && sceneHasEnterContent(it) }
-            ) {
-                val startScene = gameIR.scenes.first { it.id == startSceneId }
-                val enterFnName = enterFunctionName(startScene)
-                listOf(CExprStatement(CCall(enterFnName, emptyList())))
-            } else {
-                emptyList()
-            }
+        val startEnterCall = buildMainStartEnterCall(gameIR)
 
         // Pool template actor IDs — excluded from static OAM init (dynamic allocation).
         // Sprite tile data is STILL loaded for template actors (VRAM tiles needed by pool
@@ -4686,59 +4671,11 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                 }
                 .toSet()
 
-        // Unified sprite-VRAM tile data loading: set_sprite_data() for each actor with a sprite,
-        // followed by set_sprite_data() for each metasprite. A SINGLE [VramAllocator] hands out
-        // monotonically-increasing VRAM tile start indices across BOTH iterations, so metasprite
-        // tiles continue from where actor tiles ended (CR-01 fix — SEED-008). Actors iterate
-        // FIRST then metasprites — preserves Pong/Breakout/SimplePhysics emission shape
-        // (Pitfall 8 mitigation — no regressions in actor-only games).
-        //
-        // Template actors ARE included — their tile data must be in VRAM for pool instances.
-        //
-        // Array name convention (PHASE-13): "<metaspriteId>_tiles" (fallback until
-        // MetaspriteBuilder.sprite() is implemented and asset pipeline wiring lands in Plan 18).
         val allSpriteDataLoads = buildAllSpriteDataLoadStatements(gameIR)
-        // OAM init: set_sprite_tile() + initial move_sprite() for static actors only.
-        // Pool template actors are excluded — their OAM positions are managed per-frame by
-        // the forEachActive display sync loop in the pool's scene logic, not by update_sprites().
         val spriteOAMInits =
             buildOAMInitStatements(gameIR, excludeIds = poolTemplateActorIdsForMain)
-
-        // Phase 12 D-02 / D-08 anchor 5 — main()-loop level-switch guard (Plan 12-17 Task 2).
-        // Returns empty when the game does not opt into tilemap collision OR does not declare
-        // a "nextLevel" scene — preserves byte-identical codegen for existing games (Pong,
-        // Breakout, Explorer, RPG-Lite, Dungeon, Shmup, Racer, etc.). Spliced AFTER scene frame
-        // dispatch + AFTER per-frame system updates so the NextLevel card scene activates on
-        // the next main-loop iteration with `_current_level` already synced (avoiding a
-        // setup_current_level → frame dispatch with mismatched _next_level/_current_level).
         val levelSwitchGuardStatements = buildMainLoopLevelSwitchGuardIfNeeded(gameIR)
-
-        val gameLoopBody = buildList {
-            // Update joypad state once per frame before scene frame dispatch
-            add(CExprStatement(CCall("update_joypad", emptyList())))
-            add(CSwitch(CVar("current_scene"), frameCases))
-            // Run puzzle per-frame updates (pressure plates + timed blocks) after scene logic
-            if (gameIR.puzzleObjects.isNotEmpty()) {
-                add(CExprStatement(CCall("puzzle_update_all", emptyList())))
-            }
-            // Run NPC-NPC collision checks after movement updates, before sprite sync
-            if (gameIR.collisionRules.isNotEmpty()) {
-                add(CExprStatement(CCall("check_all_npc_collisions", emptyList())))
-            }
-            // Phase 12 D-02 / D-08 anchor 5 — fire the level-switch guard AFTER per-frame
-            // system updates but BEFORE sprite sync, so the NextLevel scene's first frame runs
-            // with `_current_level == _next_level` already (setup_current_level synced them).
-            addAll(levelSwitchGuardStatements)
-            // Sync position variables to OAM after game logic, before VBlank
-            add(CExprStatement(CCall("update_sprites", emptyList())))
-            // Update sound driver channel durations per frame
-            add(CExprStatement(CCall("sound_driver_update", emptyList())))
-            // hUGETracker audio driver tick — only emitted when music ops are used (A2)
-            if (SoundVisitor(gameIR).hasMusicOps()) {
-                add(CExprStatement(CCall("hUGE_dosound", emptyList())))
-            }
-            add(CExprStatement(CCall("wait_vbl_done", emptyList())))
-        }
+        val gameLoopBody = buildMainGameLoopBody(gameIR, frameCases, levelSwitchGuardStatements)
 
         // Actor pool init calls — one per pool, placed after OAM init but before start scene enter
         val poolInitCalls =
@@ -4747,190 +4684,55 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                 CExprStatement(CCall("pool_${poolId}_init", emptyList()))
             }
 
-        // Plan 10.1-20 (DEF-10.1-13-C): hoist the start scene's `SetPalette` ops into main()
-        // BEFORE `DISPLAY_ON`, mirroring the GBDK reference's bootstrap order
-        // (metasprites.c lines 161-194). Without this hoist, sprite palette writes were
-        // deferred to scene-enter (called AFTER DISPLAY_ON), and the first PPU frame
-        // composited with OCPD palette RAM still in its post-`cgb_compatibility()` zero
-        // state — producing all-black sprite renders on GBC. Per Plan 10.1-19's
-        // d-v3-visual-finding.md (Option A — minimal), we DUPLICATE rather than relocate:
-        // the SetPalette ops remain in {start}_enter so multi-scene navigate-back semantics
-        // and the SpritePaletteSlotEmissionTest play_enter-body assertion are preserved.
-        // Palette writes are idempotent, so duplication has no runtime cost beyond the
-        // first-boot extra writes.
-        val startScene = startSceneId?.let { id -> gameIR.scenes.firstOrNull { it.id == id } }
+        // Plan 10.1-20 / Plan 10.1-22: hoist start-scene SetPalette + bgFillCheckerboard ops
+        // into main() BEFORE DISPLAY_ON. Palette writes are idempotent (kept in {start}_enter
+        // for multi-scene navigate-back correctness and SpritePaletteSlotEmissionTest contract).
+        val startScene = gameIR.startScene?.let { id -> gameIR.scenes.firstOrNull { it.id == id } }
         val hoistedStartPaletteStatements: List<CStatement> =
             startScene?.enterOps?.filterIsInstance<io.github.gbkt.core.ir.SetPalette>()?.map {
                 it.accept(ScriptOpVisitor)
             } ?: emptyList()
-
-        // Plan 10.1-22 (DEF-10.1-13-C / 4TH LAYER): hoist the start scene's `bgFillCheckerboard`
-        // RawOp(s) — containing `fill_bkg_rect` + `set_bkg_data` — into main() pre-DISPLAY_ON,
-        // mirroring the GBDK reference's metasprites.c:177-180 step sequence. Without this
-        // hoist, BG tile data + tilemap init defers to play_enter (which runs AFTER
-        // DISPLAY_ON). The first PPU frame post-DISPLAY_ON composites BG using whatever
-        // bytes the (already-hoisted) `set_sprite_data` wrote into $8000 — the elephant
-        // sprite tile 0 — instead of the checker pattern. Per d-v3-visual-finding-v2.md
-        // and Plan 20's duplication-not-relocation pattern, the RawOp remains in
-        // {start}_enter so `BgCheckerboardEmissionTest` (play_enter-body assertion) is
-        // preserved; the BG VRAM writes are idempotent so duplication is runtime-neutral.
-        //
-        // RawOp text-match (intentional, scoped): we identify the bgFillCheckerboard
-        // emission by checking for BOTH `fill_bkg_rect` AND `set_bkg_data` substrings in
-        // the same RawOp — these come from the controlled `bgFillCheckerboard()` helper in
-        // `gbkt-lang/MetaspriteBuilder.kt` (a user cannot inject arbitrary RawOp text via
-        // the public DSL today). When a structured `BgFillCheckerboard` ScriptOp lands,
-        // replace this text match with a typed shape check.
         val hoistedBgFillCheckerboardStatements: List<CStatement> =
             startScene
                 ?.enterOps
                 ?.filterIsInstance<RawOp>()
                 ?.filter { it.code.contains("fill_bkg_rect") && it.code.contains("set_bkg_data") }
                 ?.map { it.accept(ScriptOpVisitor) } ?: emptyList()
-
-        // Plan 10.1-22 (DEF-10.1-13-C / 4TH LAYER): explicit `set_bkg_palette(0u, 1u, ...)`
-        // call statement, gated on GBC target. Replaces gbkt's prior reliance on
-        // `cgb_compatibility()` for BG palette RAM init — which (per d-v3-visual-finding-v2.md)
-        // only reaches BGP_REG (DMG path) on Coffee-GB, NOT BCPD (GBC palette RAM path).
-        // Result without this fix: BG palette RAM stays at Java zero-init → every BG pixel
-        // composites to RGB(0,0,0). With this fix: explicit write to slot 0 via BCPS/BCPD
-        // (mirrors what cgb_compatibility intends to do on real hardware).
-        // Emitted unconditionally for any non-DMG target — paired with the
-        // `_gbkt_default_bg_pal` constant declared in paletteDataRaw above.
-        val hoistedDefaultBgPaletteStatements: List<CStatement> =
-            if (gameIR.config.gbcTarget != GbcTarget.DMG) {
-                listOf(CRawCode("set_bkg_palette(0u, 1u, _gbkt_default_bg_pal);"))
-            } else {
-                emptyList()
-            }
+        val hoistedDefaultBgPaletteStatements = buildMainHoistedDefaultBgPaletteStatements(gameIR)
 
         val mainBody = buildList {
-            // Plan 10.1-20 (DEF-10.1-13-C / GAP-1): emit `DISPLAY_OFF;` as the FIRST main()
-            // statement so all palette/VRAM writes that follow run while the LCD is OFF
-            // (the only state in which `set_sprite_palette()` / `set_bkg_data()` writes are
-            // guaranteed to complete unconditionally; with LCD on outside vblank they may
-            // stall or partially complete — reference metasprites.c:161).
+            // Plan 10.1-20 GAP-1: LCD off before all palette/VRAM writes.
             add(CRawCode("DISPLAY_OFF;"))
-            // GBC compatibility init: must be the FIRST call in main() after DISPLAY_OFF —
-            // before any palette loads, sprite ops, sound init, or DISPLAY_ON. Required for
-            // GBC to enable CGB hardware features (cgb_compatibility() switches the hardware
-            // from DMG to GBC mode).
-            // Pitfall 2 mitigation: palette loaded AFTER cgb_compatibility().
+            // GBC compatibility init: FIRST call after DISPLAY_OFF — before any palette/sprite ops.
             if (gameIR.config.gbcTarget != GbcTarget.DMG) {
                 add(CRawCode("cgb_compatibility();"))
             }
-            // Plan 10.1-20 (DEF-10.1-13-C / GAP-2): hoisted sprite-palette writes from the
-            // start scene's enter handler. Must run AFTER cgb_compatibility() (palette RAM
-            // is only addressable in GBC mode) and BEFORE DISPLAY_ON (so OCPD is populated
-            // before the first composited frame).
+            // Plan 10.1-20 GAP-2: hoisted sprite-palette writes (AFTER cgb_compatibility,
+            // BEFORE DISPLAY_ON).
             addAll(hoistedStartPaletteStatements)
-            // Plan 10.1-22 (DEF-10.1-13-C / 4TH LAYER): explicit BG palette slot 0 write
-            // via BCPS/BCPD — gbkt-emitted equivalent of what cgb_compatibility intends to
-            // do on real hardware. Must run AFTER cgb_compatibility() (palette RAM is only
-            // addressable in GBC mode) and BEFORE DISPLAY_ON (so BCPD is populated before
-            // the first composited frame). For DMG targets this is a no-op (empty list).
+            // Plan 10.1-22 4TH LAYER: explicit BG palette slot 0 write via BCPS/BCPD
+            // (AFTER cgb_compatibility, BEFORE DISPLAY_ON; no-op for DMG).
             addAll(hoistedDefaultBgPaletteStatements)
-            // Sound hardware init: enable sound (NR52), master volume max (NR50), all channels on
-            // (NR51)
+            // Sound hardware init: NR52 enable, NR50 volume max, NR51 all channels on.
             add(CExprStatement(CBinaryExpr(CVar("NR52_REG"), "=", CLiteral(0x80))))
             add(CExprStatement(CBinaryExpr(CVar("NR50_REG"), "=", CLiteral(0x77))))
             add(CExprStatement(CBinaryExpr(CVar("NR51_REG"), "=", CLiteral(0xFF))))
-            // Plan 10.1-20 (DEF-10.1-13-C / GAP-3): move sprite-data + OAM init + pool init
-            // BEFORE the LCDC sequence + DISPLAY_ON. With LCD off these VRAM writes complete
-            // unconditionally (reference metasprites.c:177-183 — fill_bkg_rect / set_bkg_data
-            // / load_and_duplicate_sprite_tile_data all run with LCD off, then
-            // SHOW_BKG/SHOW_SPRITES/DISPLAY_ON last).
-            //
-            // Load all sprite-VRAM tile data into VRAM via unified loader: actor sprites first
-            // (preserves Pong/Breakout/SimplePhysics shape), then metasprites (continue from
-            // where actors left off — single VramAllocator instance, CR-01 fix).
-            // Plan 10.2-08 (DEF-10.1-13-C / 5TH LAYER): hoist bgFillCheckerboard BEFORE
-            // sprite-data loads. With LCDC.4=1 (shared $8000-$97FF sprite+BG VRAM region),
-            // set_bkg_data(0, 1, ...) writes checker bytes to VRAM tile 0 — the same region
-            // set_sprite_data(0u, 48u, ...) will write. Writing bgFillCheckerboard FIRST means
-            // the elephant tile data (set_sprite_data) is the LAST write to tile 0 → wins.
-            // Writing AFTER (Plan 22's order) caused checker bytes to overwrite elephant tile 0,
-            // triggering the sprite-renders-gray regression identified by Phase 10.2 bisect chain
-            // (evidence/d-v3-visual-finding-v3.md, Section 2).
-            //
-            // The bgFillCheckerboard writes are idempotent; the original RawOp(s) remain in
-            // {start}_enter per Plan 20's duplication-not-relocation pattern. BgCheckerboard-
-            // EmissionTest's play_enter-body assertion is unaffected by this reorder.
+            // Plan 10.2-08 5TH LAYER: bgFillCheckerboard BEFORE sprite-data loads (wins tile 0).
             addAll(hoistedBgFillCheckerboardStatements)
+            // Plan 10.1-20 GAP-3: VRAM writes before LCDC sequence + DISPLAY_ON.
             addAll(allSpriteDataLoads)
-            // Phase 12.9 D2b: upload per-metasprite OBJ palettes to GBC palette RAM after VRAM
-            // tile data is loaded. The metasprite's png2asset-generated <id>_palettes array (one
-            // sub-palette of 4 colors) is never uploaded without this call — the GBDK default
-            // grayscale OBJ palette remains, rendering the character with wrong colors.
-            // GBC-gated: DMG targets have no OBJ color palette RAM; gate mirrors the
-            // _gbkt_default_bg_pal + set_bkg_palette GBC gate above (gameIR.config.gbcTarget
-            // != GbcTarget.DMG). Slot counter starts at 0 and increments per metasprite.
+            // Phase 12.9 D2b: OBJ palette upload after VRAM tile data (GBC-gated).
             addAll(buildMetaspriteSpritePaletteStatements(gameIR))
-            // Bind OAM slots to tiles and set initial positions
             addAll(spriteOAMInits)
-            // Initialize actor pools: zero active bitmaps, set OAM entries to static base slots
             addAll(poolInitCalls)
-            // Plan 10.1-20: LCDC layer enables must precede DISPLAY_ON. The PPU latches LCDC
-            // on each scanline, so enabling BG/sprites/object-size AFTER DISPLAY_ON means the
-            // first composited frame uses whatever LCDC state was inherited from
-            // cgb_compatibility() — a soft regression that the GBDK reference avoids by
-            // ordering SHOW_BKG; SHOW_SPRITES; SPRITES_8x8; DISPLAY_ON in that exact sequence
-            // (metasprites.c:186-194).
-            //
-            // Enable BG tilemap layer (LCDC.BG_ENABLE). Without this, set_bkg_tiles writes
-            // to VRAM but the BG plane is never composited. Confirmed by Plan 07.4-25
-            // DIAGNOSIS.md (H-1). Re-introduced here after the Plan 26 attempt was rolled
-            // back; see evidence/round-6-wram-corruption/DIAGNOSIS.md for the round-6
-            // WRAM-corruption follow-up.
+            // LCDC layer enables must precede DISPLAY_ON (reference metasprites.c:186-194).
             add(CRawCode("SHOW_BKG;"))
-            // Enable OAM sprite layer — GBDK macro
             add(CRawCode("SHOW_SPRITES;"))
-            // D-V1 fix (SEED-004, Plan 10.1-11 Edit 2): set hardware sprite mode when
-            // metasprites are present. GBDK's default sprite mode after cgb_compatibility()
-            // is 8x16 (the hardware LCDC.SPRITE_SIZE bit). Without an explicit mode macro
-            // the elephant example renders garbled (its tiles are 8×8 but hardware reads
-            // them as 8×16 pairs). The conditional gate `gameIR.metasprites.isNotEmpty()`
-            // keeps non-metasprite games (Pong, Breakout, simple-physics) on the default
-            // 8x16 mode -- structurally impossible to regress, locked by
-            // Seed004ElephantTileRenderingFixTest (negative case).
-            //
-            // Debug E-02 (2026-05-24, debug/platformer-duck-malformed-blob.md):
-            // Pre-fix the pipeline unconditionally emitted `SPRITES_8x8;` for ALL
-            // metasprite games. The platformer-template's player metasprite declares
-            // `spriteMode = SPR8x16` (24×32 duck cut from a PNG with the -spr8x16
-            // png2asset flag) — forcing the hardware into 8×8 mode caused every OAM
-            // entry to render a single 8×8 tile instead of an 8×16 pair, halving the
-            // sprite height. Combined with E-03 (frame coord swap) this produced the
-            // "duck blob" symptom. Post-fix: the macro is selected from the metasprite
-            // `spriteMode` field. If ANY metasprite declares SPR8x16, emit SPRITES_8x16
-            // (hardware sprite size is a single LCDC bit — one global choice). Otherwise
-            // emit SPRITES_8x8 (the elephant SPR8x8 case + the back-compat null-spriteMode
-            // case for the Seed004 diagnostic test).
-            //
-            // Locked by:
-            //   - Seed004ElephantTileRenderingDiagnosticTest (SPR8x8 / null → SPRITES_8x8)
-            //   - SpriteMode8x16HardwareModeTest (SPR8x16 → SPRITES_8x16, no SPRITES_8x8)
-            //   - Seed004ElephantTileRenderingFixTest (no metasprites → neither macro)
-            // Reference:
-            // /Users/michalsvacha/gbdk/examples/cross-platform/metasprites/src/metasprites.c:192
-            // Finding:
-            // .planning/phases/10.1-metasprites-surplus-codegen-defects-inserted/evidence/d-v1-diagnostic/sprite-mode-init-finding.md
-            if (gameIR.metasprites.isNotEmpty()) {
-                val anySpr8x16 = gameIR.metasprites.any { it.spriteMode == SpriteMode.SPR8x16 }
-                if (anySpr8x16) {
-                    add(CRawCode("SPRITES_8x16;"))
-                } else {
-                    add(CRawCode("SPRITES_8x8;"))
-                }
-            }
-            // Plan 10.1-20: DISPLAY_ON is the LAST bootstrap macro before the game loop
-            // (reference metasprites.c:194). All palettes, VRAM tile data, BG tilemap
-            // data, and LCDC layer bits are in their final state before the LCD comes on,
-            // so the first composited frame is correct.
+            // D-V1 fix (SEED-004): sprite-mode macro gated on metasprite presence.
+            // Locked by Seed004ElephantTileRenderingFixTest / SpriteMode8x16HardwareModeTest.
+            addAll(buildMainSpriteModeMacros(gameIR))
+            // Plan 10.1-20: DISPLAY_ON last — all palettes/VRAM/LCDC ready before LCD on.
             add(CRawCode("DISPLAY_ON;"))
-            // Run the start scene's enter handler AFTER DISPLAY_ON. {start}_enter still
-            // contains the SetPalette ops (kept for multi-scene navigate-back correctness
-            // and SpritePaletteSlotEmissionTest contract); they re-run idempotently here.
             addAll(startEnterCall)
             add(CWhile(CVar("1"), gameLoopBody))
         }
@@ -4941,6 +4743,84 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
             body = mainBody,
             sectionComment = "Entry point",
         )
+    }
+
+    /**
+     * Builds the start-scene enter call for main(). Returns a single [CExprStatement] calling
+     * `{startScene}_enter` when the start scene exists and has enter content; otherwise returns an
+     * empty list. Extracted from [buildMainFunction] to reduce cognitive complexity (E-20).
+     *
+     * Uses [sceneHasEnterContent] so zone-only start scenes (no user enter block but bound zone)
+     * still get their initial enter call — same rationale as [buildTrampolinesForScene].
+     */
+    private fun buildMainStartEnterCall(gameIR: GameIR): List<CStatement> {
+        val startSceneId = gameIR.startScene ?: return emptyList()
+        if (gameIR.scenes.none { it.id == startSceneId && sceneHasEnterContent(it) }) {
+            return emptyList()
+        }
+        val startScene = gameIR.scenes.first { it.id == startSceneId }
+        return listOf(CExprStatement(CCall(enterFunctionName(startScene), emptyList())))
+    }
+
+    /**
+     * Builds the per-frame game loop body for main(). Extracted from [buildMainFunction] to reduce
+     * cognitive complexity (E-20). Emission order is preserved exactly: joypad → scene frame →
+     * puzzle → collision → level-switch guard → sprites → sound → hUGE → vblank.
+     */
+    private fun buildMainGameLoopBody(
+        gameIR: GameIR,
+        frameCases: List<CSwitchCase>,
+        levelSwitchGuardStatements: List<CStatement>,
+    ): List<CStatement> = buildList {
+        // Update joypad state once per frame before scene frame dispatch
+        add(CExprStatement(CCall("update_joypad", emptyList())))
+        add(CSwitch(CVar("current_scene"), frameCases))
+        // Run puzzle per-frame updates (pressure plates + timed blocks) after scene logic
+        if (gameIR.puzzleObjects.isNotEmpty()) {
+            add(CExprStatement(CCall("puzzle_update_all", emptyList())))
+        }
+        // Run NPC-NPC collision checks after movement updates, before sprite sync
+        if (gameIR.collisionRules.isNotEmpty()) {
+            add(CExprStatement(CCall("check_all_npc_collisions", emptyList())))
+        }
+        // Phase 12 D-02/D-08 anchor 5: level-switch guard AFTER per-frame system updates,
+        // BEFORE sprite sync (NextLevel scene's first frame runs with _current_level synced).
+        addAll(levelSwitchGuardStatements)
+        add(CExprStatement(CCall("update_sprites", emptyList())))
+        add(CExprStatement(CCall("sound_driver_update", emptyList())))
+        // hUGETracker audio driver tick — only emitted when music ops are used (A2)
+        if (SoundVisitor(gameIR).hasMusicOps()) {
+            add(CExprStatement(CCall("hUGE_dosound", emptyList())))
+        }
+        add(CExprStatement(CCall("wait_vbl_done", emptyList())))
+    }
+
+    /**
+     * Emits an explicit `set_bkg_palette(0u, 1u, _gbkt_default_bg_pal)` statement for non-DMG
+     * targets (Plan 10.1-22 / 4TH LAYER). DMG targets return an empty list (no-op). Extracted from
+     * [buildMainFunction] to reduce cognitive complexity (E-20).
+     */
+    private fun buildMainHoistedDefaultBgPaletteStatements(gameIR: GameIR): List<CStatement> =
+        if (gameIR.config.gbcTarget != GbcTarget.DMG) {
+            listOf(CRawCode("set_bkg_palette(0u, 1u, _gbkt_default_bg_pal);"))
+        } else {
+            emptyList()
+        }
+
+    /**
+     * Emits SPRITES_8x16 or SPRITES_8x8 hardware mode macro when the game uses metasprites (D-V1
+     * fix, SEED-004, Plan 10.1-11). Returns an empty list when no metasprites exist so
+     * Pong/Breakout/simple-physics stay on the default mode (structurally impossible to regress).
+     * Extracted from [buildMainFunction] to reduce cognitive complexity (E-20).
+     *
+     * Locked by Seed004ElephantTileRenderingDiagnosticTest, SpriteMode8x16HardwareModeTest,
+     * Seed004ElephantTileRenderingFixTest.
+     */
+    private fun buildMainSpriteModeMacros(gameIR: GameIR): List<CStatement> {
+        if (gameIR.metasprites.isEmpty()) return emptyList()
+        val anySpr8x16 = gameIR.metasprites.any { it.spriteMode == SpriteMode.SPR8x16 }
+        return if (anySpr8x16) listOf(CRawCode("SPRITES_8x16;"))
+        else listOf(CRawCode("SPRITES_8x8;"))
     }
 
     /**
