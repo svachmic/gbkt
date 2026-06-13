@@ -96,7 +96,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 17-04-PLAN.md — Archive 12 FEAT-*.md backlog seeds (verbatim + provenance) + expand REQUIREMENTS FEAT-XX
-- [ ] 17-05-PLAN.md — Replace 8 in-scope 160/144 literals + ROM byte-identity smoke + exemption table + D-06 seed
+- [x] 17-05-PLAN.md — Replace 8 in-scope 160/144 literals + ROM byte-identity smoke + exemption table + D-06 seed
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -193,7 +193,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 |-------|-----------|----------------|--------|-----------|
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
-| 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 3/12 | In Progress|  |
+| 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 5/12 | In Progress|  |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 0/TBD | Not started | - |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |

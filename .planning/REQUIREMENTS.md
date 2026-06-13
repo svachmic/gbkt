@@ -31,7 +31,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **QUAL-01**: Detekt violations cleared via exclusion-removal from `detekt.yml` (no committed baseline files); detekt coverage extended to the `gbkt-gradle-plugin` composite build
 - [x] **QUAL-02**: Magic 160/144 pixel literals replaced with platform-aware screen constants
-- [ ] **QUAL-03**: Remaining magic-pixel literals eliminated (in-scope set enumerated at phase spec; intentional hardware constants exempt)
+- [x] **QUAL-03**: Remaining magic-pixel literals eliminated (in-scope set enumerated at phase spec; intentional hardware constants exempt)
 
 ### Static Analysis Burn-down (SONAR)
 
@@ -114,7 +114,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPR-03 | Phase 18 | Pending |
 | QUAL-01 | Phase 17 | Complete |
 | QUAL-02 | Phase 17 | Complete |
-| QUAL-03 | Phase 17 | Pending |
+| QUAL-03 | Phase 17 | Complete |
 | SONAR-01 | Phase 18 | Pending |
 | SONAR-02 | Phase 18 | Pending |
 | FIX-01 | Phase 19 | Pending |
