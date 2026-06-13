@@ -436,3 +436,48 @@ All 12 FEAT-* files cover the 13 stale sections (sections 7 and 8 share `FEAT-CA
 - 12 target FEAT-* backlog files named — confirmed in Backlog File Assignment Summary
 - Every moved-to-backlog row maps to one of the 12 FEAT-* files — confirmed
 - `file:line` citations or ABSENT for all rows — confirmed
+
+---
+
+## Cross-Doc Consistency (Plan 17-12)
+
+**Date:** 2026-06-12  
+**Scope:** Root CLAUDE.md, all module CLAUDE.md files (50 total), context/*.md, CONTRIBUTING.md  
+**Search terms:** `states(`, `navGrid(`, `tween(`, `Easing.`, `testGame(`, `testScene(`, `battleMenu`, `combatFormulas`, `battleState(`, `battleTransition(`, `by item`, `ItemCategory`, dialog-context `.tick()`, `gridMenu(`  
+**Method:** `grep -rn` ripgrep across all target files; results filtered for FEAT-/archived/removed to exclude legitimate provenance references.
+
+### Search Results
+
+| Search Term | Files Hit | Disposition |
+|-------------|-----------|-------------|
+| `states(` | 0 live hits (excluding `CombatStates`/`animationStates` which match differently) | PASS — no stale reference |
+| `navGrid(` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `tween(` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `Easing.` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `testGame(` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `testScene(` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `battleMenu` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `combatFormulas` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `battleState(` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `battleTransition(` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `by item` | 0 hits outside DSL_REFERENCE.md (DSL_REFERENCE hit at line 1780 is `by item {` — accurate `val potion by item { }` delegate form documented in section 13) | PASS |
+| `ItemCategory` | 1 hit in gbkt-ir/CLAUDE.md:29 (`ItemCategoryDef` — IR type in file table, not a stale enum reference) | LEFT — legitimate IR type name |
+| `gridMenu(` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `dialog.tick`/`.isActive`/`.isComplete` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `menu.tick` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `romBanks =`/`ramBanks =` (17-11 renames) | 0 hits outside DSL_REFERENCE.md (property-style gone; function-style `romBanks(N)` not a stale reference) | PASS |
+| `physicsWorld`/`gravityZone` | 0 hits outside DSL_REFERENCE.md | PASS |
+| `findPathTo`/`Heuristic.` | 0 hits outside DSL_REFERENCE.md | PASS |
+
+### Justified Exceptions
+
+**gbkt-ir/CLAUDE.md:29 — `ItemCategoryDef`**  
+The string `ItemCategory` appears as part of `ItemCategoryDef` in a table row describing the IR file `InventoryIR.kt`. `ItemCategoryDef` is the real IR type name (distinct from the stale `ItemCategory` DSL enum that was removed from DSL_REFERENCE.md). This is an accurate reference to the IR layer — not a stale DSL reference. Left unchanged.
+
+### Fixes Applied
+
+None required. All 50 CLAUDE.md files, CONTRIBUTING.md, and all context/*.md files are clean — zero stale API references to removed/renamed DSL identifiers.
+
+**CLAUDE.md routing-index rule (D-16):** Confirmed — root CLAUDE.md contains no DSL quick-ref content. It remains a routing index pointing to context/DSL_REFERENCE.md and module CLAUDE.md files for authoritative API documentation. No new quick-refs were added.
+
+**D-16 Result:** Full doc surface consistent with rewritten DSL_REFERENCE.md. Zero stale API references remain outside DSL_REFERENCE.md itself.
