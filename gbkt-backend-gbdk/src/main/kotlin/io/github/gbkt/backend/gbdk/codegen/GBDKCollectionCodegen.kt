@@ -428,6 +428,42 @@ internal val VarType.cName: String
 // -----------------------------------------------------------------------
 
 /**
+ * Collect all data declaration strings in collection-type order: hash tables, pools, ring buffers,
+ * fixed slots.
+ */
+private fun GBDKCollectionCodegen.buildAllDataStrings(
+    hashTables: List<IRCollHashTable>,
+    pools: List<IRCollPool>,
+    ringBuffers: List<IRCollRingBuffer>,
+    fixedSlots: List<IRCollFixedSlots>,
+): List<String> {
+    val parts = mutableListOf<String>()
+    for (ht in hashTables) parts += generateHashTableData(ht)
+    for (pool in pools) parts += generatePoolData(pool)
+    for (rb in ringBuffers) parts += generateRingBufferData(rb)
+    for (fs in fixedSlots) parts += generateFixedSlotsData(fs)
+    return parts
+}
+
+/**
+ * Collect all helper function strings in collection-type order: hash tables, pools, ring buffers,
+ * fixed slots.
+ */
+private fun GBDKCollectionCodegen.buildAllFuncStrings(
+    hashTables: List<IRCollHashTable>,
+    pools: List<IRCollPool>,
+    ringBuffers: List<IRCollRingBuffer>,
+    fixedSlots: List<IRCollFixedSlots>,
+): List<String> {
+    val parts = mutableListOf<String>()
+    for (ht in hashTables) parts += generateHashTableFunctions(ht)
+    for (pool in pools) parts += generatePoolFunctions(pool)
+    for (rb in ringBuffers) parts += generateRingBufferFunctions(rb)
+    for (fs in fixedSlots) parts += generateFixedSlotsFunctions(fs)
+    return parts
+}
+
+/**
  * Generate all collection data declarations and helper functions from GameIR collection lists.
  *
  * Returns a pair of (dataDeclarations, helperFunctions) — each is a single concatenated C string
@@ -438,40 +474,9 @@ fun GBDKCollectionCodegen.generateAllCollections(
     pools: List<IRCollPool>,
     ringBuffers: List<IRCollRingBuffer>,
     fixedSlots: List<IRCollFixedSlots>,
-): Pair<String, String> {
-    val dataBuilder = StringBuilder()
-    val funcBuilder = StringBuilder()
-
-    for (ht in hashTables) {
-        if (dataBuilder.isNotEmpty()) dataBuilder.append("\n\n")
-        dataBuilder.append(generateHashTableData(ht))
-        if (funcBuilder.isNotEmpty()) funcBuilder.append("\n\n")
-        funcBuilder.append(generateHashTableFunctions(ht))
-    }
-
-    for (pool in pools) {
-        if (dataBuilder.isNotEmpty()) dataBuilder.append("\n\n")
-        dataBuilder.append(generatePoolData(pool))
-        if (funcBuilder.isNotEmpty()) funcBuilder.append("\n\n")
-        funcBuilder.append(generatePoolFunctions(pool))
-    }
-
-    for (rb in ringBuffers) {
-        if (dataBuilder.isNotEmpty()) dataBuilder.append("\n\n")
-        dataBuilder.append(generateRingBufferData(rb))
-        if (funcBuilder.isNotEmpty()) funcBuilder.append("\n\n")
-        funcBuilder.append(generateRingBufferFunctions(rb))
-    }
-
-    for (fs in fixedSlots) {
-        if (dataBuilder.isNotEmpty()) dataBuilder.append("\n\n")
-        dataBuilder.append(generateFixedSlotsData(fs))
-        if (funcBuilder.isNotEmpty()) funcBuilder.append("\n\n")
-        funcBuilder.append(generateFixedSlotsFunctions(fs))
-    }
-
-    return dataBuilder.toString() to funcBuilder.toString()
-}
+): Pair<String, String> =
+    buildAllDataStrings(hashTables, pools, ringBuffers, fixedSlots).joinToString("\n\n") to
+        buildAllFuncStrings(hashTables, pools, ringBuffers, fixedSlots).joinToString("\n\n")
 
 // -----------------------------------------------------------------------
 // CollElementType → CType mapping for prototype generation
