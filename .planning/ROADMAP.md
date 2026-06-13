@@ -216,7 +216,7 @@ Plans:
 
 **Wave 16** *(blocked on Wave 15 completion)*
 
-- [ ] 18-26-PLAN.md — SONAR EMITTING TrackSynthesizer E-28 (sport) + RpgVisitor E-29
+- [x] 18-26-PLAN.md — SONAR EMITTING TrackSynthesizer E-28 (sport) + RpgVisitor E-29
 
 **Wave 17** *(blocked on Wave 16 completion)*
 
