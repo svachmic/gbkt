@@ -50,7 +50,10 @@ complexity:
       - '**/combat/**'  # Battle engine configs have many options
       - '**/movement/**'  # Movement controller configs have many options
   ComplexCondition:
-    active: false  # IR generation is inherently nested
+    active: true
+    excludes:
+      - '**/codegen/**'  # Codegen condition trees generate multi-branch C dispatch — metric pressure adds no value here
+      - '**/ir/**'  # IR visitor dispatch is inherently nested; exclusion mirrors LongMethod rationale
   TooManyFunctions:
     active: true
     thresholdInFiles: 25
@@ -104,11 +107,26 @@ complexity:
 
 style:
   MagicNumber:
-    active: false  # Game development uses many coordinate and color values
+    active: true
+    ignoreNumbers:
+      - '0'
+      - '1'
+      - '2'
+      - '3'
+      - '4'
+      - '8'
+      - '16'
+    excludes:
+      - '**/codegen/**'  # Codegen emits raw hardware constants (tile offsets, VRAM addresses, bit-masks) — a magic-number detector adds noise, not signal, in this layer
+      - '**/test/**'  # Test fixtures use coordinate and tile-index literals that read as data, not magic — readability trumps extraction here
   UnusedPrivateMember:
-    active: false  # DSL receivers trigger false positives
+    active: true
+    excludes:
+      - '**/dsl/**'  # DSL receiver lambdas (e.g. GameBuilder.kt) capture private members consumed by the receiver scope — kotlinc extension-receiver resolution marks them "unused" spuriously
   UnusedPrivateProperty:
-    active: false  # DSL builders may have unused properties that are needed for API
+    active: true
+    excludes:
+      - '**/dsl/**'  # DSL builders expose properties needed for API ergonomics; some are forward-declared for future DSL surface — suppressed to prevent premature removal
   ForbiddenComment:
     active: false  # TODO/FIXME are fine
   MaxLineLength:
