@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: executing
-stopped_at: Completed 16-10-PLAN.md — Phase 16 close-out: seeds relocated (24 archive, 10 backlog, 10 confirmed-open in seeds/), REQUIREMENTS.md/ROADMAP.md D-11 reconciled
-last_updated: "2026-06-12T15:31:16Z"
-last_activity: "2026-06-12 -- Phase 16 Plan 10 complete (seed file moves + D-11 reconciliation: TRIAGE-03 satisfied, FIX-01..06 annotated, Phase 16 COMPLETE)"
+status: completed
+stopped_at: Completed 16-08-PLAN.md — D-08 visual verdict lock (8 VERIFIED-ALREADY-FIXED, 2 CONFIRMED-OPEN; SEED-004 user override)
+last_updated: "2026-06-12T15:43:20.192Z"
+last_activity: 2026-06-12
 progress:
   total_phases: 6
   completed_phases: 1
@@ -54,10 +54,10 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 16 (seed-triage) — COMPLETE
-Plan: 10 of 10 (ALL COMPLETE)
+Phase: 17
+Plan: Not started
 Status: Phase 16 complete — ready to advance to Phase 17/18/19 (parallel options available)
-Last activity: 2026-06-12 -- Phase 16 Plan 10 complete (seed file moves + D-11 reconciliation: 24 archived, 10 backlogged, 10 confirmed-open; TRIAGE-01/02/03 all satisfied)
+Last activity: 2026-06-12
 
 Resume signal: /gsd-execute-phase 17 (Docs + QUAL) or /gsd-execute-phase 18 (DEPR + SONAR) — both parallel-capable with each other; Phase 19 depends on Phase 16
 Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable; Phase 19 (Metasprite Fixes) now unblocked
@@ -84,7 +84,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 
 **Velocity:**
 
-- Total plans completed: 363
+- Total plans completed: 373
 - Average duration: 6.4 min
 - Total execution time: 0.71 hours
 
@@ -124,6 +124,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | 13.7 | 7 | - | - |
 | 13.8 | 7 | - | - |
 | 15 | 6 | - | - |
+| 16 | 10 | - | - |
 
 **Recent Trend:**
 

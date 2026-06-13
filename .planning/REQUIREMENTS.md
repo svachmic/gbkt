@@ -13,7 +13,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **TRIAGE-01**: Every seed in `.planning/seeds/` carries a terminal disposition — FIXED, VERIFIED-ALREADY-FIXED, or RE-DEFERRED with explicit v0.2.0 rationale — backed by evidence (commit hash, green test run, or screenshot at HEAD)
 - [x] **TRIAGE-02**: Visual-symptom seeds are closed only with runtime screenshot evidence at HEAD (Visual Evidence Rule), never variable assertions alone
-- [ ] **TRIAGE-03**: `.planning/seeds/` is empty at milestone close; re-deferred seeds move to a tracked v0.2.0 backlog record
+- [x] **TRIAGE-03**: `.planning/seeds/` is empty at milestone close; re-deferred seeds move to a tracked v0.2.0 backlog record
 
 ### Docs Reconciliation (DOCS)
 
