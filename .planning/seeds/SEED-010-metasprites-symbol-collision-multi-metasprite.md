@@ -5,6 +5,9 @@ planted: 2026-05-18
 planted_during: v1.0 / Phase 10 close (code-review-gate, CR-03)
 trigger_when: when any game declares ≥2 metasprites in the same compilation unit; before Phase 12 (platformer_template port likely has multiple)
 scope: medium
+triage_disposition: VERIFIED-ALREADY-FIXED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-010"
+triage_date: 2026-06-12
 ---
 
 # SEED-010: Non-namespaced C symbol names for metasprite descriptor arrays (CR-03)

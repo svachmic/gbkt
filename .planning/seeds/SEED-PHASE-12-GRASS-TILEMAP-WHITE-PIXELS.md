@@ -1,5 +1,7 @@
 # SEED: Phase 12 — Grass Tilemap White Pixels (world1-area1.png Render Artifact)
 
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-PHASE-12-GRASS-TILEMAP-WHITE-PIXELS](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-12-GRASS-TILEMAP-WHITE-PIXELS) · 2026-06-12
+
 **Created:** 2026-05-25 (Plan 12-23 round-2 — Anchor 5 human-verify Issue A)
 **Origin phase:** 12 (port-platformer-template-gbdk-example-to-gbkt)
 **Source:** Plan 12-23 round-2 anchor 5 — user inspection of `01-near-end.png` round-1 + round-2

@@ -5,6 +5,9 @@ planted: 2026-05-18
 planted_during: v1.0 / Phase 10 close (code-review-gate, CR-01)
 trigger_when: before Phase 12 (platformer_template port) starts — earliest case where actor sprites and metasprites coexist; also any user game that mixes both
 scope: medium
+triage_disposition: VERIFIED-ALREADY-FIXED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-008"
+triage_date: 2026-06-12
 ---
 
 # SEED-008: VRAM tile-slot collision when actor sprites and metasprites coexist (CR-01)

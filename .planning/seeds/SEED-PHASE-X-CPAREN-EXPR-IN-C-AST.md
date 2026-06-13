@@ -1,5 +1,7 @@
 # SEED — CParenExpr in C AST (CEmitter precedence-aware paren emission)
 
+> **Triage:** RE-DEFERRED — [TRIAGE.md#SEED-PHASE-X-CPAREN-EXPR-IN-C-AST](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-X-CPAREN-EXPR-IN-C-AST) · 2026-06-12
+
 **Surfaced:** Phase 12.7 (player-levitating-physics-codegen)
 **Rounds:** 5 + 6 (gap-closure terminal cluster)
 **Symptom:** Plan 12.7-04 emission `_player_y = foot_tile_row << 3u - 24u << 4u;`

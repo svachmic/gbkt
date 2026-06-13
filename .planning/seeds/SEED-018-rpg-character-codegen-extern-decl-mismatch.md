@@ -1,5 +1,7 @@
 # SEED-018 — RPG character codegen extern/declaration mismatch (dungeon + explorer buildRom)
 
+> **Triage:** RE-DEFERRED — [TRIAGE.md#SEED-018](.planning/phases/16-seed-triage/TRIAGE.md#SEED-018) · 2026-06-12
+
 **Origin phase:** 11.1 plan 09 (regression sweep, 2026-05-20)
 **Status:** Open — discovered via the Phase 11.1 phase-close BLOCKING `:buildRom` sweep. Pre-existing defect at the Phase 11.1 base commit (same commit as Phase 11.2 close `21a12148`).
 **Routing:** Open; not yet bound to a target phase. Needs its own discuss-phase + research per memory `feedback_route_to_proper_phase_when_blast_radius_is_wide.md` — system-wide codegen/type-system fix.

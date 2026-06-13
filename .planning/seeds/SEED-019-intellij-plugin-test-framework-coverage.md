@@ -1,5 +1,7 @@
 # SEED-019 — IntelliJ Platform test framework for gbkt-intellij-plugin (restore measurable coverage)
 
+> **Triage:** RE-DEFERRED — [TRIAGE.md#SEED-019](.planning/phases/16-seed-triage/TRIAGE.md#SEED-019) · 2026-06-12
+
 **Origin:** SonarCloud quality-gate analysis of PR #33 (`feat/d_and_d_gaps`), 2026-06-10
 **Status:** Open — not yet bound to a target phase
 **Routing:** Needs its own phase (discuss-phase + research). Standing up the IntelliJ Platform test framework is a module-wide testing-infrastructure effort, not an inline patch.

@@ -5,6 +5,9 @@ planted: 2026-05-19
 planted_during: v1.0 / Phase 10.1 close (after Plan 10.1-22 regression)
 trigger_when: surfaces in Phase 10.2 (already inserted via gsd-sdk query phase.insert 10)
 scope: medium
+triage_disposition: VERIFIED-ALREADY-FIXED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-013"
+triage_date: 2026-06-12
 ---
 
 # SEED-013: GBC Palette Write Path — D-V3 Visual Closure (Phase 10.2 Driver)

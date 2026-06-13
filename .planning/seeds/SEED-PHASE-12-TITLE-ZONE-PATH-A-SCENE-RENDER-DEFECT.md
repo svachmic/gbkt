@@ -1,5 +1,7 @@
 # SEED: Phase 12 — Title-Zone D-01 Path A Scene-Render Defect
 
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-PHASE-12-TITLE-ZONE-PATH-A-SCENE-RENDER-DEFECT](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-12-TITLE-ZONE-PATH-A-SCENE-RENDER-DEFECT) · 2026-06-12
+
 **Created:** 2026-05-23 (Phase 12.2 close — terminal close as `gaps_found`)
 **Updated:** 2026-05-23 (scope narrowed after user clarified per-image verdict; gameplay PASS, title-only FAIL)
 **Origin phase:** 12.2 (ConvertZoneTilesetsTask real-tilemap extraction via png2asset -map mode)

@@ -5,6 +5,9 @@ planted: 2026-05-18
 planted_during: v1.0 / Phase 10 close (code-review-gate, WR-05)
 trigger_when: any game that calls moveMetasprite() for ≥2 metasprites in a single frame; latent until then
 scope: small
+triage_disposition: VERIFIED-ALREADY-FIXED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-011"
+triage_date: 2026-06-12
 ---
 
 # SEED-011: `hiwater` reset on every `moveMetasprite` call collides OAM slot 0 (WR-05)

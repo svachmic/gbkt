@@ -1,5 +1,7 @@
 # SEED: Phase 12 — `ConvertZoneTilesetsTask` shared-tileset deduplication
 
+> **Triage:** RE-DEFERRED — [TRIAGE.md#SEED-PHASE-12-SHARED-TILESET](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-12-SHARED-TILESET) · 2026-06-12
+
 **Created:** 2026-05-25 (Phase 12 close — Plan 12-27 administrative phase-close)
 **Origin phase:** 12 (port-platformer-template-gbdk-example-to-gbkt)
 **Source:** Phase 12 RESEARCH.md §"D-15 Recommendations" (gap identified during research; RESEARCH-surfaced bonus seed beyond CONTEXT)

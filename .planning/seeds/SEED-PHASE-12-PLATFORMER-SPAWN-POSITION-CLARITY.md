@@ -1,5 +1,7 @@
 # SEED: Phase 12 — Platformer Player Spawn Position Clarity
 
+> **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-PHASE-12-PLATFORMER-SPAWN-POSITION-CLARITY](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-12-PLATFORMER-SPAWN-POSITION-CLARITY) · 2026-06-12
+
 **Created:** 2026-05-23 (Phase 12 Wave 13 — Plan 12-20 Anchor 2 close-out)
 **Origin phase:** 12 (port-platformer-template-gbdk-example-to-gbkt)
 **Source:** Plan 12-20 human-verify gate feedback

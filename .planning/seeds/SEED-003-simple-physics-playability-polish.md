@@ -5,6 +5,9 @@ planted: 2026-05-15
 planted_during: v1.0 / Phase 09.1 closeout (user UAT 2026-05-15)
 trigger_when: when a "playable demos" or "examples polish" milestone is opened, OR when simple_physics is referenced from documentation/marketing where wrap behavior would mislead users
 scope: small
+triage_disposition: RE-DEFERRED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-003"
+triage_date: 2026-06-12
 ---
 
 # SEED-003: simple_physics is reference-faithful but not "playable"

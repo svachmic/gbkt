@@ -5,6 +5,9 @@ planted: 2026-05-13
 planted_during: v1.0 / Phase 09 Plan 04 closeout
 trigger_when: when a future port or feature plan re-encounters the missing overload OR a DSL ergonomics milestone is opened
 scope: small
+triage_disposition: VERIFIED-ALREADY-FIXED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-002"
+triage_date: 2026-06-12
 ---
 
 # SEED-002: `ActorRef.moveTo(Expr, Expr)` overload

@@ -1,5 +1,7 @@
 # SEED: Phase 12 — PlatformerVisitor Auto-Emission Wiring Gaps (3 found in Wave 13)
 
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-PHASE-12-PLATFORMER-VISITOR-AUTO-EMISSION-GAPS](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-12-PLATFORMER-VISITOR-AUTO-EMISSION-GAPS) · 2026-06-12
+
 **Created:** 2026-05-23 (Phase 12 Wave 13 — Plan 12-21 close-out)
 **Origin phase:** 12 (port-platformer-template-gbdk-example-to-gbkt)
 **Source:** Plan 12-21 anchor 3 (horizontal scroll) UAT — three runtime gaps surfaced in one wave

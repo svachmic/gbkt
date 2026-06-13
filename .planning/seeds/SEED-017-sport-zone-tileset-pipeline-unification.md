@@ -1,5 +1,7 @@
 # SEED-017 — Unify sport and zone tileset pipelines
 
+> **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-017](.planning/phases/16-seed-triage/TRIAGE.md#SEED-017) · 2026-06-12
+
 **Origin phase:** 11.2 (tileset-pipeline-set-bkg-data-emission)
 **Status:** Deferred — captured for a future phase with bandwidth
 **Routing:** Open; not yet bound to a target phase

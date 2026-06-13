@@ -1,5 +1,7 @@
 # SEED-025 — Remove deprecated `combatIsInState(String, String)` overload in v0.2.0
 
+> **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-025](.planning/phases/16-seed-triage/TRIAGE.md#SEED-025) · 2026-06-12
+
 **Origin:** SonarCloud Info-issue sweep of PR #33 (`feat/d_and_d_gaps`), 2026-06-10 — the single S1133 finding ("remove this deprecated code someday")
 **Status:** Open — scheduled intent: v0.2.0 (next minor)
 **Routing:** One-plan removal inside any v0.2.0 DSL/API phase; no discuss-phase needed on its own.

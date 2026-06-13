@@ -1,5 +1,7 @@
 # SEED-015: Scene trampoline body delegates to wrong (prior) scene when source scene has no banked body
 
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-015](.planning/phases/16-seed-triage/TRIAGE.md#SEED-015) · 2026-06-12
+
 **Surfaced by:** Phase 11 (banks port, Plan 11-05 generateC + Plan 11-14 close)
 **Evidence:** `.planning/phases/11-port-banks-gbdk-example-to-gbkt/deferred-items.md` §"D11-05-1" + `gbkt-examples/banks/build/gbkt/generated/main.c:202-209` (post-clean rebuild reproduces it)
 **Symptom:** When FFD places one scene's enter/frame in a banked file but another scene's enter/frame in HOME (because the HOME scene is small enough), the trampoline-generation pass mis-emits the HOME scene's trampoline as a delegation to the previous banked scene's body. Concretely from `main.c:202-209` after the final clean buildRom:

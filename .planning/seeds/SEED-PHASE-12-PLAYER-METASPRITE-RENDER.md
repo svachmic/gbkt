@@ -1,5 +1,7 @@
 # SEED: Phase 12 — Player Metasprite Render Path (placeholder square)
 
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-PHASE-12-PLAYER-METASPRITE-RENDER](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-12-PLAYER-METASPRITE-RENDER) · 2026-06-12
+
 **Created:** 2026-05-23 (Phase 12.2 close — terminal close as `gaps_found`)
 **Updated:** 2026-05-23 (after user clarified the per-image verdict — `02-gameplay.png` is correct: the player IS rendering, just as a placeholder square mid-jump)
 **Origin phase:** 12.2 (ConvertZoneTilesetsTask real-tilemap extraction via png2asset -map mode)

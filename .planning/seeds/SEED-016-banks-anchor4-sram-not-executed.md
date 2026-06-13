@@ -1,5 +1,7 @@
 # SEED-016: Phase 11 Anchor 4 (SRAM GBST round-trip) — not executed
 
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-016](.planning/phases/16-seed-triage/TRIAGE.md#SEED-016) · 2026-06-12
+
 **Surfaced by:** Phase 11 (banks port close — Plan 11-14, by way of Plan 11-12 skip)
 **Evidence:** `gbkt-examples/banks/11-UAT.md` §"Phase 11 UAT Outcome" line "Anchor 4 (SRAM persistence): Not executed — Plan 11-12 skipped pending Phase 11.1 resolution"
 **Symptom:** Phase 11's 4-anchor UAT contract has Anchor 4 (SRAM save persistence via GBST `save_state`/`load_state` round-trip) pending. The mechanism path (SaveDataBuilder → `save_game_<id>` → `ENABLE_RAM` + `SWITCH_RAM(N)` → SRAM write) is provably emitted in `bank1.c` (INV-4 GREEN locks the codegen contract) AND the named-bug fix in Plan 11-10 added the `trigger_<id>` trampoline so `play_frame` can fire the write. The SRAM write path does NOT visually depend on the play scene rendering, so a UAT could in theory verify it without screenshots — but Plan 11-12 was orchestrator-skipped because it queues behind 11-11 (which RED'd on visual evidence) on the same `BanksUatTest` source file.

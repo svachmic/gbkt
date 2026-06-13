@@ -1,5 +1,7 @@
 # SEED: Player 1-2 px Sink (sub-pixel offset or collision-mask)
 
+> **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-PHASE-13-PLAYER-SUB-PIXEL-OFFSET-OR-COLLISION-MASK](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-13-PLAYER-SUB-PIXEL-OFFSET-OR-COLLISION-MASK) · 2026-06-12
+
 **Created:** 2026-05-27 (Plan 12.8-07 G3 binding gate — D-09 watchpoint CARRIED-AS-NEW-SEED)
 **Origin phase:** 12.8-grass-tileset-white-pixels-diagnostic
 **Source:** anchor-5/00-last-gameplay.png — user observation 2026-05-27 G3 binding gate: "Still sunk 1-2px"

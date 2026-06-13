@@ -5,6 +5,9 @@ planted: 2026-06-11
 planted_during: post-v0.1.0 maintenance (between milestones)
 trigger_when: next time a phase touches gbkt-gradle-plugin build infrastructure, or when a build-hygiene/tooling cluster forms
 scope: small
+triage_disposition: VERIFIED-ALREADY-FIXED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-026"
+triage_date: 2026-06-12
 ---
 
 # SEED-026: gbkt-gradle-plugin build hygiene — validatePlugins annotations + pluginTest ordering race

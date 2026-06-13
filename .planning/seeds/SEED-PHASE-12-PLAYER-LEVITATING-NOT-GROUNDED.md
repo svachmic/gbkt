@@ -1,5 +1,7 @@
 # SEED: Phase 12 — Player metasprite levitating (not pinned to ground tilemap-collision floor)
 
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-PHASE-12-PLAYER-LEVITATING-NOT-GROUNDED](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-12-PLAYER-LEVITATING-NOT-GROUNDED) · 2026-06-12
+
 **Created:** 2026-05-25 (Phase 12 Plan 12-27 human-checkpoint review — user-surfaced)
 **Origin phase:** 12 (port-platformer-template-gbdk-example-to-gbkt)
 **Source:** User direct review of `evidence/uat-screenshots/anchor-5/01-near-end.png` during Plan 12-27 ship-clearance checkpoint

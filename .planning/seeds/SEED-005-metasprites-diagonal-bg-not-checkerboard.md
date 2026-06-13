@@ -5,6 +5,9 @@ planted: 2026-05-18
 planted_during: v1.0 / Phase 10 closeout (Plan 10-20)
 trigger_when: when Phase 10.1 (metasprites surplus codegen defects) is opened
 scope: small
+triage_disposition: VERIFIED-ALREADY-FIXED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-005"
+triage_date: 2026-06-12
 ---
 
 # SEED-005: bgFillCheckerboard() emits diagonal stripe pattern, not checkerboard (D-V2)

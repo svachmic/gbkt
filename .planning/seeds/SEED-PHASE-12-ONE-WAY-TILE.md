@@ -1,5 +1,7 @@
 # SEED: Phase 12 — `oneWayThreshold(M)` ONE_WAY tile-collision extension
 
+> **Triage:** RE-DEFERRED — [TRIAGE.md#SEED-PHASE-12-ONE-WAY-TILE](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-12-ONE-WAY-TILE) · 2026-06-12
+
 **Created:** 2026-05-25 (Phase 12 close — Plan 12-27 administrative phase-close)
 **Origin phase:** 12 (port-platformer-template-gbdk-example-to-gbkt)
 **Source:** Phase 12 CONTEXT.md §D-13b (deferred at phase planning; captured at phase close per the same decision)

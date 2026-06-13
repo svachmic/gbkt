@@ -1,5 +1,7 @@
 # SEED: Platformer-template spawn position appears mid-air instead of on a platform
 
+> **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-platformer-template-spawn-polish](.planning/phases/16-seed-triage/TRIAGE.md#SEED-platformer-template-spawn-polish) · 2026-06-12
+
 **Created:** 2026-05-23 (Phase 12.3 Wave 6 — Plan 12.3-13 Anchor 2 re-shoot human-verify)
 **Origin phase:** 12.3-platformer-visitor-auto-emission-wiring (Plan 12.3-13)
 **Source:** User UAT observation during Anchor 2 re-shoot human-verify gate

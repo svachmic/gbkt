@@ -5,6 +5,9 @@ planted: 2026-05-13
 planted_during: v1.0 / Phase 07.9 closeout
 trigger_when: when v2.0 milestone is created (after v1.0 ships and audits clean)
 scope: large
+triage_disposition: RE-DEFERRED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-001"
+triage_date: 2026-06-12
 ---
 
 # SEED-001: IDE & Tooling

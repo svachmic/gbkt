@@ -1,5 +1,7 @@
 # SEED-014: `_bkg_tiles_load_banked` helper gated behind sport-racing genre
 
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-014](.planning/phases/16-seed-triage/TRIAGE.md#SEED-014) · 2026-06-12
+
 **Surfaced by:** Phase 11 (banks port close — Plan 11-14)
 **Evidence:** `.planning/phases/11-port-banks-gbdk-example-to-gbkt/evidence/inv2-failure.txt` + `gbkt-examples/banks/11-UAT.md` §"Phase 11 UAT Outcome" + `gbkt-examples/banks/build/gbkt/generated/main.c` (grep returns zero matches for `_bkg_tiles_load_banked`, `SWITCH_ROM`, `set_bkg_tiles`)
 **Symptom:** The Plan 07.4-30 HOME-bank SWITCH_ROM wrapper (`_bkg_tiles_load_banked`) is NOT emitted in any game without the sport_racing genre. The helper at `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/pipeline/GBDKPipelineV2.kt:972-980` is gated behind `hasSportRacing && bank > 1`. Banks.kt has no sport_racing genre → helper never emitted → cross-bank zone tilemap is never loaded into VRAM → at runtime the play scene renders as a blank DMG frame even though `_current_scene` variable evidence shows the scene transition fired (variable GREEN, visual BLACK). Anchor 1 + Anchor 2 of Phase 11's UAT contract both fail visually on this. INV-2 RED-by-design sentinel in `BanksEmissionTest.kt:167` locks the JVM-tier prediction of this runtime failure.

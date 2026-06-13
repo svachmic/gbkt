@@ -5,6 +5,9 @@ planted: 2026-05-18
 planted_during: v1.0 / Phase 10 closeout (Plan 10-20)
 trigger_when: when a game uses actor-level palette injection with multiple different palettes, OR when Phase 10.1 (metasprites surplus codegen defects) is opened for D-V1/V2/V3 fixes
 scope: small
+triage_disposition: VERIFIED-ALREADY-FIXED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-007"
+triage_date: 2026-06-12
 ---
 
 # SEED-007: GameBuilder actor-level palette slot always defaults to 0 (D-extra)

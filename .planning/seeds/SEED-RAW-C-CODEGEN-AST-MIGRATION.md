@@ -1,5 +1,7 @@
 # SEED — Migrate raw-C escape-hatch generators to the C AST
 
+> **Triage:** RE-DEFERRED — [TRIAGE.md#SEED-RAW-C-CODEGEN-AST-MIGRATION](.planning/phases/16-seed-triage/TRIAGE.md#SEED-RAW-C-CODEGEN-AST-MIGRATION) · 2026-06-12
+
 **Origin:** SonarCloud HIGH-issue review of PR #33 (`feat/d_and_d_gaps`), 2026-06-10
 **Status:** Open — not yet bound to a target phase
 **Routing:** Needs its own phase (discuss-phase + research). Changing the `CollectionCodegen`

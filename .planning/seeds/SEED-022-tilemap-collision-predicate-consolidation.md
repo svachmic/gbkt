@@ -1,5 +1,7 @@
 # SEED-022 — Consolidate the duplicated `gameUsesTilemapCollision` predicate
 
+> **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-022](.planning/phases/16-seed-triage/TRIAGE.md#SEED-022) · 2026-06-12
+
 **Origin:** SonarCloud Info-issue sweep of PR #33 (`feat/d_and_d_gaps`), 2026-06-10
 **Status:** Open — not yet bound to a target phase
 **Routing:** Small contained refactor plan — can ride inside any phase that already touches `gbkt-backend-gbdk` ↔ genre-module layering, or pair with [[SEED-021]] (same visitor).

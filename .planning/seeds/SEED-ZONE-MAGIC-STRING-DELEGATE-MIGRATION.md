@@ -1,5 +1,7 @@
 # SEED: `zone(id: String)` magic-string violation — convert to delegate-pattern
 
+> **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-ZONE-MAGIC-STRING-DELEGATE-MIGRATION](.planning/phases/16-seed-triage/TRIAGE.md#SEED-ZONE-MAGIC-STRING-DELEGATE-MIGRATION) · 2026-06-12
+
 **Created:** 2026-05-25 (Phase 12.6 discuss-phase — user-surfaced during DEFECT-2 fix DSL placement question)
 **Origin phase:** 12.6 (main-loop-level-switch-codegen-fix) — surfaced while adding `spawn(x, y)` to `ZoneBuilder` for DEFECT-2 per-level spawn fix
 **Source:** User direct callout during the AskUserQuestion follow-up on `spawn()` DSL surface placement. Quote: "Can be on zone block, but as always, I am raising that there is a magic string in zone !!! This should NEVER be accepted unless it's a path to a file!!!"

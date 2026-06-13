@@ -1,5 +1,7 @@
 # SEED-021 — Auto-derive `pivot_adjust` in the `tilemapCollision { }` builder
 
+> **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-021](.planning/phases/16-seed-triage/TRIAGE.md#SEED-021) · 2026-06-12
+
 **Origin:** SonarCloud Info-issue sweep of PR #33 (`feat/d_and_d_gaps`), 2026-06-10. Supersedes the never-created `SEED-PHASE-13-PIVOT-ADJUST-AUTO-DERIVE.md` that two `PlatformerVisitor` comments cited (the file was referenced in Plan 12.7-19 commentary but never written).
 **Status:** Open — not yet bound to a target phase
 **Routing:** Platformer-genre DSL/codegen phase (discuss-phase first). Touches the DSL builder + visitor contract, so it is a phase-sized change, not an inline patch.

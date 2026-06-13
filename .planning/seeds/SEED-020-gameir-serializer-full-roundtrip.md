@@ -1,5 +1,7 @@
 # SEED-020 — GameIRSerializer full round-trip (deserialize the 10 stubbed IR collections)
 
+> **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-020](.planning/phases/16-seed-triage/TRIAGE.md#SEED-020) · 2026-06-12
+
 **Origin:** SonarCloud Info-issue sweep of PR #33 (`feat/d_and_d_gaps`), 2026-06-10 — 11 of the 21 S1135 findings clustered here
 **Status:** Open — not yet bound to a target phase
 **Routing:** Single contained phase or a fat plan inside a serializer/tooling phase. No codegen blast radius — the serializer is consumed by external tooling (IDE plugin, MCP describe), not by the compile pipeline.

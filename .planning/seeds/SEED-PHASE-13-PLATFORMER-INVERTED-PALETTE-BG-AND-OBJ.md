@@ -1,5 +1,7 @@
 # SEED: Phase 13 — platformer-template colors inverted (BG + OBJ palette polarity)
 
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-PHASE-13-PLATFORMER-INVERTED-PALETTE-BG-AND-OBJ](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-13-PLATFORMER-INVERTED-PALETTE-BG-AND-OBJ) · 2026-06-12
+
 **Created:** 2026-06-04 (during Phase 13.4 `--gaps-only` execution — user UAT heads-up)
 **Origin phase:** 13.4 (framework-primitives-zone-scene-ergonomics-inserted), surfaced while closing D-04
 **Source:** User — "the world and the character in the platformer has inverted colors" … "could be linked to the same issue from Phase 13.6."

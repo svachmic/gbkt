@@ -5,6 +5,9 @@ planted: 2026-05-18
 planted_during: v1.0 / Phase 10 close (code-review-gate, CR-02)
 trigger_when: before Phase 11 (banks port) starts — any banking config that pushes scene frame functions into bank1.c+
 scope: small
+triage_disposition: VERIFIED-ALREADY-FIXED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-009"
+triage_date: 2026-06-12
 ---
 
 # SEED-009: `<gbdk/metasprites.h>` missing from bank1.c when scene frame is banked (CR-02)

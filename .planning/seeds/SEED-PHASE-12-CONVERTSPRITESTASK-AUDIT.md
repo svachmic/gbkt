@@ -1,5 +1,7 @@
 # SEED: Phase 12 — ConvertSpritesTask Synthesis Audit
 
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-PHASE-12-CONVERTSPRITESTASK-AUDIT](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-12-CONVERTSPRITESTASK-AUDIT) · 2026-06-12
+
 **Created:** 2026-05-23 (Phase 12.2 close — terminal close as `gaps_found`)
 **Updated:** 2026-05-24 (Phase 12.4 — resolved, all stub paths fail-fast)
 **Origin phase:** 12.2 (ConvertZoneTilesetsTask real-tilemap extraction via png2asset -map mode)

@@ -1,5 +1,7 @@
 # SEED: Phase 12 — Per-Zone Tilemap Bank Allocation
 
+> **Triage:** RE-DEFERRED — [TRIAGE.md#SEED-PHASE-12-PER-ZONE-TILEMAP-BANKS](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-12-PER-ZONE-TILEMAP-BANKS) · 2026-06-12
+
 **Created:** 2026-05-23 (Phase 12.2 close — terminal close as `gaps_found`)
 **Origin phase:** 12.2 (ConvertZoneTilesetsTask real-tilemap extraction via png2asset -map mode)
 **Source:** Phase 12.2 SPEC §"Out of scope"

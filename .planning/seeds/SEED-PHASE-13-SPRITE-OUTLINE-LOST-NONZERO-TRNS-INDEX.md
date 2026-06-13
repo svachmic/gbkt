@@ -1,5 +1,7 @@
 # SEED: Phase 13 — Sprite outline lost when PNG transparent color is not at palette index 0
 
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-PHASE-13-SPRITE-OUTLINE-LOST-NONZERO-TRNS-INDEX](.planning/phases/16-seed-triage/TRIAGE.md#SEED-PHASE-13-SPRITE-OUTLINE-LOST-NONZERO-TRNS-INDEX) · 2026-06-12
+
 **Created:** 2026-06-04 (during Phase 13.3 post-close UAT — user inspection of the color-cycle elephants)
 **Origin phase:** 13.3 (framework-primitives-metasprite-sprite-color-inserted)
 **Source:** User UAT after 13.3-24 — "there is some kind of outerline/borderline missing on the elephant ... I can even see through (transparency) in some places, namely around the elephant's ear."

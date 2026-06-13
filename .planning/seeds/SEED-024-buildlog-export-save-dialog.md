@@ -1,5 +1,7 @@
 # SEED-024 — BuildLogPanel export: native save-to-file dialog
 
+> **Triage:** RE-DEFERRED — [TRIAGE.md#SEED-024](.planning/phases/16-seed-triage/TRIAGE.md#SEED-024) · 2026-06-12
+
 **Origin:** SonarCloud Info-issue sweep of PR #33 (`feat/d_and_d_gaps`), 2026-06-10
 **Status:** Open — not yet bound to a target phase
 **Routing:** Fold into the IntelliJ-plugin testing/hardening phase seeded by [[SEED-019]] as a sibling task — same module, and the fix should land with a fixture test rather than untested.

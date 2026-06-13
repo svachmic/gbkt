@@ -5,6 +5,9 @@ planted: 2026-05-19
 planted_during: v1.0 / Phase 10.1-19 (D-V3 GBC palette diagnostic)
 trigger_when: next time a UAT diagnostic needs runtime hardware-register state (palette RAM, OAM raw bytes, LCDC bits, etc.) that cannot be exposed as a named sym-file variable
 scope: small
+triage_disposition: VERIFIED-ALREADY-FIXED
+triage_evidence: ".planning/phases/16-seed-triage/TRIAGE.md#SEED-012"
+triage_date: 2026-06-12
 ---
 
 # SEED-012: MCP `emulator_read_memory` Tool
