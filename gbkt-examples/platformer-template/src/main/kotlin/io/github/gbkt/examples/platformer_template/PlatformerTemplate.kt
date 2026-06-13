@@ -58,7 +58,7 @@ val platformerTemplate =
         // D-claude-3: MBC1. Reference uses minimal `0x01` (MBC1 without RAM) and Phase
         // 12 needs ≥ 3 ROM banks (HOME + scenes + zone banks 2..N for 3 tilemaps + 2 tilesets +
         // banked title + NextLevel card). romBanks is omitted — auto-derived by BankingAnalysisPass
-        // (D-05). If the derivation undersizes and buildRom fails, add back `romBanks = 8` as a
+        // (D-05). If the derivation undersizes and buildRom fails, add back `romBanks(8)` as a
         // D-05 override (Plan 13.1-10 terminal smoke sweep confirms).
         //
         // D-claude-4: GBC_COMPATIBLE — runs on both DMG and GBC; palette load is conditional on

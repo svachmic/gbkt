@@ -163,7 +163,7 @@ abstract class GbktExtension @Inject constructor(objects: ObjectFactory) {
      *
      * Only meaningful for cartridge types with RAM (MBC1+RAM, MBC5+RAM+BATTERY, etc.).
      *
-     * @deprecated Set `ramBanks` in the DSL `config { ramBanks = N }` block instead. The DSL value
+     * @deprecated Set `ramBanks` in the DSL `config { ramBanks(N) }` block instead. The DSL value
      *   flows through `gbkt-build.properties` and takes precedence over this Gradle extension
      *   property. This property remains as a backward-compatibility fallback for builds that have
      *   not yet migrated to the typed `config { cartridge(Cartridge.X) }` DSL form.

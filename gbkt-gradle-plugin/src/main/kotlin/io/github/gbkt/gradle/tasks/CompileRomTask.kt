@@ -316,7 +316,7 @@ abstract class CompileRomTask @Inject constructor(private val execOperations: Ex
     /**
      * Read `ramBanks` from `gbkt-build.properties` written by GenerateCTask.
      *
-     * D-07: DSL `config { ramBanks = N }` flows through gbkt-build.properties and takes precedence
+     * D-07: DSL `config { ramBanks(N) }` flows through gbkt-build.properties and takes precedence
      * over the Gradle extension `gbkt { ramBanks.set(N) }`. This helper mirrors the
      * [readGbcModeFromMetadata] pattern.
      *

@@ -41,7 +41,7 @@ import kotlin.test.assertTrue
 // ensures the tests remain GREEN across minor reformatting or expression
 // lowering changes that preserve semantic correctness.
 //
-// Note on bank1.c vs main.c: for single-scene games with `romBanks = 2`, the
+// Note on bank1.c vs main.c: for single-scene games with `romBanks(2)`, the
 // BankingAnalysisPass fast-path places the scene in HOME bank (bank 0). The
 // pipeline then folds scene functions into main.c and omits bank1.c entirely.
 // `playFrameBody()` handles both configurations transparently.
