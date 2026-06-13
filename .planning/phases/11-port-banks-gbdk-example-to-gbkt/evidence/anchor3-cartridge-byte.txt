@@ -1,5 +1,0 @@
-ROM file: gbkt-examples/banks/build/gbkt/output/banks.gb
-Offset:   0x0147
-Byte:     0x1b
-Expected: 0x1b (MBC5+RAM+BATT — matches reference -Wl-yt0x1B)
-Result:   PASS

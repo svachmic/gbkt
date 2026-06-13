@@ -1,8 +1,0 @@
-void play_frame(void) BANKED {
-    if (button_pressed(J_SELECT)) {
-        trigger_saves();
-    }
-    if (button_pressed(J_START)) {
-        navigate_to_scene(SCENE_PAUSE);
-    }
-}

@@ -1,6 +1,0 @@
-file: /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/uat-screenshots/anchor-3/01-initial.png
-dimensions: 160x144
-distinct_colours: 4
-dominant_ratio: 0.8834
-dominant_count: 20353
-total_pixels: 23040

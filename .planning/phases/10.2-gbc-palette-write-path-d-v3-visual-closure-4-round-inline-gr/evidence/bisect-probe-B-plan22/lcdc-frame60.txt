@@ -1,4 +1,0 @@
-LCDC: 0xC3
-Bit 7 (LCD Enable): 1
-Bit 1 (OBJ Enable): 1
-Bit 0 (BG Enable): 1

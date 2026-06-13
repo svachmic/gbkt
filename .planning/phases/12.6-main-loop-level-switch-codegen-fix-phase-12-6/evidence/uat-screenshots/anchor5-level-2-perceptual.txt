@@ -1,6 +1,0 @@
-file: /Users/michalsvacha/GitHub/personal/gbkt/.claude/worktrees/agent-ab26b52501849d960/.planning/phases/12.6-main-loop-level-switch-codegen-fix-phase-12-6/evidence/uat-screenshots/anchor-5/03-level-2.png
-dimensions: 160x144
-distinct_colours: 4
-dominant_ratio: 0.7998
-dominant_count: 18427
-total_pixels: 23040

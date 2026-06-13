@@ -1,2 +1,0 @@
--rw-r--r--  1 michalsvacha  staff  413 May 20 12:04 /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/11-port-banks-gbdk-example-to-gbkt/evidence/uat-screenshots/anchor1-play-scene.png
--rw-r--r--  1 michalsvacha  staff  413 May 20 12:04 /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/11-port-banks-gbdk-example-to-gbkt/evidence/uat-screenshots/anchor2-tilemap.png

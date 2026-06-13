@@ -1,6 +1,0 @@
-file: /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/12.7-player-levitating-physics-codegen/evidence/uat-screenshots/anchor-4/01-walk-frame-0.png
-dimensions: 160x144
-distinct_colours: 4
-dominant_ratio: 0.8626
-dominant_count: 19874
-total_pixels: 23040
