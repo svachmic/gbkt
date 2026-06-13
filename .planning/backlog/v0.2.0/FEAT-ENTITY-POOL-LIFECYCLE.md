@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 1316–1471 (commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 1316–1471 (commit d6e1e5f7).
 
 **Implemented today:** `pool(elementType, capacity)` and `pool(structDef, capacity)` data-pool delegates in `gbkt-lang/.../dsl/CollectionBuilders.kt:510,520`. These are data pools — they store data structures, not sprite entities with position/sprite/lifecycle. What is NOT implemented: `pool("bullet", size = 8) { position(0,0); velocity(0,0); sprite(asset) { }; state { }; onSpawn { }; onFrame { }; despawnWhen { }; onDespawn { } }` block form; `PoolRef.spawn { }`, `PoolRef.spawnAt(x, y)`, `PoolRef.trySpawn { } orElse { }`, `PoolRef.activeCount`, `PoolRef.hasSpace`, `PoolRef.isFull`, `PoolRef.forEachActive { }`, `PoolRef.despawnAll()`, `PoolRef.despawnWhere { }`.
 

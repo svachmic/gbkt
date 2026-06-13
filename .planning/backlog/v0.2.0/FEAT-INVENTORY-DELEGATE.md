@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 2489–2600 (commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 2489–2600 (commit 929653a4).
 
 **Implemented today:** `ItemCatalogBuilder` and `ContainerBuilder` in `gbkt-lang/.../dsl/InventoryBuilders.kt:227,298`. `items { item("potion") { name("Potion"); category(consumable) } }` block works; `val potion by item { }` delegate works inside an `items { }` block. `onUse { target.heal(50) }` works via `ItemEffectBuilder`. `container("inventory") { slots(16) }` works. What is NOT implemented: `val potion by item { }` game-level delegate (only inside `items { }` block); `ItemCategory.CONSUMABLE` global enum (category is a string ID); `EquipSlot.WEAPON` etc. in core (`EquipSlot` is only in `gbkt-genre-rpg`); `val ringSlot by equipSlot("Ring")` custom slot; `ContainerRef.add(potion, 3)`, `ContainerRef.remove(potion)`, `ContainerRef.contains(potion)`, `ContainerRef.count(potion)`, `ContainerRef.isFull`; `inventory.equip(hero, ironSword)`, `inventory.unequip(hero, slot)`, `hero.isEquipped(ironSword)`.
 

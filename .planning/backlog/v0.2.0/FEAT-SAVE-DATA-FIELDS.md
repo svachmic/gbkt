@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 1234–1307 (commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 1234–1307 (commit eb0c6aaa).
 
 **Implemented today:** `SaveDataBuilder` in `gbkt-lang/.../dsl/SystemBuilders.kt:139` exposes `slots(n)`, `checksum(enabled: Boolean)`, and `version(v: Int)` only. Saves are triggered via `triggerSystem(saves)` (ScriptBuilder.kt:545). What is NOT implemented: `u16Field()`, `u8Field()`, `flagsField()`, `arrayField()`, `var` delegates on `SaveDataBuilder`; `config { magic = "GBKT" }` nested block; `SaveDataRef.exists()`, `SaveDataRef.load()`, `SaveDataRef.save()`, `SaveDataRef.erase()`, `SaveDataRef.eraseAll()`, `SaveDataRef.copy()`; field access as variables (`save.score += 10`); flags bit operations (`save.flags.setBit(0)`, etc.); array field access (`save.inventory[0]`).
 

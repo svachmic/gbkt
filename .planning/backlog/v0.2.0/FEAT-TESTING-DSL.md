@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 2011–2239 (commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 2011–2239 (commit 63afe76a).
 
 **Implemented today:** JVM-tier simulation is done via `SimulationContext` / `ScriptOpInterpreter` in `gbkt-core/.../test/`; emulator-tier testing uses `GbktTestExtension` in `gbkt-test` (see `context/TESTING.md`). `SimulationContext.advanceFrame()` exists. The `testGame()` / `testScene()` DSL wrappers shown below do NOT exist — they are aspirational builder-pattern convenience wrappers. `press(Button.RIGHT) { advanceFrames(5) }` input simulation in DSL form is absent. `advanceUntil(maxFrames) { } orFail` is absent. `mock("actor") { }` is absent.
 

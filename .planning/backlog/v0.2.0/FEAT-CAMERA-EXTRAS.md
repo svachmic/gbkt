@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 1585–1698 (sections 7 and 8, commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 1585–1698 (sections 7 and 8, commit 183bd5a3).
 
 **Implemented today:** `CameraBuilder` in `gbkt-lang/.../dsl/SystemBuilders.kt:65` implements `follow(actor)` and `bounds(mapWidth, mapHeight)`. Script-level camera ops go through `cameraOp(CameraAction.FOLLOW/UNFOLLOW/SHAKE/MOVE_TO)`. `fade(fadeIn, frames)` is implemented as a `ScriptBuilder` method (ScriptBuilder.kt:447) — NOT a camera method. What is NOT implemented: `offset()` in CameraBuilder, `deadzone()` in CameraBuilder, range-form `bounds(0..256, 0..256)`, runtime `camera.update()`, runtime `camera.follow(player) { smoothing=...; offset(...) }` config block, `camera.followX(player)`, `camera.followY(player)`, `camera.shake { intensity=6; duration=20.frames; decay=Decay.EXPONENTIAL }` block form, `camera.impact(n)`, `camera.stopShake()`, wipe/iris/flash transitions, `camera.snapTo(player)` / `camera.snapTo(x, y)`, `camera.x` / `camera.y` read-only conditions.
 

@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 2408–2483 (commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 2408–2483 (commit 929653a4).
 
 **Implemented today:** `simpleBattle("combat") { party(hero); encounter { +goblin }; onVictory { }; onDefeat { } }` at `gbkt-genre-rpg/.../dsl/RpgExtensions.kt:168`. `battleUpdate(BattleRef)` at `RpgExtensions.kt:348`. 19 built-in `CombatStates.*` constants. What is NOT implemented: `battleMenu("menu") { position(0,12); commands { command("Attack") { } }; statusDisplay { } }` builder, `combatFormulas { d20HitRoll(baseAC=10); criticalChance(5); damageVariance(25) }` builder, `val cutsceneState by battleState("Cutscene")` custom state delegate, `battleTransition(cutsceneState)` script op.
 

@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 1473–1539 (commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 1473–1539 (commit d6e1e5f7).
 
 **Implemented today:** Nothing in this section is implemented. `tween()` does not exist in `ScriptBuilder.kt`. The `Easing` enum does not exist in any DSL file. `MAX_TWEENS` configuration constant is absent.
 

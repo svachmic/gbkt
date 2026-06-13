@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 1704–1818 (commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 1704–1818 (commit d6e1e5f7).
 
 **Implemented today:** Per-actor `physics { }` block in `gbkt-lang/.../dsl/ActorBuilder.kt:500` with function-style API: `gravity(n: Int)`, `friction(n)` (via `MovementBuilder` at line 429), `velocity(dx, dy)`, `bounce(coefficient: Float)`, `maxFallSpeed(n: Int)`, `platformerMode(enabled: Boolean)`. `physicsUpdate(actor: ActorRef)` script op in `ScriptBuilder.kt:657`. What is NOT implemented: `maxVelocity = 4 to 8` pair form, `mass = 1.0f` property, top-level `physics { gravity = 0.5f }` world builder, `tag("player")` entity tagging, `physicsWorld.collide(tagA, tagB)`, `physicsWorld.update()`, `gravityZone(x, y, width, height) { gravity = 0.1f }`, `physics { useLocalFriction = true }` per-entity override.
 

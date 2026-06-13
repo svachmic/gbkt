@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 1824–1983 (commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 1824–1983 (commit 63afe76a).
 
 **Implemented today:** `PathfindingBuilder` in `gbkt-lang/.../dsl/SystemBuilders.kt:315` with `gridSize(px)`, `mapSize(widthTiles, heightTiles)`, `maxOpenNodes(count)`, `maxPathLength(length)`. Script-level ops: `pathfindStep(npc: ActorRef, target: ActorRef)` at ScriptBuilder.kt:611 and `waypointStep(npc: ActorRef)` at ScriptBuilder.kt:633. What is NOT implemented: `navGrid("arena") { size = 16 x 16; blocked(...) }` builder, `navGrid(from = dungeonMap) { blockedTiles(...) }` tilemap form, `weight(x, y, cost = n)` tile weighting, `player findPathTo treasure using navGrid` infix, `player.findPathTo(treasure).using(navGrid) { diagonal = true; heuristic = Heuristic.MANHATTAN }`, path result API (`path.found`, `path.hasNext`, `path.directionX()`, etc.), `enemy.followPath(path) { speed = 2; onArrive { } }`, `navGrid.addObstacle(enemy)` / `removeObstacle()`, `Heuristic.MANHATTAN` / `CHEBYSHEV` / `EUCLIDEAN` enum.
 

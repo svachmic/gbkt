@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 370–408 (commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 370–408 (commit eb0c6aaa).
 
 **Implemented today:** Per-actor `animationStates { }` DSL in `ActorBuilder.kt` and `setAnimationState(actor, "state")` in `ScriptBuilder.kt`. There is no top-level `states("...")` builder.
 

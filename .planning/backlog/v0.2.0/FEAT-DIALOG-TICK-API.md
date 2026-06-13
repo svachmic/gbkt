@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 922–1001 (commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 922–1001 (commit eb0c6aaa).
 
 **Implemented today:** `DialogBuilder` exists in `gbkt-lang/.../dsl/UIBuilders.kt:64`. The builder is function-style (`textSpeed(3)`, `speaker("Elder")`, `box(x, y, width, height)`). `DialogHandle.say(text)` and `DialogHandle.say(vararg)` and `DialogHandle.choice(block)` + `portrait(AssetRef)` + `border(BorderStyle)` + `fontMode(FontMode)` are all implemented. What is NOT implemented: `DialogHandle.tick()`, `DialogHandle.isActive`, `DialogHandle.isComplete`, `DialogHandle.show()`, `DialogHandle.hide()` — `show()`/`hide()` exist only on `MenuHandle`.
 

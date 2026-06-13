@@ -14,7 +14,7 @@ triage_date: 2026-06-12
 
 ## Source
 
-Removed from context/DSL_REFERENCE.md lines 1007–1113 (commit removal-commit-TBD).
+Removed from context/DSL_REFERENCE.md lines 1007–1113 (commit eb0c6aaa).
 
 **Implemented today:** `MenuBuilder` in `gbkt-lang/.../dsl/UIBuilders.kt:273`. Config is function-style (`cursor(">")`, `parent(mainMenu)`, `position(x, y, width, height)`, `slider(label, variable, min, max, step)`). `MenuHandle.show()` and `MenuHandle.hide()` are implemented. What is NOT implemented: nested `style {}` block, `border` on `MenuBuilder`, `spacing` on `MenuBuilder`, `menu.tick()`, `gridMenu()`, `MenuHandle.isVisible`, `MenuHandle.isActive`, `MenuHandle.selectedIndex`.
 
