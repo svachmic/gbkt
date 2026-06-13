@@ -205,26 +205,42 @@ class GBDKPipeline {
      */
     internal fun buildMetadataFile(gameIR: GameIR): String {
         val json = org.json.JSONObject()
+        json.put("scenes", buildMetadataScenesJson(gameIR))
+        json.put("actors", buildMetadataActorsJson(gameIR))
+        json.put("variables", buildMetadataVariablesJson(gameIR))
+        json.put("texts", buildMetadataTextsJson(gameIR))
+        json.put("terminalScenes", buildMetadataTerminalScenesJson(gameIR))
+        json.put("controls", buildMetadataControlsJson(gameIR))
+        json.put("transitions", buildMetadataTransitionsJson(gameIR))
+        json.put("tileDecoders", buildMetadataTileDecodersJson())
+        json.put("zoneTilesets", buildMetadataZoneTilesetsJson(gameIR))
+        json.put("sprites", buildMetadataSpritesJson(gameIR))
+        return json.toString(2)
+    }
 
-        // Scenes: name → index
+    /** Scenes section: name → index map. */
+    private fun buildMetadataScenesJson(gameIR: GameIR): org.json.JSONObject {
         val scenes = org.json.JSONObject()
         for ((index, scene) in gameIR.scenes.withIndex()) {
             scenes.put(scene.id, index)
         }
-        json.put("scenes", scenes)
+        return scenes
+    }
 
-        // Actors with OAM slot assignments
+    /**
+     * Actors section: OAM slot assignments, sprite dimensions, position-variable names.
+     *
+     * WR-02: hardware SPRITES_8x16 mode uses ONE OAM slot per 8×16 pair. An actor sprite that is
+     * 16px tall has tilesHigh=2 raw tiles but only 1 OAM entry. Uses the same derivation as the
+     * actor-sprite sidecar emission loop: tileHeight <= 8 → SPR8x8 (8px OAM slot), else SPR8x16
+     * (16px OAM slot).
+     */
+    private fun buildMetadataActorsJson(gameIR: GameIR): org.json.JSONArray {
         val actors = org.json.JSONArray()
         for (actor in gameIR.actors) {
             if (actor.sprite == null) continue
             val sprite = actor.sprite!!
             val tilesWide = (sprite.size.width + 7) / 8
-            // WR-02: hardware SPRITES_8x16 mode uses ONE OAM slot per 8×16 pair.
-            // An actor sprite that is 16px tall has tilesHigh=2 raw tiles but only
-            // 1 OAM entry (each OAM slot covers both the top and bottom 8-pixel rows).
-            // Use the same derivation as the actor-sprite sidecar emission loop
-            // (line 395 below): tileHeight <= 8 → SPR8x8 (8px OAM slot), else SPR8x16
-            // (16px OAM slot). This makes oamCount correct for emulator agent assertions.
             val oamSlotHeight = if (sprite.size.height <= 8) 8 else 16
             val oamCount = tilesWide * ((sprite.size.height + oamSlotHeight - 1) / oamSlotHeight)
             val actorJson =
@@ -241,9 +257,11 @@ class GBDKPipeline {
                     )
             actors.put(actorJson)
         }
-        json.put("actors", actors)
+        return actors
+    }
 
-        // Variables: DSL-declared variables with name and type
+    /** Variables section: DSL-declared variables with name, type, and semantic. */
+    private fun buildMetadataVariablesJson(gameIR: GameIR): org.json.JSONArray {
         val variables = org.json.JSONArray()
         for (variable in gameIR.variables) {
             variables.put(
@@ -254,26 +272,32 @@ class GBDKPipeline {
                     .put("semantic", inferVariableSemantic(variable.name))
             )
         }
-        json.put("variables", variables)
+        return variables
+    }
 
-        // Texts: literal display strings extracted from all scene scripts
+    /** Texts section: literal display strings extracted from all scene scripts. */
+    private fun buildMetadataTextsJson(gameIR: GameIR): org.json.JSONArray {
         val allOps = gameIR.scenes.flatMap { it.enterOps + it.frameOps + it.exitOps }
         val texts = org.json.JSONArray()
         for (text in collectTexts(allOps)) {
             texts.put(text)
         }
-        json.put("texts", texts)
+        return texts
+    }
 
-        // Terminal scenes: convention-based detection of game-ending scenes
+    /** Terminal scenes section: convention-based detection of game-ending scenes. */
+    private fun buildMetadataTerminalScenesJson(gameIR: GameIR): org.json.JSONArray {
         val terminalScenes = org.json.JSONArray()
         for (scene in gameIR.scenes) {
             if (scene.id.lowercase() in TERMINAL_SCENE_PATTERNS) {
                 terminalScenes.put(scene.id)
             }
         }
-        json.put("terminalScenes", terminalScenes)
+        return terminalScenes
+    }
 
-        // Controls: per-scene input mappings extracted from IfOp conditions
+    /** Controls section: per-scene input mappings extracted from IfOp conditions. */
+    private fun buildMetadataControlsJson(gameIR: GameIR): org.json.JSONObject {
         val controlsJson = org.json.JSONObject()
         for ((sceneId, mappings) in extractControls(gameIR)) {
             val mappingsArray = org.json.JSONArray()
@@ -284,34 +308,35 @@ class GBDKPipeline {
             }
             controlsJson.put(sceneId, mappingsArray)
         }
-        json.put("controls", controlsJson)
+        return controlsJson
+    }
 
-        // Transitions: scene navigation graph extracted from NavigateTo ops
+    /** Transitions section: scene navigation graph extracted from NavigateTo ops. */
+    private fun buildMetadataTransitionsJson(gameIR: GameIR): org.json.JSONArray {
         val transitionsArray = org.json.JSONArray()
         for (edge in extractTransitions(gameIR)) {
             transitionsArray.put(org.json.JSONObject().put("from", edge.from).put("to", edge.to))
         }
-        json.put("transitions", transitionsArray)
+        return transitionsArray
+    }
 
-        // Emit tile decoder config — default decoders for all games
+    /** Tile decoders section: default decoders for all games. */
+    private fun buildMetadataTileDecodersJson(): org.json.JSONObject {
         val tileDecodersObj = org.json.JSONObject()
         tileDecodersObj.put("bg", org.json.JSONObject().put("type", "gbdk_offset"))
         tileDecodersObj.put("win", org.json.JSONObject().put("type", "direct_ascii"))
-        json.put("tileDecoders", tileDecodersObj)
+        return tileDecodersObj
+    }
 
-        // Phase 11.2 (D-A4): zone tilesets manifest consumed by ConvertZoneTilesetsTask.
-        // Filtered to NEW-path consumers (zone.tilesetPath != null); procedurally-authored
-        // sport-racing zones stay on LEGACY path.
-        // Plan 11.1-17 (Phase A): also emit mapWidth + mapHeight so ConvertZoneTilesetsTask
-        // can synthesize the _zone_<id>_tilemap[] screen-tile-index array at the correct
-        // screen-tile-grid dimensions (e.g. 20 × 18 for Banks's play_zone).
-        // Phase 12.1-01 Task 1 (D-01 option b): also emit `bank` so ConvertZoneTilesetsTask
-        // can prepend `#pragma bank N` to the synthesized `_zone_<id>_tilemap.c`. This fixes
-        // Defect 2 (SDCC error 20 `Undefined identifier '__bank__zone_<id>_tilemap'`) by
-        // making SDCC synthesize the `__bank_<sym>` companion symbol that `BANK(...)`
-        // expands to. `allocateZoneBanks` is invoked side-effect-free here (RESEARCH
-        // §BankingAnalysisPass option b) — the legacy `buildTilemapBankFiles` path
-        // is independent and unaffected.
+    /**
+     * Zone tilesets section: manifest consumed by ConvertZoneTilesetsTask.
+     *
+     * Phase 11.2 (D-A4): filtered to NEW-path consumers (zone.tilesetPath != null). Phase 11.1-17:
+     * emits mapWidth + mapHeight. Phase 12.1-01: emits `bank` for #pragma bank synthesis.
+     * `allocateZoneBanks` is invoked side-effect-free (legacy `buildTilemapBankFiles` path is
+     * independent).
+     */
+    private fun buildMetadataZoneTilesetsJson(gameIR: GameIR): org.json.JSONArray {
         val zoneBankAllocation = allocateZoneBanks(gameIR)
         val zoneTilesets = org.json.JSONArray()
         for (zone in gameIR.zones) {
@@ -328,60 +353,34 @@ class GBDKPipeline {
                     .JSONObject()
                     .put("id", zone.id)
                     .put("path", path)
-                    // Phase 12.2 R-04: emit explicit JSONObject.NULL (not Kotlin null) so the
-                    // serialized JSON carries "tilemapPath": null rather than omitting the key —
-                    // lets ConvertZoneTilesetsTask use optString("tilemapPath", null) cleanly.
+                    // Phase 12.2 R-04: emit explicit JSONObject.NULL so the serialized JSON carries
+                    // "tilemapPath": null rather than omitting the key.
                     .put("tilemapPath", zone.tilemapPath ?: org.json.JSONObject.NULL)
                     .put("sanitizedSymbol", sanitized)
                     // Plan 13.4-02: emit explicit JSONObject.NULL when the sentinel is null so the
-                    // JSON key is present (not omitted) — ConvertZoneTilesetsTask reads it via
-                    // isNull("mapWidth"). Mirrors the tilemapPath JSONObject.NULL idiom at :333.
+                    // JSON key is present (not omitted).
                     .put("mapWidth", zone.mapWidth ?: org.json.JSONObject.NULL)
                     .put("mapHeight", zone.mapHeight ?: org.json.JSONObject.NULL)
                     .put("bank", bank)
             )
         }
-        json.put("zoneTilesets", zoneTilesets)
+        return zoneTilesets
+    }
 
-        // Phase 12.4 D-02: sprites[] manifest consumed by ConvertSpritesTask (sidecar reader
-        // replacing
-        // main.c parseSpriteIncludes/isMetaspriteBound/isMirrorDedupOptIn helpers). Includes:
-        //   1. Metasprites with explicit sprite(asset(...)) binding (spritePath != null) per D-01b.
-        //   2. Actor sprites (actor { sprite(asset(...)) }) — these also produce #include
-        // "sprites/X.h"
-        //      in main.c and require ConvertSpritesTask to generate the matching .c/.h tile data
-        // files.
-        //      Actor sprites always use mirrorDedup=false (no mirror-pair dedup opt-in at actor
-        // level).
-        //      Plan 12.4-13 Rule 1 regression fix: Phase 12.4-03 sidecar refactor dropped actor
-        // sprites
-        //      from the sprites[] manifest; ConvertSpritesTask then skipped them, leaving the
-        // #include
-        //      directives dangling and breaking :buildRom for pong, breakout, banks,
-        // simple-physics.
-        //
-        // Each entry carries:
-        //   - "id": sprite identifier (metasprite id, or PNG stem for actor sprites)
-        //   - "spritePath": relative path to source PNG from res/ (used to locate the file)
-        //   - "includePath": relative path where the .h file must land under cSourceDir
-        //                    (matches the #include directive in generated C — may differ from
-        // spritePath
-        //                     when a metasprite's PNG lives under graphics/ but is included as
-        // sprites/<id>.h)
-        //   - "mirrorDedup": true → png2asset mirror-pair tile dedup enabled; false → -noflip added
+    /**
+     * Sprites section: manifest consumed by ConvertSpritesTask (Phase 12.4 D-02).
+     *
+     * Includes metasprites with explicit sprite binding (spritePath != null) and actor sprites.
+     * Actor sprites always use mirrorDedup=false. Plan 12.4-13 Rule 1: actor sprites were
+     * previously dropped, leaving #include directives dangling.
+     */
+    private fun buildMetadataSpritesJson(gameIR: GameIR): org.json.JSONArray {
         val sprites = org.json.JSONArray()
         for (ms in gameIR.metasprites) {
             val spritePath = ms.spritePath ?: continue
-            // main.c #include uses "sprites/<id>.h" (from metaspriteSpriteIncludes convention).
-            // The PNG may live anywhere (e.g. "graphics/player-character-gbapduck-sprites.png").
-            // includePath must match the #include directive so ConvertSpritesTask places the header
-            // at the correct location relative to cSourceDir.
+            // main.c #include uses "sprites/<id>.h"; includePath must match so ConvertSpritesTask
+            // places the header at the correct location relative to cSourceDir.
             val includePath = "sprites/${ms.id}.h"
-            // Phase 12.5 D-05 — png2asset cutting flags in sidecar
-            // Phase 13.3 D-07 — frameCount field for build-time cross-validation in
-            // ConvertSpritesTask
-            // Phase 13.3 D-01 — isMetasprite flag so ConvertSpritesTask can emit the native array
-            // extern
             val spriteEntry =
                 org.json
                     .JSONObject()
@@ -400,25 +399,16 @@ class GBDKPipeline {
             }
             sprites.put(spriteEntry)
         }
-        // Actor sprite entries carry cutting flags derived from actor.sprite.size (Rule 1 fix:
-        // ConvertSpritesTask now always passes -px/-py/-sw/-sh; without flags in the sidecar the
-        // defaults SPR8x16 + frameHeight=8 conflict for 8x8 sprites). Cutting flags are derived
-        // from the first actor that references each unique sprite path:
-        //   - spriteMode: SpriteMode.SPR8x8 when tile height <= 8px, else SpriteMode.SPR8x16
-        //   - frameWidth/frameHeight: actor.sprite.size.width / actor.sprite.size.height
-        //   - pivotX/pivotY: always 0,0 (actor sprites have no DSL pivot declaration)
-        // distinct() prevents duplicates when multiple actors share the same sprite PNG
-        // (e.g. pong's paddle1 + paddle2 both reference "sprites/paddle.png").
-        // For actor sprites, includePath is derived directly from spritePath — the main.c
-        // actorSpriteIncludes convention converts "sprites/paddle.png" → "sprites/paddle.h"
-        // (same subdirectory, same stem), so includePath == path-with-.h-extension.
+        // Actor sprite entries: cutting flags derived from actor.sprite.size. distinct() prevents
+        // duplicates when multiple actors share the same sprite PNG (e.g. pong's paddle1 +
+        // paddle2).
         val actorSpritesByPath =
             gameIR.actors
                 .mapNotNull { actor -> actor.sprite?.let { sprite -> actor to sprite } }
                 .groupBy { (_, sprite) -> sprite.assetRef.path }
-        for ((spritePath, actors) in actorSpritesByPath) {
+        for ((spritePath, actorsForPath) in actorSpritesByPath) {
             val includePath = spritePath.substringBeforeLast('.') + ".h"
-            val firstSprite = actors.first().second
+            val firstSprite = actorsForPath.first().second
             val tileHeight = firstSprite.size.height
             val tileWidth = firstSprite.size.width
             val actorSpriteMode = if (tileHeight <= 8) SpriteMode.SPR8x8 else SpriteMode.SPR8x16
@@ -436,9 +426,7 @@ class GBDKPipeline {
                     .put("frameHeight", tileHeight)
             )
         }
-        json.put("sprites", sprites)
-
-        return json.toString(2)
+        return sprites
     }
 
     companion object {
