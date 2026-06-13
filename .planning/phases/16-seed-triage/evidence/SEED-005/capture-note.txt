@@ -1,0 +1,8 @@
+ROM: gbkt-examples/metasprites/build/gbkt/output/metasprites.gb
+Mode: gbcMode=true, symFile=metasprites.noi
+Frame: 120 (after boot + 2 sec settle)
+Input: none (static initial scene)
+Shows: Background fill pattern. Visual result at HEAD is a proper CHECKERBOARD
+(alternating black and white squares). The SEED reported a diagonal stripe pattern
+from the wrong byte literal in bgFillCheckerboard(). HEAD screenshot shows checkerboard,
+suggesting the fix from a later phase may have corrected this.

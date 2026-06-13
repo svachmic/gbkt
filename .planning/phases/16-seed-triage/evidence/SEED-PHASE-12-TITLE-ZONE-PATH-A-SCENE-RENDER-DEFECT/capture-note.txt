@@ -1,0 +1,9 @@
+ROM: gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb
+Mode: gbcMode=true, symFile=platformer-template.noi
+Frame: 60 (after boot settle, no input)
+Input: none (title screen at startup)
+Shows: Title screen displaying "GBDK-2020 PLATFORMER TEMPLATE" in clean white text
+on a white/light background. No text doubling, no garbling, no rendering defect visible.
+The SEED reported the title screen showed doubled "GBDK-2020 PLATFORMER TEMPLATE" text
+due to the 32x32 synthetic tilemap bug (Phase 12.2 diagnosis). At HEAD the title renders
+correctly — single clean text, no duplication.

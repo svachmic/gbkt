@@ -1,0 +1,10 @@
+ROM: gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb
+Mode: gbcMode=true, symFile=platformer-template.noi
+Frame: 93 (first gameplay frame after scene transition)
+Input: START to advance from title, then no input
+Shows: Player renders as a recognizable character sprite (duck/platformer hero) using
+6 OAM entries (3×2 tile metasprite). Sprite is NOT a dark checkerboard square.
+Sprite tiles observed: tileIndex 0,2,4 (top row) and 6,8,10 (bottom row).
+The SEED reported the player rendered as a dark checkerboard square due to the
+ConvertSpritesTask stub path bug (pre-Phase 12.4). At HEAD the player sprite is correct.
+GBC mode is confirmed (gbcMode=true, correct green colors visible).
