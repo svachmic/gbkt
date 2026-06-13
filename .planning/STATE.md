@@ -4,13 +4,13 @@ milestone: v0.1.1
 milestone_name: Hardening
 status: executing
 stopped_at: Completed 18-04-PLAN.md
-last_updated: "2026-06-13T10:14:22.228Z"
-last_activity: 2026-06-13 -- Phase 18 execution started
+last_updated: "2026-06-13T10:23:33.822Z"
+last_activity: 2026-06-13
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 49
-  completed_plans: 28
+  completed_plans: 29
   percent: 33
 ---
 
@@ -55,9 +55,9 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
-Plan: 7 of 27
+Plan: 8 of 27
 Status: Ready to execute
-Last activity: 2026-06-13 -- Phase 18 execution started
+Last activity: 2026-06-13
 
 Resume signal: /gsd-execute-phase 17 (Docs + QUAL) or /gsd-execute-phase 18 (DEPR + SONAR) — both parallel-capable with each other; Phase 19 depends on Phase 16
 Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable; Phase 19 (Metasprite Fixes) now unblocked
@@ -1009,7 +1009,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-13T10:14:22.222Z
+Last session: 2026-06-13T10:23:33.817Z
 Stopped at: Completed 18-04-PLAN.md
 
 ## Operator Next Steps
