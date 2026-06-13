@@ -114,7 +114,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 17-11-PLAN.md — Folded todos: ConfigBuilder setter unify + config{} docs + MBC5 warning + RpgRegistry.clear()
+- [x] 17-11-PLAN.md — Folded todos: ConfigBuilder setter unify + config{} docs + MBC5 warning + RpgRegistry.clear()
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
@@ -193,7 +193,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 |-------|-----------|----------------|--------|-----------|
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
-| 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 10/12 | In Progress|  |
+| 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 11/12 | In Progress|  |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 0/TBD | Not started | - |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
