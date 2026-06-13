@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 16-04-PLAN.md — metasprites emission cluster triage (all 8 entries VERIFIED-ALREADY-FIXED)
-last_updated: "2026-06-12T14:25:00.000Z"
-last_activity: 2026-06-12 -- Phase 16 Plan 04 complete (SEED-006..011, SEED-PHASE-13-SPRITE-OUTLINE, TODO-metasprites-baseline all VERIFIED-ALREADY-FIXED; 9 evidence files; cluster-metasprites-emission.md draft)
+stopped_at: Completed 16-05-PLAN.md — banks cluster triage (5 seeds VERIFIED-ALREADY-FIXED, 3 WR items CONFIRMED-OPEN)
+last_updated: "2026-06-12T14:35:56.631Z"
+last_activity: 2026-06-12 -- Phase 16 Plan 01 complete (TRIAGE.md skeleton + archive/backlog/_drafts dirs)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 10
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 16 (seed-triage) — EXECUTING
-Plan: 3 of 10
+Plan: 4 of 10
 Status: Ready to execute
 Last activity: 2026-06-12 -- Phase 16 Plan 01 complete (TRIAGE.md skeleton + archive/backlog/_drafts dirs)
 
@@ -385,6 +385,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 15 P05 | 34 min | 3 tasks | 6 files |
 | Phase 15 P06 | 14 min | 2 tasks | 2 files |
 | Phase 16-seed-triage P02 | 7min | 2 tasks | 4 files |
+| Phase 16-seed-triage P05 | 6 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -875,6 +876,9 @@ Recent decisions affecting current work:
 - [Phase 16-seed-triage]: D-14 complied: SHA 8cef3dbca7d0868f42cf0d627921b8559d7754e8 pinned to substrate-sha.txt before build
 - [Phase 16-seed-triage]: BanksEmissionTest INV-2 GREEN: SEED-014 and SEED-015 signalled VERIFIED-ALREADY-FIXED
 - [Phase 16-seed-triage]: validatePlugins + pluginTest PASS: SEED-026 signalled VERIFIED-ALREADY-FIXED
+- [Phase ?]: SEED-014 VERIFIED-ALREADY-FIXED: INV-2+INV-6 GREEN at substrate SHA; hasZoneSceneBinder guard sufficient
+- [Phase ?]: SEED-015/016 VERIFIED-ALREADY-FIXED: trampoline calls dedup canonical pause_enter; Anchor-4 SRAM @Test present at BanksUatTest.kt:291
+- [Phase ?]: TODO-13.8 WR-01/02/03 CONFIRMED-OPEN: allocatedZoneBank single-zone gap, initialSubPaletteSlot no collision guard, RGB555 no range check; route Phase 19/20
 
 ### Pending Todos
 
@@ -970,8 +974,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-12T13:57:49.495Z
-Stopped at: Completed 16-02-PLAN.md — substrate pass
+Last session: 2026-06-12T14:35:56.625Z
+Stopped at: Completed 16-05-PLAN.md — banks cluster triage (5 seeds VERIFIED-ALREADY-FIXED, 3 WR items CONFIRMED-OPEN)
 
 ## Operator Next Steps
 

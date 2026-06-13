@@ -57,7 +57,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 
 - [x] 16-03-PLAN.md — Visual evidence capture (10 visual seeds, gbcMode) + batch review document draft
 - [x] 16-04-PLAN.md — Metasprites emission triage (SEED-006..011, sprite-outline tRNS, stale-baseline todo)
-- [ ] 16-05-PLAN.md — Banks triage (SEED-014 INV-2 sentinel, 015, 016, retroactive/convert audits, 13.8 WR todo)
+- [x] 16-05-PLAN.md — Banks triage (SEED-014 INV-2 sentinel, 015, 016, retroactive/convert audits, 13.8 WR todo)
 - [ ] 16-06-PLAN.md — DSL/lang/tooling source triage (SEED-002/003/012/020/023/025/026 + triggersystem todo)
 - [ ] 16-07-PLAN.md — Platformer/zone source triage (SEED-017/021/022, zone-magic-string, cEmit gaps, RE-DEFERRED zone seeds)
 
@@ -151,7 +151,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
-| 16. Seed Triage | v0.1.1 | 2/10 | In Progress|  |
+| 16. Seed Triage | v0.1.1 | 5/10 | In Progress|  |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 0/TBD | Not started | - |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 0/TBD | Not started | - |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
