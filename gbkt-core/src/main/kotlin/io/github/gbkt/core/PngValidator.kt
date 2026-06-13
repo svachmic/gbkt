@@ -137,12 +137,12 @@ object PngValidator {
         }
 
         // Check chunk type is "IHDR"
-        if (
-            data[12] != 'I'.code.toByte() ||
-                data[13] != 'H'.code.toByte() ||
-                data[14] != 'D'.code.toByte() ||
-                data[15] != 'R'.code.toByte()
-        ) {
+        val isIhdrChunk =
+            data[12] == 'I'.code.toByte() &&
+                data[13] == 'H'.code.toByte() &&
+                data[14] == 'D'.code.toByte() &&
+                data[15] == 'R'.code.toByte()
+        if (!isIhdrChunk) {
             return null
         }
 

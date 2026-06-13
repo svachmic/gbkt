@@ -182,8 +182,6 @@ class SpritePaletteSlotEmissionTest {
                 }
                 .build()
 
-        val mainC = pipeline.generate(gameIR).files["main.c"] ?: error("main.c not generated")
-
         val allFilesSingle = pipeline.generate(gameIR).files
         val allSourceSingle = allFilesSingle.values.joinToString("\n")
 

@@ -286,7 +286,6 @@ class StepAgentTest {
 
     @Test
     fun `step holds and releases buttons via set diff`() {
-        var lastHeld = emptySet<Button>()
         val rom = fakeRom()
         val sym = writeSymFile()
         val config =
@@ -449,23 +448,6 @@ class StepAgentTest {
     }
 
     // ── toSummary tests ───────────────────────────────────────────────────────
-
-    private fun sprite(index: Int = 0, x: Int = 0, y: Int = 0, tile: Int = 0): SpriteEntry =
-        SpriteEntry(
-            index = index,
-            screenX = x,
-            screenY = y,
-            rawX = x + 8,
-            rawY = y + 16,
-            tileIndex = tile,
-            behindBg = false,
-            yFlip = false,
-            xFlip = false,
-            dmgPalette = 0,
-            gbcVramBank = 0,
-            gbcPalette = 0,
-            rawAttributes = 0,
-        )
 
     private fun emptyRows(count: Int = 18): List<String> = List(count) { "                    " }
 

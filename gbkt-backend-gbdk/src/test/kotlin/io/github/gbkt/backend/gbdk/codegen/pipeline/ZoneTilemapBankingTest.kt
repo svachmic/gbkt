@@ -32,9 +32,6 @@ import kotlin.test.assertTrue
 /** One byte past 16KB — too large for a single bank. */
 private const val OVERSIZED_TILE_COUNT = 16385
 
-/** 8KB of tiles — fits two per 16KB bank. */
-private const val EIGHT_KB_TILE_COUNT = 8192
-
 /** 12KB of tiles — fits one per 16KB bank. */
 private const val TWELVE_KB_TILE_COUNT = 12288
 

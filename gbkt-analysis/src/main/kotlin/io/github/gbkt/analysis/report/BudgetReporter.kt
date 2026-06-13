@@ -60,6 +60,9 @@ object BudgetReporter {
     private const val MAX_OAM_SPRITES = 40
     private const val MAX_HRAM_BYTES = 127
 
+    /** Total Game Boy VRAM tile slots (0..383): 256 BG/window + 128 OBJ-only shared tiles. */
+    private const val TOTAL_VRAM_TILES = 384
+
     // ANSI color codes
     private const val ANSI_GREEN = "\u001B[32m"
     private const val ANSI_YELLOW = "\u001B[33m"
@@ -387,8 +390,7 @@ object BudgetReporter {
                     .sumOf { range -> range.endTile - range.startTile }
 
             // BG available = total - sprite tiles (global tiles already counted in sprite range)
-            val totalVramTiles = 384
-            val bgAvail = totalVramTiles - spriteTiles
+            val bgAvail = TOTAL_VRAM_TILES - spriteTiles
             val sceneRange = context.vramAssignments[scene.id]
             val bgUsed = if (sceneRange != null) sceneRange.endTile - sceneRange.startTile else 0
 

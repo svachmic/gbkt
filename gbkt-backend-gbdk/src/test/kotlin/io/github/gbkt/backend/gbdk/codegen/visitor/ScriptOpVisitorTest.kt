@@ -513,7 +513,6 @@ class ScriptOpVisitorTest {
 
         for (op in allOps) {
             val result = ScriptOpVisitor.visit(op)
-            val emittedCode = result.toString()
             // None of the results should be a TODO stub
             assertFalse(
                 result is CRawCode && result.code.contains("TODO:"),

@@ -380,7 +380,7 @@ class CombatVisitor(private val gameIR: GameIR) {
                 val coreStateIds = buildCoreStateIndex(system)
                 for ((parent, children) in system.stateHierarchy) {
                     val parentId = coreStateIds[parent] ?: 1
-                    for (_child in children) {
+                    repeat(children.size) {
                         add(
                             CSwitchCase(
                                 value = CLiteral(subStateIndex),

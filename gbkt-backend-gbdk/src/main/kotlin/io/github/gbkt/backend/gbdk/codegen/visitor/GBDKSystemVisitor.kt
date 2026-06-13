@@ -5438,7 +5438,7 @@ class GBDKSystemVisitor(
         val conditions = requiresIds.mapNotNull { reqId ->
             val sanitizedId = reqId.replace('-', '_').replace(' ', '_')
             val activeVar =
-                when (val reqObj = puzzleById[reqId]) {
+                when (puzzleById[reqId]) {
                     is SwitchObjectIR -> "_switch_${sanitizedId}_active"
                     is DoorObjectIR -> "_door_${sanitizedId}_open"
                     is PressurePlateObjectIR -> "_plate_${sanitizedId}_pressed"

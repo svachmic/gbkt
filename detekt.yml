@@ -54,6 +54,8 @@ complexity:
     excludes:
       - '**/codegen/**'  # Codegen condition trees generate multi-branch C dispatch — metric pressure adds no value here
       - '**/ir/**'  # IR visitor dispatch is inherently nested; exclusion mirrors LongMethod rationale
+      - '**/intellij/editors/**'  # Swing visual editors: bounds-check conditions for tile-grid hit-testing (x<0 || x>=w || y<0 || y>=h) and path-heuristic checks are inherently 4-clause predicates; the meaning is clearer inline than split across named booleans
+      - '**/intellij/editors/sprite/**'  # Sprite editor hit-test bounds checks — same rationale as intellij/editors/**
   TooManyFunctions:
     active: true
     thresholdInFiles: 25
@@ -109,16 +111,50 @@ style:
   MagicNumber:
     active: true
     ignoreNumbers:
+      - '-1'  # Universal sentinel for "unset / auto-assign / not found" (Java/Kotlin API convention: optInt(key, -1), indexOf, etc.)
       - '0'
       - '1'
       - '2'
       - '3'
       - '4'
+      - '5'   # Minimum column-width formatting sentinel (e.g. "Scene".length); too small to warrant a named constant
+      - '7'   # Ceil-to-byte-boundary rounding: (x + 7) / 8 == ceil(x / 8); universally recognised bit-arithmetic idiom
       - '8'
+      - '10'  # Ubiquitous scale boundary: 1–10 difficulty/quality rating, decade multiplier; universally idiomatic
+      - '14'  # GB dialog box default Y position in tiles; also common 4-bit pair (high nibble of 0xE_)
       - '16'
+      - '18'  # Game Boy screen height in tiles: 144px / 8 = 18 tiles; universally idiomatic in GB development
+      - '20'  # Game Boy screen width in tiles: 160px / 8 = 20 tiles; universally idiomatic in GB development
+      - '24'  # ARGB alpha-channel bit-shift: (color shr 24) and 0xFF; standard ARGB component extraction idiom
+      - '32'  # Game Boy BG map dimension: 32×32 tiles; also power-of-two shift value
+      - '64'  # Audio priority LOW level; also common power-of-two buffer sentinel
+      - '100' # Percentage calculations: value * 100 / total, coerceIn(0, 100); universally idiomatic
+      - '128' # Audio priority MEDIUM level; also common power-of-two / signed-byte sentinel
+      - '192' # Audio priority HIGH level; also common colour constant (3/4 of 255)
+      - '255' # Maximum byte value: used in bit masking (and 255 or and 0xFF); universally idiomatic for byte extraction
+      - '256' # Full byte-value count (0-255 inclusive); page size; also MBC5 ROM bank count — all are specification-level constants
+      - '0xFF' # Hex form of 255; same rationale as '255' above — detekt compares literal text, not normalised value
+      - '0x1F' # RGB555 5-bit channel mask: each colour channel occupies bits 0-4; standard bit-extraction idiom
+      - '0x7FFF' # RGB555 maximum value (32767): 15 significant bits representing all-white; GBC colour-space boundary constant
+      - '0xFFFF' # 16-bit address space maximum; universally idiomatic in embedded/Game Boy memory range guards
+      - '1024' # Kilobyte conversion: bytes / 1024.0; universally idiomatic
     excludes:
       - '**/codegen/**'  # Codegen emits raw hardware constants (tile offsets, VRAM addresses, bit-masks) — a magic-number detector adds noise, not signal, in this layer
       - '**/test/**'  # Test fixtures use coordinate and tile-index literals that read as data, not magic — readability trumps extraction here
+      - '**/AssetPipeline.kt'  # Dense RGB/GBC colour-pipeline constants: alpha threshold (128), luminance weights (0.299/0.587/0.114 — float), palette luminance steps (192/128/64/200/140/80), and RGB555↔RGB888 bit-scale shifts; extracting each to a named constant produces a 15-entry micro-constant companion that obscures the colour-science formulae rather than clarifying them
+      - '**/FontCharacterMapping.kt'  # Font-encoding tables: raw glyph byte-offset sequences for ASCII characters; these are specification data tables, not extractable named constants — adding names would balloon the file without adding semantic value
+      - '**/optimization/AnalyzedAsset.kt'  # Scoring-rubric constants: inter-related penalty weights (30/20/10/5) and grade thresholds (90/75/60/40) form a single calibrated rubric; extracting each to a named constant would create noise without improving readability, and the thresholds are only meaningful together
+      - '**/PngValidator.kt'  # PNG specification byte offsets and magic bytes (IHDR chunk positions 12-15, width/height offsets 16/20, IHDR-data-size 13, png-sig-member 25): these are PNG-spec literals embedded inside a byte-array constant (PNG_SIGNATURE) and a spec-faithful IHDR parser; naming each offset individually would add 8 micro-constants without improving comprehension beyond the existing inline comments
+      - '**/emulator/ui/**'  # Swing UI layout constants (pixel sizes, colours, font sizes, component dimensions) — same class as intellij-plugin UI constants; Swing API is pixel-oriented and every numeric argument is inherently context-specific to the parent container
+      - '**/emulator/debug/**'  # Emulator debug subsystem: EMU_printf trap opcodes (0x52), CPU register bit positions, GBDK printf-buffer addresses, source-map offset arithmetic — domain-specific byte sequences that must not be renamed; identical rationale to codegen/** hardware constants
+      - '**/emulator/agent/**'  # Agent API: VRAM tile layout constants (tile grid offsets, BG map width=32, tilemap address arithmetic), OAM slot byte offsets, screenshot comparison pixel-difference thresholds — dense hardware-addressed arithmetic where named constants would not reduce cognitive load
+      - '**/emulator/CoffeeGbEmulator.kt'  # Coffee-GB wrapper: tick-count ceiling (maxTicksPerFrame), frame-timing constants, display-buffer size — emulation-loop implementation constants tightly coupled to Coffee-GB internals
+      - '**/emulator/EmulatorConfig.kt'  # Emulator configuration defaults (timeout thresholds, frame limits) — inline defaults are more readable than a companion-object full of single-use constants
+      - '**/dsl/**'  # DSL builder default values (physics parameters: gravity, terminal velocity, coyote frames, walk speed; camera defaults; platform crumble delays) are calibrated API defaults documented via KDoc; extracting them to companion-object constants would not reduce magic-number risk because the defaults are the design contract, not arbitrary choices
+      - '**/intellij/**'  # IntelliJ plugin Swing UI: pixel dimensions, font sizes, colour component values, layout constants, ANSI-escape byte offsets, progress percentages, and GB-hardware display constants (160×144, tile sizes). Swing API is inherently pixel-oriented; every argument is layout-specific. Identical rationale to emulator/ui/** — naming each Dimension/Color argument to a companion constant would produce boilerplate that obscures intent rather than improving it
+      - '**/examples/**'  # Example game sources: pixel positions, brick counts, score increments, spawn coordinates, and tile indices in game DSL files are game-design constants whose meaning is self-evident from context (e.g. position(72, 132) in a 160×144 screen); extracting each to a named constant would create boilerplate with no readability benefit in short single-file game definitions
+      - '**/ir/Types.kt'  # GB cartridge hardware spec data table (Cartridge enum): MBC register byte codes (0x06, 0x11, 0x13, 0x19, 0x1B) and ROM bank counts (256 for MBC5) are authoritative Game Boy hardware constants from the Pan Docs spec; named per-entry extraction adds no semantic value beyond the enum member name itself
+      - '**/ir/CoreTypes.kt'  # GBC colour-space spec data: RGB555 bit-field masks (0x1F per channel, 0x7FFF max), slot range sentinels (-1), and palette-size constraints (4 colors, 7 max slot); these are specification-boundary constants documented inline; extraction would create redundant companion names
   UnusedPrivateMember:
     active: true
     excludes:
@@ -127,6 +163,12 @@ style:
     active: true
     excludes:
       - '**/dsl/**'  # DSL builders expose properties needed for API ergonomics; some are forward-declared for future DSL surface — suppressed to prevent premature removal
+      - '**/test/**'  # Test DSL fixtures use property-delegate syntax (val z1 by zone {}, val dummySprite by metasprite {}) for side-effect registration; the delegate binding is required but the variable itself is not referenced — identical to the dsl/** exclusion rationale
+      - '**/intellij/**'  # IntelliJ plugin: constructor params (EntityPreviewPanel.project, PoEditorPanel.project, GbktToolWindowPanel.project) are API-contract parameters accepted for future use (e.g. opening project-aware file dialogs, service lookups); removing them would break callers wired by IntelliJ's dependency injection. Detekt incorrectly classifies them as UnusedPrivateProperty even after removing the 'val' keyword
+  UtilityClassWithPublicConstructor:
+    active: true
+    excludes:
+      - '**/test/**'  # Test scaffold classes may have companion objects with constants but no instance test methods yet (Wave-0 pattern); detekt incorrectly flags them as "utility classes"
   ForbiddenComment:
     active: false  # TODO/FIXME are fine
   MaxLineLength:

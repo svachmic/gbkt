@@ -43,7 +43,7 @@ import javax.swing.table.DefaultTableCellRenderer
  * - Character count validation (18 chars/line, 90 total)
  * - Parameter highlighting (%name, %damage, etc.)
  */
-class PoEditorPanel(private val project: Project, private val file: VirtualFile) :
+class PoEditorPanel(@Suppress("UnusedParameter") project: Project, private val file: VirtualFile) :
     JPanel(BorderLayout()) {
 
     private val tableModel = PoTableModel()

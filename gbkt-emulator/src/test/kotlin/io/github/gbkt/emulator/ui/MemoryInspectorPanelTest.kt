@@ -274,7 +274,6 @@ class MemoryInspectorPanelTest {
 
     @Test
     fun `panel refresh delegates to both tabs`() {
-        var refreshCount = 0
         val memory = MockMemoryAccess(mapOf(0xC100 to 7))
 
         val panel = MemoryInspectorPanel(memoryProvider = { memory })
