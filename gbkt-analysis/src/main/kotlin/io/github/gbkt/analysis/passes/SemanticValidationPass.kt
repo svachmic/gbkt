@@ -270,15 +270,27 @@ class SemanticValidationPass : AnalysisPass {
     /**
      * Walks every GameIR subsystem and returns the flat list of top-level [ScriptOp]s. Used by
      * [checkFadeWithoutAudioMixer] (and a candidate caller for any future cross-subsystem op walk).
-     * Extracted from [checkFadeWithoutAudioMixer] to keep the host function under LongMethod /
-     * CyclomaticComplexMethod thresholds.
+     * Delegates to focused per-category helpers to keep individual method complexity below the
+     * S3776 threshold.
      */
-    private fun collectAllTopLevelOps(game: GameIR): List<ScriptOp> = buildList {
+    private fun collectAllTopLevelOps(game: GameIR): List<ScriptOp> =
+        collectSceneOps(game) +
+            collectZoneOps(game) +
+            collectCollisionRuleOps(game) +
+            collectActorPoolOps(game) +
+            collectMenuOps(game) +
+            collectPuzzleObjectOps(game) +
+            collectSystemOps(game)
+
+    private fun collectSceneOps(game: GameIR): List<ScriptOp> = buildList {
         for (scene in game.scenes) {
             addAll(scene.enterOps)
             addAll(scene.frameOps)
             addAll(scene.exitOps)
         }
+    }
+
+    private fun collectZoneOps(game: GameIR): List<ScriptOp> = buildList {
         for (zone in game.zones) {
             addAll(zone.onEnter)
             addAll(zone.onExit)
@@ -286,44 +298,63 @@ class SemanticValidationPass : AnalysisPass {
                 addAll(obj.onInteract)
             }
         }
+    }
+
+    private fun collectCollisionRuleOps(game: GameIR): List<ScriptOp> = buildList {
         for (rule in game.collisionRules) {
             addAll(rule.onCollide)
         }
+    }
+
+    private fun collectActorPoolOps(game: GameIR): List<ScriptOp> = buildList {
         for (pool in game.actorPools) {
             addAll(pool.deathCallback)
         }
+    }
+
+    private fun collectMenuOps(game: GameIR): List<ScriptOp> = buildList {
         for (menu in game.menus) {
             for (item in menu.items) {
                 addAll(item.body)
             }
         }
+    }
+
+    private fun collectPuzzleObjectOps(game: GameIR): List<ScriptOp> = buildList {
         for (puzzleObj in game.puzzleObjects) {
             for (h in puzzleObj.handlers) {
                 addAll(h.actions)
             }
         }
+    }
+
+    private fun collectSystemOps(game: GameIR): List<ScriptOp> = buildList {
         for (system in game.systems) {
             when (system) {
-                is ExplorationSystem -> {
-                    addAll(system.stepStatements)
-                    addAll(system.blockedStatements)
-                    addAll(system.interactStatements)
-                    for (g in system.gauges) {
-                        addAll(g.onLowStatements)
-                        addAll(g.onDepletedStatements)
-                    }
-                }
-                is CombatEngineSystem -> {
-                    addAll(system.onVictoryCondition)
-                    addAll(system.onDefeatCondition)
-                    addAll(system.onVictoryOps)
-                    addAll(system.onDefeatOps)
-                    for ((_, ops) in system.combatHooks) {
-                        addAll(ops)
-                    }
-                }
+                is ExplorationSystem -> addAll(collectExplorationSystemOps(system))
+                is CombatEngineSystem -> addAll(collectCombatSystemOps(system))
                 else -> Unit
             }
+        }
+    }
+
+    private fun collectExplorationSystemOps(system: ExplorationSystem): List<ScriptOp> = buildList {
+        addAll(system.stepStatements)
+        addAll(system.blockedStatements)
+        addAll(system.interactStatements)
+        for (g in system.gauges) {
+            addAll(g.onLowStatements)
+            addAll(g.onDepletedStatements)
+        }
+    }
+
+    private fun collectCombatSystemOps(system: CombatEngineSystem): List<ScriptOp> = buildList {
+        addAll(system.onVictoryCondition)
+        addAll(system.onDefeatCondition)
+        addAll(system.onVictoryOps)
+        addAll(system.onDefeatOps)
+        for ((_, ops) in system.combatHooks) {
+            addAll(ops)
         }
     }
 }
