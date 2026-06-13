@@ -5074,156 +5074,11 @@ class GBDKSystemVisitor(
         vars += CVarDecl(name = "_plate_${id}_pressed", type = CU8, initializer = CLiteral(0))
 
         // puzzle_check_plate_{id}(): test if any respondTo actor/pool entity is at plate position
-        val checkBody =
-            buildList<CStatement> {
-                // requires() guard: check required objects before processing step events
-                val requiresGuard = buildRequiresGuard(obj.requires, puzzleById)
-                if (requiresGuard.isNotEmpty()) addAll(requiresGuard)
-
-                // UINT8 _on = 0; (local var)
-                add(CVarDecl("_on", CU8, initializer = CLiteral(0)))
-                // Check each respondTo actor or pool entity
-                for (actorId in obj.respondToActorIds) {
-                    if (actorId.startsWith("pool:")) {
-                        // Pool entity: pool:<poolName> — check pool entity positions
-                        val poolName =
-                            actorId.removePrefix("pool:").replace('-', '_').replace(' ', '_')
-                        // pool_<name>_any_at(plate.x, plate.y) returns nonzero if any entity there
-                        add(
-                            CIf(
-                                condition =
-                                    CCall(
-                                        "pool_${poolName}_any_at",
-                                        listOf(CLiteral(obj.x), CLiteral(obj.y)),
-                                    ),
-                                thenBody =
-                                    listOf(
-                                        CExprStatement(CBinaryExpr(CVar("_on"), "=", CLiteral(1)))
-                                    ),
-                            )
-                        )
-                    } else {
-                        val sanitizedActorId = actorId.replace('-', '_').replace(' ', '_')
-                        // if (_<actor>_x == plate.x && _<actor>_y == plate.y) _on = 1;
-                        add(
-                            CIf(
-                                condition =
-                                    CBinaryExpr(
-                                        CBinaryExpr(
-                                            CVar("_${sanitizedActorId}_x"),
-                                            "==",
-                                            CLiteral(obj.x),
-                                        ),
-                                        "&&",
-                                        CBinaryExpr(
-                                            CVar("_${sanitizedActorId}_y"),
-                                            "==",
-                                            CLiteral(obj.y),
-                                        ),
-                                    ),
-                                thenBody =
-                                    listOf(
-                                        CExprStatement(CBinaryExpr(CVar("_on"), "=", CLiteral(1)))
-                                    ),
-                            )
-                        )
-                    }
-                }
-                // if (_on && !_plate_{id}_pressed) { onStepOn; _plate_{id}_pressed = 1; }
-                if (obj.onStepOn.isNotEmpty()) {
-                    val stepOnBody =
-                        buildList<CStatement> {
-                            for (op in obj.onStepOn) add(ScriptOpVisitor.visit(op))
-                            add(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_plate_${id}_pressed"), "=", CLiteral(1))
-                                )
-                            )
-                        }
-                    add(
-                        CIf(
-                            condition =
-                                CBinaryExpr(
-                                    CVar("_on"),
-                                    "&&",
-                                    CRawExpr("!_plate_${id}_pressed"),
-                                ),
-                            thenBody = stepOnBody,
-                        )
-                    )
-                } else {
-                    // No onStepOn ops — just update state
-                    add(
-                        CIf(
-                            condition =
-                                CBinaryExpr(
-                                    CVar("_on"),
-                                    "&&",
-                                    CRawExpr("!_plate_${id}_pressed"),
-                                ),
-                            thenBody =
-                                listOf(
-                                    CExprStatement(
-                                        CBinaryExpr(
-                                            CVar("_plate_${id}_pressed"),
-                                            "=",
-                                            CLiteral(1),
-                                        )
-                                    )
-                                ),
-                        )
-                    )
-                }
-                // if (!_on && _plate_{id}_pressed) { onStepOff; _plate_{id}_pressed = 0; }
-                if (obj.onStepOff.isNotEmpty()) {
-                    val stepOffBody =
-                        buildList<CStatement> {
-                            for (op in obj.onStepOff) add(ScriptOpVisitor.visit(op))
-                            add(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_plate_${id}_pressed"), "=", CLiteral(0))
-                                )
-                            )
-                        }
-                    add(
-                        CIf(
-                            condition =
-                                CBinaryExpr(
-                                    CRawExpr("!_on"),
-                                    "&&",
-                                    CVar("_plate_${id}_pressed"),
-                                ),
-                            thenBody = stepOffBody,
-                        )
-                    )
-                } else {
-                    add(
-                        CIf(
-                            condition =
-                                CBinaryExpr(
-                                    CRawExpr("!_on"),
-                                    "&&",
-                                    CVar("_plate_${id}_pressed"),
-                                ),
-                            thenBody =
-                                listOf(
-                                    CExprStatement(
-                                        CBinaryExpr(
-                                            CVar("_plate_${id}_pressed"),
-                                            "=",
-                                            CLiteral(0),
-                                        )
-                                    )
-                                ),
-                        )
-                    )
-                }
-            }
         functions +=
             CFunction(
                 name = "puzzle_check_plate_$id",
                 returnType = CVoid,
-                body = checkBody,
+                body = buildPlateCheckBody(obj, id, puzzleById),
                 sectionComment = "Puzzle pressure plate: $id",
             )
 
@@ -5243,6 +5098,113 @@ class GBDKSystemVisitor(
             perFrameCalls = listOf(CExprStatement(CCall("puzzle_check_plate_$id", emptyList()))),
         )
     }
+
+    /**
+     * Builds the body of `puzzle_check_plate_{id}()`.
+     *
+     * Extracted from [buildPressurePlateObjectOutput] to flatten nesting (SonarCloud S3776 18-28).
+     */
+    private fun buildPlateCheckBody(
+        obj: PressurePlateObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): List<CStatement> = buildList {
+        // requires() guard: check required objects before processing step events
+        val requiresGuard = buildRequiresGuard(obj.requires, puzzleById)
+        if (requiresGuard.isNotEmpty()) addAll(requiresGuard)
+        // UINT8 _on = 0; (local var)
+        add(CVarDecl("_on", CU8, initializer = CLiteral(0)))
+        // Check each respondTo actor or pool entity
+        addAll(buildPlateRespondToChecks(obj))
+        // if (_on && !_plate_{id}_pressed) { onStepOn; _plate_{id}_pressed = 1; }
+        add(
+            CIf(
+                condition = CBinaryExpr(CVar("_on"), "&&", CRawExpr("!_plate_${id}_pressed")),
+                thenBody = buildPlatePressedBody(obj, id),
+            )
+        )
+        // if (!_on && _plate_{id}_pressed) { onStepOff; _plate_{id}_pressed = 0; }
+        add(
+            CIf(
+                condition = CBinaryExpr(CRawExpr("!_on"), "&&", CVar("_plate_${id}_pressed")),
+                thenBody = buildPlateReleasedBody(obj, id),
+            )
+        )
+    }
+
+    /**
+     * Builds the `_on` setter checks for each respondTo actor or pool entity.
+     *
+     * Extracted from [buildPlateCheckBody] to flatten nesting (SonarCloud S3776 18-28).
+     */
+    private fun buildPlateRespondToChecks(obj: PressurePlateObjectIR): List<CStatement> =
+        buildList {
+            for (actorId in obj.respondToActorIds) {
+                if (actorId.startsWith("pool:")) {
+                    // Pool entity: pool:<poolName> — check pool entity positions
+                    val poolName = actorId.removePrefix("pool:").replace('-', '_').replace(' ', '_')
+                    // pool_<name>_any_at(plate.x, plate.y) returns nonzero if any entity there
+                    add(
+                        CIf(
+                            condition =
+                                CCall(
+                                    "pool_${poolName}_any_at",
+                                    listOf(CLiteral(obj.x), CLiteral(obj.y)),
+                                ),
+                            thenBody =
+                                listOf(CExprStatement(CBinaryExpr(CVar("_on"), "=", CLiteral(1)))),
+                        )
+                    )
+                } else {
+                    val sanitizedActorId = actorId.replace('-', '_').replace(' ', '_')
+                    // if (_<actor>_x == plate.x && _<actor>_y == plate.y) _on = 1;
+                    add(
+                        CIf(
+                            condition =
+                                CBinaryExpr(
+                                    CBinaryExpr(
+                                        CVar("_${sanitizedActorId}_x"),
+                                        "==",
+                                        CLiteral(obj.x),
+                                    ),
+                                    "&&",
+                                    CBinaryExpr(
+                                        CVar("_${sanitizedActorId}_y"),
+                                        "==",
+                                        CLiteral(obj.y),
+                                    ),
+                                ),
+                            thenBody =
+                                listOf(CExprStatement(CBinaryExpr(CVar("_on"), "=", CLiteral(1)))),
+                        )
+                    )
+                }
+            }
+        }
+
+    /**
+     * Builds the then-body of the `_on && !_pressed` step-on CIf.
+     *
+     * Always iterates [PressurePlateObjectIR.onStepOn] (empty list = zero iterations, same result
+     * as the original else branch). Extracted from [buildPlateCheckBody] to flatten nesting.
+     */
+    private fun buildPlatePressedBody(obj: PressurePlateObjectIR, id: String): List<CStatement> =
+        buildList {
+            for (op in obj.onStepOn) add(ScriptOpVisitor.visit(op))
+            add(CExprStatement(CBinaryExpr(CVar("_plate_${id}_pressed"), "=", CLiteral(1))))
+        }
+
+    /**
+     * Builds the then-body of the `!_on && _pressed` step-off CIf.
+     *
+     * Always iterates [PressurePlateObjectIR.onStepOff] (empty list = zero iterations, same result
+     * as the original else branch). Extracted from [buildPlateCheckBody] to flatten nesting.
+     */
+    private fun buildPlateReleasedBody(obj: PressurePlateObjectIR, id: String): List<CStatement> =
+        buildList {
+            for (op in obj.onStepOff) add(ScriptOpVisitor.visit(op))
+            add(CExprStatement(CBinaryExpr(CVar("_plate_${id}_pressed"), "=", CLiteral(0))))
+        }
 
     private fun buildTimedBlockObjectOutput(
         obj: TimedBlockObjectIR,
