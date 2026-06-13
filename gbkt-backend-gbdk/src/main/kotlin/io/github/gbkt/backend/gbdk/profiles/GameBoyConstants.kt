@@ -26,16 +26,16 @@ object GameBoyConstants {
     /**
      * Screen width in pixels.
      *
-     * Derived from the canonical Game Boy screen specification
-     * [TargetProfiles.GAME_BOY_SCREEN] — the single source of truth for 160×144 dimensions.
+     * Derived from the canonical Game Boy screen specification [TargetProfiles.GAME_BOY_SCREEN] —
+     * the single source of truth for 160×144 dimensions.
      */
     val SCREEN_WIDTH = TargetProfiles.GAME_BOY_SCREEN.width
 
     /**
      * Screen height in pixels.
      *
-     * Derived from the canonical Game Boy screen specification
-     * [TargetProfiles.GAME_BOY_SCREEN] — the single source of truth for 160×144 dimensions.
+     * Derived from the canonical Game Boy screen specification [TargetProfiles.GAME_BOY_SCREEN] —
+     * the single source of truth for 160×144 dimensions.
      */
     val SCREEN_HEIGHT = TargetProfiles.GAME_BOY_SCREEN.height
 

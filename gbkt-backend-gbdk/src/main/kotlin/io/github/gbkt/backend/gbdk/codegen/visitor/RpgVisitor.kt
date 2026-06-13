@@ -87,8 +87,8 @@ import io.github.gbkt.rpg.domain.UseAbility
  * Handles character stat structs, ability codegen, status effect codegen, and monster AI codegen.
  * All generated code uses typed C AST (zero [io.github.gbkt.backend.gbdk.codegen.ast.CRawCode]).
  *
- * @param gameIR Reserved for future cross-cutting queries; currently unused but kept for
- *   API stability so callers can pass [GameIR] without a signature change when it is needed.
+ * @param gameIR Reserved for future cross-cutting queries; currently unused but kept for API
+ *   stability so callers can pass [GameIR] without a signature change when it is needed.
  */
 @Suppress("UNCHECKED_CAST", "UnusedPrivateProperty")
 class RpgVisitor(gameIR: GameIR) {

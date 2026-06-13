@@ -1984,7 +1984,11 @@ class PlatformerVisitor : GenreSystemVisitor {
                     CVar("_cam_x"),
                     "=",
                     CBinaryExpr(
-                        CBinaryExpr(CVar("_cam_target_x"), "/", CLiteral(GameBoyConstants.SCREEN_WIDTH)),
+                        CBinaryExpr(
+                            CVar("_cam_target_x"),
+                            "/",
+                            CLiteral(GameBoyConstants.SCREEN_WIDTH),
+                        ),
                         "*",
                         CLiteral(GameBoyConstants.SCREEN_WIDTH),
                     ),
@@ -1998,7 +2002,11 @@ class PlatformerVisitor : GenreSystemVisitor {
                     CVar("_cam_y"),
                     "=",
                     CBinaryExpr(
-                        CBinaryExpr(CVar("_cam_target_y"), "/", CLiteral(GameBoyConstants.SCREEN_HEIGHT)),
+                        CBinaryExpr(
+                            CVar("_cam_target_y"),
+                            "/",
+                            CLiteral(GameBoyConstants.SCREEN_HEIGHT),
+                        ),
                         "*",
                         CLiteral(GameBoyConstants.SCREEN_HEIGHT),
                     ),

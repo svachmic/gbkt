@@ -466,7 +466,11 @@ object ActorVisitor {
                             CBinaryExpr(
                                 CCall("dpad_held", listOf(CVar("J_DOWN"))),
                                 "&&",
-                                CBinaryExpr(yVar, "<", CLiteral(GameBoyConstants.SCREEN_HEIGHT - speed)),
+                                CBinaryExpr(
+                                    yVar,
+                                    "<",
+                                    CLiteral(GameBoyConstants.SCREEN_HEIGHT - speed),
+                                ),
                             ),
                         thenBody = listOf(CExprStatement(CBinaryExpr(yVar, "+=", CLiteral(speed)))),
                     )
@@ -488,7 +492,11 @@ object ActorVisitor {
                             CBinaryExpr(
                                 CCall("dpad_held", listOf(CVar("J_RIGHT"))),
                                 "&&",
-                                CBinaryExpr(xVar, "<", CLiteral(GameBoyConstants.SCREEN_WIDTH - speed)),
+                                CBinaryExpr(
+                                    xVar,
+                                    "<",
+                                    CLiteral(GameBoyConstants.SCREEN_WIDTH - speed),
+                                ),
                             ),
                         thenBody = listOf(CExprStatement(CBinaryExpr(xVar, "+=", CLiteral(speed)))),
                     )

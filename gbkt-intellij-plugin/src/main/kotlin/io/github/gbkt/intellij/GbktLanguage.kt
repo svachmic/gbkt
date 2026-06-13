@@ -29,8 +29,7 @@ object GbktLanguage : Language("gbkt") {
     // instance is resolved. Required for Kotlin objects used as IntelliJ Language singletons to
     // survive plugin classloader reload without creating a second Language instance — the method
     // itself is invoked by the JVM serialization machinery, not by Kotlin call-sites.
-    @Suppress("UnusedPrivateMember")
-    private fun readResolve(): Any = GbktLanguage
+    @Suppress("UnusedPrivateMember") private fun readResolve(): Any = GbktLanguage
 
     override fun getDisplayName(): String = "gbkt"
 

@@ -87,8 +87,8 @@ internal object RpgRegistry {
      * Clears the thread-local registry.
      *
      * Called automatically on `game { }` teardown via [io.github.gbkt.core.dsl.GameBuilderContext]
-     * to prevent stale character/monster entries from leaking into subsequent `game { }` invocations
-     * on the same thread (e.g., in Gradle daemon or JUnit test suites).
+     * to prevent stale character/monster entries from leaking into subsequent `game { }`
+     * invocations on the same thread (e.g., in Gradle daemon or JUnit test suites).
      */
     fun clear() {
         holder.remove()

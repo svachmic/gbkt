@@ -51,11 +51,11 @@ object GameBuilderContext {
     /**
      * Thread-local list of teardown hooks registered by genre modules (e.g., RpgRegistry.clear()).
      *
-     * Hooks are invoked in [with]'s `finally` block after the game builder lambda returns, before the
-     * previous context is restored. This allows genre packages (which depend on [GameBuilderContext]
-     * indirectly through gbkt-core) to clean up thread-local state without creating a circular
-     * module dependency: `gbkt-lang` does not know about `gbkt-genre-rpg`, but genre packages can
-     * call [addTeardownHook] to register their cleanup actions.
+     * Hooks are invoked in [with]'s `finally` block after the game builder lambda returns, before
+     * the previous context is restored. This allows genre packages (which depend on
+     * [GameBuilderContext] indirectly through gbkt-core) to clean up thread-local state without
+     * creating a circular module dependency: `gbkt-lang` does not know about `gbkt-genre-rpg`, but
+     * genre packages can call [addTeardownHook] to register their cleanup actions.
      *
      * Hooks are scoped to the outermost `game { }` call — nested `with()` calls (if any) share the
      * same hook list and only invoke it on the final `finally` restoration.
