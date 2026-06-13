@@ -5,6 +5,7 @@ plugins {
     signing
     alias(libs.plugins.spotless)
     alias(libs.plugins.plugin.publish)
+    alias(libs.plugins.detekt)
 }
 
 val licenseHeader = """
@@ -24,6 +25,16 @@ spotless {
         trimTrailingWhitespace()
         endWithNewline()
     }
+}
+
+detekt {
+    // The composite build's rootDir is gbkt-gradle-plugin/ — go one level up to reach
+    // the shared root detekt.yml (Pitfall 2 from RESEARCH.md: rootProject.files() is
+    // not available in an includedBuild context).
+    config.setFrom(file("${rootDir}/../detekt.yml"))
+    buildUponDefaultConfig = true
+    parallel = true
+    // No baseline file — D-04 compliance (baseline wiring is a debt-hiding mechanism).
 }
 
 repositories {

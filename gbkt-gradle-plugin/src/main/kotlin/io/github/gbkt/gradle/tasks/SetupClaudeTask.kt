@@ -63,7 +63,7 @@ abstract class SetupClaudeTask @Inject constructor() : DefaultTask() {
         for (skill in skills) {
             val content =
                 javaClass.classLoader.getResourceAsStream("claude-code/$skill")
-                    ?: throw IllegalStateException("Skill resource not found: claude-code/$skill")
+                    ?: error("Skill resource not found: claude-code/$skill")
             val target = File(commandsDir, skill)
             target.writeBytes(content.readBytes())
             logger.lifecycle("Installed skill: ${target.absolutePath}")

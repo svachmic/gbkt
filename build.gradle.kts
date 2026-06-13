@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.spotless) apply false
-    alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.detekt)
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.kover)
 }
@@ -176,8 +176,6 @@ subprojects {
             config.setFrom(rootProject.files("detekt.yml"))
             buildUponDefaultConfig = true
             parallel = true
-            // Use baseline to track existing violations during incremental cleanup
-            baseline = file("detekt-baseline.xml")
         }
     }
 
@@ -200,8 +198,18 @@ subprojects {
             config.setFrom(rootProject.files("detekt.yml"))
             buildUponDefaultConfig = true
             parallel = true
-            // Use baseline to track existing violations during incremental cleanup
-            baseline = file("detekt-baseline.xml")
         }
     }
+}
+
+// ============================================================================
+// Composite-build detekt bridge (D-03)
+//
+// The root `detekt` lifecycle task only covers subprojects within the root
+// Gradle build. The gbkt-gradle-plugin is an includedBuild (composite) and
+// must be bridged explicitly — the same pattern used by `pluginTest` above.
+// After this wiring, plain `./gradlew detekt` covers the composite too.
+// ============================================================================
+tasks.named("detekt") {
+    dependsOn(gradle.includedBuild("gbkt-gradle-plugin").task(":detekt"))
 }

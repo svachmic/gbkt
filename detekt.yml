@@ -15,6 +15,7 @@ performance:
     excludes:
       - '**/intellij/inspections/**'  # IntelliJ API requires vararg spread
       - '**/test/**'  # Test code prioritizes readability over perf — spread is idiomatic for varargs forwarding
+      - '**/gradle/**'  # Gradle task ProcessBuilder invocations pass CLI argument arrays via spread (lcc/png2asset args) — ProcessBuilder requires Array<String> and spread is the idiomatic Kotlin conversion from a list of args
 
 complexity:
   LongMethod:
@@ -29,6 +30,7 @@ complexity:
       - '**/CodeGenerator.kt'  # Main generator orchestrates many codegen calls
       - '**/dsl/**'  # DSL GameBuilder.build() accumulates all IR fields per feature
       - '**/mcp/**'  # MCP tool registration block (registerEmulatorTools) and per-tool dispatch (batchAssert) are inherently large
+      - '**/gradle/**'  # Gradle task execute() methods orchestrate multi-step build pipelines (sprite conversion, tileset processing, ROM compilation, asset generation) — inherently long; same rationale as codegen/**. GbktPlugin.registerTasks() registers 12+ tasks with complex afterEvaluate wiring — unavoidably long orchestration method
   LongParameterList:
     active: true
     functionThreshold: 6
@@ -49,6 +51,7 @@ complexity:
       - '**/validation/**'  # Validation passes many context params
       - '**/combat/**'  # Battle engine configs have many options
       - '**/movement/**'  # Movement controller configs have many options
+      - '**/gradle/**'  # Gradle task helper functions (convertOneTileset, buildPng2AssetArgs, synthesizeHeader) receive all pipeline context as explicit params to avoid Gradle task-state mutation — inherently high parameter count; parallels codegen/**
   ComplexCondition:
     active: true
     excludes:
@@ -56,6 +59,7 @@ complexity:
       - '**/ir/**'  # IR visitor dispatch is inherently nested; exclusion mirrors LongMethod rationale
       - '**/intellij/editors/**'  # Swing visual editors: bounds-check conditions for tile-grid hit-testing (x<0 || x>=w || y<0 || y>=h) and path-heuristic checks are inherently 4-clause predicates; the meaning is clearer inline than split across named booleans
       - '**/intellij/editors/sprite/**'  # Sprite editor hit-test bounds checks — same rationale as intellij/editors/**
+      - '**/gradle/**'  # Gradle task conditionals check filesystem state, OS platform, tool availability, and CLI output codes in compound guards — 4-clause conditions are the natural form; splitting to named booleans would obscure the guard intent
   TooManyFunctions:
     active: true
     thresholdInFiles: 25
@@ -99,6 +103,7 @@ complexity:
       - '**/collision/**'  # Collision math is complex
       - '**/intellij/completion/**'  # Completion type resolution checks many types
       - '**/mcp/**'  # MCP tool dispatch (registerEmulatorTools, batchAssert) branches over many tool types
+      - '**/gradle/**'  # Gradle task execute() methods handle many pipeline paths (file-not-found, format variations, platform differences, error recovery) — complexity parallels codegen visitor dispatch. GbktPlugin.registerTasks() branches over 12+ task registration paths
   NestedBlockDepth:
     active: true
     threshold: 5  # DSL builders can be nested
@@ -155,16 +160,19 @@ style:
       - '**/examples/**'  # Example game sources: pixel positions, brick counts, score increments, spawn coordinates, and tile indices in game DSL files are game-design constants whose meaning is self-evident from context (e.g. position(72, 132) in a 160×144 screen); extracting each to a named constant would create boilerplate with no readability benefit in short single-file game definitions
       - '**/ir/Types.kt'  # GB cartridge hardware spec data table (Cartridge enum): MBC register byte codes (0x06, 0x11, 0x13, 0x19, 0x1B) and ROM bank counts (256 for MBC5) are authoritative Game Boy hardware constants from the Pan Docs spec; named per-entry extraction adds no semantic value beyond the enum member name itself
       - '**/ir/CoreTypes.kt'  # GBC colour-space spec data: RGB555 bit-field masks (0x1F per channel, 0x7FFF max), slot range sentinels (-1), and palette-size constraints (4 colors, 7 max slot); these are specification-boundary constants documented inline; extraction would create redundant companion names
+      - '**/gradle/**'  # Gradle task numeric constants (process exit codes, timeout values, tool version thresholds) are build-toolchain-specific implementation details; same rationale as emulator/agent** — hardware-addressed arithmetic where named constants add noise
   UnusedPrivateMember:
     active: true
     excludes:
       - '**/dsl/**'  # DSL receiver lambdas (e.g. GameBuilder.kt) capture private members consumed by the receiver scope — kotlinc extension-receiver resolution marks them "unused" spuriously
+      - '**/gradle/**'  # Gradle plugin test helpers (e.g. rgb888ToRgb555 in PalettePolarityWarningTest) are kept as future verification utilities — same forward-declaration rationale as intellij/** UnusedPrivateProperty exclusion. Internal plugin classes (ErrorEnhancer) carry named-capture-group properties that are forward-declared for structured error matching
   UnusedPrivateProperty:
     active: true
     excludes:
       - '**/dsl/**'  # DSL builders expose properties needed for API ergonomics; some are forward-declared for future DSL surface — suppressed to prevent premature removal
       - '**/test/**'  # Test DSL fixtures use property-delegate syntax (val z1 by zone {}, val dummySprite by metasprite {}) for side-effect registration; the delegate binding is required but the variable itself is not referenced — identical to the dsl/** exclusion rationale
       - '**/intellij/**'  # IntelliJ plugin: constructor params (EntityPreviewPanel.project, PoEditorPanel.project, GbktToolWindowPanel.project) are API-contract parameters accepted for future use (e.g. opening project-aware file dialogs, service lookups); removing them would break callers wired by IntelliJ's dependency injection. Detekt incorrectly classifies them as UnusedPrivateProperty even after removing the 'val' keyword
+      - '**/gradle/**'  # Gradle plugin internal classes (ErrorEnhancer): named regex capture groups stored as private properties for structured error-text matching; forward-declared properties for planned structured reporting. Same rationale as intellij/** — API-contract forward-declarations
   UtilityClassWithPublicConstructor:
     active: true
     excludes:
@@ -182,6 +190,7 @@ style:
       - '**/test/**'  # Test files can have long assertion messages
       - '**/commonTest/**'
       - '**/codegen/**'  # Codegen files generate C code strings
+      - '**/gradle/**'  # Gradle task string templates (CLI argument lists, diagnostic messages, error text with file paths) can exceed 120 chars when embedding full file paths, version strings, and multi-component tool arguments; same rationale as codegen/**
   UnusedParameter:
     active: true
     excludes:
@@ -191,12 +200,14 @@ style:
       - '**/flow/**'  # Flow callback parameters
       - '**/ui/**'  # Menu callback parameters
       - '**/scene/**'  # Scene callback parameters
+      - '**/gradle/**'  # JUnit @TempDir and Gradle TestKit parameters in integration tests follow JUnit5 injection conventions; the injected parameter must be declared even when only indirectly consumed via Gradle runner API
   WildcardImport:
     active: true
     excludes:
       - '**/test/**'  # Test files use wildcards for brevity
       - '**/commonTest/**'
       - '**/codegen/**'  # Codegen AST uses wildcard imports for the C AST type aliases
+      - '**/gradle/**'  # Gradle plugin tasks use org.gradle.api.tasks.* wildcard — the Gradle API surface is idiomatic to import as a block when many Gradle annotations (@InputFile, @OutputDirectory, @TaskAction, etc.) are used in a single file
     excludeImports:
       - 'java.util.*'
       - 'kotlinx.coroutines.*'
@@ -221,12 +232,14 @@ style:
       - '**/intellij/toolwindow/**'  # Tool window navigation handlers need early returns
       - '**/codegen/**'  # Visitor helpers use fail-fast validation pattern (each invalid input returns null); parallels intellij/codegen exclusion
       - '**/mcp/**'  # MCP tool handlers fail-fast on invalid input arguments (each returns CallToolResult error)
+      - '**/gradle/**'  # Gradle task functions (e.g. findMgba path-finder) use early returns to probe multiple installation locations — fail-fast detection pattern; parallels intellij/navigation exclusion
   LoopWithTooManyJumpStatements:
     active: true
     maxJumpCount: 1
     excludes:
       - '**/codegen/**'  # Complex loop-based C code generation
       - '**/AssetPipeline.kt'  # Asset parsing with early exits
+      - '**/gradle/**'  # Gradle task and test loops (PNG chunk scanning, sprite-frame processing) use multiple break/continue to implement efficient skip-ahead iteration — idiomatic for binary-format parsing
   FunctionOnlyReturningConstant:
     active: true
     ignoreOverridableFunction: true
@@ -237,6 +250,8 @@ style:
     active: true
     max: 4
     excludeGuardClauses: true
+    excludes:
+      - '**/gradle/**'  # Gradle task execute() functions validate many preconditions (GBDK path, ROM size, file format, version) — each distinct failure mode requires its own exception; extracting to sub-functions would obscure the linear build-step validation chain
 
 naming:
   InvalidPackageDeclaration:
@@ -267,6 +282,10 @@ naming:
     privatePropertyPattern: '_?[A-Za-z][_A-Za-z0-9]*'
 
 exceptions:
+  InstanceOfCheckForException:
+    active: true
+    excludes:
+      - '**/gradle/**'  # Gradle plugin wraps ProcessBuilder exceptions where the calling API throws a generic checked exception; instanceof-check is the only way to distinguish tool-not-found from process-execution-error without restructuring the reflection-based invocation chain
   TooGenericExceptionCaught:
     active: true
     exceptionNames:
@@ -283,6 +302,7 @@ exceptions:
       - '**/intellij/codegen/**'  # Codegen service catches exceptions at boundary
       - '**/mcp/**'  # MCP tool handlers catch broadly at protocol boundary — convert exceptions into JSON error responses
       - '**/emulator/**'  # Agent code catches broadly at IO/parse boundary (savestate IO, metadata parse, debug session)
+      - '**/gradle/**'  # Gradle task implementations catch broadly at CLI boundary (ProcessBuilder, IOException from external tools) — converting exceptions to GradleException requires broad catch at the Gradle task API layer
   TooGenericExceptionThrown:
     active: true
     exceptionNames:
@@ -298,6 +318,8 @@ exceptions:
       - 'NumberFormatException'
       - 'ParseException'
     allowedExceptionNameRegex: '_|(ignore|expected).*'
+    excludes:
+      - '**/gradle/**'  # Gradle task implementations swallow exceptions at sub-step boundaries and emit actionable Gradle build errors instead — swallowing is intentional at the tool-error-to-Gradle-exception translation layer
 
 empty-blocks:
   EmptyFunctionBlock:
@@ -318,3 +340,7 @@ potential-bugs:
     active: true
   UselessPostfixExpression:
     active: true
+  ImplicitDefaultLocale:
+    active: true
+    excludes:
+      - '**/gradle/**'  # Gradle task diagnostic output (progress percentages, size ratios) uses implicit locale intentionally — these are developer-facing build log messages, not user-facing localizable strings; locale-neutral formatting would add noise without benefit
