@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 16-05-PLAN.md — banks cluster triage (5 seeds VERIFIED-ALREADY-FIXED, 3 WR items CONFIRMED-OPEN)
-last_updated: "2026-06-12T14:35:56.631Z"
-last_activity: 2026-06-12 -- Phase 16 Plan 01 complete (TRIAGE.md skeleton + archive/backlog/_drafts dirs)
+stopped_at: Completed 16-06-PLAN.md — DSL/tooling cluster triage (3 VERIFIED-ALREADY-FIXED, 1 RE-DEFERRED, 2 CONFIRMED-OPEN Phase 18, 2 CONFIRMED-OPEN Phase 21)
+last_updated: "2026-06-12T15:10:00.000Z"
+last_activity: 2026-06-12 -- Phase 16 Plan 06 complete (DSL/tooling cluster: SEED-002/003/012/020/023/025/026 + TODO-triggersystem dispositioned; cluster-dsl.md draft ready)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 10
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -55,9 +55,9 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 16 (seed-triage) — EXECUTING
-Plan: 4 of 10
+Plan: 6 of 10
 Status: Ready to execute
-Last activity: 2026-06-12 -- Phase 16 Plan 01 complete (TRIAGE.md skeleton + archive/backlog/_drafts dirs)
+Last activity: 2026-06-12 -- Phase 16 Plan 06 complete (DSL/tooling cluster: SEED-002/003/012/020/023/025/026 + TODO-triggersystem dispositioned; cluster-dsl.md draft ready)
 
 Resume signal: /gsd-plan-phase 16 (Seed Triage — gates all codegen fix phases)
 Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable
