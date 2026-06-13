@@ -46,6 +46,7 @@ import io.github.gbkt.core.ir.ActorPoolIR
 import io.github.gbkt.core.ir.CameraSystem
 import io.github.gbkt.core.ir.ChestObjectIR
 import io.github.gbkt.core.ir.CollisionResponse
+import io.github.gbkt.core.ir.CollisionRuleIR
 import io.github.gbkt.core.ir.CollisionShape
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.DialogSystem
@@ -4395,54 +4396,46 @@ class GBDKSystemVisitor(
          * - `UINT8 _pool_<id>_y[max]` — per-instance y positions
          * - `UINT8 _pool_<id>_oam[max]` — per-instance OAM slot mapping (initialized to 0xFF)
          */
-        fun buildActorPoolStateVars(gameIR: GameIR): List<CVarDecl> {
-            val vars = mutableListOf<CVarDecl>()
-            for (pool in gameIR.actorPools) {
+        fun buildActorPoolStateVars(gameIR: GameIR): List<CVarDecl> =
+            gameIR.actorPools.flatMap { pool ->
                 val id = pool.id.replace('-', '_').replace(' ', '_')
                 val maxSize = pool.config.maxSize
-                vars +=
-                    CVarDecl(
-                        name = "_pool_${id}_active",
-                        type = CArray(CU8, maxSize),
-                        initializer = null,
-                    )
-                vars +=
-                    CVarDecl(
-                        name = "_pool_${id}_x",
-                        type = CArray(CU8, maxSize),
-                        initializer = null,
-                    )
-                vars +=
-                    CVarDecl(
-                        name = "_pool_${id}_y",
-                        type = CArray(CU8, maxSize),
-                        initializer = null,
-                    )
-                vars +=
-                    CVarDecl(
-                        name = "_pool_${id}_oam",
-                        type = CArray(CU8, maxSize),
-                        initializer = null,
-                    )
-                // Per-instance property parallel arrays — one array per property per pool slot
-                for (prop in pool.instanceProperties) {
-                    val elemType =
-                        when (prop.type) {
-                            VarType.U8,
-                            VarType.U16 -> CU8
-                            VarType.I8,
-                            VarType.I16 -> CI8
-                        }
-                    vars +=
-                        CVarDecl(
-                            name = "_pool_${id}_${prop.name}",
-                            type = CArray(elemType, maxSize),
-                            initializer = null,
-                        )
-                }
+                buildPoolCoreStateVars(id, maxSize) +
+                    buildPoolInstancePropertyVars(id, maxSize, pool)
             }
-            return vars
-        }
+
+        private fun buildPoolCoreStateVars(id: String, maxSize: Int): List<CVarDecl> =
+            listOf(
+                CVarDecl(
+                    name = "_pool_${id}_active",
+                    type = CArray(CU8, maxSize),
+                    initializer = null,
+                ),
+                CVarDecl(name = "_pool_${id}_x", type = CArray(CU8, maxSize), initializer = null),
+                CVarDecl(name = "_pool_${id}_y", type = CArray(CU8, maxSize), initializer = null),
+                CVarDecl(name = "_pool_${id}_oam", type = CArray(CU8, maxSize), initializer = null),
+            )
+
+        // Per-instance property parallel arrays — one array per property per pool slot
+        private fun buildPoolInstancePropertyVars(
+            id: String,
+            maxSize: Int,
+            pool: ActorPoolIR,
+        ): List<CVarDecl> =
+            pool.instanceProperties.map { prop ->
+                val elemType =
+                    when (prop.type) {
+                        VarType.U8,
+                        VarType.U16 -> CU8
+                        VarType.I8,
+                        VarType.I16 -> CI8
+                    }
+                CVarDecl(
+                    name = "_pool_${id}_${prop.name}",
+                    type = CArray(elemType, maxSize),
+                    initializer = null,
+                )
+            }
 
         /**
          * Generate all lifecycle functions for every actor pool in a [GameIR].
@@ -5463,253 +5456,21 @@ class GBDKSystemVisitor(
      *
      * Returns an empty list when [GameIR.collisionRules] is empty.
      */
-    @Suppress("LongMethod")
     fun buildNpcCollisionFunctions(gameIR: GameIR): List<CFunction> {
         val rules = gameIR.collisionRules
         if (rules.isEmpty()) return emptyList()
 
-        // Build a map: groupId → list of actor IDs in that group
-        val groupActors: Map<String, List<String>> = buildMap {
-            for (actor in gameIR.actors) {
-                val cfg = actor.npcCollisionConfig ?: continue
-                for (groupId in cfg.groupIds) {
-                    getOrPut(groupId) { mutableListOf() }
-                    (getValue(groupId) as MutableList).add(actor.id)
-                }
-            }
-        }
-
-        // Build a map: actorId → mass (default 1)
-        val actorMass: Map<String, Int> = buildMap {
-            for (actor in gameIR.actors) {
-                val cfg = actor.npcCollisionConfig ?: continue
-                put(actor.id, cfg.mass)
-            }
-        }
-
-        // ExprVisitor for onCollide callback codegen (actor-aware expression resolution)
+        val groupActors = buildNpcGroupActorMap(gameIR)
+        val actorMass = buildNpcActorMassMap(gameIR)
         val exprVisitor = ExprVisitor(gameIR.actors)
 
-        val ruleFunctions = mutableListOf<CFunction>()
-
-        for (rule in rules) {
-            val actorsA = groupActors[rule.groupA] ?: emptyList()
-            val actorsB = groupActors[rule.groupB] ?: emptyList()
-            if (actorsA.isEmpty() || actorsB.isEmpty()) continue
-
-            val fnName =
-                "check_collision_${rule.groupA.replace('-', '_')}_${rule.groupB.replace('-', '_')}"
-            val body = mutableListOf<CStatement>()
-
-            // Interval counter: static UINT8 _npc_interval_{sanitized}
-            if (rule.interval > 1) {
-                val counterName = "_npc_interval_${fnName}"
-                body.add(CVarDecl(counterName, CU8, CLiteral(0), isStatic = true))
-                body.add(
-                    CExprStatement(
-                        CBinaryExpr(
-                            CVar(counterName),
-                            "=",
-                            CBinaryExpr(
-                                CBinaryExpr(CVar(counterName), "+", CLiteral(1)),
-                                "%",
-                                CLiteral(rule.interval),
-                            ),
-                        )
-                    )
-                )
-                body.add(
-                    CIf(
-                        condition = CBinaryExpr(CVar(counterName), "!=", CLiteral(0)),
-                        thenBody = listOf(CReturn()),
-                    )
-                )
-            }
-
-            // Nested loop: for each actor in A, for each actor in B (explicit unrolled)
-            for (idA in actorsA) {
-                for (idB in actorsB) {
-                    // Skip self-collision in intra-group rules
-                    if (rule.groupA == rule.groupB && idA == idB) continue
-
-                    val xA = CVar("_${idA}_x")
-                    val yA = CVar("_${idA}_y")
-                    val xB = CVar("_${idB}_x")
-                    val yB = CVar("_${idB}_y")
-
-                    // AABB overlap: ax < bx+8 && ax+8 > bx && ay < by+8 && ay+8 > by
-                    // Using 8 as default hitbox size for sprite entities
-                    val hitSize = CLiteral(8)
-                    val overlapX =
-                        CBinaryExpr(
-                            CBinaryExpr(xA, "<", CBinaryExpr(xB, "+", hitSize)),
-                            "&&",
-                            CBinaryExpr(CBinaryExpr(xA, "+", hitSize), ">", xB),
-                        )
-                    val overlapY =
-                        CBinaryExpr(
-                            CBinaryExpr(yA, "<", CBinaryExpr(yB, "+", hitSize)),
-                            "&&",
-                            CBinaryExpr(CBinaryExpr(yA, "+", hitSize), ">", yB),
-                        )
-                    val aabb = CBinaryExpr(overlapX, "&&", overlapY)
-
-                    val responseBody = mutableListOf<CStatement>()
-
-                    // Built-in response dispatch
-                    when (rule.response) {
-                        CollisionResponse.OVERLAP -> {
-                            // No movement change — only callback
-                        }
-                        CollisionResponse.BLOCK -> {
-                            // Zero velocity of actor A on collision
-                            responseBody.add(CComment("BLOCK: stop actor $idA velocity"))
-                            responseBody.add(
-                                CExprStatement(CBinaryExpr(CVar("_${idA}_vx"), "=", CLiteral(0)))
-                            )
-                            responseBody.add(
-                                CExprStatement(CBinaryExpr(CVar("_${idA}_vy"), "=", CLiteral(0)))
-                            )
-                        }
-                        CollisionResponse.BOUNCE -> {
-                            // Reverse velocity of actor A
-                            responseBody.add(CComment("BOUNCE: reverse actor $idA velocity"))
-                            responseBody.add(
-                                CExprStatement(
-                                    CBinaryExpr(
-                                        CVar("_${idA}_vx"),
-                                        "=",
-                                        CUnaryExpr("-", CVar("_${idA}_vx")),
-                                    )
-                                )
-                            )
-                            responseBody.add(
-                                CExprStatement(
-                                    CBinaryExpr(
-                                        CVar("_${idA}_vy"),
-                                        "=",
-                                        CUnaryExpr("-", CVar("_${idA}_vy")),
-                                    )
-                                )
-                            )
-                        }
-                        CollisionResponse.PUSH -> {
-                            // Mass-proportional displacement
-                            // dispA = massB / (massA + massB), dispB = massA / (massA + massB)
-                            val massA = actorMass[idA] ?: 1
-                            val massB = actorMass[idB] ?: 1
-                            val totalMass = massA + massB
-                            responseBody.add(
-                                CComment("PUSH: mass $idA=$massA, $idB=$massB, total=$totalMass")
-                            )
-                            // Horizontal overlap displacement
-                            responseBody.add(
-                                CIf(
-                                    condition =
-                                        CBinaryExpr(
-                                            CBinaryExpr(xA, "+", CLiteral(4)),
-                                            "<",
-                                            CBinaryExpr(xB, "+", CLiteral(4)),
-                                        ),
-                                    thenBody =
-                                        listOf(
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    xA,
-                                                    "=",
-                                                    CBinaryExpr(
-                                                        xA,
-                                                        "-",
-                                                        CLiteral(
-                                                            massB / totalMass.coerceAtLeast(1)
-                                                        ),
-                                                    ),
-                                                )
-                                            ),
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    xB,
-                                                    "=",
-                                                    CBinaryExpr(
-                                                        xB,
-                                                        "+",
-                                                        CLiteral(
-                                                            massA / totalMass.coerceAtLeast(1)
-                                                        ),
-                                                    ),
-                                                )
-                                            ),
-                                        ),
-                                    elseBody =
-                                        listOf(
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    xA,
-                                                    "=",
-                                                    CBinaryExpr(
-                                                        xA,
-                                                        "+",
-                                                        CLiteral(
-                                                            massB / totalMass.coerceAtLeast(1)
-                                                        ),
-                                                    ),
-                                                )
-                                            ),
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    xB,
-                                                    "=",
-                                                    CBinaryExpr(
-                                                        xB,
-                                                        "-",
-                                                        CLiteral(
-                                                            massA / totalMass.coerceAtLeast(1)
-                                                        ),
-                                                    ),
-                                                )
-                                            ),
-                                        ),
-                                )
-                            )
-                        }
-                    }
-
-                    // Emit onCollide script ops (if any) as typed C statements
-                    if (rule.onCollide.isNotEmpty()) {
-                        responseBody.add(CComment("onCollide callback"))
-                        for (op in rule.onCollide) {
-                            val stmt = ScriptOpVisitor.visit(op, exprVisitor)
-                            responseBody.add(stmt)
-                        }
-                    }
-
-                    if (responseBody.isNotEmpty()) {
-                        body.add(CIf(condition = aabb, thenBody = responseBody))
-                    } else {
-                        // OVERLAP with no callback — still emit the check to allow future extension
-                        body.add(
-                            CIf(condition = aabb, thenBody = listOf(CRawCode("/* overlap */")))
-                        )
-                    }
-                }
-            }
-
-            ruleFunctions.add(
-                CFunction(
-                    name = fnName,
-                    returnType = CVoid,
-                    body = body,
-                    sectionComment =
-                        "NPC collision: ${rule.groupA} vs ${rule.groupB} (${rule.response})",
-                )
-            )
+        val ruleFunctions = rules.mapNotNull { rule ->
+            buildNpcCollisionRuleFunction(rule, groupActors, actorMass, exprVisitor)
         }
 
         if (ruleFunctions.isEmpty()) return emptyList()
 
-        // Master function: calls all rule check functions
         val masterBody = ruleFunctions.map { fn -> CExprStatement(CCall(fn.name, emptyList())) }
-
         val masterFn =
             CFunction(
                 name = "check_all_npc_collisions",
@@ -5719,6 +5480,240 @@ class GBDKSystemVisitor(
             )
 
         return ruleFunctions + listOf(masterFn)
+    }
+
+    private fun buildNpcGroupActorMap(gameIR: GameIR): Map<String, List<String>> = buildMap {
+        for (actor in gameIR.actors) {
+            val cfg = actor.npcCollisionConfig ?: continue
+            for (groupId in cfg.groupIds) {
+                getOrPut(groupId) { mutableListOf() }
+                (getValue(groupId) as MutableList).add(actor.id)
+            }
+        }
+    }
+
+    private fun buildNpcActorMassMap(gameIR: GameIR): Map<String, Int> = buildMap {
+        for (actor in gameIR.actors) {
+            val cfg = actor.npcCollisionConfig ?: continue
+            put(actor.id, cfg.mass)
+        }
+    }
+
+    private fun buildNpcCollisionRuleFunction(
+        rule: CollisionRuleIR,
+        groupActors: Map<String, List<String>>,
+        actorMass: Map<String, Int>,
+        exprVisitor: ExprVisitor,
+    ): CFunction? {
+        val actorsA = groupActors[rule.groupA] ?: emptyList()
+        val actorsB = groupActors[rule.groupB] ?: emptyList()
+        if (actorsA.isEmpty() || actorsB.isEmpty()) return null
+
+        val fnName =
+            "check_collision_${rule.groupA.replace('-', '_')}_${rule.groupB.replace('-', '_')}"
+        val body = mutableListOf<CStatement>()
+        body += buildNpcIntervalGuardStatements(rule, fnName)
+
+        // Nested loop: for each actor in A, for each actor in B (explicit unrolled)
+        for (idA in actorsA) {
+            for (idB in actorsB) {
+                if (rule.groupA == rule.groupB && idA == idB) continue
+                body.add(buildNpcActorPairCollisionCheck(rule, idA, idB, actorMass, exprVisitor))
+            }
+        }
+
+        return CFunction(
+            name = fnName,
+            returnType = CVoid,
+            body = body,
+            sectionComment = "NPC collision: ${rule.groupA} vs ${rule.groupB} (${rule.response})",
+        )
+    }
+
+    private fun buildNpcIntervalGuardStatements(
+        rule: CollisionRuleIR,
+        fnName: String,
+    ): List<CStatement> {
+        if (rule.interval <= 1) return emptyList()
+        val counterName = "_npc_interval_${fnName}"
+        return listOf(
+            CVarDecl(counterName, CU8, CLiteral(0), isStatic = true),
+            CExprStatement(
+                CBinaryExpr(
+                    CVar(counterName),
+                    "=",
+                    CBinaryExpr(
+                        CBinaryExpr(CVar(counterName), "+", CLiteral(1)),
+                        "%",
+                        CLiteral(rule.interval),
+                    ),
+                )
+            ),
+            CIf(
+                condition = CBinaryExpr(CVar(counterName), "!=", CLiteral(0)),
+                thenBody = listOf(CReturn()),
+            ),
+        )
+    }
+
+    private fun buildNpcActorPairCollisionCheck(
+        rule: CollisionRuleIR,
+        idA: String,
+        idB: String,
+        actorMass: Map<String, Int>,
+        exprVisitor: ExprVisitor,
+    ): CStatement {
+        val xA = CVar("_${idA}_x")
+        val yA = CVar("_${idA}_y")
+        val xB = CVar("_${idB}_x")
+        val yB = CVar("_${idB}_y")
+        // AABB overlap: ax < bx+8 && ax+8 > bx && ay < by+8 && ay+8 > by
+        // Using 8 as default hitbox size for sprite entities
+        val hitSize = CLiteral(8)
+        val overlapX =
+            CBinaryExpr(
+                CBinaryExpr(xA, "<", CBinaryExpr(xB, "+", hitSize)),
+                "&&",
+                CBinaryExpr(CBinaryExpr(xA, "+", hitSize), ">", xB),
+            )
+        val overlapY =
+            CBinaryExpr(
+                CBinaryExpr(yA, "<", CBinaryExpr(yB, "+", hitSize)),
+                "&&",
+                CBinaryExpr(CBinaryExpr(yA, "+", hitSize), ">", yB),
+            )
+        val aabb = CBinaryExpr(overlapX, "&&", overlapY)
+        val responseBody =
+            buildNpcCollisionResponseStatements(rule, idA, idB, actorMass, exprVisitor)
+        return if (responseBody.isNotEmpty()) {
+            CIf(condition = aabb, thenBody = responseBody)
+        } else {
+            // OVERLAP with no callback — still emit the check to allow future extension
+            CIf(condition = aabb, thenBody = listOf(CRawCode("/* overlap */")))
+        }
+    }
+
+    private fun buildNpcCollisionResponseStatements(
+        rule: CollisionRuleIR,
+        idA: String,
+        idB: String,
+        actorMass: Map<String, Int>,
+        exprVisitor: ExprVisitor,
+    ): List<CStatement> {
+        val responseBody = mutableListOf<CStatement>()
+        // Built-in response dispatch
+        when (rule.response) {
+            CollisionResponse.OVERLAP -> {
+                // No movement change — only callback
+            }
+            CollisionResponse.BLOCK -> {
+                // Zero velocity of actor A on collision
+                responseBody.add(CComment("BLOCK: stop actor $idA velocity"))
+                responseBody.add(CExprStatement(CBinaryExpr(CVar("_${idA}_vx"), "=", CLiteral(0))))
+                responseBody.add(CExprStatement(CBinaryExpr(CVar("_${idA}_vy"), "=", CLiteral(0))))
+            }
+            CollisionResponse.BOUNCE -> {
+                // Reverse velocity of actor A
+                responseBody.add(CComment("BOUNCE: reverse actor $idA velocity"))
+                responseBody.add(
+                    CExprStatement(
+                        CBinaryExpr(
+                            CVar("_${idA}_vx"),
+                            "=",
+                            CUnaryExpr("-", CVar("_${idA}_vx")),
+                        )
+                    )
+                )
+                responseBody.add(
+                    CExprStatement(
+                        CBinaryExpr(
+                            CVar("_${idA}_vy"),
+                            "=",
+                            CUnaryExpr("-", CVar("_${idA}_vy")),
+                        )
+                    )
+                )
+            }
+            CollisionResponse.PUSH -> {
+                // Mass-proportional displacement
+                // dispA = massB / (massA + massB), dispB = massA / (massA + massB)
+                val massA = actorMass[idA] ?: 1
+                val massB = actorMass[idB] ?: 1
+                val totalMass = massA + massB
+                val xA = CVar("_${idA}_x")
+                val xB = CVar("_${idB}_x")
+                responseBody.add(CComment("PUSH: mass $idA=$massA, $idB=$massB, total=$totalMass"))
+                // Horizontal overlap displacement
+                responseBody.add(
+                    CIf(
+                        condition =
+                            CBinaryExpr(
+                                CBinaryExpr(xA, "+", CLiteral(4)),
+                                "<",
+                                CBinaryExpr(xB, "+", CLiteral(4)),
+                            ),
+                        thenBody =
+                            listOf(
+                                CExprStatement(
+                                    CBinaryExpr(
+                                        xA,
+                                        "=",
+                                        CBinaryExpr(
+                                            xA,
+                                            "-",
+                                            CLiteral(massB / totalMass.coerceAtLeast(1)),
+                                        ),
+                                    )
+                                ),
+                                CExprStatement(
+                                    CBinaryExpr(
+                                        xB,
+                                        "=",
+                                        CBinaryExpr(
+                                            xB,
+                                            "+",
+                                            CLiteral(massA / totalMass.coerceAtLeast(1)),
+                                        ),
+                                    )
+                                ),
+                            ),
+                        elseBody =
+                            listOf(
+                                CExprStatement(
+                                    CBinaryExpr(
+                                        xA,
+                                        "=",
+                                        CBinaryExpr(
+                                            xA,
+                                            "+",
+                                            CLiteral(massB / totalMass.coerceAtLeast(1)),
+                                        ),
+                                    )
+                                ),
+                                CExprStatement(
+                                    CBinaryExpr(
+                                        xB,
+                                        "=",
+                                        CBinaryExpr(
+                                            xB,
+                                            "-",
+                                            CLiteral(massA / totalMass.coerceAtLeast(1)),
+                                        ),
+                                    )
+                                ),
+                            ),
+                    )
+                )
+            }
+        }
+        // Emit onCollide script ops (if any) as typed C statements
+        if (rule.onCollide.isNotEmpty()) {
+            responseBody.add(CComment("onCollide callback"))
+            for (op in rule.onCollide) {
+                responseBody.add(ScriptOpVisitor.visit(op, exprVisitor))
+            }
+        }
+        return responseBody
     }
 
     // -------------------------------------------------------------------------
