@@ -138,12 +138,14 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
   5. Every S3776 refactor commit touching `codegen/visitor/**` or `GBDKPipeline.kt` has a passing 7-example byte-identity ROM sweep as exit evidence; S3776 commits are never combined with seed-fix commits
 
 **Phase 17 code-review carry-ins** (developer-decided 2026-06-13, fold into discuss-phase scope):
+
   - **SEED-027** (WR-01): align `GAME_BOY_COLOR_SCREEN.bitsPerPixel` 4→2 + narrow the "MUST derive" KDoc to width/height. Trivial constants/KDoc fix, byte-identical (zero consumers). See `.planning/seeds/SEED-027-gbc-screen-bitsperpixel-correctness.md`.
   - **SEED-028** (WR-04/05): accept the ConfigBuilder hard removal (no `@Deprecated` shim) + add a v0.1.1 migration note + fix the 4 stale `config { ramBanks = N }` guidance strings. See `.planning/seeds/SEED-028-configbuilder-removal-migration-guidance.md`.
 
 **Plans**: 27 plans
-
 Plans:
+**Wave 1**
+
 - [ ] 18-01-PLAN.md — DEPR-01 code: remove whenever, relocate pool-collision runIf overload, migrate all call sites
 - [ ] 18-02-PLAN.md — DEPR-01 docs: migrate whenever→runIf in context/DSL_REFERENCE.md
 - [ ] 18-03-PLAN.md — DEPR-02: remove combatIsInState(String) overload + migrate sole test site
@@ -155,22 +157,75 @@ Plans:
 - [ ] 18-09-PLAN.md — SONAR-01 non-emitting: mcp-server batch (N-07/N-10/N-12)
 - [ ] 18-10-PLAN.md — SONAR-01 non-emitting: test N-06 + core N-03 + lang GameBuilder N-11
 - [ ] 18-11-PLAN.md — SONAR-01 non-emitting: intellij-plugin batch (N-14/N-17)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 18-12-PLAN.md — SEED-028: fix 4 stale ramBanks guidance strings (D-08)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 18-13-PLAN.md — SONAR EMITTING GBDKPipeline: E-03/E-04 (per-commit ROM sweep)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 18-14-PLAN.md — SONAR EMITTING GBDKPipeline: E-13/E-19 (walkOps promotion) + E-15
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 18-15-PLAN.md — SONAR EMITTING GBDKPipeline: E-17/E-20/E-24
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 18-16-PLAN.md — SONAR EMITTING GBDKPipeline: E-25/E-27 (file cleared)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
 - [ ] 18-17-PLAN.md — SONAR EMITTING GBDKSystemVisitor: E-01 (cc92)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
 - [ ] 18-18-PLAN.md — SONAR EMITTING GBDKSystemVisitor: E-05/E-08
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
 - [ ] 18-19-PLAN.md — SONAR EMITTING GBDKSystemVisitor: E-09/E-10
+
+**Wave 10** *(blocked on Wave 9 completion)*
+
 - [ ] 18-20-PLAN.md — SONAR EMITTING GBDKSystemVisitor: E-11/E-14 (file cleared)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+
 - [ ] 18-21-PLAN.md — SONAR EMITTING MenuVisitor: E-02 (cc90)
+
+**Wave 12** *(blocked on Wave 11 completion)*
+
 - [ ] 18-22-PLAN.md — SONAR EMITTING SceneVisitor E-07 + CombatVisitor E-16
+
+**Wave 13** *(blocked on Wave 12 completion)*
+
 - [ ] 18-23-PLAN.md — SONAR EMITTING NOSONAR decisions: CEmitter E-12 + SoundVisitor E-06 (D-05)
+
+**Wave 14** *(blocked on Wave 13 completion)*
+
 - [ ] 18-24-PLAN.md — SONAR EMITTING HudVisitor E-18 + ActorVisitor E-21
+
+**Wave 15** *(blocked on Wave 14 completion)*
+
 - [ ] 18-25-PLAN.md — SONAR EMITTING Collection E-22 + SharedConstant E-23 + Dialog E-26
+
+**Wave 16** *(blocked on Wave 15 completion)*
+
 - [ ] 18-26-PLAN.md — SONAR EMITTING TrackSynthesizer E-28 (sport) + RpgVisitor E-29
+
+**Wave 17** *(blocked on Wave 16 completion)*
+
 - [ ] 18-27-PLAN.md — Phase-end consolidated sweep + full suite + SonarCloud S3776=0 gate
+
+**Cross-cutting constraints:**
+
+- 6/6 non-pong example ROMs are byte-identical to baseline after each commit; pong matches on generated C
+- 6/6 non-pong example ROMs are byte-identical to baseline; pong matches on generated C
 
 ### Phase 19: Codegen Fixes — Metasprite Cluster
 
