@@ -1491,167 +1491,59 @@ gameplayScene = scene("gameplay") {
 
 ## Pathfinding
 
-gbkt provides A* pathfinding optimized for tile-based games with navigation grids, weighted tiles, and dynamic obstacles.
+gbkt provides A* pathfinding for tile-based games. Configure the system at game level with `PathfindingBuilder`, then call `pathfindStep()` / `waypointStep()` each frame to move NPCs.
 
-> **Stale-API caveat:** the implemented pathfinding DSL is `PathfindingBuilder`
-> (`gridSize`, `mapSize`, `maxOpenNodes`, `maxPathLength`) plus `pathfindStep(...)` /
-> `waypointStep(...)` script ops. The `navGrid()` / `findPathTo` APIs below are not
-> implemented — cross-check `gbkt-lang/.../dsl/SystemBuilders.kt` and `ScriptBuilder.kt`.
+### Configuration
 
-### Navigation Grid Setup
-
-Define which tiles are walkable for pathfinding:
+Register the pathfinding system in the top-level `game { }` block:
 
 ```kotlin
-// Manual definition
-val navGrid = navGrid("arena") {
-    size = 16 x 16
-    default = true        // All tiles walkable by default
-    blocked(0..15, 0)     // Top wall
-    blocked(0..15, 15)    // Bottom wall
-    blocked(0, 0..15)     // Left wall
-    blocked(15, 0..15)    // Right wall
-    blocked(8, 8)         // Obstacle in center
-}
-
-// From tilemap (auto-extract from Tiled map)
-val navGrid = navGrid(from = dungeonMap) {
-    blockedTiles(0, 1, 2)  // Wall tile indices are blocked
-}
-
-// With collision layer from Tiled
-val navGrid = navGrid(from = dungeonMap) {
-    collisionLayer = "Collision"  // Use Tiled layer name
+val game = game("MyGame") {
+    // pathfinding { } configures the A* system (SystemBuilders.kt:315)
+    pathfinding {
+        gridSize(8)          // Tile size in pixels — used to convert pixel coords to tile coords
+        mapSize(32, 32)      // Map dimensions in tiles (widthTiles, heightTiles)
+        maxOpenNodes(32)     // Open-list capacity (each node costs 4 bytes of WRAM)
+        maxPathLength(32)    // Maximum path steps (each step costs 2 bytes of WRAM)
+    }
 }
 ```
 
-### Weighted Tiles
+All four parameters are optional; defaults are `gridSize=8`, `mapSize(32,32)`, `maxOpenNodes=32`, `maxPathLength=32`.
 
-Give tiles different movement costs for more realistic pathfinding:
+### Per-Frame NPC Movement
+
+Two script ops advance a moving character one step per frame call (ScriptBuilder.kt:611, 633):
 
 ```kotlin
-val navGrid = navGrid("dungeon") {
-    size = 16 x 16
-    default = true
+val enemy by actor { /* ... */ }
+val player by actor { /* ... */ }
 
-    // Swamp area is slow
-    weight(4..8, 4..8, cost = 3)  // 3x slower than normal
-
-    // Road is fast
-    weight(0..15, 8, cost = 1)  // Normal speed
-
-    // Impassable walls (cost = 0 means blocked)
-    blocked(0..15, 0)
+val guard by actor {
+    // Define waypoint patrol route on the actor
+    waypoints {
+        add(32, 16)
+        add(80, 16)
+        add(80, 64)
+    }
 }
-```
 
-### Pathfinding Queries
-
-Find paths between entities or tiles:
-
-```kotlin
 gameplayScene = scene("gameplay") {
     frame {
-        // Fluent infix syntax
-        val path = player findPathTo treasure using navGrid
-
-        // Or with options
-        val path2 = player.findPathTo(treasure).using(navGrid) {
-            diagonal = true   // Allow 8-way movement
-            maxDepth = 64     // Search limit
-            heuristic = Heuristic.MANHATTAN  // or CHEBYSHEV, EUCLIDEAN
+        // pathfindStep: move `enemy` one A* step toward `player`
+        // Call every frame (or every N frames to reduce CPU load)
+        whenever((frameCount and 7) isEqualTo 0) {
+            pathfindStep(enemy, player)
         }
 
-        // From/to tile coordinates
-        val path3 = findPath(fromTileX = 0, fromTileY = 0, toTileX = 15, toTileY = 15)
-            .using(navGrid)
+        // waypointStep: advance `guard` one step along its waypoint patrol route
+        waypointStep(guard)
     }
 }
 ```
 
-### Following Paths
-
-Move entities along computed paths:
-
-```kotlin
-gameplayScene = scene("gameplay") {
-    frame {
-        val path = enemy findPathTo player using navGrid
-
-        whenever(path.found and path.hasNext) {
-            // Move toward next waypoint
-            enemy.x += path.directionX(enemy.x)  // Returns -1, 0, or 1
-            enemy.y += path.directionY(enemy.y)
-
-            // Advance when waypoint reached
-            whenever(path.atWaypoint(enemy, threshold = 4)) {
-                path.advance()
-            }
-        }
-    }
-}
-
-// Or use automatic path following
-frame {
-    val path = enemy findPathTo player using navGrid
-
-    enemy.followPath(path) {
-        speed = 2
-        onArrive { /* reached destination */ }
-        onBlocked { /* path blocked */ }
-    }
-}
-```
-
-### Path State Queries
-
-Check path state with conditions:
-
-```kotlin
-whenever(path.found) { /* valid path exists */ }
-whenever(path.notFound) { /* no valid path */ }
-whenever(path.hasNext) { /* more waypoints remain */ }
-
-// Path properties (as Expr)
-val len = path.length       // Total waypoints
-val idx = path.currentIndex // Current waypoint index
-val nextX = path.nextX      // Next waypoint X (tiles)
-val nextY = path.nextY      // Next waypoint Y (tiles)
-```
-
-### Dynamic Obstacles
-
-Modify navigation at runtime:
-
-```kotlin
-frame {
-    // Block tile where enemy stands (pixels → tiles automatic)
-    navGrid.addObstacle(enemy)
-
-    // Later, clear it
-    navGrid.removeObstacle(enemy)
-
-    // Or by tile coordinates
-    navGrid.setBlocked(8, 8)
-    navGrid.setWalkable(8, 8)
-
-    // Change movement cost
-    navGrid.setWeight(x = 5, y = 5, cost = 3)
-
-    // Check if tile is walkable
-    whenever(navGrid.isWalkable(tileX, tileY)) {
-        // Tile is passable
-    }
-}
-```
-
-### Heuristics
-
-Choose the distance calculation method:
-
-- `Heuristic.MANHATTAN` - |dx| + |dy| - Best for 4-way movement (default)
-- `Heuristic.CHEBYSHEV` - max(|dx|, |dy|) - Best for 8-way movement
-- `Heuristic.EUCLIDEAN` - sqrt(dx² + dy²) - Most accurate but slower
+- `pathfindStep(npc, target)` — runs one A* iteration, moving `npc` toward `target`. Call periodically (not every frame) to budget CPU time.
+- `waypointStep(npc)` — advances `npc` along its `waypoints { }` patrol list; wraps automatically at the end.
 
 ## Signed Integer Types
 
@@ -1678,237 +1570,17 @@ gameplayScene = scene("gameplay") {
 
 ## Testing Framework
 
-gbkt includes a built-in testing framework that lets you test game logic without compiling to ROM or running an emulator. Tests run directly on the JVM with simulated game state.
+gbkt game logic is tested through three tiers. The authoritative guide for all testing tiers, APIs, recipes, and MCP agent usage is **[context/TESTING.md](TESTING.md)**.
 
-> **Stale-API caveat:** the `testGame()`/`testScene()` DSL below does not exist in the current
-> codebase. JVM-tier simulation is done via `SimulationContext` / `ScriptOpInterpreter` in
-> `gbkt-core/.../test/`; emulator-tier testing uses `GbktTestExtension` in `gbkt-test` (see
-> context/TESTING.md).
+### Test Tiers
 
-### Basic Test Structure
+| Tier | Module | What it tests |
+|------|--------|---------------|
+| **JVM simulation** | `gbkt-core` (`SimulationContext` / `ScriptOpInterpreter`) | Game logic and IR correctness without an emulator — fast, no ROM required |
+| **Emulator** | `gbkt-test` (`GbktTestExtension`) | Real ROM running in an embedded Game Boy emulator; auto-skip when ROM is absent |
+| **MCP agent** | `gbkt-mcp-server` | AI-driven UAT via 19 MCP tools (`emulator_start`, `emulator_step`, `emulator_assert`, etc.) |
 
-```kotlin
-import io.github.gbkt.core.test.*
-import kotlin.test.*
-
-class MyGameTest {
-    @Test
-    fun `player moves right`() = testGame("movement") {
-        var playerX by u8Var(80)
-
-        val gameplay = scene("gameplay") {
-            frame {
-                playerX += dpad.x * 2
-            }
-        }
-        start = gameplay
-
-        test {
-            // Initially at 80
-            expect("playerX").toEqual(80)
-
-            // Hold right for 5 frames
-            press(Button.RIGHT) { advanceFrames(5) }
-
-            // Should have moved 10 pixels (2 * 5)
-            expect("playerX").toEqual(90)
-        }
-    }
-}
-```
-
-### Testing Single Scenes
-
-For simpler tests, use `testScene` to test a scene in isolation:
-
-```kotlin
-@Test
-fun `counter increments each frame`() = testScene("test") {
-    var counter by u8Var(0)
-
-    frame { counter += 1 }
-
-    test {
-        expect("counter").toEqual(0)
-        advanceFrame()
-        expect("counter").toEqual(1)
-        advanceFrames(9)
-        expect("counter").toEqual(10)
-    }
-}
-```
-
-### Frame Control
-
-```kotlin
-test {
-    // Advance one frame
-    advanceFrame()
-
-    // Advance multiple frames
-    advanceFrames(60)
-
-    // Advance by approximate seconds (60 FPS)
-    advanceSeconds(2.5f)
-
-    // Advance until condition is met (with safety limit)
-    val result = advanceUntil(maxFrames = 600) { getVariable("timer") >= 50 }
-    result.assertMet("Timer should reach 50")
-
-    // Or use orFail for cleaner syntax
-    advanceUntil { getVariable("health") == 0 } orFail "Player should die"
-
-    // Advance while condition is true
-    advanceWhile { getVariable("jumping") == 1 }
-
-    // Step one frame with inline assertions
-    stepFrame {
-        expect("score").toBeGreaterThan(0)
-    }
-
-    // Access frame count
-    println("Current frame: $frameCount")
-}
-```
-
-### Input Simulation
-
-```kotlin
-test {
-    // Tap a button (press for one frame, release)
-    tap(Button.A)
-    tap(Button.START)
-
-    // Tap multiple buttons simultaneously
-    tap(Button.A, Button.B)
-
-    // Hold while executing block
-    press(Button.RIGHT) {
-        advanceFrames(30)
-        expect("playerX").toBeGreaterThan(80)
-    }
-
-    // Manual hold and release
-    hold(Button.A)
-    advanceFrames(10)
-    release(Button.A)
-
-    // Release all buttons
-    releaseAll()
-}
-```
-
-Available buttons: `Button.A`, `Button.B`, `Button.START`, `Button.SELECT`, `Button.UP`, `Button.DOWN`, `Button.LEFT`, `Button.RIGHT`
-
-### Fluent Assertions
-
-Integer expectations:
-
-```kotlin
-test {
-    expect("score").toEqual(100)
-    expect("health").toBeGreaterThan(0)
-    expect("lives").toBeAtLeast(1)
-    expect("timer").toBeLessThan(60)
-    expect("ammo").toBeAtMost(99)
-    expect("x").toBeBetween(0..160)
-    expect("count").toBeZero()
-    expect("money").toBePositive()
-    expect("velocity").toBeNegative()
-    expect("value").toSatisfy("is even") { it % 2 == 0 }
-}
-```
-
-Sprite expectations:
-
-```kotlin
-test {
-    expectSprite("player").toBeAt(80, 72)
-    expectSprite("player").toHaveX(80)
-    expectSprite("player").toHaveY(72)
-    expectSprite("player").toBeVisible()
-    expectSprite("enemy").toBeHidden()
-    expectSprite("hero").toBePlayingAnimation("run")
-    expectSprite("idle_enemy").toNotBeAnimating()
-    expectSprite("player").toCollideWith(simulation.getSprite("enemy")!!)
-    expectSprite("player").toNotCollideWith(simulation.getSprite("wall")!!)
-}
-```
-
-Pool expectations:
-
-```kotlin
-test {
-    expectPool("bullets").toHaveActiveCount(5)
-    expectPool("particles").toBeEmpty()
-    expectPool("enemies").toNotBeEmpty()
-    expectPool("bullets").toHaveSpace()
-    expectPool("bullets").toHaveSpaceFor(3)
-    expectPool("bullets").toBeFull()
-
-    // Check all/any entities match condition
-    expectPool("bullets").allMatch("moving up") { idx ->
-        getVariable("bullet_${idx}_vel_y") < 0
-    }
-    expectPool("enemies").anyMatch("on screen") { idx ->
-        getVariable("enemy_${idx}_x") in 0..160
-    }
-}
-```
-
-Game/scene expectations:
-
-```kotlin
-test {
-    game.toBeInScene("gameplay")
-    game.toHaveFrameCount(100)
-    game.toHaveRunForAtLeast(60)
-    expectScene("gameplay")
-}
-```
-
-### State Access
-
-```kotlin
-test {
-    // Get variable value
-    val health = getVariable("health")
-
-    // Set variable directly (for test setup)
-    setVariable("score", 1000)
-
-    // Access current scene
-    println("In scene: $currentScene")
-
-    // Direct scene entry (for test setup)
-    enterScene("gameplay")
-
-    // Listen for scene changes
-    onSceneChange { from, to ->
-        println("Scene changed: $from -> $to")
-    }
-}
-```
-
-### IR Verification (Advanced)
-
-For testing that your DSL generates correct IR:
-
-```kotlin
-import io.github.gbkt.core.test.*
-import io.github.gbkt.core.ir.*
-
-@Test
-fun `assignment generates correct IR`() {
-    val ir = recordIR {
-        playerX += 1
-    }
-
-    assertTrue(ir.containsType<IRAssign>())
-    val assigns = ir.filterType<IRAssign>()
-    assertEquals("playerX", assigns.first().target)
-}
-```
+See [context/TESTING.md](TESTING.md) for setup instructions, `GbktTestExtension` API, `GameConstants` helpers, `PLAYBOOK.md` format, and a full worked MCP play session.
 
 ## RPG Stats System
 
@@ -2837,60 +2509,3 @@ whenever(gameFlags.isSet("story", "metElder")) {
 gameFlags.toggle("world", "doorUnlocked")
 ```
 
-### Complete Example
-
-```kotlin
-class PlatformerTest {
-    @Test
-    fun `player jumps when A pressed on ground`() = testGame("platformer") {
-        var playerY by u8Var(100)  // Ground level
-        var velocityY by i8Var(0)
-        var jumping by u8Var(0)
-
-        val gameplay = scene("gameplay") {
-            frame {
-                // Jump when A pressed and on ground
-                whenever(buttons.a.pressed and (jumping isEqualTo 0)) {
-                    velocityY set -8
-                    jumping set 1
-                }
-
-                // Apply gravity
-                whenever(jumping isEqualTo 1) {
-                    playerY += velocityY
-                    velocityY += 1
-
-                    // Land
-                    whenever(playerY isAtLeast 100) {
-                        playerY set 100
-                        jumping set 0
-                    }
-                }
-            }
-        }
-        start = gameplay
-
-        test {
-            // Initially on ground
-            expect("playerY").toEqual(100)
-            expect("jumping").toEqual(0)
-
-            // Press A to jump
-            tap(Button.A)
-            expect("jumping").toEqual(1)
-            expect("velocityY").toEqual(-8)
-
-            // Should rise
-            advanceFrames(5)
-            expect("playerY").toBeLessThan(100)
-
-            // Wait to land
-            advanceUntil { getVariable("jumping") == 0 } orFail "Player should land"
-
-            // Back on ground
-            expect("playerY").toEqual(100)
-            expect("jumping").toEqual(0)
-        }
-    }
-}
-```
