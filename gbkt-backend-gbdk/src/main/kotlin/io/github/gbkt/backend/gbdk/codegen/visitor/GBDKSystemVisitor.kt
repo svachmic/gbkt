@@ -4864,540 +4864,24 @@ class GBDKSystemVisitor(
 
         val vars = mutableListOf<CVarDecl>()
         val functions = mutableListOf<CFunction>()
-        val perFrameCalls = mutableListOf<CStatement>() // calls for puzzle_update_all()
-
-        // Build ID→PuzzleObjectIR map for requires() lookup
+        val perFrameCalls = mutableListOf<CStatement>()
         val puzzleById = gameIR.puzzleObjects.associateBy { it.id }
 
         for (obj in gameIR.puzzleObjects) {
             val id = obj.id.replace('-', '_').replace(' ', '_')
-            when (obj) {
-                is SwitchObjectIR -> {
-                    // State variable: UINT8 _switch_{id}_active = 0
-                    vars +=
-                        CVarDecl(
-                            name = "_switch_${id}_active",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-
-                    // puzzle_activate_{id}(): toggle switch active state, run onActivate
-                    val activateBody =
-                        buildList<CStatement> {
-                            // requires() guard: if any required object is not active, return early
-                            addAll(buildRequiresGuard(obj.requires, puzzleById))
-                            // _switch_{id}_active = 1;
-                            add(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_switch_${id}_active"), "=", CLiteral(1))
-                                )
-                            )
-                            // Run onActivate ScriptOps
-                            for (op in obj.onActivate) add(ScriptOpVisitor.visit(op))
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_activate_$id",
-                            returnType = CVoid,
-                            body = activateBody,
-                            sectionComment = "Puzzle switch: $id",
-                        )
-
-                    // puzzle_deactivate_{id}(): toggle switch inactive state, run onDeactivate
-                    val deactivateBody =
-                        buildList<CStatement> {
-                            // _switch_{id}_active = 0;
-                            add(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_switch_${id}_active"), "=", CLiteral(0))
-                                )
-                            )
-                            // Run onDeactivate ScriptOps
-                            for (op in obj.onDeactivate) add(ScriptOpVisitor.visit(op))
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_deactivate_$id",
-                            returnType = CVoid,
-                            body = deactivateBody,
-                        )
-
-                    // Hidden state variable and reveal/hide functions
-                    vars +=
-                        CVarDecl(
-                            name = "_switch_${id}_hidden",
-                            type = CU8,
-                            initializer = CLiteral(if (obj.hidden) 1 else 0),
-                        )
-                    functions += buildPuzzleRevealFunction(id, "_switch_${id}_hidden")
-                    functions += buildPuzzleHideFunction(id, "_switch_${id}_hidden")
+            val output =
+                when (obj) {
+                    is SwitchObjectIR -> buildSwitchObjectOutput(obj, id, puzzleById)
+                    is DoorObjectIR -> buildDoorObjectOutput(obj, id, puzzleById)
+                    is PressurePlateObjectIR -> buildPressurePlateObjectOutput(obj, id, puzzleById)
+                    is TimedBlockObjectIR -> buildTimedBlockObjectOutput(obj, id, puzzleById)
+                    is TriggerObjectIR -> buildTriggerObjectOutput(obj, id, puzzleById)
                 }
-
-                is DoorObjectIR -> {
-                    // State variable: UINT8 _door_{id}_open = 0
-                    vars +=
-                        CVarDecl(name = "_door_${id}_open", type = CU8, initializer = CLiteral(0))
-
-                    // puzzle_activate_{id}(): open door — set state, swap tile to openTile, run
-                    // onOpen
-                    val openBody =
-                        buildList<CStatement> {
-                            // requires() guard: all required objects must be active before door
-                            // opens
-                            addAll(buildRequiresGuard(obj.requires, puzzleById))
-                            add(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_door_${id}_open"), "=", CLiteral(1))
-                                )
-                            )
-                            // Swap the door's background tile to its open graphic.
-                            add(
-                                CExprStatement(
-                                    CCall(
-                                        "set_bkg_tile_xy",
-                                        listOf(
-                                            CLiteral(obj.x),
-                                            CLiteral(obj.y),
-                                            CLiteral(obj.openTile),
-                                        ),
-                                    )
-                                )
-                            )
-                            for (op in obj.onOpen) add(ScriptOpVisitor.visit(op))
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_activate_$id",
-                            returnType = CVoid,
-                            body = openBody,
-                            sectionComment = "Puzzle door: $id",
-                        )
-
-                    // puzzle_deactivate_{id}(): close door — set state, swap tile to closedTile,
-                    // run onClose
-                    val closeBody =
-                        buildList<CStatement> {
-                            add(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_door_${id}_open"), "=", CLiteral(0))
-                                )
-                            )
-                            // Swap the door's background tile back to its closed graphic.
-                            add(
-                                CExprStatement(
-                                    CCall(
-                                        "set_bkg_tile_xy",
-                                        listOf(
-                                            CLiteral(obj.x),
-                                            CLiteral(obj.y),
-                                            CLiteral(obj.closedTile),
-                                        ),
-                                    )
-                                )
-                            )
-                            for (op in obj.onClose) add(ScriptOpVisitor.visit(op))
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_deactivate_$id",
-                            returnType = CVoid,
-                            body = closeBody,
-                        )
-
-                    // Hidden state variable and reveal/hide functions
-                    vars +=
-                        CVarDecl(
-                            name = "_door_${id}_hidden",
-                            type = CU8,
-                            initializer = CLiteral(if (obj.hidden) 1 else 0),
-                        )
-                    functions += buildPuzzleRevealFunction(id, "_door_${id}_hidden")
-                    functions += buildPuzzleHideFunction(id, "_door_${id}_hidden")
-                }
-
-                is PressurePlateObjectIR -> {
-                    // State variable: UINT8 _plate_{id}_pressed = 0
-                    vars +=
-                        CVarDecl(
-                            name = "_plate_${id}_pressed",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-
-                    // puzzle_check_plate_{id}(): test if any respondTo actor/pool entity is at
-                    // plate position
-                    val checkBody =
-                        buildList<CStatement> {
-                            // requires() guard: check required objects before processing step
-                            // events
-                            val requiresGuard = buildRequiresGuard(obj.requires, puzzleById)
-                            if (requiresGuard.isNotEmpty()) addAll(requiresGuard)
-
-                            // UINT8 _on = 0; (local var)
-                            add(CVarDecl("_on", CU8, initializer = CLiteral(0)))
-                            // Check each respondTo actor or pool entity
-                            for (actorId in obj.respondToActorIds) {
-                                if (actorId.startsWith("pool:")) {
-                                    // Pool entity: pool:<poolName> — check pool entity positions
-                                    val poolName =
-                                        actorId
-                                            .removePrefix("pool:")
-                                            .replace('-', '_')
-                                            .replace(' ', '_')
-                                    // Emit a raw pool position check:
-                                    // pool_<name>_check_at(plate.x, plate.y) returns nonzero if any
-                                    // entity is there
-                                    add(
-                                        CIf(
-                                            condition =
-                                                CCall(
-                                                    "pool_${poolName}_any_at",
-                                                    listOf(CLiteral(obj.x), CLiteral(obj.y)),
-                                                ),
-                                            thenBody =
-                                                listOf(
-                                                    CExprStatement(
-                                                        CBinaryExpr(CVar("_on"), "=", CLiteral(1))
-                                                    )
-                                                ),
-                                        )
-                                    )
-                                } else {
-                                    val sanitizedActorId =
-                                        actorId.replace('-', '_').replace(' ', '_')
-                                    // if (_<actor>_x == plate.x && _<actor>_y == plate.y) _on = 1;
-                                    add(
-                                        CIf(
-                                            condition =
-                                                CBinaryExpr(
-                                                    CBinaryExpr(
-                                                        CVar("_${sanitizedActorId}_x"),
-                                                        "==",
-                                                        CLiteral(obj.x),
-                                                    ),
-                                                    "&&",
-                                                    CBinaryExpr(
-                                                        CVar("_${sanitizedActorId}_y"),
-                                                        "==",
-                                                        CLiteral(obj.y),
-                                                    ),
-                                                ),
-                                            thenBody =
-                                                listOf(
-                                                    CExprStatement(
-                                                        CBinaryExpr(CVar("_on"), "=", CLiteral(1))
-                                                    )
-                                                ),
-                                        )
-                                    )
-                                }
-                            }
-                            // if (_on && !_plate_{id}_pressed) { onStepOn; _plate_{id}_pressed = 1;
-                            // }
-                            if (obj.onStepOn.isNotEmpty()) {
-                                val stepOnBody =
-                                    buildList<CStatement> {
-                                        for (op in obj.onStepOn) add(ScriptOpVisitor.visit(op))
-                                        add(
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    CVar("_plate_${id}_pressed"),
-                                                    "=",
-                                                    CLiteral(1),
-                                                )
-                                            )
-                                        )
-                                    }
-                                add(
-                                    CIf(
-                                        condition =
-                                            CBinaryExpr(
-                                                CVar("_on"),
-                                                "&&",
-                                                CRawExpr("!_plate_${id}_pressed"),
-                                            ),
-                                        thenBody = stepOnBody,
-                                    )
-                                )
-                            } else {
-                                // No onStepOn ops — just update state
-                                add(
-                                    CIf(
-                                        condition =
-                                            CBinaryExpr(
-                                                CVar("_on"),
-                                                "&&",
-                                                CRawExpr("!_plate_${id}_pressed"),
-                                            ),
-                                        thenBody =
-                                            listOf(
-                                                CExprStatement(
-                                                    CBinaryExpr(
-                                                        CVar("_plate_${id}_pressed"),
-                                                        "=",
-                                                        CLiteral(1),
-                                                    )
-                                                )
-                                            ),
-                                    )
-                                )
-                            }
-                            // if (!_on && _plate_{id}_pressed) { onStepOff; _plate_{id}_pressed =
-                            // 0; }
-                            if (obj.onStepOff.isNotEmpty()) {
-                                val stepOffBody =
-                                    buildList<CStatement> {
-                                        for (op in obj.onStepOff) add(ScriptOpVisitor.visit(op))
-                                        add(
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    CVar("_plate_${id}_pressed"),
-                                                    "=",
-                                                    CLiteral(0),
-                                                )
-                                            )
-                                        )
-                                    }
-                                add(
-                                    CIf(
-                                        condition =
-                                            CBinaryExpr(
-                                                CRawExpr("!_on"),
-                                                "&&",
-                                                CVar("_plate_${id}_pressed"),
-                                            ),
-                                        thenBody = stepOffBody,
-                                    )
-                                )
-                            } else {
-                                add(
-                                    CIf(
-                                        condition =
-                                            CBinaryExpr(
-                                                CRawExpr("!_on"),
-                                                "&&",
-                                                CVar("_plate_${id}_pressed"),
-                                            ),
-                                        thenBody =
-                                            listOf(
-                                                CExprStatement(
-                                                    CBinaryExpr(
-                                                        CVar("_plate_${id}_pressed"),
-                                                        "=",
-                                                        CLiteral(0),
-                                                    )
-                                                )
-                                            ),
-                                    )
-                                )
-                            }
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_check_plate_$id",
-                            returnType = CVoid,
-                            body = checkBody,
-                            sectionComment = "Puzzle pressure plate: $id",
-                        )
-
-                    // Hidden state variable and reveal/hide functions
-                    vars +=
-                        CVarDecl(
-                            name = "_plate_${id}_hidden",
-                            type = CU8,
-                            initializer = CLiteral(if (obj.hidden) 1 else 0),
-                        )
-                    functions += buildPuzzleRevealFunction(id, "_plate_${id}_hidden")
-                    functions += buildPuzzleHideFunction(id, "_plate_${id}_hidden")
-
-                    // Add to per-frame update list
-                    perFrameCalls += CExprStatement(CCall("puzzle_check_plate_$id", emptyList()))
-                }
-
-                is TimedBlockObjectIR -> {
-                    // State variables: UINT16 _timedblock_{id}_timer = 0, UINT8
-                    // _timedblock_{id}_solid = 1
-                    vars +=
-                        CVarDecl(
-                            name = "_timedblock_${id}_timer",
-                            type = CU16,
-                            initializer = CLiteral(0),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_timedblock_${id}_solid",
-                            type = CU8,
-                            initializer = CLiteral(1),
-                        )
-
-                    // puzzle_update_timedblock_{id}(): increment timer, swap tile when interval
-                    // reached
-                    val updateBody =
-                        buildList<CStatement> {
-                            // requires() guard: only update when required objects are active
-                            addAll(buildRequiresGuard(obj.requires, puzzleById))
-                            // _timedblock_{id}_timer++;
-                            add(CExprStatement(CUnaryExpr("++", CVar("_timedblock_${id}_timer"))))
-                            // if (_timedblock_{id}_timer >= interval) { swap tile; reset timer; }
-                            val swapBody =
-                                buildList<CStatement> {
-                                    // _timedblock_{id}_timer = 0;
-                                    add(
-                                        CExprStatement(
-                                            CBinaryExpr(
-                                                CVar("_timedblock_${id}_timer"),
-                                                "=",
-                                                CLiteral(0),
-                                            )
-                                        )
-                                    )
-                                    // if (_timedblock_{id}_solid) { set_bkg_tile_xy(x, y,
-                                    // emptyTile); solid=0; }
-                                    // else { set_bkg_tile_xy(x, y, solidTile); solid=1; }
-                                    add(
-                                        CIf(
-                                            condition = CVar("_timedblock_${id}_solid"),
-                                            thenBody =
-                                                listOf(
-                                                    CExprStatement(
-                                                        CCall(
-                                                            "set_bkg_tile_xy",
-                                                            listOf(
-                                                                CLiteral(obj.x),
-                                                                CLiteral(obj.y),
-                                                                CLiteral(obj.emptyTile),
-                                                            ),
-                                                        )
-                                                    ),
-                                                    CExprStatement(
-                                                        CBinaryExpr(
-                                                            CVar("_timedblock_${id}_solid"),
-                                                            "=",
-                                                            CLiteral(0),
-                                                        )
-                                                    ),
-                                                ),
-                                            elseBody =
-                                                listOf(
-                                                    CExprStatement(
-                                                        CCall(
-                                                            "set_bkg_tile_xy",
-                                                            listOf(
-                                                                CLiteral(obj.x),
-                                                                CLiteral(obj.y),
-                                                                CLiteral(obj.solidTile),
-                                                            ),
-                                                        )
-                                                    ),
-                                                    CExprStatement(
-                                                        CBinaryExpr(
-                                                            CVar("_timedblock_${id}_solid"),
-                                                            "=",
-                                                            CLiteral(1),
-                                                        )
-                                                    ),
-                                                ),
-                                        )
-                                    )
-                                }
-                            add(
-                                CIf(
-                                    condition =
-                                        CBinaryExpr(
-                                            CVar("_timedblock_${id}_timer"),
-                                            ">=",
-                                            CLiteral(obj.interval),
-                                        ),
-                                    thenBody = swapBody,
-                                )
-                            )
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_update_timedblock_$id",
-                            returnType = CVoid,
-                            body = updateBody,
-                            sectionComment = "Puzzle timed block: $id",
-                        )
-
-                    // Hidden state variable and reveal/hide functions
-                    vars +=
-                        CVarDecl(
-                            name = "_timedblock_${id}_hidden",
-                            type = CU8,
-                            initializer = CLiteral(if (obj.hidden) 1 else 0),
-                        )
-                    functions += buildPuzzleRevealFunction(id, "_timedblock_${id}_hidden")
-                    functions += buildPuzzleHideFunction(id, "_timedblock_${id}_hidden")
-
-                    // Add to per-frame update list
-                    perFrameCalls +=
-                        CExprStatement(CCall("puzzle_update_timedblock_$id", emptyList()))
-                }
-
-                is TriggerObjectIR -> {
-                    // Generic trigger: no built-in state, all logic in handlers.
-                    // Generates puzzle_trigger_{id}_fire(UINT8 event) with switch-case dispatch.
-
-                    // Group handlers by event type for switch-case generation
-                    val handlersByEvent = obj.handlers.groupBy { it.event }
-
-                    // Build switch-case body for each registered event
-                    val cases =
-                        buildList<CSwitchCase> {
-                            for ((eventType, handlers) in handlersByEvent) {
-                                val caseBody =
-                                    buildList<CStatement> {
-                                        // requires() guard inside each case
-                                        addAll(buildRequiresGuard(obj.requires, puzzleById))
-                                        for (handler in handlers) {
-                                            for (op in handler.actions) add(
-                                                ScriptOpVisitor.visit(op)
-                                            )
-                                        }
-                                        add(CBreak)
-                                    }
-                                // Use event type ordinal as the C case value (EVENT_INTERACT=0,
-                                // etc.)
-                                add(
-                                    CSwitchCase(
-                                        value = CLiteral(eventType.ordinal),
-                                        body = caseBody,
-                                    )
-                                )
-                            }
-                        }
-
-                    val fireBody =
-                        buildList<CStatement> {
-                            if (cases.isNotEmpty()) {
-                                add(CSwitch(expr = CVar("event"), cases = cases))
-                            }
-                        }
-
-                    functions +=
-                        CFunction(
-                            name = "puzzle_trigger_${id}_fire",
-                            returnType = CVoid,
-                            params = listOf(CParam("event", CU8)),
-                            body = fireBody,
-                            sectionComment = "Puzzle generic trigger: $id",
-                        )
-
-                    // Hidden state variable and reveal/hide functions
-                    vars +=
-                        CVarDecl(
-                            name = "_trigger_${id}_hidden",
-                            type = CU8,
-                            initializer = CLiteral(if (obj.hidden) 1 else 0),
-                        )
-                    functions += buildPuzzleRevealFunction(id, "_trigger_${id}_hidden")
-                    functions += buildPuzzleHideFunction(id, "_trigger_${id}_hidden")
-                }
-            }
+            vars += output.vars
+            functions += output.functions
+            perFrameCalls += output.perFrameCalls
         }
 
-        // puzzle_update_all(): calls all per-frame puzzle checks (plates + timed blocks)
         functions +=
             CFunction(
                 name = "puzzle_update_all",
@@ -5476,6 +4960,498 @@ class GBDKSystemVisitor(
             returnType = CVoid,
             body = listOf(CExprStatement(CBinaryExpr(CVar(hiddenVarName), "=", CLiteral(1)))),
         )
+
+    /** Accumulated output for a single puzzle object: vars, functions, and per-frame calls. */
+    private data class PuzzleObjectOutput(
+        val vars: List<CVarDecl>,
+        val functions: List<CFunction>,
+        val perFrameCalls: List<CStatement> = emptyList(),
+    )
+
+    private fun buildSwitchObjectOutput(
+        obj: SwitchObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): PuzzleObjectOutput {
+        val vars = mutableListOf<CVarDecl>()
+        val functions = mutableListOf<CFunction>()
+
+        // State variable: UINT8 _switch_{id}_active = 0
+        vars += CVarDecl(name = "_switch_${id}_active", type = CU8, initializer = CLiteral(0))
+
+        // puzzle_activate_{id}(): toggle switch active state, run onActivate
+        val activateBody =
+            buildList<CStatement> {
+                // requires() guard: if any required object is not active, return early
+                addAll(buildRequiresGuard(obj.requires, puzzleById))
+                // _switch_{id}_active = 1;
+                add(CExprStatement(CBinaryExpr(CVar("_switch_${id}_active"), "=", CLiteral(1))))
+                // Run onActivate ScriptOps
+                for (op in obj.onActivate) add(ScriptOpVisitor.visit(op))
+            }
+        functions +=
+            CFunction(
+                name = "puzzle_activate_$id",
+                returnType = CVoid,
+                body = activateBody,
+                sectionComment = "Puzzle switch: $id",
+            )
+
+        // puzzle_deactivate_{id}(): toggle switch inactive state, run onDeactivate
+        val deactivateBody =
+            buildList<CStatement> {
+                // _switch_{id}_active = 0;
+                add(CExprStatement(CBinaryExpr(CVar("_switch_${id}_active"), "=", CLiteral(0))))
+                // Run onDeactivate ScriptOps
+                for (op in obj.onDeactivate) add(ScriptOpVisitor.visit(op))
+            }
+        functions +=
+            CFunction(
+                name = "puzzle_deactivate_$id",
+                returnType = CVoid,
+                body = deactivateBody,
+            )
+
+        // Hidden state variable and reveal/hide functions
+        vars +=
+            CVarDecl(
+                name = "_switch_${id}_hidden",
+                type = CU8,
+                initializer = CLiteral(if (obj.hidden) 1 else 0),
+            )
+        functions += buildPuzzleRevealFunction(id, "_switch_${id}_hidden")
+        functions += buildPuzzleHideFunction(id, "_switch_${id}_hidden")
+
+        return PuzzleObjectOutput(vars = vars, functions = functions)
+    }
+
+    private fun buildDoorObjectOutput(
+        obj: DoorObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): PuzzleObjectOutput {
+        val vars = mutableListOf<CVarDecl>()
+        val functions = mutableListOf<CFunction>()
+
+        // State variable: UINT8 _door_{id}_open = 0
+        vars += CVarDecl(name = "_door_${id}_open", type = CU8, initializer = CLiteral(0))
+
+        // puzzle_activate_{id}(): open door — set state, swap tile to openTile, run onOpen
+        val openBody =
+            buildList<CStatement> {
+                // requires() guard: all required objects must be active before door opens
+                addAll(buildRequiresGuard(obj.requires, puzzleById))
+                add(CExprStatement(CBinaryExpr(CVar("_door_${id}_open"), "=", CLiteral(1))))
+                // Swap the door's background tile to its open graphic.
+                add(
+                    CExprStatement(
+                        CCall(
+                            "set_bkg_tile_xy",
+                            listOf(CLiteral(obj.x), CLiteral(obj.y), CLiteral(obj.openTile)),
+                        )
+                    )
+                )
+                for (op in obj.onOpen) add(ScriptOpVisitor.visit(op))
+            }
+        functions +=
+            CFunction(
+                name = "puzzle_activate_$id",
+                returnType = CVoid,
+                body = openBody,
+                sectionComment = "Puzzle door: $id",
+            )
+
+        // puzzle_deactivate_{id}(): close door — set state, swap tile to closedTile, run onClose
+        val closeBody =
+            buildList<CStatement> {
+                add(CExprStatement(CBinaryExpr(CVar("_door_${id}_open"), "=", CLiteral(0))))
+                // Swap the door's background tile back to its closed graphic.
+                add(
+                    CExprStatement(
+                        CCall(
+                            "set_bkg_tile_xy",
+                            listOf(CLiteral(obj.x), CLiteral(obj.y), CLiteral(obj.closedTile)),
+                        )
+                    )
+                )
+                for (op in obj.onClose) add(ScriptOpVisitor.visit(op))
+            }
+        functions +=
+            CFunction(
+                name = "puzzle_deactivate_$id",
+                returnType = CVoid,
+                body = closeBody,
+            )
+
+        // Hidden state variable and reveal/hide functions
+        vars +=
+            CVarDecl(
+                name = "_door_${id}_hidden",
+                type = CU8,
+                initializer = CLiteral(if (obj.hidden) 1 else 0),
+            )
+        functions += buildPuzzleRevealFunction(id, "_door_${id}_hidden")
+        functions += buildPuzzleHideFunction(id, "_door_${id}_hidden")
+
+        return PuzzleObjectOutput(vars = vars, functions = functions)
+    }
+
+    private fun buildPressurePlateObjectOutput(
+        obj: PressurePlateObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): PuzzleObjectOutput {
+        val vars = mutableListOf<CVarDecl>()
+        val functions = mutableListOf<CFunction>()
+
+        // State variable: UINT8 _plate_{id}_pressed = 0
+        vars += CVarDecl(name = "_plate_${id}_pressed", type = CU8, initializer = CLiteral(0))
+
+        // puzzle_check_plate_{id}(): test if any respondTo actor/pool entity is at plate position
+        val checkBody =
+            buildList<CStatement> {
+                // requires() guard: check required objects before processing step events
+                val requiresGuard = buildRequiresGuard(obj.requires, puzzleById)
+                if (requiresGuard.isNotEmpty()) addAll(requiresGuard)
+
+                // UINT8 _on = 0; (local var)
+                add(CVarDecl("_on", CU8, initializer = CLiteral(0)))
+                // Check each respondTo actor or pool entity
+                for (actorId in obj.respondToActorIds) {
+                    if (actorId.startsWith("pool:")) {
+                        // Pool entity: pool:<poolName> — check pool entity positions
+                        val poolName =
+                            actorId.removePrefix("pool:").replace('-', '_').replace(' ', '_')
+                        // pool_<name>_any_at(plate.x, plate.y) returns nonzero if any entity there
+                        add(
+                            CIf(
+                                condition =
+                                    CCall(
+                                        "pool_${poolName}_any_at",
+                                        listOf(CLiteral(obj.x), CLiteral(obj.y)),
+                                    ),
+                                thenBody =
+                                    listOf(
+                                        CExprStatement(CBinaryExpr(CVar("_on"), "=", CLiteral(1)))
+                                    ),
+                            )
+                        )
+                    } else {
+                        val sanitizedActorId = actorId.replace('-', '_').replace(' ', '_')
+                        // if (_<actor>_x == plate.x && _<actor>_y == plate.y) _on = 1;
+                        add(
+                            CIf(
+                                condition =
+                                    CBinaryExpr(
+                                        CBinaryExpr(
+                                            CVar("_${sanitizedActorId}_x"),
+                                            "==",
+                                            CLiteral(obj.x),
+                                        ),
+                                        "&&",
+                                        CBinaryExpr(
+                                            CVar("_${sanitizedActorId}_y"),
+                                            "==",
+                                            CLiteral(obj.y),
+                                        ),
+                                    ),
+                                thenBody =
+                                    listOf(
+                                        CExprStatement(CBinaryExpr(CVar("_on"), "=", CLiteral(1)))
+                                    ),
+                            )
+                        )
+                    }
+                }
+                // if (_on && !_plate_{id}_pressed) { onStepOn; _plate_{id}_pressed = 1; }
+                if (obj.onStepOn.isNotEmpty()) {
+                    val stepOnBody =
+                        buildList<CStatement> {
+                            for (op in obj.onStepOn) add(ScriptOpVisitor.visit(op))
+                            add(
+                                CExprStatement(
+                                    CBinaryExpr(CVar("_plate_${id}_pressed"), "=", CLiteral(1))
+                                )
+                            )
+                        }
+                    add(
+                        CIf(
+                            condition =
+                                CBinaryExpr(
+                                    CVar("_on"),
+                                    "&&",
+                                    CRawExpr("!_plate_${id}_pressed"),
+                                ),
+                            thenBody = stepOnBody,
+                        )
+                    )
+                } else {
+                    // No onStepOn ops — just update state
+                    add(
+                        CIf(
+                            condition =
+                                CBinaryExpr(
+                                    CVar("_on"),
+                                    "&&",
+                                    CRawExpr("!_plate_${id}_pressed"),
+                                ),
+                            thenBody =
+                                listOf(
+                                    CExprStatement(
+                                        CBinaryExpr(
+                                            CVar("_plate_${id}_pressed"),
+                                            "=",
+                                            CLiteral(1),
+                                        )
+                                    )
+                                ),
+                        )
+                    )
+                }
+                // if (!_on && _plate_{id}_pressed) { onStepOff; _plate_{id}_pressed = 0; }
+                if (obj.onStepOff.isNotEmpty()) {
+                    val stepOffBody =
+                        buildList<CStatement> {
+                            for (op in obj.onStepOff) add(ScriptOpVisitor.visit(op))
+                            add(
+                                CExprStatement(
+                                    CBinaryExpr(CVar("_plate_${id}_pressed"), "=", CLiteral(0))
+                                )
+                            )
+                        }
+                    add(
+                        CIf(
+                            condition =
+                                CBinaryExpr(
+                                    CRawExpr("!_on"),
+                                    "&&",
+                                    CVar("_plate_${id}_pressed"),
+                                ),
+                            thenBody = stepOffBody,
+                        )
+                    )
+                } else {
+                    add(
+                        CIf(
+                            condition =
+                                CBinaryExpr(
+                                    CRawExpr("!_on"),
+                                    "&&",
+                                    CVar("_plate_${id}_pressed"),
+                                ),
+                            thenBody =
+                                listOf(
+                                    CExprStatement(
+                                        CBinaryExpr(
+                                            CVar("_plate_${id}_pressed"),
+                                            "=",
+                                            CLiteral(0),
+                                        )
+                                    )
+                                ),
+                        )
+                    )
+                }
+            }
+        functions +=
+            CFunction(
+                name = "puzzle_check_plate_$id",
+                returnType = CVoid,
+                body = checkBody,
+                sectionComment = "Puzzle pressure plate: $id",
+            )
+
+        // Hidden state variable and reveal/hide functions
+        vars +=
+            CVarDecl(
+                name = "_plate_${id}_hidden",
+                type = CU8,
+                initializer = CLiteral(if (obj.hidden) 1 else 0),
+            )
+        functions += buildPuzzleRevealFunction(id, "_plate_${id}_hidden")
+        functions += buildPuzzleHideFunction(id, "_plate_${id}_hidden")
+
+        return PuzzleObjectOutput(
+            vars = vars,
+            functions = functions,
+            perFrameCalls = listOf(CExprStatement(CCall("puzzle_check_plate_$id", emptyList()))),
+        )
+    }
+
+    private fun buildTimedBlockObjectOutput(
+        obj: TimedBlockObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): PuzzleObjectOutput {
+        val vars = mutableListOf<CVarDecl>()
+        val functions = mutableListOf<CFunction>()
+
+        // State variables: UINT16 _timedblock_{id}_timer = 0, UINT8 _timedblock_{id}_solid = 1
+        vars += CVarDecl(name = "_timedblock_${id}_timer", type = CU16, initializer = CLiteral(0))
+        vars += CVarDecl(name = "_timedblock_${id}_solid", type = CU8, initializer = CLiteral(1))
+
+        // puzzle_update_timedblock_{id}(): increment timer, swap tile when interval reached
+        val updateBody =
+            buildList<CStatement> {
+                // requires() guard: only update when required objects are active
+                addAll(buildRequiresGuard(obj.requires, puzzleById))
+                // _timedblock_{id}_timer++;
+                add(CExprStatement(CUnaryExpr("++", CVar("_timedblock_${id}_timer"))))
+                // if (_timedblock_{id}_timer >= interval) { swap tile; reset timer; }
+                val swapBody =
+                    buildList<CStatement> {
+                        // _timedblock_{id}_timer = 0;
+                        add(
+                            CExprStatement(
+                                CBinaryExpr(CVar("_timedblock_${id}_timer"), "=", CLiteral(0))
+                            )
+                        )
+                        // if (_timedblock_{id}_solid) { set_bkg_tile_xy(x, y, emptyTile); }
+                        // else { set_bkg_tile_xy(x, y, solidTile); }
+                        add(
+                            CIf(
+                                condition = CVar("_timedblock_${id}_solid"),
+                                thenBody =
+                                    listOf(
+                                        CExprStatement(
+                                            CCall(
+                                                "set_bkg_tile_xy",
+                                                listOf(
+                                                    CLiteral(obj.x),
+                                                    CLiteral(obj.y),
+                                                    CLiteral(obj.emptyTile),
+                                                ),
+                                            )
+                                        ),
+                                        CExprStatement(
+                                            CBinaryExpr(
+                                                CVar("_timedblock_${id}_solid"),
+                                                "=",
+                                                CLiteral(0),
+                                            )
+                                        ),
+                                    ),
+                                elseBody =
+                                    listOf(
+                                        CExprStatement(
+                                            CCall(
+                                                "set_bkg_tile_xy",
+                                                listOf(
+                                                    CLiteral(obj.x),
+                                                    CLiteral(obj.y),
+                                                    CLiteral(obj.solidTile),
+                                                ),
+                                            )
+                                        ),
+                                        CExprStatement(
+                                            CBinaryExpr(
+                                                CVar("_timedblock_${id}_solid"),
+                                                "=",
+                                                CLiteral(1),
+                                            )
+                                        ),
+                                    ),
+                            )
+                        )
+                    }
+                add(
+                    CIf(
+                        condition =
+                            CBinaryExpr(
+                                CVar("_timedblock_${id}_timer"),
+                                ">=",
+                                CLiteral(obj.interval),
+                            ),
+                        thenBody = swapBody,
+                    )
+                )
+            }
+        functions +=
+            CFunction(
+                name = "puzzle_update_timedblock_$id",
+                returnType = CVoid,
+                body = updateBody,
+                sectionComment = "Puzzle timed block: $id",
+            )
+
+        // Hidden state variable and reveal/hide functions
+        vars +=
+            CVarDecl(
+                name = "_timedblock_${id}_hidden",
+                type = CU8,
+                initializer = CLiteral(if (obj.hidden) 1 else 0),
+            )
+        functions += buildPuzzleRevealFunction(id, "_timedblock_${id}_hidden")
+        functions += buildPuzzleHideFunction(id, "_timedblock_${id}_hidden")
+
+        return PuzzleObjectOutput(
+            vars = vars,
+            functions = functions,
+            perFrameCalls =
+                listOf(CExprStatement(CCall("puzzle_update_timedblock_$id", emptyList()))),
+        )
+    }
+
+    private fun buildTriggerObjectOutput(
+        obj: TriggerObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): PuzzleObjectOutput {
+        val vars = mutableListOf<CVarDecl>()
+        val functions = mutableListOf<CFunction>()
+
+        // Generic trigger: no built-in state, all logic in handlers.
+        // Generates puzzle_trigger_{id}_fire(UINT8 event) with switch-case dispatch.
+
+        // Group handlers by event type for switch-case generation
+        val handlersByEvent = obj.handlers.groupBy { it.event }
+
+        // Build switch-case body for each registered event
+        val cases =
+            buildList<CSwitchCase> {
+                for ((eventType, handlers) in handlersByEvent) {
+                    val caseBody =
+                        buildList<CStatement> {
+                            // requires() guard inside each case
+                            addAll(buildRequiresGuard(obj.requires, puzzleById))
+                            for (handler in handlers) {
+                                for (op in handler.actions) add(ScriptOpVisitor.visit(op))
+                            }
+                            add(CBreak)
+                        }
+                    // Use event type ordinal as the C case value (EVENT_INTERACT=0, etc.)
+                    add(CSwitchCase(value = CLiteral(eventType.ordinal), body = caseBody))
+                }
+            }
+
+        val fireBody =
+            buildList<CStatement> {
+                if (cases.isNotEmpty()) {
+                    add(CSwitch(expr = CVar("event"), cases = cases))
+                }
+            }
+
+        functions +=
+            CFunction(
+                name = "puzzle_trigger_${id}_fire",
+                returnType = CVoid,
+                params = listOf(CParam("event", CU8)),
+                body = fireBody,
+                sectionComment = "Puzzle generic trigger: $id",
+            )
+
+        // Hidden state variable and reveal/hide functions
+        vars +=
+            CVarDecl(
+                name = "_trigger_${id}_hidden",
+                type = CU8,
+                initializer = CLiteral(if (obj.hidden) 1 else 0),
+            )
+        functions += buildPuzzleRevealFunction(id, "_trigger_${id}_hidden")
+        functions += buildPuzzleHideFunction(id, "_trigger_${id}_hidden")
+
+        return PuzzleObjectOutput(vars = vars, functions = functions)
+    }
 
     /**
      * Builds NPC-NPC collision check functions for all [CollisionRuleIR] entries.
