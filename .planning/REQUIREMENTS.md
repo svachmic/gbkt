@@ -40,8 +40,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Codegen Defect Fixes (FIX — triage-confirmed-open seeds only)
 
-- [ ] **FIX-01**: Metasprite visual-parity cluster — closed by Phase 16 triage (see TRIAGE.md): SEED-004 VERIFIED-ALREADY-FIXED (user override; elephant renders correctly), SEED-005 VERIFIED-ALREADY-FIXED (checkerboard present, Phase 10.1 fix), SEED-006 VERIFIED-ALREADY-FIXED (sub-palette assignment confirmed in main.c), SEED-013 VERIFIED-ALREADY-FIXED (GBC colors correct, Phase 10.2 fix). All 4 seeds moved to seeds/archive/. Phase 19 FIX-01 scope = screenshot evidence confirmation only.
-- [ ] **FIX-02**: Metasprite structural latents — closed by Phase 16 triage (see TRIAGE.md): SEED-007 VERIFIED-ALREADY-FIXED (actorPaletteAutoSlot counter present), SEED-008 VERIFIED-ALREADY-FIXED (monotonic VRAM allocator confirmed), SEED-009 VERIFIED-ALREADY-FIXED (metasprites.h include present in bank1.c), SEED-010 VERIFIED-ALREADY-FIXED (namespaced symbol arrays confirmed), SEED-011 VERIFIED-ALREADY-FIXED (hiwater=0 once per frame, Route A fix confirmed). All 5 seeds moved to seeds/archive/. Phase 19 FIX-02 scope = emission-test guards for confirmed-already-fixed behavior.
+- [x] **FIX-01**: Metasprite visual-parity cluster — closed by Phase 16 triage (see TRIAGE.md): SEED-004 VERIFIED-ALREADY-FIXED (user override; elephant renders correctly), SEED-005 VERIFIED-ALREADY-FIXED (checkerboard present, Phase 10.1 fix), SEED-006 VERIFIED-ALREADY-FIXED (sub-palette assignment confirmed in main.c), SEED-013 VERIFIED-ALREADY-FIXED (GBC colors correct, Phase 10.2 fix). All 4 seeds moved to seeds/archive/. Phase 19 FIX-01 scope = screenshot evidence confirmation only.
+- [x] **FIX-02**: Metasprite structural latents — closed by Phase 16 triage (see TRIAGE.md): SEED-007 VERIFIED-ALREADY-FIXED (actorPaletteAutoSlot counter present), SEED-008 VERIFIED-ALREADY-FIXED (monotonic VRAM allocator confirmed), SEED-009 VERIFIED-ALREADY-FIXED (metasprites.h include present in bank1.c), SEED-010 VERIFIED-ALREADY-FIXED (namespaced symbol arrays confirmed), SEED-011 VERIFIED-ALREADY-FIXED (hiwater=0 once per frame, Route A fix confirmed). All 5 seeds moved to seeds/archive/. Phase 19 FIX-02 scope = emission-test guards for confirmed-already-fixed behavior.
 - [ ] **FIX-03**: Banks trio — closed by Phase 16 triage (see TRIAGE.md): SEED-014 VERIFIED-ALREADY-FIXED (INV-2+INV-6 GREEN; hasZoneSceneBinder guard sufficient), SEED-015 VERIFIED-ALREADY-FIXED (INV-5 GREEN; title_enter deduplicated correctly), SEED-016 VERIFIED-ALREADY-FIXED (Anchor 4 @Test present; ran in substrate). All 3 seeds moved to seeds/archive/. Phase 20 FIX-03 scope = re-verify + guard; discuss-phase gate may be scoped down.
 - [ ] **FIX-04**: Sprite-outline tRNS — closed by Phase 16 triage (see TRIAGE.md): SEED-PHASE-13-SPRITE-OUTLINE VERIFIED-ALREADY-FIXED (Phase 13.6 tRNS auto-route confirmed; visual closure oracle deferred to Phase 20 D-08). Seed moved to seeds/archive/. Phase 20 FIX-04 scope = visual oracle confirmation only.
 - [ ] **FIX-05**: Platformer seeds — Phase 16 triage disposition: SEED-021 CONFIRMED-OPEN (pivot_adjust hardcoded, Phase 21), SEED-PHASE-12-PLATFORMER-SPAWN-POSITION-CLARITY CONFIRMED-OPEN (Phase 21), SEED-PHASE-13-PLAYER-SUB-PIXEL-OFFSET-OR-COLLISION-MASK CONFIRMED-OPEN (Phase 21, LOCKED visual review), SEED-platformer-template-spawn-polish CONFIRMED-OPEN (Phase 21, LOCKED visual review). All 4 remain in seeds/. UAT anchors re-shot scope unchanged.
@@ -117,8 +117,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUAL-03 | Phase 17 | Complete |
 | SONAR-01 | Phase 18 | Complete |
 | SONAR-02 | Phase 18 | Complete |
-| FIX-01 | Phase 19 | Pending |
-| FIX-02 | Phase 19 | Pending |
+| FIX-01 | Phase 19 | Complete |
+| FIX-02 | Phase 19 | Complete |
 | FIX-03 | Phase 20 | Pending |
 | FIX-04 | Phase 20 | Pending |
 | FIX-05 | Phase 21 | Pending |
