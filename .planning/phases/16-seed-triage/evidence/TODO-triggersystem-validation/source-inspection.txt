@@ -1,0 +1,75 @@
+# TODO-triggersystem-validation Source Inspection
+# Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+# Inspection date: 2026-06-12
+# Source todo: .planning/todos/pending/triggersystem-ref-registry-validation.md
+# Tool: mcp__serena__find_symbol
+
+## Query 1: triggerSystem in ScriptBuilder
+
+mcp__serena__find_symbol: name_path_pattern="ScriptBuilder/triggerSystem"
+  in gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ScriptBuilder.kt
+  (include_body=true)
+
+Result (lines 290-306):
+    fun triggerSystem(ref: SystemRef, args: Map<String, Expr> = emptyMap()) {
+        ops += TriggerSystem(ref.systemId, args, sourceLocation = captureV2Location())
+    }
+
+No registry validation: ref.systemId is used directly without checking against any
+registered system IDs. A SystemRef("nonexistent") will produce a TriggerSystem("nonexistent")
+IR node without error.
+
+## Query 2: ScriptBuilder.build()
+
+mcp__serena__find_symbol: name_path_pattern="ScriptBuilder/build"
+  (include_body=true)
+
+Result (lines 63-64):
+    /** Returns the accumulated list of script operations. */
+    fun build(): List<ScriptOp> = ops.toList()
+
+No validation at build() either. The ops list is returned as-is.
+
+## Contrast with existing ref validation
+
+The todo references GameBuilder.build() lines 694-714 as the site where SoundRef/SceneRef
+are validated. ScriptBuilder.triggerSystem() has no analogous enforcement — a typo in
+SystemRef("typo") is silently accepted and only surfaces as an opaque lcc "undefined
+identifier" error at C link time.
+
+## RED Test Shape (D-07 repro)
+
+The receiving Phase 21 (FIX-06) should add a JVM test:
+
+    @Test
+    fun `triggerSystem with nonexistent system ref should fail at build`() {
+        assertFailsWith<IllegalArgumentException> {
+            gbktGame("test") {
+                scene("main") {
+                    every.frame {
+                        triggerSystem(SystemRef("nonexistent_system"))
+                    }
+                }
+                startScene = ref("main")
+            }
+        }
+    }
+
+Currently this test would FAIL (no exception is thrown — the SystemRef is accepted).
+After the fix, it would throw with an actionable message like:
+  "Unresolved SystemRef 'nonexistent_system'. Registered systems: [...]"
+
+Preferred fix site: validate in ScriptBuilder.triggerSystem() against the ref registry
+at DSL recording time, consistent with GameBuilder.playSound()/transition() validation.
+Alternative: validate at GameBuilder.build() by walking TriggerSystem IR nodes.
+
+## Proposed Disposition
+
+CONFIRMED-OPEN
+
+Evidence: ScriptBuilder.triggerSystem() at line 290-306 emits TriggerSystem(ref.systemId)
+with NO registry check. ScriptBuilder.build() at line 63-64 performs no validation.
+A SystemRef("nonexistent") silently produces broken IR that fails only at C link time.
+
+Fix-phase routing: Phase 21 FIX-06 (DSL/tooling misc — typed-ref validation)
+Repro: triggerSystem(SystemRef("nonexistent")) succeeds at build() — currently DOES NOT throw

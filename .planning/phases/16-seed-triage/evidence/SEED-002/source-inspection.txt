@@ -1,0 +1,51 @@
+# SEED-002 Source Inspection — ActorRef.moveTo(Expr, Expr) overload
+# Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+# Inspection date: 2026-06-12
+# Tool: mcp__serena__find_symbol moveTo in gbkt-lang/src/main/kotlin
+
+## Query
+
+mcp__serena__find_symbol: name_path_pattern="moveTo", relative_path="gbkt-lang/src/main/kotlin"
+
+## Result
+
+Two moveTo overloads found in:
+  gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ActorBuilder.kt
+
+  [0] moveTo(x: Int, y: Int) — lines 325–333
+      fun ActorRef.moveTo(x: Int, y: Int) {
+          ScriptBuilderContext.current?.setPosition(id, Literal(x), Literal(y))
+              ?: error("moveTo() called outside a ScriptBuilder block")
+      }
+
+  [1] moveTo(x: Expr, y: Expr) — lines 335–346
+      /**
+       * Teleports [this] actor to an absolute position computed from expressions.
+       *
+       * Emits a [io.github.gbkt.core.ir.SetPosition] op. Requires a ScriptBuilder context. Unlike
+       * [moveTo(Int, Int)], this overload accepts [Expr] arguments directly — no [Literal] wrapping is
+       * applied. Use this when the position is derived from a runtime expression (e.g.,
+       * `smiley.moveTo(posX shr 4, posY shr 4)`).
+       */
+      fun ActorRef.moveTo(x: Expr, y: Expr) {
+          ScriptBuilderContext.current?.setPosition(id, x, y)
+              ?: error("moveTo() called outside a ScriptBuilder block")
+      }
+
+## Verdict
+
+SEED-002 concern: "moveTo(x: Expr, y: Expr) overload does NOT exist"
+
+Evidence at HEAD: THE OVERLOAD EXISTS at ActorBuilder.kt:335–346. The moveTo(Expr, Expr)
+overload was added after seed planting. It correctly delegates to setPosition(id, x, y)
+without wrapping in Literal.
+
+The workaround described in the seed (smiley.x set ...; smiley.y set ...) is no longer
+necessary — DSL users can call smiley.moveTo(posX shr 4, posY shr 4) directly.
+
+## Proposed Disposition
+
+VERIFIED-ALREADY-FIXED
+
+Fix location: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ActorBuilder.kt:335-346
+Fix-phase routing: N/A (already fixed)
