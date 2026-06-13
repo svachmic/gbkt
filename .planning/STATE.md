@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Phase 16 Plan 01 complete
-last_updated: "2026-06-12T13:43:00Z"
-last_activity: 2026-06-12 -- Phase 16 Plan 01 complete (TRIAGE.md skeleton + dirs)
+stopped_at: Completed 16-02-PLAN.md — substrate pass
+last_updated: "2026-06-12T13:57:49.500Z"
+last_activity: 2026-06-12 -- Phase 16 Plan 01 complete (TRIAGE.md skeleton + archive/backlog/_drafts dirs)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 10
-  completed_plans: 1
-  percent: 10
+  completed_plans: 2
+  percent: 0
 ---
 
 # Project State
@@ -55,8 +55,8 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 16 (seed-triage) — EXECUTING
-Plan: 2 of 10
-Status: Executing Phase 16
+Plan: 3 of 10
+Status: Ready to execute
 Last activity: 2026-06-12 -- Phase 16 Plan 01 complete (TRIAGE.md skeleton + archive/backlog/_drafts dirs)
 
 Resume signal: /gsd-plan-phase 16 (Seed Triage — gates all codegen fix phases)
@@ -384,6 +384,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 15 P03 | 18 min | 2 tasks | 4 files |
 | Phase 15 P05 | 34 min | 3 tasks | 6 files |
 | Phase 15 P06 | 14 min | 2 tasks | 2 files |
+| Phase 16-seed-triage P02 | 7min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -870,6 +871,10 @@ Recent decisions affecting current work:
 - [Phase ?]: W1: IOException-only catch in countUsedVisibleColors — scan-loop logic errors propagate, protecting REQ-5 OBJ-palette overflow guard from silent bypass
 - [Phase ?]: W2+W3: stemName-keyed prePermuteIndexedPng temp name + temporaryDir relocation — collision-free naming for same-basename sprites, and temp files outside @OutputDirectory fingerprint
 - [Phase ?]: Ran all 7 generateC tasks in single chained Gradle invocation (CLAUDE.md no-parallel-clean rule)
+- [Phase 16-seed-triage]: D-13 complied: single serial Gradle invocation for all 7 clean+buildRom
+- [Phase 16-seed-triage]: D-14 complied: SHA 8cef3dbca7d0868f42cf0d627921b8559d7754e8 pinned to substrate-sha.txt before build
+- [Phase 16-seed-triage]: BanksEmissionTest INV-2 GREEN: SEED-014 and SEED-015 signalled VERIFIED-ALREADY-FIXED
+- [Phase 16-seed-triage]: validatePlugins + pluginTest PASS: SEED-026 signalled VERIFIED-ALREADY-FIXED
 
 ### Pending Todos
 
@@ -965,8 +970,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-12T12:39:43.665Z
-Stopped at: Phase 16 context gathered
+Last session: 2026-06-12T13:57:49.495Z
+Stopped at: Completed 16-02-PLAN.md — substrate pass
 
 ## Operator Next Steps
 

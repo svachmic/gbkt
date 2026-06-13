@@ -11,7 +11,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Seed Triage & Closure (TRIAGE)
 
-- [ ] **TRIAGE-01**: Every seed in `.planning/seeds/` carries a terminal disposition — FIXED, VERIFIED-ALREADY-FIXED, or RE-DEFERRED with explicit v0.2.0 rationale — backed by evidence (commit hash, green test run, or screenshot at HEAD)
+- [x] **TRIAGE-01**: Every seed in `.planning/seeds/` carries a terminal disposition — FIXED, VERIFIED-ALREADY-FIXED, or RE-DEFERRED with explicit v0.2.0 rationale — backed by evidence (commit hash, green test run, or screenshot at HEAD)
 - [ ] **TRIAGE-02**: Visual-symptom seeds are closed only with runtime screenshot evidence at HEAD (Visual Evidence Rule), never variable assertions alone
 - [ ] **TRIAGE-03**: `.planning/seeds/` is empty at milestone close; re-deferred seeds move to a tracked v0.2.0 backlog record
 
@@ -82,7 +82,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRIAGE-01 | Phase 16 | Pending |
+| TRIAGE-01 | Phase 16 | Complete |
 | TRIAGE-02 | Phase 16 | Pending |
 | TRIAGE-03 | Phase 16 | Pending |
 | DOCS-01 | Phase 17 | Pending |
@@ -104,6 +104,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FIX-06 | Phase 21 | Pending |
 
 **Coverage:**
+
 - v0.1.1 requirements: 20 total
 - Mapped to phases: 20/20 ✓
 - Unmapped: 0

@@ -51,7 +51,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 **Wave 1**
 
 - [x] 16-01-PLAN.md — Scaffold TRIAGE.md skeleton (47 rows), archive/backlog dirs, 6 fast-path RE-DEFERREDs (D-12)
-- [ ] 16-02-PLAN.md — Substrate pass: serial build of 7 ROMs + full JVM suite + plugin validation, pin SHA, rebuild MCP JAR
+- [x] 16-02-PLAN.md — Substrate pass: serial build of 7 ROMs + full JVM suite + plugin validation, pin SHA, rebuild MCP JAR
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -151,7 +151,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
-| 16. Seed Triage | v0.1.1 | 0/10 | Planned | - |
+| 16. Seed Triage | v0.1.1 | 2/10 | In Progress|  |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 0/TBD | Not started | - |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 0/TBD | Not started | - |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
