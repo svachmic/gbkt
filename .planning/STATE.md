@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 18-13-PLAN.md
-last_updated: "2026-06-13T11:23:00Z"
+stopped_at: Completed 18-14-PLAN.md
+last_updated: "2026-06-13T11:34:19.072Z"
 last_activity: 2026-06-13
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 49
-  completed_plans: 34
+  completed_plans: 36
   percent: 33
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
-Plan: 14 of 27
+Plan: 15 of 27
 Status: Ready to execute
 Last activity: 2026-06-13
 
@@ -410,6 +410,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 18 P10 | 10 | 3 tasks | 3 files |
 | Phase 18 P12 | 5 | 1 tasks | 4 files |
 | Phase 18 P13 | 8 min | 2 tasks | 1 files |
+| Phase 18 P14 | 7 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -920,6 +921,7 @@ Recent decisions affecting current work:
 - [Phase ?]: DEPR-02: Deleted typed-vs-string equivalence test; String overload removed, no meaningful re-expression possible
 - [Phase ?]: Two-tier deprecation rule: post-1.0 uses @Deprecated grace period; pre-1.0/Hardening milestones use hard removal with CHANGELOG as minimum bar (D-04)
 - [Phase ?]: N-01 batchAssert: EXTRACT-METHOD (not NOSONAR) — per-type helpers + CheckResult data class reduce cc=74 to below threshold
+- [Phase ?]: Promoted walkOps from local closure to top-level private fun with explicit result parameter (E-13+E-19); extracted three buildHeaderFile sub-builders as value-returning functions (E-15)
 
 ### Pending Todos
 
@@ -1015,8 +1017,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-13T11:11:36.124Z
-Stopped at: Completed 18-08-PLAN.md
+Last session: 2026-06-13T11:34:19.066Z
+Stopped at: Completed 18-14-PLAN.md
 
 ## Operator Next Steps
 
