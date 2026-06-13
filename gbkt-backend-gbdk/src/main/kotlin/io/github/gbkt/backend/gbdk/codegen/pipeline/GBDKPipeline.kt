@@ -4198,378 +4198,304 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         for (system in gameIR.systems) {
             val sanitizedId = system.id.replace('-', '_').replace(' ', '_')
             when (system) {
-                is io.github.gbkt.core.ir.CameraSystem -> {
-                    vars += CVarDecl(name = "_camera_x", type = CU8, initializer = CLiteral(0))
-                    vars += CVarDecl(name = "_camera_y", type = CU8, initializer = CLiteral(0))
-                    vars +=
-                        CVarDecl(
-                            name = "_camera_target",
-                            type = CU8,
-                            initializer = CRawExpr("0xFF"),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_camera_shake_intensity",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_camera_shake_timer",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-                }
-                is io.github.gbkt.core.ir.ExplorationSystem -> {
-                    vars += CVarDecl(name = "_player_x", type = CU8, initializer = CLiteral(0))
-                    vars += CVarDecl(name = "_player_y", type = CU8, initializer = CLiteral(0))
-                    vars += CVarDecl(name = "_current_floor", type = CU8, initializer = CLiteral(0))
-                    // Expanded exploration state globals (Plan 06.3-02)
-                    vars +=
-                        CVarDecl(
-                            name = "_exploration_step_count",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_encounter_safe_steps",
-                            type = CU8,
-                            initializer =
-                                CLiteral(
-                                    gameIR.zones
-                                        .firstOrNull { it.encounterTable != null }
-                                        ?.encounterTable
-                                        ?.safeSteps ?: 10
-                                ),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_encounter_triggered",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-                    vars += CVarDecl(name = "_encounter_id", type = CU8, initializer = CLiteral(0))
-                    vars +=
-                        CVarDecl(name = "_current_zone_safe", type = CU8, initializer = CLiteral(0))
-                    // _current_tileset_id already declared in allVariables — skip to avoid
-                    // duplicate
-                    vars +=
-                        CVarDecl(
-                            name = "_current_zone_id",
-                            type = CU8,
-                            initializer = CRawExpr("0xFF"),
-                        )
-                    // Per-gauge globals
-                    for (gauge in system.gauges) {
-                        vars +=
-                            CVarDecl(
-                                name = "_gauge_${gauge.id}",
-                                type = CU8,
-                                initializer = CLiteral(gauge.initial),
-                            )
-                    }
-                    // Per-key globals
-                    for (key in system.keys) {
-                        vars +=
-                            CVarDecl(
-                                name = "_key_${key.id}",
-                                type = CU8,
-                                initializer = CLiteral(key.initial),
-                            )
-                    }
-                    // Entity collision globals (G3 — Plan 06.3-03)
-                    // Emitted when any actor has non-PASSTHROUGH entity collision config.
-                    val collisionActors =
-                        gameIR.actors.filter {
-                            val ec = it.entityCollision
-                            ec != null && ec.mode != EntityCollisionMode.PASSTHROUGH
-                        }
-                    if (collisionActors.isNotEmpty()) {
-                        val maxEntities = collisionActors.size
-                        val mapSize = 32 * 32 / 8 + 1 // 129 bytes for 32x32 grid
-                        // _entity_grid[MAP_SIZE] — bit-packed entity presence grid
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_grid",
-                                type = CArray(CU8, mapSize),
-                                initializer = null,
-                            )
-                        // _entity_collision_mode[MAX_ENTITIES] — per-entity mode (0xFF=none)
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_collision_mode",
-                                type = CArray(CU8, maxEntities),
-                                initializer =
-                                    CRawExpr(
-                                        "{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"
-                                    ),
-                            )
-                        // _entity_collision_shape[MAX_ENTITIES] — 0=TILE, 1=HITBOX
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_collision_shape",
-                                type = CArray(CU8, maxEntities),
-                                initializer = null,
-                            )
-                        // _entity_tile_x/y[MAX_ENTITIES] — entity tile positions
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_tile_x",
-                                type = CArray(CU8, maxEntities),
-                                initializer =
-                                    CRawExpr(
-                                        "{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"
-                                    ),
-                            )
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_tile_y",
-                                type = CArray(CU8, maxEntities),
-                                initializer =
-                                    CRawExpr(
-                                        "{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"
-                                    ),
-                            )
-                        // _entity_count — number of registered entities
-                        vars +=
-                            CVarDecl(name = "_entity_count", type = CU8, initializer = CLiteral(0))
-                        // Gap 1 callback globals — set before callback execution
-                        vars +=
-                            CVarDecl(
-                                name = "_blocking_entity_id",
-                                type = CU8,
-                                initializer = CRawExpr("0xFF"),
-                            )
-                        vars +=
-                            CVarDecl(
-                                name = "_pushed_entity_id",
-                                type = CU8,
-                                initializer = CRawExpr("0xFF"),
-                            )
-                        vars +=
-                            CVarDecl(
-                                name = "_push_direction",
-                                type = CU8,
-                                initializer = CRawExpr("0xFF"),
-                            )
-                        // Multi-tile entity dimensions (Gap A)
-                        val tilesWideInit =
-                            collisionActors.joinToString(", ") {
-                                (it.entityCollision?.tilesWide ?: 1).toString()
-                            }
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_tiles_wide",
-                                type = CArray(CU8, maxEntities),
-                                initializer = CRawExpr("{$tilesWideInit}"),
-                            )
-                        val tilesHighInit =
-                            collisionActors.joinToString(", ") {
-                                (it.entityCollision?.tilesHigh ?: 1).toString()
-                            }
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_tiles_high",
-                                type = CArray(CU8, maxEntities),
-                                initializer = CRawExpr("{$tilesHighInit}"),
-                            )
-                        // Push direction constraints (Gap B)
-                        val pushDirInit =
-                            collisionActors.joinToString(", ") {
-                                (it.entityCollision?.pushDirection?.ordinal ?: 0).toString()
-                            }
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_push_dir",
-                                type = CArray(CU8, maxEntities),
-                                initializer = CRawExpr("{$pushDirInit}"),
-                            )
-                        val pushAllowedInit =
-                            collisionActors.joinToString(", ") { actor ->
-                                val ec = actor.entityCollision
-                                if (ec != null && ec.pushDirection == PushDirection.SPECIFIC) {
-                                    var mask = 0
-                                    for (edge in ec.allowedPushDirections) {
-                                        mask =
-                                            mask or
-                                                (1 shl
-                                                    when (edge) {
-                                                        TransitionEdge.NORTH -> 0
-                                                        TransitionEdge.SOUTH -> 1
-                                                        TransitionEdge.WEST -> 2
-                                                        TransitionEdge.EAST -> 3
-                                                    })
-                                    }
-                                    mask.toString()
-                                } else {
-                                    "0"
-                                }
-                            }
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_push_allowed",
-                                type = CArray(CU8, maxEntities),
-                                initializer = CRawExpr("{$pushAllowedInit}"),
-                            )
-                    }
-                }
-                is PathfindingSystem -> {
-                    vars += GBDKSystemVisitor.buildPathfindingGlobals(system)
-                }
-                is io.github.gbkt.core.ir.DialogSystem -> {
-                    // Extended config: default speed and border style
-                    vars +=
-                        CVarDecl(
-                            name = "_dialog_default_speed",
-                            type = CU8,
-                            initializer = CLiteral(system.textSpeed),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_dialog_default_border",
-                            type = CU8,
-                            initializer = CLiteral(system.defaultBorder.ordinal),
-                        )
-                }
-                is GenericSystem -> {
-                    val systemType = system.config["type"] as? String
-                    val genreVisitor =
-                        if (systemType != null) {
-                            genreVisitors.find { it.canHandle(systemType) }
-                        } else {
-                            null
-                        }
-                    if (genreVisitor != null && systemType != null) {
-                        vars +=
-                            genreVisitor
-                                .visit(systemType, system.config, gameIR)
-                                .varDecls
-                                .filterIsInstance<CVarDecl>()
-                    } else if (systemType == "simple_battle") {
-                        vars +=
-                            CVarDecl(
-                                name = "_combat_state_$sanitizedId",
-                                type = CU8,
-                                initializer = CLiteral(0),
-                            )
-                    }
-                    if (genreVisitor == null && systemType == "arpg_combat") {
-                        vars += RpgVisitor(gameIR).generateActionRpgVarDecls(system)
-                    }
-                    if (genreVisitor == null && systemType == "roguelike_system") {
-                        vars += RpgVisitor(gameIR).generateRoguelikeVarDecls(system)
-                    }
-                    if (genreVisitor == null && systemType == "rpg_currency") {
-                        vars += RpgVisitor(gameIR).generateCurrencyVarDecls(system)
-                    }
-                    if (genreVisitor == null && systemType == "pickup_system") {
-                        vars += GBDKSystemVisitor(gameIR).buildPickupVarDecls(system, sanitizedId)
-                    }
-                    if (genreVisitor == null && systemType == "audio_mixer") {
-                        @Suppress("UNCHECKED_CAST")
-                        val groups =
-                            (system.config["groups"] as? List<ChannelGroupDef>)
-                                ?: listOf(
-                                    ChannelGroupDef("music", setOf(1, 2), 7, 0),
-                                    ChannelGroupDef("sfx", setOf(3, 4), 7, 1),
-                                    ChannelGroupDef("ui", setOf(3), 7, 2),
-                                )
-                        val masterVol = system.config["master_volume"] as? Int ?: 7
-
-                        // _mixer_group_vol[N] — initial volumes per group
-                        // emitted as individual element inits; C arrays init sequentially
-                        val initVols = groups.joinToString(", ") { it.defaultVolume.toString() }
-                        vars +=
-                            CVarDecl(
-                                name = "_mixer_group_vol",
-                                type = CArray(CU8, groups.size),
-                                initializer = CRawExpr("{$initVols}"),
-                            )
-
-                        // _mixer_master_vol — initial master volume
-                        vars +=
-                            CVarDecl(
-                                name = "_mixer_master_vol",
-                                type = CU8,
-                                initializer = CLiteral(masterVol),
-                            )
-
-                        // _mixer_group_muted[N] — mute state per group (0 = unmuted)
-                        val initMuted = groups.joinToString(", ") { "0" }
-                        vars +=
-                            CVarDecl(
-                                name = "_mixer_group_muted",
-                                type = CArray(CU8, groups.size),
-                                initializer = CRawExpr("{$initMuted}"),
-                            )
-
-                        // _mixer_channel_mask_<name> — NR51 bit pattern per group
-                        // NR51: bits 7-4 = L-channel enables (CH4,CH3,CH2,CH1),
-                        //       bits 3-0 = R-channel enables (CH4,CH3,CH2,CH1)
-                        // CH1=bit0, CH2=bit1, CH3=bit2, CH4=bit3 (both L and R together)
-                        for (group in groups) {
-                            var mask = 0
-                            for (ch in group.channels) {
-                                val bit = ch - 1 // CH1=0, CH2=1, CH3=2, CH4=3
-                                mask = mask or (1 shl bit) // R-enable
-                                mask = mask or (1 shl (bit + 4)) // L-enable
-                            }
-                            vars +=
-                                CVarDecl(
-                                    name = "_mixer_channel_mask_${group.name}",
-                                    type = CU8,
-                                    initializer = CRawExpr("0x${mask.toString(16).uppercase()}"),
-                                    isConst = true,
-                                )
-                        }
-
-                        // _mixer_priority[4] — per-channel priority (4 GB channels), init 0
-                        vars +=
-                            CVarDecl(
-                                name = "_mixer_priority",
-                                type = CArray(CU8, 4),
-                                initializer = CRawExpr("{0, 0, 0, 0}"),
-                            )
-
-                        // _mixer_preduck_vol — saved music volume before auto-ducking (Gap 6)
-                        vars +=
-                            CVarDecl(
-                                name = "_mixer_preduck_vol",
-                                type = CU8,
-                                initializer = CLiteral(7),
-                            )
-                    }
-                }
-                is io.github.gbkt.core.ir.CombatEngineSystem -> {
-                    // _combat_state_<id>: INIT state (0) at startup
-                    vars +=
-                        CVarDecl(
-                            name = "_combat_state_$sanitizedId",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-                    // _pending_state_<id>: 0xFF sentinel = no pending transition
-                    vars +=
-                        CVarDecl(
-                            name = "_pending_state_$sanitizedId",
-                            type = CU8,
-                            initializer = CLiteral(0xFF),
-                        )
-                    // ATB-specific globals: gauge[], active[], acted[], agl[], menu_open,
-                    // and optionally charge[] (CHARGE model) and _turn_order[] (when strategy set)
-                    val combatVisitor =
-                        io.github.gbkt.backend.gbdk.codegen.visitor.CombatVisitor(gameIR)
-                    vars += combatVisitor.generateAtbGlobals(system)
-                    // Wave survival globals: _wave_<id>_current (UINT8), _wave_<id>_timer (UINT16)
-                    vars += combatVisitor.generateWaveGlobals(system)
-                    // Hook enabled flag: _combat_<id>_hooks_enabled (only when hooks registered)
-                    vars += combatVisitor.generateHookGlobals(system)
-                }
+                is io.github.gbkt.core.ir.CameraSystem -> vars += buildCameraSystemGlobalVars()
+                is io.github.gbkt.core.ir.ExplorationSystem ->
+                    vars += buildExplorationSystemGlobalVars(gameIR, system)
+                is PathfindingSystem -> vars += GBDKSystemVisitor.buildPathfindingGlobals(system)
+                is io.github.gbkt.core.ir.DialogSystem ->
+                    vars += buildDialogSystemGlobalVars(system)
+                is GenericSystem ->
+                    vars += buildGenericSystemGlobalVars(gameIR, system, sanitizedId, genreVisitors)
+                is io.github.gbkt.core.ir.CombatEngineSystem ->
+                    vars += buildCombatEngineSystemGlobalVars(system, sanitizedId, gameIR)
                 else -> Unit
             }
         }
         return vars
+    }
+
+    private fun buildCameraSystemGlobalVars(): List<CVarDecl> =
+        listOf(
+            CVarDecl(name = "_camera_x", type = CU8, initializer = CLiteral(0)),
+            CVarDecl(name = "_camera_y", type = CU8, initializer = CLiteral(0)),
+            CVarDecl(name = "_camera_target", type = CU8, initializer = CRawExpr("0xFF")),
+            CVarDecl(name = "_camera_shake_intensity", type = CU8, initializer = CLiteral(0)),
+            CVarDecl(name = "_camera_shake_timer", type = CU8, initializer = CLiteral(0)),
+        )
+
+    private fun buildExplorationSystemGlobalVars(
+        gameIR: GameIR,
+        system: io.github.gbkt.core.ir.ExplorationSystem,
+    ): List<CVarDecl> {
+        val vars = mutableListOf<CVarDecl>()
+        vars += CVarDecl(name = "_player_x", type = CU8, initializer = CLiteral(0))
+        vars += CVarDecl(name = "_player_y", type = CU8, initializer = CLiteral(0))
+        vars += CVarDecl(name = "_current_floor", type = CU8, initializer = CLiteral(0))
+        // Expanded exploration state globals (Plan 06.3-02)
+        vars += CVarDecl(name = "_exploration_step_count", type = CU8, initializer = CLiteral(0))
+        vars +=
+            CVarDecl(
+                name = "_encounter_safe_steps",
+                type = CU8,
+                initializer =
+                    CLiteral(
+                        gameIR.zones
+                            .firstOrNull { it.encounterTable != null }
+                            ?.encounterTable
+                            ?.safeSteps ?: 10
+                    ),
+            )
+        vars += CVarDecl(name = "_encounter_triggered", type = CU8, initializer = CLiteral(0))
+        vars += CVarDecl(name = "_encounter_id", type = CU8, initializer = CLiteral(0))
+        vars += CVarDecl(name = "_current_zone_safe", type = CU8, initializer = CLiteral(0))
+        // _current_tileset_id already declared in allVariables — skip to avoid duplicate
+        vars += CVarDecl(name = "_current_zone_id", type = CU8, initializer = CRawExpr("0xFF"))
+        // Per-gauge globals
+        for (gauge in system.gauges) {
+            vars +=
+                CVarDecl(
+                    name = "_gauge_${gauge.id}",
+                    type = CU8,
+                    initializer = CLiteral(gauge.initial),
+                )
+        }
+        // Per-key globals
+        for (key in system.keys) {
+            vars +=
+                CVarDecl(name = "_key_${key.id}", type = CU8, initializer = CLiteral(key.initial))
+        }
+        // Entity collision globals (G3 — Plan 06.3-03)
+        vars += buildEntityCollisionGlobalVars(gameIR)
+        return vars
+    }
+
+    private fun buildEntityCollisionGlobalVars(gameIR: GameIR): List<CVarDecl> {
+        val collisionActors =
+            gameIR.actors.filter {
+                val ec = it.entityCollision
+                ec != null && ec.mode != EntityCollisionMode.PASSTHROUGH
+            }
+        if (collisionActors.isEmpty()) return emptyList()
+        val maxEntities = collisionActors.size
+        val mapSize = 32 * 32 / 8 + 1 // 129 bytes for 32x32 grid
+        val tilesWideInit =
+            collisionActors.joinToString(", ") { (it.entityCollision?.tilesWide ?: 1).toString() }
+        val tilesHighInit =
+            collisionActors.joinToString(", ") { (it.entityCollision?.tilesHigh ?: 1).toString() }
+        val pushDirInit =
+            collisionActors.joinToString(", ") {
+                (it.entityCollision?.pushDirection?.ordinal ?: 0).toString()
+            }
+        val pushAllowedInit = buildEntityPushAllowedInit(collisionActors)
+        return listOf(
+            // _entity_grid[MAP_SIZE] — bit-packed entity presence grid
+            CVarDecl(name = "_entity_grid", type = CArray(CU8, mapSize), initializer = null),
+            // _entity_collision_mode[MAX_ENTITIES] — per-entity mode (0xFF=none)
+            CVarDecl(
+                name = "_entity_collision_mode",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"),
+            ),
+            // _entity_collision_shape[MAX_ENTITIES] — 0=TILE, 1=HITBOX
+            CVarDecl(
+                name = "_entity_collision_shape",
+                type = CArray(CU8, maxEntities),
+                initializer = null,
+            ),
+            // _entity_tile_x/y[MAX_ENTITIES] — entity tile positions
+            CVarDecl(
+                name = "_entity_tile_x",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"),
+            ),
+            CVarDecl(
+                name = "_entity_tile_y",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"),
+            ),
+            // _entity_count — number of registered entities
+            CVarDecl(name = "_entity_count", type = CU8, initializer = CLiteral(0)),
+            // Gap 1 callback globals — set before callback execution
+            CVarDecl(name = "_blocking_entity_id", type = CU8, initializer = CRawExpr("0xFF")),
+            CVarDecl(name = "_pushed_entity_id", type = CU8, initializer = CRawExpr("0xFF")),
+            CVarDecl(name = "_push_direction", type = CU8, initializer = CRawExpr("0xFF")),
+            // Multi-tile entity dimensions (Gap A)
+            CVarDecl(
+                name = "_entity_tiles_wide",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{$tilesWideInit}"),
+            ),
+            CVarDecl(
+                name = "_entity_tiles_high",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{$tilesHighInit}"),
+            ),
+            // Push direction constraints (Gap B)
+            CVarDecl(
+                name = "_entity_push_dir",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{$pushDirInit}"),
+            ),
+            CVarDecl(
+                name = "_entity_push_allowed",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{$pushAllowedInit}"),
+            ),
+        )
+    }
+
+    private fun buildEntityPushAllowedInit(
+        collisionActors: List<io.github.gbkt.core.ir.ActorIR>
+    ): String =
+        collisionActors.joinToString(", ") { actor ->
+            val ec = actor.entityCollision
+            if (ec != null && ec.pushDirection == PushDirection.SPECIFIC) {
+                var mask = 0
+                for (edge in ec.allowedPushDirections) {
+                    mask =
+                        mask or
+                            (1 shl
+                                when (edge) {
+                                    TransitionEdge.NORTH -> 0
+                                    TransitionEdge.SOUTH -> 1
+                                    TransitionEdge.WEST -> 2
+                                    TransitionEdge.EAST -> 3
+                                })
+                }
+                mask.toString()
+            } else {
+                "0"
+            }
+        }
+
+    private fun buildDialogSystemGlobalVars(
+        system: io.github.gbkt.core.ir.DialogSystem
+    ): List<CVarDecl> =
+        listOf(
+            // Extended config: default speed and border style
+            CVarDecl(
+                name = "_dialog_default_speed",
+                type = CU8,
+                initializer = CLiteral(system.textSpeed),
+            ),
+            CVarDecl(
+                name = "_dialog_default_border",
+                type = CU8,
+                initializer = CLiteral(system.defaultBorder.ordinal),
+            ),
+        )
+
+    private fun buildGenericSystemGlobalVars(
+        gameIR: GameIR,
+        system: GenericSystem,
+        sanitizedId: String,
+        genreVisitors: List<GenreSystemVisitor>,
+    ): List<CVarDecl> {
+        val systemType = system.config["type"] as? String
+        val genreVisitor =
+            if (systemType != null) genreVisitors.find { it.canHandle(systemType) } else null
+        if (genreVisitor != null && systemType != null) {
+            return genreVisitor
+                .visit(systemType, system.config, gameIR)
+                .varDecls
+                .filterIsInstance<CVarDecl>()
+        }
+        val vars = mutableListOf<CVarDecl>()
+        if (systemType == "simple_battle") {
+            vars +=
+                CVarDecl(name = "_combat_state_$sanitizedId", type = CU8, initializer = CLiteral(0))
+        }
+        if (systemType == "arpg_combat")
+            vars += RpgVisitor(gameIR).generateActionRpgVarDecls(system)
+        if (systemType == "roguelike_system")
+            vars += RpgVisitor(gameIR).generateRoguelikeVarDecls(system)
+        if (systemType == "rpg_currency")
+            vars += RpgVisitor(gameIR).generateCurrencyVarDecls(system)
+        if (systemType == "pickup_system")
+            vars += GBDKSystemVisitor(gameIR).buildPickupVarDecls(system, sanitizedId)
+        if (systemType == "audio_mixer") vars += buildAudioMixerSystemGlobalVars(system)
+        return vars
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun buildAudioMixerSystemGlobalVars(system: GenericSystem): List<CVarDecl> {
+        val groups =
+            (system.config["groups"] as? List<ChannelGroupDef>)
+                ?: listOf(
+                    ChannelGroupDef("music", setOf(1, 2), 7, 0),
+                    ChannelGroupDef("sfx", setOf(3, 4), 7, 1),
+                    ChannelGroupDef("ui", setOf(3), 7, 2),
+                )
+        val masterVol = system.config["master_volume"] as? Int ?: 7
+        val initVols = groups.joinToString(", ") { it.defaultVolume.toString() }
+        val initMuted = groups.joinToString(", ") { "0" }
+        val channelMaskVars = groups.map { group ->
+            var mask = 0
+            for (ch in group.channels) {
+                val bit = ch - 1 // CH1=0, CH2=1, CH3=2, CH4=3
+                mask = mask or (1 shl bit) // R-enable
+                mask = mask or (1 shl (bit + 4)) // L-enable
+            }
+            CVarDecl(
+                name = "_mixer_channel_mask_${group.name}",
+                type = CU8,
+                initializer = CRawExpr("0x${mask.toString(16).uppercase()}"),
+                isConst = true,
+            )
+        }
+        return listOf(
+            // _mixer_group_vol[N] — initial volumes per group
+            CVarDecl(
+                name = "_mixer_group_vol",
+                type = CArray(CU8, groups.size),
+                initializer = CRawExpr("{$initVols}"),
+            ),
+            // _mixer_master_vol — initial master volume
+            CVarDecl(name = "_mixer_master_vol", type = CU8, initializer = CLiteral(masterVol)),
+            // _mixer_group_muted[N] — mute state per group (0 = unmuted)
+            CVarDecl(
+                name = "_mixer_group_muted",
+                type = CArray(CU8, groups.size),
+                initializer = CRawExpr("{$initMuted}"),
+            ),
+        ) +
+            // _mixer_channel_mask_<name> — NR51 bit pattern per group
+            channelMaskVars +
+            listOf(
+                // _mixer_priority[4] — per-channel priority (4 GB channels), init 0
+                CVarDecl(
+                    name = "_mixer_priority",
+                    type = CArray(CU8, 4),
+                    initializer = CRawExpr("{0, 0, 0, 0}"),
+                ),
+                // _mixer_preduck_vol — saved music volume before auto-ducking (Gap 6)
+                CVarDecl(name = "_mixer_preduck_vol", type = CU8, initializer = CLiteral(7)),
+            )
+    }
+
+    private fun buildCombatEngineSystemGlobalVars(
+        system: io.github.gbkt.core.ir.CombatEngineSystem,
+        sanitizedId: String,
+        gameIR: GameIR,
+    ): List<CVarDecl> {
+        val combatVisitor = io.github.gbkt.backend.gbdk.codegen.visitor.CombatVisitor(gameIR)
+        return listOf(
+            // _combat_state_<id>: INIT state (0) at startup
+            CVarDecl(name = "_combat_state_$sanitizedId", type = CU8, initializer = CLiteral(0)),
+            // _pending_state_<id>: 0xFF sentinel = no pending transition
+            CVarDecl(
+                name = "_pending_state_$sanitizedId",
+                type = CU8,
+                initializer = CLiteral(0xFF),
+            ),
+        ) +
+            // ATB-specific globals: gauge[], active[], acted[], agl[], menu_open,
+            // and optionally charge[] (CHARGE model) and _turn_order[] (when strategy set)
+            combatVisitor.generateAtbGlobals(system) +
+            // Wave survival globals: _wave_<id>_current (UINT8), _wave_<id>_timer (UINT16)
+            combatVisitor.generateWaveGlobals(system) +
+            // Hook enabled flag: _combat_<id>_hooks_enabled (only when hooks registered)
+            combatVisitor.generateHookGlobals(system)
     }
 
     /**
