@@ -422,29 +422,22 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
 
     /**
      * Called when any document is about to be saved. Guards on auto-refresh enabled and disposed
-     * state, then delegates to project-scoped refresh trigger if the file is a .gbkt.kts DSL file.
+     * state, then triggers an async, project-scoped refresh if the file is a .gbkt.kts DSL file
+     * belonging to this project (path check avoids cross-project interference).
      */
     private fun onDslFileSaved(document: com.intellij.openapi.editor.Document) {
         if (!autoRefreshCheckbox.isSelected) return
         if (isDisposed) return
 
-        val file = FileDocumentManager.getInstance().getFile(document)
-        if (file != null && file.name.endsWith(".gbkt.kts")) {
-            triggerRefreshIfInProject(file)
-        }
-    }
+        val file = FileDocumentManager.getInstance().getFile(document) ?: return
+        if (!file.name.endsWith(".gbkt.kts")) return
 
-    /**
-     * Triggers an async code refresh if [file] belongs to this project. Verifies the file path
-     * starts with the project base path to avoid cross-project interference.
-     */
-    private fun triggerRefreshIfInProject(file: com.intellij.openapi.vfs.VirtualFile) {
-        val projectPath = project.basePath
-        if (projectPath != null && file.path.startsWith(projectPath)) {
-            ApplicationManager.getApplication().invokeLater {
-                if (!isDisposed) {
-                    refreshCode()
-                }
+        val projectPath = project.basePath ?: return
+        if (!file.path.startsWith(projectPath)) return
+
+        ApplicationManager.getApplication().invokeLater {
+            if (!isDisposed) {
+                refreshCode()
             }
         }
     }
