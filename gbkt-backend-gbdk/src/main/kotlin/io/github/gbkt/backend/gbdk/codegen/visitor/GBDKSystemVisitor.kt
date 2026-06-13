@@ -1844,88 +1844,86 @@ class GBDKSystemVisitor(
                     )
                 )
                 val allEntries: List<EncounterEntryIR> = zones.flatMap { zone ->
-                    val table = zone.encounterTable
-                    table?.entries ?: emptyList()
+                    zone.encounterTable?.entries ?: emptyList()
                 }
-                if (allEntries.isNotEmpty()) {
-                    val totalWeight = allEntries.sumOf { it.weight }
-                    add(CVarDecl("roll", CU8, null))
-                    add(
-                        CExprStatement(
-                            CBinaryExpr(
-                                CVar("roll"),
-                                "=",
-                                CBinaryExpr(CCall("rand", emptyList()), "%", CLiteral(totalWeight)),
-                            )
-                        )
-                    )
-                    add(CVarDecl("acc", CU8, CLiteral(0)))
-                    for ((idx, entry) in allEntries.withIndex()) {
-                        val weightCheck =
-                            CBinaryExpr(
-                                CVar("roll"),
-                                "<",
-                                CBinaryExpr(CVar("acc"), "+", CLiteral(entry.weight)),
-                            )
-                        val fireBody: List<CStatement> =
-                            listOf(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_encounter_triggered"), "=", CLiteral(1))
-                                ),
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_encounter_id"), "=", CLiteral(idx))
-                                ),
-                                CReturn(null),
-                            )
-                        // Build guard condition: conditionFlag AND/OR level range checks
-                        // All guards are optional and stack with && when multiple are present
-                        var guardCondition: CExpr? = null
-                        val conditionFlag: String? = entry.conditionFlag
-                        if (conditionFlag != null) {
-                            guardCondition = CVar("_flag_${conditionFlag}")
-                        }
-                        val minLvl: Int? = entry.minLevel
-                        if (minLvl != null) {
-                            val minCheck =
-                                CBinaryExpr(CVar("_player_level"), ">=", CLiteral(minLvl))
-                            guardCondition =
-                                if (guardCondition != null) {
-                                    CBinaryExpr(guardCondition, "&&", minCheck)
-                                } else {
-                                    minCheck
-                                }
-                        }
-                        val maxLvl: Int? = entry.maxLevel
-                        if (maxLvl != null) {
-                            val maxCheck = CBinaryExpr(CVar("_player_level"), "<", CLiteral(maxLvl))
-                            guardCondition =
-                                if (guardCondition != null) {
-                                    CBinaryExpr(guardCondition, "&&", maxCheck)
-                                } else {
-                                    maxCheck
-                                }
-                        }
-                        if (guardCondition != null) {
-                            val guard = guardCondition
-                            add(
-                                CIf(
-                                    condition = guard,
-                                    thenBody =
-                                        listOf(CIf(condition = weightCheck, thenBody = fireBody)),
-                                )
-                            )
-                        } else {
-                            add(CIf(condition = weightCheck, thenBody = fireBody))
-                        }
-                        add(CExprStatement(CBinaryExpr(CVar("acc"), "+=", CLiteral(entry.weight))))
-                    }
-                }
+                addAll(buildEncounterRollStatements(allEntries))
             }
         return CFunction(
             name = "exploration_encounter_check_$sanitizedId",
             returnType = CVoid,
             body = body,
         )
+    }
+
+    /**
+     * Builds the roll/acc variable declarations and per-entry weight-check dispatch for encounter
+     * resolution. Returns an empty list when there are no encounter table entries.
+     */
+    private fun buildEncounterRollStatements(allEntries: List<EncounterEntryIR>): List<CStatement> {
+        if (allEntries.isEmpty()) return emptyList()
+        val totalWeight = allEntries.sumOf { it.weight }
+        val result = mutableListOf<CStatement>()
+        result.add(CVarDecl("roll", CU8, null))
+        result.add(
+            CExprStatement(
+                CBinaryExpr(
+                    CVar("roll"),
+                    "=",
+                    CBinaryExpr(CCall("rand", emptyList()), "%", CLiteral(totalWeight)),
+                )
+            )
+        )
+        result.add(CVarDecl("acc", CU8, CLiteral(0)))
+        for ((idx, entry) in allEntries.withIndex()) {
+            val weightCheck =
+                CBinaryExpr(
+                    CVar("roll"),
+                    "<",
+                    CBinaryExpr(CVar("acc"), "+", CLiteral(entry.weight)),
+                )
+            val fireBody: List<CStatement> =
+                listOf(
+                    CExprStatement(CBinaryExpr(CVar("_encounter_triggered"), "=", CLiteral(1))),
+                    CExprStatement(CBinaryExpr(CVar("_encounter_id"), "=", CLiteral(idx))),
+                    CReturn(null),
+                )
+            val guard = buildEncounterEntryGuard(entry)
+            if (guard != null) {
+                result.add(
+                    CIf(
+                        condition = guard,
+                        thenBody = listOf(CIf(condition = weightCheck, thenBody = fireBody)),
+                    )
+                )
+            } else {
+                result.add(CIf(condition = weightCheck, thenBody = fireBody))
+            }
+            result.add(CExprStatement(CBinaryExpr(CVar("acc"), "+=", CLiteral(entry.weight))))
+        }
+        return result
+    }
+
+    /**
+     * Builds the combined guard condition for a single encounter entry: optional conditionFlag AND
+     * optional min/max level range checks stacked with &&. Returns null when there is no guard.
+     */
+    private fun buildEncounterEntryGuard(entry: EncounterEntryIR): CExpr? {
+        var guard: CExpr? = null
+        val conditionFlag: String? = entry.conditionFlag
+        if (conditionFlag != null) {
+            guard = CVar("_flag_${conditionFlag}")
+        }
+        val minLvl: Int? = entry.minLevel
+        if (minLvl != null) {
+            val minCheck = CBinaryExpr(CVar("_player_level"), ">=", CLiteral(minLvl))
+            guard = if (guard != null) CBinaryExpr(guard, "&&", minCheck) else minCheck
+        }
+        val maxLvl: Int? = entry.maxLevel
+        if (maxLvl != null) {
+            val maxCheck = CBinaryExpr(CVar("_player_level"), "<", CLiteral(maxLvl))
+            guard = if (guard != null) CBinaryExpr(guard, "&&", maxCheck) else maxCheck
+        }
+        return guard
     }
 
     /**
