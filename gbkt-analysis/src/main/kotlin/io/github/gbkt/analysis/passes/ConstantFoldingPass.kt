@@ -143,13 +143,24 @@ class ConstantFoldingPass : AnalysisPass {
      */
     private fun evalBinaryOp(op: BinaryOp, l: Int, r: Int): Int? =
         when (op) {
-            BinaryOp.ADD, BinaryOp.SUB, BinaryOp.MUL,
-            BinaryOp.DIV, BinaryOp.MOD -> evalArithmeticOp(op, l, r)
-            BinaryOp.AND, BinaryOp.OR, BinaryOp.XOR,
-            BinaryOp.SHL, BinaryOp.SHR -> evalBitwiseOp(op, l, r)
-            BinaryOp.EQ, BinaryOp.NEQ, BinaryOp.LT,
-            BinaryOp.LTE, BinaryOp.GT, BinaryOp.GTE -> evalComparisonOp(op, l, r)
-            BinaryOp.LOGICAL_AND, BinaryOp.LOGICAL_OR -> evalLogicalOp(op, l, r)
+            BinaryOp.ADD,
+            BinaryOp.SUB,
+            BinaryOp.MUL,
+            BinaryOp.DIV,
+            BinaryOp.MOD -> evalArithmeticOp(op, l, r)
+            BinaryOp.AND,
+            BinaryOp.OR,
+            BinaryOp.XOR,
+            BinaryOp.SHL,
+            BinaryOp.SHR -> evalBitwiseOp(op, l, r)
+            BinaryOp.EQ,
+            BinaryOp.NEQ,
+            BinaryOp.LT,
+            BinaryOp.LTE,
+            BinaryOp.GT,
+            BinaryOp.GTE -> evalComparisonOp(op, l, r)
+            BinaryOp.LOGICAL_AND,
+            BinaryOp.LOGICAL_OR -> evalLogicalOp(op, l, r)
         }
 
     /** Evaluates arithmetic operations (ADD, SUB, MUL, DIV, MOD). Returns null for div-by-zero. */

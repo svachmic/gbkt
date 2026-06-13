@@ -103,7 +103,8 @@ class EmulatorSession(private val config: EmulatorConfig) {
 
     /**
      * Creates all developer UI windows on the EDT and wires emulator callbacks. Called from inside
-     * [SwingUtilities.invokeAndWait] so all Swing state is initialized on the Event Dispatch Thread.
+     * [SwingUtilities.invokeAndWait] so all Swing state is initialized on the Event Dispatch
+     * Thread.
      */
     private fun createAndWireWindowsOnEdt(emu: CoffeeGbEmulator) {
         // ── Main emulator window ──────────────────────────────────────
@@ -126,7 +127,11 @@ class EmulatorSession(private val config: EmulatorConfig) {
         emu.onDebugEntry = { entry -> logWin.logPanel.appendEntry(entry) }
 
         // ── Memory Inspector window (hidden until Memory button toggled) ──
-        val memWin = MemoryInspectorWindow(memoryProvider = { safeMemoryRead(emu) }, symbolFile = findSymFile())
+        val memWin =
+            MemoryInspectorWindow(
+                memoryProvider = { safeMemoryRead(emu) },
+                symbolFile = findSymFile(),
+            )
         this.memoryWindow = memWin
 
         // ── Wire toolbar toggles and pause/step callbacks ──
@@ -139,7 +144,8 @@ class EmulatorSession(private val config: EmulatorConfig) {
 
     /**
      * Returns the current [MemoryAccess] if the emulator is running, otherwise null. Used as the
-     * [MemoryInspectorWindow] memory provider to avoid accessing memory when the emulator is stopped.
+     * [MemoryInspectorWindow] memory provider to avoid accessing memory when the emulator is
+     * stopped.
      */
     private fun safeMemoryRead(emu: GbEmulator): MemoryAccess? =
         if (emu.isRunning()) {
@@ -153,7 +159,11 @@ class EmulatorSession(private val config: EmulatorConfig) {
         }
 
     /** Wires all [EmulatorToolbar] toggle callbacks for the log viewer and memory inspector. */
-    private fun wireToolbarCallbacks(win: EmulatorWindow, logWin: LogCatWindow, memWin: MemoryInspectorWindow) {
+    private fun wireToolbarCallbacks(
+        win: EmulatorWindow,
+        logWin: LogCatWindow,
+        memWin: MemoryInspectorWindow,
+    ) {
         win.toolbar.onLogViewerToggle = { show ->
             logWin.isVisible = show
             if (show) logWin.toFront()
@@ -180,7 +190,8 @@ class EmulatorSession(private val config: EmulatorConfig) {
 
     /**
      * Wires keyboard input to the [EmulatorWindow] after [CoffeeGbEmulator.start] has been called.
-     * The EventBus is created inside [CoffeeGbEmulator.start], so input wiring must happen after it.
+     * The EventBus is created inside [CoffeeGbEmulator.start], so input wiring must happen after
+     * it.
      */
     private fun wireInputAfterStart(emu: CoffeeGbEmulator) {
         val win = this.window

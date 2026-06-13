@@ -130,12 +130,16 @@ class GameMetadata(
          * @param json The JSON content to parse.
          * @return A [GameMetadata] instance with scenes and actors.
          */
-        @Suppress("ThrowsCount") // Required fields produce two explicit throw sites plus two in catches
+        @Suppress(
+            "ThrowsCount"
+        ) // Required fields produce two explicit throw sites plus two in catches
         fun fromJsonString(json: String): GameMetadata {
             try {
                 val root = JSONObject(json)
-                if (!root.has("scenes")) throw MetadataParseException("Missing required field 'scenes'")
-                if (!root.has("actors")) throw MetadataParseException("Missing required field 'actors'")
+                if (!root.has("scenes"))
+                    throw MetadataParseException("Missing required field 'scenes'")
+                if (!root.has("actors"))
+                    throw MetadataParseException("Missing required field 'actors'")
                 return GameMetadata(
                     scenes = parseScenes(root),
                     actors = parseActors(root),
@@ -220,7 +224,10 @@ class GameMetadata(
                         sceneId,
                         (0 until arr.length()).map { i ->
                             val m = arr.getJSONObject(i)
-                            ControlMapping(button = m.getString("button"), type = m.getString("type"))
+                            ControlMapping(
+                                button = m.getString("button"),
+                                type = m.getString("type"),
+                            )
                         },
                     )
                 }

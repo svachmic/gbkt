@@ -530,7 +530,8 @@ fun Observation.toSummary(): String = buildString {
     if (bgRows.isEmpty()) appendLine("BG: (empty)") else bgRows.forEach { appendLine("BG: $it") }
     // WIN text
     val winRows = nonEmptyRowsFormatted(winText)
-    if (winRows.isEmpty()) appendLine("WIN: (empty)") else winRows.forEach { appendLine("WIN: $it") }
+    if (winRows.isEmpty()) appendLine("WIN: (empty)")
+    else winRows.forEach { appendLine("WIN: $it") }
     // Log
     if (newLogEntries.isNotEmpty()) {
         newLogEntries.forEach { entry -> appendLine("Log: ${entry.formatted().trimEnd()}") }

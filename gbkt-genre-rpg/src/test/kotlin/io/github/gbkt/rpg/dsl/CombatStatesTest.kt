@@ -111,5 +111,4 @@ class CombatStatesTest {
         val arg = assertIs<VarRef>(callExpr.args[0])
         assertEquals("COMBAT_STATE_PLAYER_TURN", arg.name)
     }
-
 }

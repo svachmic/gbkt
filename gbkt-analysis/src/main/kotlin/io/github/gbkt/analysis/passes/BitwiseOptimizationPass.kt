@@ -123,8 +123,7 @@ class BitwiseOptimizationPass : AnalysisPass {
         // The cast below is NOT redundant: K2 cannot smart-cast optimizedLeft to Literal
         // from the compound leftIsPow2/rightIsPow2 guards (Sonar S6531 false positive).
         val n =
-            if (rightIsPow2) (optimizedRight as Literal).value
-            else (optimizedLeft as Literal).value
+            if (rightIsPow2) (optimizedRight as Literal).value else (optimizedLeft as Literal).value
         val other = if (rightIsPow2) optimizedLeft else optimizedRight
         val shift = log2(n)
         val rewritten = expr.copy(left = other, op = BinaryOp.SHL, right = Literal(shift))

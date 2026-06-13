@@ -43,8 +43,8 @@ object TargetProfiles {
      * Canonical screen specification for the Game Boy Color (GBC).
      *
      * Single source of truth for the 160×144 pixel display, 2 bits per pixel, color via 8 hardware
-     * palettes (4 colours each), 8×8 tiles, one background layer. GBC color depth comes from per-tile
-     * palette attributes, not deeper tile data — tiles are always 2bpp, same as DMG.
+     * palettes (4 colours each), 8×8 tiles, one background layer. GBC color depth comes from
+     * per-tile palette attributes, not deeper tile data — tiles are always 2bpp, same as DMG.
      */
     val GAME_BOY_COLOR_SCREEN =
         ScreenSpec(

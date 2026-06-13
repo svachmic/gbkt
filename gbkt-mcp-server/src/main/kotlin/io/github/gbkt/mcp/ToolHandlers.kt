@@ -152,14 +152,15 @@ internal object ToolHandlerLogic {
         session: McpEmulatorSession,
         gameName: String,
         gbcMode: Boolean,
-    ): CallToolResult = withContext(ioDispatcher) {
-        try {
-            val result = session.startByName(gameName, gbcMode)
-            buildStartedResult(result.metadata)
-        } catch (e: IllegalStateException) {
-            errorResult(e.message ?: "Failed to start game '$gameName'")
+    ): CallToolResult =
+        withContext(ioDispatcher) {
+            try {
+                val result = session.startByName(gameName, gbcMode)
+                buildStartedResult(result.metadata)
+            } catch (e: IllegalStateException) {
+                errorResult(e.message ?: "Failed to start game '$gameName'")
+            }
         }
-    }
 
     private suspend fun startByRomFile(
         session: McpEmulatorSession,

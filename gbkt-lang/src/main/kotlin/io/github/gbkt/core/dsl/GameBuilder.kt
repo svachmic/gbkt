@@ -30,8 +30,8 @@ import io.github.gbkt.core.ir.MetaspriteIR
 import io.github.gbkt.core.ir.MusicDef
 import io.github.gbkt.core.ir.PaletteType
 import io.github.gbkt.core.ir.RefKind
-import io.github.gbkt.core.ir.SetPalette
 import io.github.gbkt.core.ir.SceneIR
+import io.github.gbkt.core.ir.SetPalette
 import io.github.gbkt.core.ir.SoundEffectDef
 import io.github.gbkt.core.ir.StructDef
 import io.github.gbkt.core.ir.SystemIR
@@ -746,8 +746,8 @@ class GameBuilder(val name: String) {
     /**
      * Builds scenes with per-actor SPRITE palette [SetPalette] ops injected into enter handlers.
      *
-     * SEED-007 / D-extra: auto-slot counter increments only for actors without an explicit slot,
-     * so an explicit-slot actor in the middle does not displace subsequent auto-slot assignments.
+     * SEED-007 / D-extra: auto-slot counter increments only for actors without an explicit slot, so
+     * an explicit-slot actor in the middle does not displace subsequent auto-slot assignments.
      */
     private fun buildScenesWithActorPalettes(
         actors: List<ActorIR>,
@@ -774,7 +774,7 @@ class GameBuilder(val name: String) {
      * Returns the (possibly augmented) mutable group and rule lists.
      */
     private fun buildEffectiveNpcCollisions(
-        actors: List<ActorIR>,
+        actors: List<ActorIR>
     ): Pair<MutableList<CollisionGroupIR>, MutableList<CollisionRuleIR>> {
         val groups = _collisionGroups.toMutableList()
         val rules = _collisionRules.toMutableList()
@@ -786,10 +786,12 @@ class GameBuilder(val name: String) {
             if (groups.none { it.id == CollisionGroupIR.DEFAULT_NPC_GROUP }) {
                 groups.add(CollisionGroupIR(CollisionGroupIR.DEFAULT_NPC_GROUP))
             }
-            if (rules.none { rule ->
+            if (
+                rules.none { rule ->
                     rule.groupA == CollisionGroupIR.DEFAULT_NPC_GROUP &&
                         rule.groupB == CollisionGroupIR.DEFAULT_NPC_GROUP
-                }) {
+                }
+            ) {
                 rules.add(
                     CollisionRuleIR(
                         groupA = CollisionGroupIR.DEFAULT_NPC_GROUP,
@@ -803,8 +805,8 @@ class GameBuilder(val name: String) {
     }
 
     /**
-     * Assigns the implicit `_default_npc` groupId to actors that have `collidesWithNpcs = true`
-     * but no explicit collision groups.
+     * Assigns the implicit `_default_npc` groupId to actors that have `collidesWithNpcs = true` but
+     * no explicit collision groups.
      */
     private fun assignImplicitNpcGroups(actors: List<ActorIR>): List<ActorIR> =
         actors.map { actor ->

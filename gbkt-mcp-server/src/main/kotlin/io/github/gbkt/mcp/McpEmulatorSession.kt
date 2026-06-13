@@ -487,8 +487,8 @@ class McpEmulatorSession(
     }
 
     /**
-     * Searches [rows] for the first occurrence of [text] and returns a triple of
-     * (columnIndex, rowIndex, layerLabel), or null if not found.
+     * Searches [rows] for the first occurrence of [text] and returns a triple of (columnIndex,
+     * rowIndex, layerLabel), or null if not found.
      */
     private fun findTextInRows(
         text: String,
