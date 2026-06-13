@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 16-03-PLAN.md — visual screenshot capture + D-08 review doc
-last_updated: "2026-06-12T17:30:00.000Z"
-last_activity: 2026-06-12 -- Phase 16 Plan 03 complete (10 visual-seed screenshots at HEAD, visual-review-document.md, cluster-visual.md draft TRIAGE rows)
+stopped_at: Completed 16-04-PLAN.md — metasprites emission cluster triage (all 8 entries VERIFIED-ALREADY-FIXED)
+last_updated: "2026-06-12T14:25:00.000Z"
+last_activity: 2026-06-12 -- Phase 16 Plan 04 complete (SEED-006..011, SEED-PHASE-13-SPRITE-OUTLINE, TODO-metasprites-baseline all VERIFIED-ALREADY-FIXED; 9 evidence files; cluster-metasprites-emission.md draft)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 10
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 

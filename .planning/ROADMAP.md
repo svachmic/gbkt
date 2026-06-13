@@ -56,7 +56,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 16-03-PLAN.md — Visual evidence capture (10 visual seeds, gbcMode) + batch review document draft
-- [ ] 16-04-PLAN.md — Metasprites emission triage (SEED-006..011, sprite-outline tRNS, stale-baseline todo)
+- [x] 16-04-PLAN.md — Metasprites emission triage (SEED-006..011, sprite-outline tRNS, stale-baseline todo)
 - [ ] 16-05-PLAN.md — Banks triage (SEED-014 INV-2 sentinel, 015, 016, retroactive/convert audits, 13.8 WR todo)
 - [ ] 16-06-PLAN.md — DSL/lang/tooling source triage (SEED-002/003/012/020/023/025/026 + triggersystem todo)
 - [ ] 16-07-PLAN.md — Platformer/zone source triage (SEED-017/021/022, zone-magic-string, cEmit gaps, RE-DEFERRED zone seeds)
