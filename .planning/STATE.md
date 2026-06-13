@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: executing
-stopped_at: Completed 18-20-PLAN.md
-last_updated: "2026-06-13T12:34:00.000Z"
+status: Ready for Plan 21
+stopped_at: Completed 18-17-PLAN.md
+last_updated: "2026-06-13T12:49:28.487Z"
 last_activity: 2026-06-13
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 49
-  completed_plans: 42
+  completed_plans: 43
   percent: 33
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
-Plan: 20 of 27 (COMPLETE)
+Plan: 21 of 27 (COMPLETE)
 Status: Ready for Plan 21
 Last activity: 2026-06-13
 
@@ -415,6 +415,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 18 P14 | 7 | 2 tasks | 1 files |
 | Phase 18 P17 | 7 min | 1 tasks | 1 files |
 | Phase 18-deprecation-removals-and-sonar-burn-down P19 | 12 | 2 tasks | 1 files |
+| Phase 18 P21 | 8 min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -928,6 +929,7 @@ Recent decisions affecting current work:
 - [Phase ?]: N-01 batchAssert: EXTRACT-METHOD (not NOSONAR) — per-type helpers + CheckResult data class reduce cc=74 to below threshold
 - [Phase ?]: Promoted walkOps from local closure to top-level private fun with explicit result parameter (E-13+E-19); extracted three buildHeaderFile sub-builders as value-returning functions (E-15)
 - [Phase 18]: Per-type puzzle helpers return PuzzleObjectOutput(vars, functions, perFrameCalls) — value-returning extract-method with no shared-mutable accumulation — Pitfall 1 compliance: extracting each sealed-interface branch into a focused helper that returns its contribution as data (not side-effecting a shared list) preserves emission order and enables future independent testing of each puzzle type
+- [Phase ?]: E-02 MenuVisitor.buildMenuFunction (cc90) decomposed: 11 class methods + 5 file-level privates; 7-example byte-identity sweep passes
 
 ### Pending Todos
 
@@ -1023,7 +1025,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-13T12:29:39.204Z
+Last session: 2026-06-13T12:49:22.418Z
 Stopped at: Completed 18-17-PLAN.md
 
 ## Operator Next Steps

@@ -192,11 +192,11 @@ Plans:
 
 **Wave 10** *(blocked on Wave 9 completion)*
 
-- [ ] 18-20-PLAN.md — SONAR EMITTING GBDKSystemVisitor: E-11/E-14 (file cleared)
+- [x] 18-20-PLAN.md — SONAR EMITTING GBDKSystemVisitor: E-11/E-14 (file cleared)
 
 **Wave 11** *(blocked on Wave 10 completion)*
 
-- [ ] 18-21-PLAN.md — SONAR EMITTING MenuVisitor: E-02 (cc90)
+- [x] 18-21-PLAN.md — SONAR EMITTING MenuVisitor: E-02 (cc90)
 
 **Wave 12** *(blocked on Wave 11 completion)*
 
@@ -282,7 +282,7 @@ Plans:
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 12/12 | Complete   | 2026-06-12 |
-| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 19/27 | In Progress|  |
+| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 21/27 | In Progress|  |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |
