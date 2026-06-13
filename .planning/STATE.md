@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 16-08-PLAN.md — D-08 visual verdict lock (8 VERIFIED-ALREADY-FIXED, 2 CONFIRMED-OPEN; SEED-004 user override)
-last_updated: "2026-06-12T15:24:43.973Z"
-last_activity: "2026-06-12 -- Phase 16 Plan 07 complete (platformer/zone source cluster: SEED-017/021/022/ZONE-MAGIC-STRING/ONE-WAY-TILE/PER-ZONE-BANKS/SHARED-TILESET/SPAWN-CLARITY/AUTO-EMISSION-GAPS dispositioned; cluster-platformer-source.md draft ready)"
+stopped_at: Completed 16-10-PLAN.md — Phase 16 close-out: seeds relocated (24 archive, 10 backlog, 10 confirmed-open in seeds/), REQUIREMENTS.md/ROADMAP.md D-11 reconciled
+last_updated: "2026-06-12T15:31:16Z"
+last_activity: "2026-06-12 -- Phase 16 Plan 10 complete (seed file moves + D-11 reconciliation: TRIAGE-03 satisfied, FIX-01..06 annotated, Phase 16 COMPLETE)"
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 10
-  completed_plans: 9
-  percent: 0
+  completed_plans: 10
+  percent: 17
 ---
 
 # Project State
@@ -54,13 +54,13 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 16 (seed-triage) — EXECUTING
-Plan: 9 of 10
-Status: Ready to execute
-Last activity: 2026-06-12 -- Phase 16 Plan 07 complete (platformer/zone source cluster: SEED-017/021/022/ZONE-MAGIC-STRING/ONE-WAY-TILE/PER-ZONE-BANKS/SHARED-TILESET/SPAWN-CLARITY/AUTO-EMISSION-GAPS dispositioned; cluster-platformer-source.md draft ready)
+Phase: 16 (seed-triage) — COMPLETE
+Plan: 10 of 10 (ALL COMPLETE)
+Status: Phase 16 complete — ready to advance to Phase 17/18/19 (parallel options available)
+Last activity: 2026-06-12 -- Phase 16 Plan 10 complete (seed file moves + D-11 reconciliation: 24 archived, 10 backlogged, 10 confirmed-open; TRIAGE-01/02/03 all satisfied)
 
-Resume signal: /gsd-plan-phase 16 (Seed Triage — gates all codegen fix phases)
-Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable
+Resume signal: /gsd-execute-phase 17 (Docs + QUAL) or /gsd-execute-phase 18 (DEPR + SONAR) — both parallel-capable with each other; Phase 19 depends on Phase 16
+Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable; Phase 19 (Metasprite Fixes) now unblocked
 
 ### Bisect state as of Plan 06d complete
 

@@ -27,7 +27,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 
 **Milestone Goal:** Drain the v0.1.0 deferred-debt backlog — every seed gets a terminal disposition (fixed, verified-closed, or explicitly re-routed), the docs tell the truth, and static-analysis debt is burned down.
 
-- [ ] **Phase 16: Seed Triage** - Establish terminal dispositions for all 44 seeds against current master; gate for all codegen fix phases
+- [x] **Phase 16: Seed Triage** - Establish terminal dispositions for all 44 seeds against current master; gate for all codegen fix phases — COMPLETE 2026-06-12 (47 dispositions: 24 VERIFIED-FIXED, 12 CONFIRMED-OPEN, 10 RE-DEFERRED; seeds/ is live confirmed-open queue)
 - [ ] **Phase 17: Docs Reconciliation and Quality Cleanup** - DSL_REFERENCE.md accuracy restored; detekt clean; magic-pixel literals eliminated
 - [ ] **Phase 18: Deprecation Removals and Sonar Burn-down** - `whenever`/`runIf` unified and deprecated `combatIsInState` overload removed; S3776 HIGH findings reduced to 0
 - [ ] **Phase 19: Codegen Fixes — Metasprite Cluster** - Visual-parity and structural latent metasprite bugs fixed with emission test coverage
@@ -156,7 +156,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
-| 16. Seed Triage | v0.1.1 | 9/10 | In Progress|  |
+| 16. Seed Triage | v0.1.1 | 10/10 | Complete | 2026-06-12 |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 0/TBD | Not started | - |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 0/TBD | Not started | - |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
