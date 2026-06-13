@@ -1706,14 +1706,13 @@ val game = game("MyGame") {
 
 ## Battle System
 
-Turn-based combat driven by a generated combat state machine with victory/defeat callbacks.
-
-> **Note:** Use `simpleBattle()` for v1. The `combatEngine()` DSL is experimental and will be revised in a future release.
+Turn-based combat driven by a generated combat state machine with victory/defeat callbacks. Register the battle with `simpleBattle()` (in `gbkt-genre-rpg`), then call `battleUpdate()` every frame to advance the state machine.
 
 ### Battle Definition
 
 ```kotlin
 // simpleBattle(id) registers a turn-based combat system and returns a BattleRef
+// (RpgExtensions.kt:168 — fun GameBuilder.simpleBattle)
 val combat = simpleBattle("combat") {
     party(hero)                       // CharacterRef(s) in the party
     encounter { +goblin }             // MonsterRefs in the encounter
@@ -1721,7 +1720,8 @@ val combat = simpleBattle("combat") {
     onDefeat { navigate(gameoverScene) }
 }
 
-// The battle scene must drive the state machine every frame
+// The battle scene must call battleUpdate every frame to drive the state machine
+// (RpgExtensions.kt:348 — fun ScriptBuilder.battleUpdate)
 scene("battle") {
     frame {
         battleUpdate(combat)
@@ -1749,199 +1749,104 @@ CombatStates.FLEEING          // Party fleeing
 CombatStates.WAITING          // Idle/waiting
 ```
 
-> **Stale-API caveat:** the Battle Menu, Combat Formulas, and Custom Battle States
-> subsections below describe APIs (`battleMenu`, `combatFormulas`, `battleState`,
-> `battleTransition`) that do not exist in the current codebase. Cross-check
-> `gbkt-genre-rpg/.../dsl/RpgExtensions.kt` for the implemented RPG DSL entry points.
-
-### Battle Menu
-
-```kotlin
-val battleMenu by battleMenu("menu") {
-    position(0, 12)           // Menu position (tile coords)
-
-    // Main commands
-    commands {
-        command("Attack") { action(ActionType.ATTACK) }
-        command("Magic") { submenu(magicMenu) }
-        command("Item") { submenu(itemMenu) }
-        command("Flee") { action(ActionType.FLEE) }
-    }
-
-    // Status display configuration
-    statusDisplay {
-        showHp(true)
-        showSp(true)
-        showStatusIcons(true)
-        position(0, 0)
-    }
-}
-```
-
-### Combat Formulas
-
-```kotlin
-val combat = combatFormulas {
-    // Hit formula strategies
-    d20HitRoll(baseAC = 10)           // D&D-style: roll + ATK vs DEF + AC
-    percentageHitChance(baseChance = 80, minChance = 20, maxChance = 95, perDiff = 3)
-    agilityBasedHit(baseChance = 70)  // Hit based on AGL difference
-    alwaysHits()                       // No miss chance
-
-    // Critical hit strategies
-    criticalChance(5)                  // Flat 5% chance
-    criticalOnHighRoll(threshold = 20, dieSize = 20)  // Natural 20
-    noCriticalHits()                   // Disable crits
-    criticalMultiplier(200)            // 2x damage on crit
-
-    // Damage variance strategies
-    damageVariance(25)                 // ±12.5% variance
-    damageMultiplierRange(min = 75, max = 125)  // Lookup table
-    noVariance()                       // Exact damage
-
-    // Fumble system
-    enableFumble(threshold = 1)        // Fumble on natural 1
-}
-```
-
-### Custom Battle States
-
-```kotlin
-val game = game("MyGame") {
-    // Define custom battle states beyond the 19 built-in states
-    val cutsceneState by battleState("Cutscene")
-    val animationState by battleState("Animation")
-
-    val combat by battle("combat") {
-        onState(cutsceneState) {
-            // Custom cutscene logic
-        }
-    }
-
-    scene("battle") {
-        frame {
-            battleTransition(cutsceneState)  // Transition to custom state
-        }
-    }
-}
-```
-
 ## Item & Inventory System
 
-Complete item management with consumables, equipment, and stacking.
+Define items with `items { }` (`ItemCatalogBuilder`) and containers with `container { }` (`ContainerBuilder`). Both are in `gbkt-lang/.../dsl/InventoryBuilders.kt` and `GameBuilder.kt`. Equipment slots and stat bonuses live in the `gbkt-genre-rpg` plugin (`EquipSlot` in `gbkt-genre-rpg`).
 
-> **Stale-API caveat:** the implemented core entry points are `items { item("potion") { ... } }`
-> (ItemCatalogBuilder, category is a string) and `container("inventory") { slots(16) }` — see
-> `gbkt-lang/.../dsl/InventoryBuilders.kt`. The `by item` delegate and `ItemCategory` enum below
-> are not in the current core DSL; equipment slots/stat bonuses live in the RPG genre plugin
-> (`equipmentSystem`, `EquipSlot` in `gbkt-genre-rpg`).
+### Item Catalog
 
-### Item Definition
-
-```kotlin
-// Consumable item
-val potion by item {
-    name("Potion")
-    description("Restores 50 HP")
-    category(ItemCategory.CONSUMABLE)
-    maxStack(10)
-    buyPrice(50)
-    sellPrice(25)
-
-    onUse {
-        target.heal(50)
-        cEmit("play_sfx(SFX_HEAL);")  // Play sound effect
-    }
-}
-
-// Equipment item with stat bonuses
-val ironSword by item {
-    name("Iron Sword")
-    description("A sturdy blade")
-    category(ItemCategory.WEAPON)
-    slot(EquipSlot.WEAPON)
-    maxStack(1)  // Equipment doesn't stack
-    buyPrice(200)
-
-    // Stat bonuses when equipped
-    stats {
-        atk(+10)
-        acc(+5)
-    }
-}
-
-// Key item (non-consumable, non-equipment)
-val dungeonKey by item {
-    name("Dungeon Key")
-    description("Opens dungeon doors")
-    category(ItemCategory.KEY_ITEM)
-    maxStack(1)
-}
-```
-
-### Item Categories & Equipment Slots
-
-```kotlin
-// Item categories
-ItemCategory.CONSUMABLE   // Usable items (potions, scrolls)
-ItemCategory.WEAPON       // Equippable weapons
-ItemCategory.ARMOR        // Equippable armor
-ItemCategory.ACCESSORY    // Equippable accessories
-ItemCategory.KEY_ITEM     // Quest items
-ItemCategory.MATERIAL     // Crafting materials
-
-// Built-in equipment slots
-EquipSlot.WEAPON
-EquipSlot.OFFHAND
-EquipSlot.HEAD
-EquipSlot.BODY
-EquipSlot.ACCESSORY
-```
-
-### Custom Equipment Slots
+Define categories and items in the top-level `game { }` block:
 
 ```kotlin
 val game = game("MyGame") {
-    // Define custom equipment slots
-    val ringSlot by equipSlot("Ring")
-    val bootsSlot by equipSlot("Boots")
-    val glovesSlot by equipSlot("Gloves")
+    items {
+        // Category: ID inferred from property name, or explicit string
+        val consumable by category { defaultMaxStack(10) }
+        val weapon by category { defaultMaxStack(1) }
 
-    // Use custom slot in item definition
-    val powerRing by item {
-        name("Power Ring")
-        category(ItemCategory.EQUIPMENT)
-        equipmentSlot(ringSlot)  // Use custom slot
-        stats { atk(+5) }
+        // Item using delegate syntax (ID = "potion")
+        val potion by item {
+            name("Potion")
+            category(consumable)   // Pass the category ID string
+            maxStack(10)
+            buyPrice(50)
+
+            onUse {
+                heal(50)           // Restores 50 HP
+            }
+        }
+
+        // Item using explicit ID
+        item("keyItem") {
+            name("Dungeon Key")
+            category("key")
+            maxStack(1)
+        }
     }
 }
 ```
 
-### Inventory Management
+**`ItemBuilder` methods (InventoryBuilders.kt:146):**
+
+| Method | Description |
+|--------|-------------|
+| `name(String)` | Display name |
+| `category(String)` | Category ID — use the string returned by `category {}` |
+| `maxStack(Int)` | Override category default; 1 = no stacking |
+| `buyPrice(Int)` | Shop purchase price; 0 = not sold |
+| `dropWeight(Int)` | Relative random drop weight; 0 = never dropped |
+| `onUse { }` | Use effect block (see below) |
+
+**`onUse { }` effects (`ItemEffectBuilder`, InventoryBuilders.kt:98):**
 
 ```kotlin
-// Create inventory
-val inventory by inventory { maxSlots(16) }
-
-// Add items
-inventory.add(potion, 3)         // Add 3 potions
-inventory.add(ironSword)         // Add 1 item
-
-// Remove items
-inventory.remove(potion, 1)      // Remove 1 potion
-inventory.remove(potion)         // Remove all potions of this type
-
-// Query inventory
-whenever(inventory.contains(potion)) { /* has at least one */ }
-whenever(inventory.count(potion) isAtLeast 5) { /* has 5+ */ }
-whenever(inventory.isFull) { showInventoryFullMessage() }
-whenever(inventory.hasSpace) { /* can add more items */ }
-
-// Equipment
-inventory.equip(hero, ironSword)
-inventory.unequip(hero, EquipSlot.WEAPON)
-whenever(hero.isEquipped(ironSword)) { /* sword equipped */ }
+onUse {
+    heal(50)                              // Restore 50 HP
+    buff("atk", amount = 5, duration = 3) // +5 ATK for 3 turns
+    script { /* arbitrary ScriptBuilder ops */ }  // Escape hatch
+}
 ```
+
+### Item Categories
+
+Categories group items and set a shared default max stack. The category ID is a plain string:
+
+```kotlin
+items {
+    val consumable by category { defaultMaxStack(10) }
+    val equipment by category { defaultMaxStack(1) }
+
+    // Or with explicit ID string:
+    category("key") { defaultMaxStack(1) }
+}
+```
+
+### Containers
+
+Containers hold stacks of items up to a fixed slot count:
+
+```kotlin
+val game = game("MyGame") {
+    // Delegate syntax — ID inferred from property name
+    val bag by container { slots(16) }
+
+    // Optional category filter
+    val weaponSlots by container {
+        slots(4)
+        categoryFilter("weapon")   // Only accepts items in the "weapon" category
+    }
+
+    // Explicit ID form
+    container("chest") { slots(8) }
+}
+```
+
+**`ContainerBuilder` methods (InventoryBuilders.kt:298):**
+
+| Method | Description |
+|--------|-------------|
+| `slots(Int)` | Maximum number of item stacks |
+| `categoryFilter(String)` | Restrict to one category ID; omit to accept all items |
 
 ## Ability System
 
