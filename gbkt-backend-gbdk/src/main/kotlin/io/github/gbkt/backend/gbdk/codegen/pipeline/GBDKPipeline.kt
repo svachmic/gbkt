@@ -1474,16 +1474,17 @@ class GBDKPipeline {
         bkgSetLevelSubmapHelperRaw: String?,
         levelSpawnTablesRaw: String?,
         setupCurrentLevelFunctionRaw: String?,
-    ): List<String> = buildList {
-        if (collectionDataRaw.isNotEmpty()) add(collectionDataRaw)
-        if (collectionFunctionsRaw.isNotEmpty()) add(collectionFunctionsRaw)
-        if (paletteDataRaw != null) add(paletteDataRaw)
-        if (metaspriteDescriptorRaw != null) add(metaspriteDescriptorRaw)
-        if (isTileSolidHelperRaw != null) add(isTileSolidHelperRaw)
-        if (bkgSetLevelSubmapHelperRaw != null) add(bkgSetLevelSubmapHelperRaw)
-        if (levelSpawnTablesRaw != null) add(levelSpawnTablesRaw)
-        if (setupCurrentLevelFunctionRaw != null) add(setupCurrentLevelFunctionRaw)
-    }
+    ): List<String> =
+        listOfNotNull(
+            collectionDataRaw.takeIf { it.isNotEmpty() },
+            collectionFunctionsRaw.takeIf { it.isNotEmpty() },
+            paletteDataRaw,
+            metaspriteDescriptorRaw,
+            isTileSolidHelperRaw,
+            bkgSetLevelSubmapHelperRaw,
+            levelSpawnTablesRaw,
+            setupCurrentLevelFunctionRaw,
+        )
 
     /**
      * Returns collision functions for HOME bank; generates a stub when exploration systems exist
