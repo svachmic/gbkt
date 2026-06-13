@@ -1135,6 +1135,17 @@ The framework automatically manages Game Boy hardware resources (VRAM, banking, 
 
 See `.planning/MILESTONES.md` and `.planning/milestones/v0.1.0-ROADMAP.md` for the full record.
 
+## Current Milestone: v0.1.1 Hardening
+
+**Goal:** Drain the v0.1.0 deferred-debt backlog — every seed gets a terminal disposition (fixed, verified-closed, or explicitly re-routed), the docs tell the truth, and static-analysis debt is burned down.
+
+**Target features:**
+- Seed triage & closure — all 44 seeds end fixed, closed-with-evidence, or re-deferred with an explicit v0.2.0 disposition; `.planning/seeds/` is empty at milestone close. Stale status hints (written before Phases 12.6–13.8 shipped) must be re-verified against current master, not trusted.
+- Deprecation removals pulled forward — SEED-023 (whenever/runIf unification) and SEED-025 (remove deprecated combat String overload) land in v0.1.1
+- DSL_REFERENCE.md reconciliation — prune/rewrite the 13 dead-API sections so docs match the implemented DSL; each removed subsystem becomes a tracked v0.2.0 feature candidate; apply the 2 doc-only fixes
+- QUAL-01..03 cleanup — detekt violations, platform-aware screen constants, magic-pixel elimination (the deferred Phase 08 scope)
+- Sonar S3776 burn-down — clear the 46 cognitive-complexity HIGH findings
+
 ## Requirements
 
 ### Validated
@@ -1152,12 +1163,13 @@ See `.planning/MILESTONES.md` and `.planning/milestones/v0.1.0-ROADMAP.md` for t
 - ✓ JVM test runner for game logic (ScriptOp interpreter, simulated environment) — v0.1.0
 - ✓ Framework codegen correctness validated against 4 GBDK SDK reference examples (simple_physics → metasprites → banks → platformer_template) via the Phases 9–13 reference-port track with binding visual UAT — v0.1.0
 
-### Active (next milestone)
+### Active (v0.1.1)
 
-- [ ] Quality/tech-debt cleanup — detekt violations, platform-aware screen constants, magic-pixel elimination (deferred Phase 08 / QUAL-01..03)
-- [ ] Genre-codegen completion — platformer (07.5), RPG audit (07.6), GBC palette init (07.7), UAT re-run (07.8)
-- [ ] IDE-04 IntelliJ DX completion (deferred Phase 5.4)
-- [ ] Triage the 56 deferred backlog items (seeds, advisory codegen todos) via `/gsd-review-backlog`
+- [ ] Seed triage & closure — every seed fixed, verified-closed with evidence, or re-deferred with an explicit v0.2.0 disposition; seeds directory empty at close
+- [ ] Deprecation removals — SEED-023 (whenever/runIf unification), SEED-025 (remove deprecated combat String overload)
+- [ ] DSL_REFERENCE.md reconciliation — prune/rewrite the 13 dead-API sections; removed subsystems tracked as v0.2.0 feature candidates
+- [ ] QUAL-01..03 — detekt violations, platform-aware screen constants, magic-pixel elimination (deferred Phase 08 scope)
+- [ ] Sonar S3776 burn-down — 46 cognitive-complexity HIGH findings
 
 ### Out of Scope
 
@@ -1166,6 +1178,10 @@ See `.planning/MILESTONES.md` and `.planning/milestones/v0.1.0-ROADMAP.md` for t
 - New game ports — focus on framework correctness, not new game content
 - Community docs / tutorials — premature until architecture stabilizes
 - Link cable multiplayer support — future library
+- Implementing the 13 documented-but-absent DSL subsystems (state machines, dialog/menu property APIs, save fields, entity-pool lifecycle, tweening, camera extras, physics property API, pathfinding, battle menus, items) — v0.1.1 makes docs match reality; implementation is v0.2.0+ feature work
+- Big-ticket seeds deferred from v0.1.1: SEED-RAW-C-CODEGEN-AST-MIGRATION (own architecture phase), SEED-PHASE-X-CPAREN (~50+ fixture re-snapshots), SEED-019/024 (IntelliJ test infra), SEED-001 (IDE features, v2.0 trigger)
+- SEED-018 RPG character codegen extern/decl mismatch — stays dormant with the archived dungeon/explorer games
+- Genre-codegen phases 07.5–07.8 and IDE-04 — wait for their own milestone
 
 ## Constraints
 
@@ -1185,8 +1201,27 @@ See `.planning/MILESTONES.md` and `.planning/milestones/v0.1.0-ROADMAP.md` for t
 | Full-green suite as the v0.1.0 release gate | A cleanup release must leave a tree that works end-to-end; a red suite is unacceptable | ✓ Good — Phase 15 drove 18 red tests green diagnose-first, zero threshold-weakening |
 | Keep LabyrinthOfTheDragon in-repo for now | Ultimate integration test; move to separate repo when mature | ⚠️ Revisit — RPG-port buildRom debt (SEED-018) deferred; reassess next milestone |
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-06-09 after v0.1.0 milestone — MVP Compiler Pipeline Rebuild shipped (66 phases, 652 plans, 887 tasks; full-green release gate satisfied via Phase 15). Prior: 2026-06-03 after Phase 13.2 (framework primitives — delegate ergonomics + variable/control-flow) completion — 7/7 plans shipped, verifier 6/6 success criteria passed. Phase 13.2 removed the delegate-ceremony tax and the hand-rolled variable/frame-logic patterns: a uniform single-use `delegateUsed` guard across all five delegate types with one `@file:Suppress` per example file replacing 18 per-site suppresses (Req #12 + carried-in WR-06); `runIf`/`unless`/`orElse` single-frame conditional aliases over `IfOp` (Req #2); `i16FixedVar`/`toPixel`/`subpixel` fixed-point sub-pixel abstraction (Req #3); `easeToZero` decay primitive (Req #8); and `u8Var(wrapAt = N)` declarative wrap with mask vs compare-reset emission (Req #9). Four audited example ports migrated; full `:gbkt-lang:test` 292/0; SimplePhysics D-12 byte-identical codegen oracle GREEN; D-18 ROM sweep 8/8 buildRom EXIT 0 (pong PASS*). Code review surfaced 1 BLOCKER in the phase's own new code — fixed in-phase: CR-01 (i16FixedVar `fractionalBits` not flowing to `toPixel`, RED→GREEN, commits e24fc345/c205be1b). Five advisory items filed as backlog todos: W1–W4 (wrapAt=0, wrapAt-decrement asymmetry, orElse-after-wrap-guard, easeToZero by>1) and a pre-existing metasprites byte-identity baseline staleness (Phase 12.8, not a 13.2 regression). Resume target: Phase 13 parent (next decimal is 13.3 — metasprite, sprite & color). Advisory items still open from 13.1-REVIEW.md: WR-01, WR-03, WR-07.*
+*Last updated: 2026-06-12 — milestone v0.1.1 Hardening started (seed-backlog drain, deprecation removals 023/025, DSL_REFERENCE reconciliation, QUAL-01..03, Sonar S3776 burn-down).*
+
+*Prior: 2026-06-09 after v0.1.0 milestone — MVP Compiler Pipeline Rebuild shipped (66 phases, 652 plans, 887 tasks; full-green release gate satisfied via Phase 15). Prior: 2026-06-03 after Phase 13.2 (framework primitives — delegate ergonomics + variable/control-flow) completion — 7/7 plans shipped, verifier 6/6 success criteria passed. Phase 13.2 removed the delegate-ceremony tax and the hand-rolled variable/frame-logic patterns: a uniform single-use `delegateUsed` guard across all five delegate types with one `@file:Suppress` per example file replacing 18 per-site suppresses (Req #12 + carried-in WR-06); `runIf`/`unless`/`orElse` single-frame conditional aliases over `IfOp` (Req #2); `i16FixedVar`/`toPixel`/`subpixel` fixed-point sub-pixel abstraction (Req #3); `easeToZero` decay primitive (Req #8); and `u8Var(wrapAt = N)` declarative wrap with mask vs compare-reset emission (Req #9). Four audited example ports migrated; full `:gbkt-lang:test` 292/0; SimplePhysics D-12 byte-identical codegen oracle GREEN; D-18 ROM sweep 8/8 buildRom EXIT 0 (pong PASS*). Code review surfaced 1 BLOCKER in the phase's own new code — fixed in-phase: CR-01 (i16FixedVar `fractionalBits` not flowing to `toPixel`, RED→GREEN, commits e24fc345/c205be1b). Five advisory items filed as backlog todos: W1–W4 (wrapAt=0, wrapAt-decrement asymmetry, orElse-after-wrap-guard, easeToZero by>1) and a pre-existing metasprites byte-identity baseline staleness (Phase 12.8, not a 13.2 regression). Resume target: Phase 13 parent (next decimal is 13.3 — metasprite, sprite & color). Advisory items still open from 13.1-REVIEW.md: WR-01, WR-03, WR-07.*
 
 *Prior: 2026-06-03 after Phase 12.11 (platformer level-2 gameplay-zone near-blank render in UAT harness) completion — 4/4 plans shipped, verifier 5/5 must-haves passed. Phase 12.11 closed the two entangled anchor-5 defects: Failure A (card→gameplay level-2 switch never completing, `_current_level` stuck at 0) root-caused to a frame-boundary VBlank collision — the main-loop level-switch guard called `nextLevelScene_enter()` every frame, leaving the ROM paused mid-enter so START was never registered — fixed by extending `buildMainLoopLevelSwitchGuardIfNeeded` with `&& current_scene != SCENE_NEXTLEVELSCENE`; Failure B (level-2 BG near-blank, 0.983 dominant ratio) fixed by wrapping `setup_current_level()`'s per-zone VRAM writes in `DISPLAY_OFF`/`DISPLAY_ON` in `buildSetupCurrentLevelFunctionIfNeeded`. Both edits gated by `gameUsesTilemapCollision` (7-target ROM sweep byte-identical, pong PASS*). `anchor5LevelSwitch()` re-armed (no @Disabled, live `assertScreenshotIsNonUniform`), passing 3/3 with binding PNG `evidence/anchor-5/03-level-2.png`. RED→GREEN JVM guard `SetupCurrentLevelDisplayGateEmissionTest` added. Phase 12 itself was SHIPPED earlier (2026-06-02 via Phase 12.9, 28/28 plans, `phase.complete 12` invoked). Resume target: Phase 13 (framework primitives surfaced by example ports). Advisory code-review items carried (12.11-REVIEW.md): WR-01 stale KDoc on `buildMainLoopLevelSwitchGuardIfNeeded`, IN-01 dead `Disabled` import, IN-02 no JVM guard for the Failure-A guard condition (covered by the re-armed UAT).*
 

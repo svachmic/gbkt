@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.1.0
-milestone_name: MVP — Compiler Pipeline Rebuild
-status: Awaiting next milestone
-stopped_at: v0.1.0 milestone shipped and archived
-last_updated: "2026-06-09T15:52:30.144Z"
-last_activity: 2026-06-11 — Completed quick task 260611-k1w: unify version catalog across all Gradle build scripts
+milestone: v0.1.1
+milestone_name: Hardening
+status: planning
+last_updated: "2026-06-12T09:38:23.518Z"
+last_activity: 2026-06-12
 progress:
-  total_phases: 71
-  completed_phases: 56
-  total_plans: 654
-  completed_plans: 639
-  percent: 79
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -54,10 +53,10 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: Milestone v0.1.0 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-11 — Completed quick task 260611-k1w: unify version catalog (libs.versions.toml) across all Gradle build scripts
+Status: Defining requirements
+Last activity: 2026-06-12 — Milestone v0.1.1 started
 
 ### Bisect state as of Plan 06d complete
 
