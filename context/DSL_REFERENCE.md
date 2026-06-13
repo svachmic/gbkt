@@ -369,45 +369,33 @@ a DSL build-time error. Choose one path per metasprite.
 | `sprite(asset(...)) + frames(N)` | PNG sprite sheet — png2asset cuts frames automatically |
 | `frame { tile(x, y, id) }` | Hand-crafted layouts; shared/legacy tile sets (D-04 escape hatch) |
 
-## State Machine DSL
+## Animation State Machine
 
-> **Stale-API caveat:** the `states("...")` builder shown below does not exist in the current
-> codebase. The implemented state machine is the per-actor `animationStates { }` DSL (see
-> "Sprite Animations" above) plus `setAnimationState(actor, "state")` for manual transitions.
+Per-actor animation states are declared with `animationStates { }` inside the `actor { }` block.
+Condition-based auto-transitions and manual `setAnimationState()` calls are the two ways to
+drive the state machine at runtime. See "Sprite Animations" above for the full example.
 
 ```kotlin
-// Define entity states (new in v2.0!)
-// Assumes idleAnim, runAnim, jumpAnim are declared (see Sprite Animations)
-val playerState = states("player") {
-    "idle" {
-        enter { player.play(idleAnim) }
-        on(buttons.a.pressed) { goto("jump") }
-        on(dpad.any) { goto("run") }
-    }
+val player by actor {
+    position(80, 72)
+    sprite(asset("sprites/player.png")) { size(8, 16) }
 
-    "run" {
-        enter { player.play(runAnim) }
-        tick { playerX += dpad.x * 2 }
-        on(dpad.none) { goto("idle") }
-        on(buttons.a.pressed) { goto("jump") }
-    }
-
-    "jump" {
-        enter { player.play(jumpAnim) }
-        tick {
-            playerY -= playerVelY
-            playerVelY -= 1
-        }
-        on(playerY isAtLeast groundY) { goto("idle") }
+    // Declare states with frame ranges and optional auto-transitions
+    animationStates {
+        state("idle") { frames(0..0); speed(8) }
+        state("walk") { frames(1..4); speed(6) }
+        state("jump") { frames(5..5); speed(1) }
+        transition("idle" to "walk") { dpad.any }   // auto: held d-pad → walk
+        transition("walk" to "idle") { dpad.none }  // auto: released → idle
     }
 }
 
-// Use state machine in scene
-gameplayScene = scene("gameplay") {
-    enter { playerState.start("idle") }
-    frame { playerState.update() }
-}
+// Manual transition from any script block (enter/frame/exit)
+whenever(buttons.a.pressed) { setAnimationState(player, "jump") }
 ```
+
+State transitions happen automatically when a `transition` condition becomes true.
+`setAnimationState(actor, "stateName")` forces a transition unconditionally from script.
 
 ## Control Flow
 
@@ -919,16 +907,13 @@ cEmit("custom_function();")
 
 ## Dialog System DSL
 
-gbkt provides a smooth, Compose-like dialog system for RPGs, adventures, and action games. Supports typewriter text effects, customizable borders, variable interpolation, and choice menus.
-
-> **Stale-API caveat:** some snippets below predate the current `DialogBuilder` — config is
-> function-style (`textSpeed(3)`, `speaker("Elder")`, `box(x, y, width, height)`), not
-> property-style, and `dialog.tick()`/`isActive`/`isComplete` are not in the current
-> `DialogHandle`. Cross-check `gbkt-lang/.../dsl/UIBuilders.kt` before relying on details.
+gbkt provides a typewriter-effect dialog system for RPGs, adventures, and action games.
+Config is function-style (not property-style). Source: `UIBuilders.kt` (`DialogBuilder`,
+`DialogHandle`).
 
 ```kotlin
 // === Quick Inline Dialog (action games) ===
-// Perfect for item pickups, notifications, one-liners
+// say() uses the default dialog box at the bottom of the screen
 gameplayScene = scene("gameplay") {
     frame {
         whenever(gotItem isEqualTo 1) {
@@ -939,88 +924,56 @@ gameplayScene = scene("gameplay") {
 }
 
 // === Named Dialog (RPGs, adventures) ===
-// Define once, reuse everywhere
-val elder = dialog("elder") {
-    speaker = "Elder"           // Prefix: "Elder: Hello!"
-    textSpeed = 3               // Characters per frame (higher = faster)
-    box {
-        position(0, 10)         // Tile coordinates (x, y)
-        size = 20 x 6           // Width x Height in tiles
-        border = BorderStyle.SIMPLE  // NONE, SIMPLE, ROUNDED, DOUBLE
-        padding = 1
-    }
-}
-
-lateinit var villageScene: SceneRef
+// Define once at game scope; reuse from any scene via the returned DialogHandle
 lateinit var questScene: SceneRef
+val elder = dialog("elder") {
+    speaker("Elder")              // Prefix displayed above the box: "Elder: ..."
+    textSpeed(3)                  // Characters per frame (higher = faster)
+    box(x = 0, y = 10, width = 20, height = 6)  // tile coordinates + dimensions
+    border(BorderStyle.SIMPLE)    // NONE, SIMPLE, ROUNDED, DOUBLE
+    fontMode(FontMode.FIXED_WIDTH)
+    portrait(asset("sprites/elder.png"))  // optional portrait asset
+}
 
 villageScene = scene("village") {
     enter {
         elder.say("Welcome, young hero!")
         elder.say("The kingdom needs you.")
     }
-
-    frame {
-        // Update typewriter effect (REQUIRED when dialog is active!)
-        elder.tick()
-
-        // Check dialog state
-        whenever(elder.isComplete) {
-            // Dialog finished displaying
-        }
-    }
 }
 
 // === Variable Interpolation ===
-val shopkeeper = dialog("shop") { textSpeed = 2 }
+val shopkeeper = dialog("shop") { textSpeed(2) }
 
+// say() accepts vararg Any — mix String literals and AssignableVar/Expr
 shopkeeper.say("That'll be ", price, " gold.")
 shopkeeper.say("You have ", coins, " coins!")
 
-// === Choice Menus (with type-safe SceneRefs) ===
+// === Choice Menus ===
 elder.choice {
     option("Accept quest") { navigate(questScene) }
     option("Decline") { navigate(villageScene) }
     option("Tell me more") { elder.say("Long ago...") }
 }
-
-// === Dialog Visibility ===
-elder.show()    // Show dialog box (without text)
-elder.hide()    // Hide dialog box
-
-// === Border Styles ===
-// BorderStyle.NONE   - No border, text only
-// BorderStyle.SIMPLE - ASCII border: +--+
-// BorderStyle.ROUNDED - Rounded corners (custom tiles)
-// BorderStyle.DOUBLE  - Double-line border (custom tiles)
 ```
 
 **Important Notes:**
-- Always call `dialog.tick()` in `frame { }` when a dialog is active
-- Use `dialog.isActive` and `dialog.isComplete` conditions to check state
-- Press A button to advance text after typewriter completes
-- Named dialogs require `dialog("name") { ... }` builder syntax
-- Inline `say()` uses default dialog at bottom of screen
+- `dialog("id") { }` config is function-style: `speaker("Name")`, `textSpeed(3)`, not property assignment
+- `box(x, y, width, height)` is a single function call — no nested box builder, no `padding`
+- `DialogHandle` methods: `say(text)`, `say(vararg segments)`, `choice { option(...) { } }`
+- Inline `say()` (no handle) uses the default dialog at the bottom of the screen
 
 ## Menu System DSL
 
-gbkt provides a Compose-like menu system for title screens, pause menus, settings, and inventories. Menus handle navigation, selection, and input automatically.
-
-> **Stale-API caveat:** some snippets below predate the current `MenuBuilder` — config is
-> function-style (`cursor(">")`, `parent(mainMenu)`, `position(x, y, width, height)`,
-> `slider(label, variable, min, max, step)`), there is no `style { }` block, no `gridMenu()`,
-> and no `menu.tick()`. Cross-check `gbkt-lang/.../dsl/UIBuilders.kt` before relying on details.
+gbkt provides a menu system for title screens, pause menus, settings, and inventories. Config
+is function-style (no `style { }` block). Source: `UIBuilders.kt` (`MenuBuilder`, `MenuHandle`).
 
 ```kotlin
 // === Simple Vertical Menu (Title Screens, Pause Menus) ===
-// Assumes gameplayScene, continueScene are declared as SceneRef
+// menu("id") { } returns a MenuHandle for show/hide from script blocks
 val mainMenu = menu("main") {
-    style {
-        position(5, 8)        // Tile coordinates (x, y)
-        cursor = ">"          // Cursor character
-        border = BorderStyle.ROUNDED
-        spacing = 2           // Lines between items
-    }
+    position(5, 8, 10, 10)    // x, y, width, height in tile coordinates
+    cursor(">")               // cursor character (function-style)
 
     item("NEW GAME") { navigate(gameplayScene) }
     item("CONTINUE") { navigate(continueScene) }
@@ -1029,90 +982,45 @@ val mainMenu = menu("main") {
 
 titleScene = scene("title") {
     enter {
-        clear()
-        printCentered("MY GAME") at 3
-        mainMenu.show()
+        mainMenu.show()   // MenuHandle.show() — opens and focuses the menu
     }
-
-    frame {
-        mainMenu.tick()  // REQUIRED - handles input and rendering
+    exit {
+        mainMenu.hide()   // MenuHandle.hide() — closes the menu
     }
 }
 
 // === Settings Menu with Controls ===
 val optionsMenu = menu("options") {
-    parent = mainMenu  // B button returns to parent
+    parent(mainMenu)         // B button auto-returns to parent (function-style)
+    position(3, 4, 14, 12)
 
-    style {
-        position(3, 4)
-        labelWidth = 10   // Width of label column
-        valueWidth = 6    // Width of value column
-    }
+    // Toggle: A button or left/right flips the variable (0 ↔ 1)
+    toggle("MUSIC", musicEnabled)
 
-    // Toggle: A button or left/right to flip
-    toggle("MUSIC", musicEnabled) {
-        onChange { applyMusicSetting() }
-    }
+    // Slider: left/right adjusts variable in [min, max] with step
+    slider("VOLUME", volume, min = 0, max = 7, step = 1)
 
-    // Slider: Left/right to adjust
-    slider("VOLUME", volume, 0..7) {
-        step = 1
-        onChange { applyVolume() }
-    }
-
-    // Option cycle: Left/right to cycle through choices
-    option("DIFFICULTY", difficulty) {
-        choices("EASY", "NORMAL", "HARD")
-    }
+    // Option cycle: left/right cycles through a list of string choices
+    option("DIFFICULTY", difficulty, listOf("EASY", "NORMAL", "HARD"))
 
     item("BACK") { close() }
 }
 
-// === Submenu Navigation ===
-// open(childMenu) - Push child menu onto stack
-// close() - Pop current menu, return to parent
-// B button auto-returns when parent is set
-
 // === Grid Menu (Inventories) ===
-val inventory = gridMenu("inventory") {
-    grid(4, 3)  // 4 columns, 3 rows
-
-    style {
-        position(2, 2)
-        cellSize = 2 x 2      // Cell size in tiles
-        padding = 1           // Padding between cells
-        border = BorderStyle.SIMPLE
-    }
-
-    itemsFrom(inventorySlots) { slot, index ->
-        onSelect { useItem(index) }
-        whenEmpty { /* nothing */ }
-    }
+val inventoryMenu = menu("inventory") {
+    layout(MenuLayout.GRID)
+    columns(4)                // 4-column grid
+    position(2, 2, 16, 12)
+    itemsFrom(inventorySlots) // ArrayVar data source — items auto-populate
 }
-
-// === Menu State Conditions ===
-whenever(mainMenu.isVisible) { /* menu is shown */ }
-whenever(mainMenu.isActive) { /* menu has focus */ }
-val idx = mainMenu.selectedIndex  // Current cursor position
-
-// === Cursor Styles ===
-// cursor = ">"           // Custom character
-// cursorStyle = CursorStyle.ARROW   // Predefined: ARROW, DASH, DOT
-// cursorSprite = myCursor           // Sprite-based cursor
-// cursorOffset = -8 to 0            // Pixel offset for sprite
-
-// === Wrap Modes ===
-// wrapMode = WrapMode.WRAP   // Wrap from last to first (default)
-// wrapMode = WrapMode.CLAMP  // Stop at edges
 ```
 
 **Important Notes:**
-- Always call `menu.tick()` in `frame { }` when a menu is active
-- Use `menu.show()` to display and focus a menu
-- D-Pad navigates, A selects, B cancels/goes back
-- For settings: use `toggle`, `slider`, `option` controls
-- For inventories: use `gridMenu` with `itemsFrom` binding
-- Submenus: set `parent = parentMenu` for automatic back navigation
+- `menu("id") { }` config is function-style: `cursor(">")`, `position(x, y, w, h)`, `parent(menuHandle)` — no property assignment, no `style { }` block
+- `toggle(label, variable)` — no block; `slider(label, variable, min, max, step)` — separate Int params, not a range
+- `option(label, variable, listOf(...))` — choices as `List<String>`, not a block
+- `itemsFrom(arrayVar)` — accepts `ArrayVar`; takes no block
+- `MenuHandle.show()` / `MenuHandle.hide()` are the script-op entry points; D-Pad navigates, A selects, B cancels
 
 ## Game Configuration
 
@@ -1231,84 +1139,38 @@ whenever(buttons.select.pressed) { triggerSystem(saves) }
 > `Cartridge.MBC1_RAM_BATTERY` or `Cartridge.MBC5_RAM_BATTERY`. Declare the cartridge in
 > `config { }` — the framework no longer auto-upgrades the cartridge type silently.
 
-### Save Data Fields
+### Save Data Configuration
 
-> **Stale-API caveat:** the field-level save API below (`u16Field()`, `flagsField()`,
-> `save.load()`, etc.) does not exist in the current codebase. The implemented
-> `SaveDataBuilder` exposes only `slots(n)`, `checksum(enabled)`, and `version(v)`; saves are
-> triggered via `triggerSystem(saves)` as shown above.
+`SaveDataBuilder` exposes three configuration functions. Source: `SystemBuilders.kt`.
 
 ```kotlin
-// Define save data structure
-val save = saveData("mygame") {
-    var score by u16Field()           // 2 bytes (0-65535)
-    var level by u8Field(default = 1) // 1 byte with default value
-    var lives by u8Field(default = 3)
-    var highScore by u16Field()
-    var playerX by u8Field()
-    var playerY by u8Field()
-    var flags by flagsField()         // 8 boolean flags (1 byte)
-    var inventory by arrayField(8)    // Fixed-size array (8 bytes)
-
-    config {
-        slots = 3                     // 3 save slots
-        checksum = Checksum.CRC8      // Data integrity (NONE, XOR, CRC8, SUM16)
-        magic = "GBKT"                // 4-char validation marker
-        version = 1                   // Save format version
-    }
+@Suppress("UNUSED_VARIABLE") val saves by saveData {
+    slots(3)              // number of independent SRAM save slots (default: 1)
+    checksum(true)        // enable 8-bit rolling checksum on load (default: false)
+    version(1)            // save format version number (default: 1)
 }
-
-// Usage in scenes (assumes SceneRefs are declared)
-titleScene = scene("title") {
-    enter {
-        // Check if save exists before loading
-        whenever(save.exists(slot = 0)) {
-            printAt(4, 8, "CONTINUE")
-        }
-    }
-
-    frame {
-        whenever(buttons.a.pressed) {
-            save.load(slot = 0)
-            navigate(gameplayScene)
-        }
-    }
-}
-
-gameplayScene = scene("gameplay") {
-    frame {
-        // Access save fields like normal variables
-        save.score += 10
-
-        // Compare with save data
-        whenever(score isAbove save.highScore) {
-            save.highScore set score
-        }
-
-        // Save on checkpoint
-        whenever(buttons.start.pressed) {
-            save.save()  // Saves to current slot
-        }
-    }
-}
-
-// Flags field for boolean states
-save.flags.setBit(0)        // Set flag 0
-save.flags.clearBit(1)      // Clear flag 1
-save.flags.toggleBit(2)     // Toggle flag 2
-whenever(save.flags.isSet(0)) { /* flag 0 is set */ }
-
-// Array field access
-save.inventory[0] set 5     // Set item at index 0
-whenever(save.inventory[0] isEqualTo 5) { /* ... */ }
-
-// Slot management
-save.erase(slot = 1)        // Erase a slot
-save.eraseAll()             // Erase all slots
-save.copy(from = 0, to = 1) // Copy slot 0 to slot 1
 ```
 
-**Note:** In Phase 13.1 and later, the cartridge type is NOT auto-upgraded. Declare
+Save/load is triggered at runtime via `triggerSystem(saves)` from any script block.
+Game state variables (declared with `u8Var`, `i8Var`, etc.) are included automatically;
+mark a variable `transient = true` to exclude it.
+
+```kotlin
+// Include in save (default — no annotation needed)
+var score by u8Var(0)
+
+// Exclude from save (e.g. frame counters, debug state)
+var frameCounter by u8Var(0, transient = true)
+
+// Trigger save/load from a scene
+scene("gameplay") {
+    frame {
+        whenever(buttons.select.pressed) { triggerSystem(saves) }
+    }
+}
+```
+
+**Note:** The cartridge type is NOT auto-upgraded. Declare
 `cartridge(Cartridge.MBC5_RAM_BATTERY)` explicitly in `config { }` when using `saveData`.
 
 ## Entity Pools
