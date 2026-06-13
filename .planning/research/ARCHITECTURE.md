@@ -1,426 +1,533 @@
 # Architecture Research
 
-**Domain:** DSL-to-native-code compiler framework (Kotlin DSL -> C for Game Boy)
-**Researched:** 2026-02-17
-**Confidence:** HIGH (derived from codebase analysis + established compiler architecture patterns)
-
----
+**Domain:** Kotlin DSL → GBDK C compiler (Game Boy) — v0.1.1 hardening integration
+**Researched:** 2026-06-12
+**Confidence:** HIGH
 
 ## Standard Architecture
 
 ### System Overview
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                         FRONTEND LAYER                               │
-│  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────────┐   │
-│  │   :dsl module   │  │   :assets module  │  │  :ir module      │   │
-│  │  Kotlin DSL     │  │  PNG/TMX/PO proc  │  │  Sealed IR types │   │
-│  │  builders       │  │  → AssetIR nodes  │  │  zero deps       │   │
-│  └────────┬────────┘  └────────┬──────────┘  └────────┬─────────┘  │
-│           │                   │                        │            │
-│           └───────────────────┴────────────────────────┘            │
-│                               │ emits GameIR                        │
-└───────────────────────────────┼─────────────────────────────────────┘
-                                ↓
-┌──────────────────────────────────────────────────────────────────────┐
-│                        ANALYSIS LAYER                                │
-│  :analysis module — ordered pipeline of GameIR → GameIR passes      │
-│                                                                      │
-│  Pass 1: SemanticValidation   (type checks, missing refs)           │
-│  Pass 2: ResourceInventory    (count sprites, tiles, sounds)        │
-│  Pass 3: ConstraintCheck      (OAM ≤40, WRAM ≤6KB, palette ≤8)     │
-│  Pass 4: BankingAnalysis      (bin-pack code into 16KB banks)       │
-│  Pass 5: VRAMLayout           (assign tiles to VRAM addresses)      │
-│  Pass 6: OAMAllocation        (assign sprite slots per scene)       │
-│  Pass 7: DeadCodeElimination  (drop unused IR nodes)               │
-│  Pass 8: ConstantFolding      (reduce static expressions)           │
-│  Pass 9: AnnotatedIR          (attach layout metadata to nodes)     │
-│                               │ produces AnnotatedGameIR            │
-└───────────────────────────────┼─────────────────────────────────────┘
-                                ↓
-┌──────────────────────────────────────────────────────────────────────┐
-│                        CODEGEN LAYER                                 │
-│  :codegen module — IR → C AST → pretty-printed C strings           │
-│                                                                      │
-│  IR Visitor → C AST nodes (CFunction, CStruct, CPragma, etc.)      │
-│  C AST → CEmitter (bank-aware, source-mapped)                      │
-│  Output: Map<String, String>  filename → C source                  │
-└──────────────────────────────────────────────────────────────────────┘
-                                ↓
-┌──────────────────────────────────────────────────────────────────────┐
-│                       TOOLING LAYER                                  │
-│  :gradle-plugin  :cli  :intellij-plugin  :test-runner               │
-│  Orchestrate build pipeline; invoke frontend → analysis → codegen   │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-### Component Responsibilities
-
-| Component | Responsibility | Typical Implementation |
-|-----------|----------------|------------------------|
-| `:ir` (within gbkt-core) | Define sealed IR node hierarchies — zero dependencies | Kotlin sealed interfaces + data classes; all must be in one module (Kotlin constraint) |
-| `:dsl` (within gbkt-core) | Execute Kotlin DSL, capture operations as IR via RecordingContext | Thread-local context; property delegates; operator overloads on Expr |
-| `:assets` (within gbkt-core) | Process PNG/TMX/PO files into asset IR nodes | PNG decoder, Tiled TMX parser, PO parser; emits asset references with metadata |
-| `:analysis` | Run ordered passes over GameIR; each pass is GameIR → GameIR | Pass interface + pipeline executor; passes annotate IR with layout metadata |
-| `:codegen` | Transform annotated IR into C AST, then emit C source strings | Visitor over IR nodes; structured C AST builder (not raw string concatenation); bank-aware emitter |
-| `:gradle-plugin` | Orchestrate pipeline; invoke lcc compiler; manage build tasks | Gradle plugin; GenerateCTask, CompileRomTask, RunEmulatorTask |
-| `:test-runner` | JVM-side execution of game logic for unit tests | ScriptOp interpreter; SimulationContext; InlineExecutor |
-| `:backend-api` | Swappable backend contract; future GBA/NES targets | CodegenBackend interface with validate(game) + generate(game) methods |
-
----
-
-## Recommended Project Structure
+The v0.1.0 pipeline that v0.1.1 hardens:
 
 ```
-gbkt/
-├── gbkt-core/                       # All IR + DSL (sealed interface constraint forces co-location)
-│   ├── ir/                          # Sealed IR node types (IRStatement, IRExpression hierarchies)
-│   ├── dsl/                         # RecordingContext, operators, DSL builders
-│   ├── builder/                     # GameBuilder, GameConfig, feature registration
-│   ├── assets/                      # Asset reference types (SpriteAsset, MapAsset, etc.)
-│   ├── entity/                      # Entity/component system IR
-│   ├── rpg/                         # RPG domain IR (stats, battle, abilities)
-│   ├── world/                       # World/dungeon IR (floors, encounters, flags)
-│   ├── exploration/                 # Exploration system IR
-│   ├── flow/                        # Game flow IR (scene transitions, pause, save)
-│   ├── graphics/                    # Graphics IR (sprites, tilemaps, camera)
-│   ├── input/                       # Input IR
-│   ├── scene/                       # Scene lifecycle IR
-│   ├── ui/                          # UI IR (dialogs, menus, status bars)
-│   └── validation/                  # Constraint definitions (TargetProfile)
-│
-├── gbkt-analysis/                   # Analysis pass pipeline (NEW)
-│   ├── api/                         # AnalysisPass interface, AnnotatedGameIR, PassContext
-│   ├── passes/
-│   │   ├── SemanticValidationPass.kt
-│   │   ├── ResourceInventoryPass.kt
-│   │   ├── ConstraintCheckPass.kt
-│   │   ├── BankingAnalysisPass.kt
-│   │   ├── VRAMLayoutPass.kt
-│   │   ├── OAMAllocationPass.kt
-│   │   ├── DeadCodeEliminationPass.kt
-│   │   ├── ConstantFoldingPass.kt
-│   │   └── AnnotatedIRPass.kt
-│   └── pipeline/                    # PassPipeline executor; ordering enforcement
-│
-├── gbkt-backend-api/                # Backend contract (unchanged)
-│   └── CodegenBackend.kt            # validate(game) + generate(annotatedGame) methods
-│
-├── gbkt-backend-gbdk/               # GBDK C code generator
-│   ├── codegen/
-│   │   ├── ast/                     # C AST node types (NEW — no more raw string building)
-│   │   │   ├── CDeclaration.kt      # CFunction, CStruct, CTypedef, CGlobalVar
-│   │   │   ├── CStatement.kt        # CIf, CWhile, CFor, CReturn, CExprStatement
-│   │   │   ├── CExpression.kt       # CLiteral, CBinary, CUnary, CCall, CArrayAccess
-│   │   │   └── CUnit.kt             # CFile (root), CPragma, CInclude, CComment
-│   │   ├── emit/
-│   │   │   ├── CEmitter.kt          # C AST → string with indentation, source mapping
-│   │   │   └── BankAwareEmitter.kt  # Wraps CEmitter; handles #pragma bank switching
-│   │   ├── visitors/                # IR node visitors → C AST subtrees
-│   │   │   ├── StatementVisitor.kt
-│   │   │   ├── ExpressionVisitor.kt
-│   │   │   ├── RPGVisitor.kt
-│   │   │   ├── WorldVisitor.kt
-│   │   │   └── GraphicsVisitor.kt
-│   │   └── GBDKCodeGenerator.kt     # Orchestrates visitors → CUnit → BankAwareEmitter
-│   └── profiles/                    # GB/GBC TargetProfile (VRAM limits, OAM limits, etc.)
-│
-├── gbkt-gradle-plugin/              # Build tooling (unchanged structure)
-├── gbkt-cli/                        # CLI tool (unchanged)
-├── gbkt-intellij-plugin/            # IDE support (unchanged)
-└── gbkt-examples/                   # Example games (unchanged)
+Kotlin DSL (gbkt-lang)
+    ↓ DSL recording via GameBuilderContext / ScriptBuilderContext
+IR construction (gbkt-ir, gbkt-engine, gbkt-world)
+    ↓ GameBuilder.build() → GameIR tree
+Analysis (gbkt-analysis) — 12 ordered passes
+    ↓ DefaultPipeline: validate → allocate banks/VRAM/OAM/RAM → budget audit
+Annotation — applyAnnotations() copies allocations back onto GameIR
+    ↓
+Code generation (gbkt-backend-gbdk)
+    ↓ GBDKPipeline → 13 visitors → typed C AST → CEmitter → C text
+Post-processing (COutputOptimizer)
+    ↓ dedup constants + functions
+Gradle plugin / CLI — invokes GBDK lcc to produce .gb ROM
 ```
 
-### Structure Rationale
+The 20-module layout does NOT change in v0.1.1. All hardening work is internal to
+existing modules — no new modules, no new public IR interfaces.
 
-- **gbkt-core is monolithic by constraint:** Kotlin sealed interfaces require all subclasses in the same compilation module. IRStatement, IRExpression, and all their subtypes must co-locate. This is not poor design — it is the correct trade-off to retain exhaustive `when` matching in codegen.
-- **gbkt-analysis is a new module:** Analysis passes depend on GameIR (from core) but produce AnnotatedGameIR without depending on any backend. This is the correct dependency direction.
-- **C AST nodes in gbkt-backend-gbdk/codegen/ast/:** The current architecture builds C as raw strings. A structured C AST separates "what C code to generate" from "how to format it", making codegen testable and bank switching traceable.
-- **Visitors separate IR traversal from output:** Each domain (RPG, World, Graphics) gets its own visitor class. This replaces the single monolithic GBDKCodeGenerator with 50+ extension functions.
+### Component Responsibilities — Hardening Touch Map
 
----
+| Component | Module | v0.1.1 Touch | Risk |
+|-----------|--------|--------------|------|
+| `GBDKPipeline.kt` | gbkt-backend-gbdk | S3776 extract-method + SEED-014/015 banking gate fix | HIGH — changes C output for all zone games |
+| `GBDKSystemVisitor.kt` | gbkt-backend-gbdk | S3776 extract-method (6390 lines, ~20 hotspots) | MEDIUM — S3776 only is zero-C-change |
+| `ScriptOpVisitor.kt` | gbkt-backend-gbdk | S3776 extract-method (2052 lines) | LOW |
+| `RpgVisitor.kt` | gbkt-backend-gbdk | S3776 extract-method (3377 lines) | LOW |
+| `CombatVisitor.kt` | gbkt-backend-gbdk | S3776 extract-method (2837 lines) | LOW |
+| `ActorVisitor.kt` | gbkt-backend-gbdk | S3776 extract-method (1365 lines) | LOW |
+| `MetaspriteVisitor.kt` | gbkt-backend-gbdk | SEED-004/005/006/008/010/011 codegen fixes | HIGH — C output changes for metasprites example |
+| `PlatformerVisitor.kt` | gbkt-genre-platformer | SEED-PHASE-12 wiring gaps + SEED-021/022 | HIGH — C output changes for platformer-template |
+| `GenerateCTask.kt` | gbkt-gradle-plugin | S3776 extract-method (929 lines) | LOW — no C output impact |
+| `ConvertSpritesTask.kt` | gbkt-gradle-plugin | S3776 + SEED-PHASE-13 tRNS transparency fix | MEDIUM — affects sprite assets for every game |
+| `ConvertZoneTilesetsTask.kt` | gbkt-gradle-plugin | S3776 extract-method (726 lines) | LOW |
+| `GameBuilder.kt` | gbkt-lang | SEED-007 palette slot default fix (line 713) | LOW — 1-3 line change |
+| `ScriptBuilder.kt` | gbkt-lang | SEED-023 whenever/runIf deprecation | LOW — DSL surface only |
+| `RpgExtensions.kt` | gbkt-genre-rpg | SEED-025 combatIsInState String removal | LOW |
+| `context/DSL_REFERENCE.md` | docs | 13 dead-API sections pruned/rerouted | ZERO codegen risk |
+| detekt.yml + source files | multiple | QUAL-01..03 detekt violations, magic pixels | LOW |
 
-## Architectural Patterns
 
-### Pattern 1: Ordered Pass Pipeline (LLVM-inspired)
+## S3776 Cognitive-Complexity Hotspot Analysis
 
-**What:** Analysis is a sequence of independent passes, each taking GameIR and returning GameIR (or AnnotatedGameIR). Passes declare their dependencies on prior passes. The pipeline executor enforces ordering.
+### Where the 46 Sonar findings live
 
-**When to use:** Any analysis that needs to query results from a prior analysis. BankingAnalysis needs ResourceInventory results; VRAMLayout needs BankingAnalysis results.
+Sonar S3776 fires when a function's cognitive complexity score exceeds the project
+threshold (typically 15). Each `if`/`for`/`while`/`catch` at nesting level 0 scores 1;
+nesting multiplies the score. The findings concentrate in the largest visitors and pipeline
+builders, NOT in the analysis passes (which are well-factored at below 500 lines each).
 
-**Trade-offs:** Slightly more boilerplate than inline analysis, but each pass is independently testable and the ordering is explicit rather than buried in 1,700-line files.
+**Tier 1: Primary hotspot files (estimated 30+ findings)**
 
-**Example:**
+`GBDKSystemVisitor.kt` (6390 lines) — the densest concentration:
+- `visitExplorationSystem()` spans roughly 870-1851 lines (981 lines), containing
+  `buildEntityCollisionFunctions`, `buildEncounterCheckFunction`,
+  `buildZoneLoadFunction`, `buildZoneTransitionFunction`, `buildZoneCheckEdgesFunction`,
+  `buildZoneObjectFunctions`, `buildChestHandlerFunction`, `buildSignHandlerFunction`,
+  `buildNpcHandlerFunction`, `buildLeverHandlerFunction`, `buildSconceHandlerFunction`
+  — each of which has 3-5 levels of nested `for`/`when`/`if`
+- `buildPuzzleObjectFunctions()` (~568 lines, 4861-5429) — deep branching on puzzle object types
+- `buildPickupFunctions()` (~544 lines, 5773-6317) — pickup type dispatch with nested C AST builders
+- `buildNpcCollisionFunctions()` (~283 lines, 5490-5773) — NPC collision shape dispatch
+
+`GBDKPipeline.kt` (5397 lines):
+- `buildHomeFile()` (~627 lines, 964-1591) — assembles main.c; the file's own CLAUDE.md calls
+  this "the largest method in the pipeline"
+- `buildSetupCurrentLevelFunctionIfNeeded()` (~204 lines, 2469-2673) — multi-condition branching
+  on tilemap config + physics + zone binder presence
+- `buildTrampolinesForScene()` (3211-3290) — scene trampoline emission loop with SEED-015 bug
+
+**Tier 2: Secondary hotspot files (estimated 10-15 findings)**
+
+`RpgVisitor.kt` (3377 lines):
+- Character stat codegen functions dispatch over 6-8 stat types with nested enum matching
+- Ability resolution trees with equipment interaction branching
+
+`CombatVisitor.kt` (2837 lines):
+- Battle state machine codegen: 5-state machine with nested per-state action builders
+- Damage formula visitor with operator dispatch
+
+`ScriptOpVisitor.kt` (2052 lines):
+- `visitIfOp()` — recursively builds nested CStatement; detekt LongMethod exclusion in
+  `**/codegen/**` already applies, but S3776 cognitive-complexity fires separately
+- `visitPoolForEachActive()` — complex loop with active-predicate injection
+- `visitMoveMetasprite()` — flip-variant switch with raw-C escape hatch
+
+**Tier 3: Gradle task files (estimated 4-6 findings)**
+
+`GenerateCTask.kt` (929 lines), `ConvertSpritesTask.kt` (868 lines),
+`ConvertZoneTilesetsTask.kt` (726 lines) — each has conditional asset-pipeline
+dispatch that generates S3776 findings.
+
+`PlatformerVisitor.kt` (2548 lines, gbkt-genre-platformer) — `buildTilemapPhysicsUpdateFunction()`
+contains the 5-point AABB probe with multi-axis tilemap lookup dispatch.
+
+
+### Refactoring patterns that work WITHOUT changing emitted C
+
+The byte-identity oracle gates (7 examples + `./gradlew :gbkt-examples:*:buildRom` sweep)
+mean that S3776 refactors must produce zero diff in generated C text. Three patterns
+satisfy this constraint:
+
+**Pattern 1: Extract private helper methods (primary)**
+Move a block of logic that builds a subtree of the C AST into a private method within
+the same class. The method signature takes the relevant GameIR subset and returns
+`List<CStatement>` or `CFunction` — the same types already used. The calling code
+becomes a composition of named helpers.
+
+Example: `GBDKSystemVisitor.visitExplorationSystem()` at 981 lines should become:
 ```kotlin
-interface AnalysisPass<in I : GameIR, out O : GameIR> {
-    val name: String
-    val requires: List<String>   // names of passes that must run before this one
-
-    fun run(input: I, context: PassContext): O
+override fun visitExplorationSystem(system: ExplorationSystem): List<CFunction> {
+    return buildEntityCollisionFunctions(gameIR, system) +
+           buildZoneLoadFunctions(system, zones) +
+           buildZoneTransitionFunctions(system, zones) +
+           buildZoneObjectFunctions(zones) +
+           buildEncounterFunctions(system, zones) +
+           buildPathwayHelpers(system)
 }
 
-// BankingAnalysisPass declares it needs ResourceInventory results
-class BankingAnalysisPass : AnalysisPass<GameIR, GameIRWithBanking> {
-    override val requires = listOf("ResourceInventory", "ConstraintCheck")
-
-    override fun run(input: GameIR, context: PassContext): GameIRWithBanking {
-        val inventory = context.get<ResourceInventoryResult>()
-        // bin-pack IR nodes into 16KB bank slots
-        return input.withBankAssignments(bankLayout)
-    }
-}
+private fun buildZoneLoadFunctions(system: ExplorationSystem, zones: List<ZoneIR>): List<CFunction> =
+    zones.map { zone -> buildZoneLoadFunction(zone.sanitizedId, listOf(zone)) }
 ```
 
-### Pattern 2: Structured C AST (not raw string concatenation)
+Many helpers already exist as private methods; the refactor promotes inner blocks to
+properly-named methods at the class level, reducing the complexity of the calling method.
 
-**What:** The codegen layer first builds a C AST (structured data classes for C constructs), then emits it via a separate CEmitter. Bank switching is a CEmitter concern, not a codegen concern.
-
-**When to use:** Whenever you need to generate C code that has structure (conditionals, loops, function bodies). String concatenation breaks down when you need to retroactively add includes, reorder declarations, or track line numbers for source maps.
-
-**Trade-offs:** More upfront type design. Eliminates classes of bugs where bank state leaks across generation functions (the most critical current fragile area per CONCERNS.md).
-
-**Example:**
+**Pattern 2: Map-based dispatch for string-keyed system variants**
+`GBDKSystemVisitor.visitGenericSystem()` dispatches on `system.config["type"]`. Replace
+a `when` chain with a function-reference map:
 ```kotlin
-// Instead of: line("#pragma bank $bank"); line("void scene_gameplay() {")
-// Build AST:
-val fn = CFunction(
-    name = "scene_gameplay",
-    returnType = CType.Void,
-    body = listOf(
-        CExprStatement(CCall("update_player", emptyList())),
-        CIf(condition = CBinary(CVar("score"), CIntLiteral(100), BinaryOp.GTE),
-            then = listOf(CExprStatement(CCall("win", emptyList()))))
-    ),
-    bank = 1   // bank is a CFunction property, not a side-effectful pragma call
+private val genericSystemBuilders: Map<String, (GenericSystem) -> List<CFunction>> = mapOf(
+    "sport_racing" to ::buildRacingSystemFunctions,
+    "pickup" to ::buildPickupSystemFunctions,
 )
-// Emit:
-val emitter = BankAwareEmitter()
-emitter.emit(fn)  // emitter handles #pragma bank automatically based on fn.bank
 ```
+This reduces the function's top-level branch count from N to 1 (the map lookup + default).
 
-### Pattern 3: Sealed IR + Exhaustive When (retain existing pattern)
+**Pattern 3: Sub-builder extraction for `GBDKPipeline.buildHomeFile()`**
+`buildHomeFile()` invokes roughly 30 distinct sub-builders inline. Each should be a named
+private method call. The function body becomes a sequential list of `val x = buildX(gameIR)`
+calls assembled into `CFile(...)`. No logic changes — only call-site extraction.
 
-**What:** All IR node types are sealed interfaces. Code generation uses `when (node)` without an `else` branch. The Kotlin compiler verifies all IR node types are handled.
+**Pattern NOT to use: sealed-interface dispatch**
+The project explicitly replaced sealed IR hierarchies with non-sealed interfaces + visitors
+to enable the multi-module split. Refactoring back toward sealed `when` dispatch would
+break the extensibility contract for genre plugins. Every refactor must stay within the
+visitor pattern.
 
-**When to use:** Always — this is the foundational correctness guarantee of the pipeline. Never add `else ->` to IR dispatch.
 
-**Trade-offs:** Requires all IR in one module (Kotlin constraint). The trade-off is accepted — module cohesion matters less than type safety in a compiler.
+### Verification gate for S3776 refactors
 
-**Example:**
-```kotlin
-// Correct — exhaustive, compiler-verified
-fun generateStatement(stmt: IRStatement): List<CStatement> = when (stmt) {
-    is IRAssign     -> listOf(CAssignment(generateExpr(stmt.target), generateExpr(stmt.value)))
-    is IRIf         -> listOf(CIf(generateExpr(stmt.cond), generateStatements(stmt.then), generateStatements(stmt.else_)))
-    is IRWhile      -> listOf(CWhile(generateExpr(stmt.cond), generateStatements(stmt.body)))
-    is IRSceneChange -> listOf(CExprStatement(CCall("scene_change", listOf(CVar("SCENE_${stmt.scene.name.uppercase()}")))))
-    // ... all other cases — NO else branch
-}
+After each batch of extract-method refactors, run the 7-target buildRom sweep:
+```bash
+./gradlew :gbkt-examples:pong:buildRom \
+          :gbkt-examples:breakout:buildRom \
+          :gbkt-examples:simple-physics:buildRom \
+          :gbkt-examples:metasprites:buildRom \
+          :gbkt-examples:banks:buildRom \
+          :gbkt-examples:platformer-template:buildRom
 ```
+All must exit 0 and produce byte-identical ROMs to pre-refactor output. Pong is known
+non-deterministic (lcc toolchain non-determinism); flag as PASS* in reporting.
 
-### Pattern 4: RecordingContext for DSL Capture (retain existing pattern)
 
-**What:** DSL execution runs inside a `RecordingContext` (thread-local). Kotlin operators on `Expr`/`AssignableExpr` emit IR nodes instead of computing values. The game is represented as IR, not as a live Kotlin object graph.
+## Seed Defect Cluster Analysis
 
-**When to use:** All DSL execution. This is what makes `playerX += 2` generate `IRAssign(IRVar("player_x"), IRBinary(IRVar("player_x"), IRLiteral(2), ADD))` instead of actually computing.
+### Mandatory first step: Seed triage
 
-**Trade-offs:** Thread-local state is fragile (see CONCERNS.md — parallel builds could corrupt). The fix is to wrap RecordingContext in a structured scope object, not to change the DSL capture approach itself.
+Several seeds were planted BEFORE Phases 12.6-13.8 shipped (2026-05-25 through 2026-06-05).
+The PROJECT.md explicitly warns: "Stale status hints ... must be re-verified against current
+master, not trusted." Re-verify each seed against master before opening fix phases. Known
+resolutions already visible in the seed files themselves:
 
----
+| Seed | Status in seed file | Disposition |
+|------|---------------------|-------------|
+| SEED-PHASE-12-GRASS-TILEMAP-WHITE-PIXELS | "RESOLVED 2026-06-02 by Phase 12.9" | CLOSED — verify and archive |
+| SEED-PHASE-12-CONVERTSPRITESTASK-AUDIT | "RESOLVED 2026-05-24 by Phase 12.4" | CLOSED — verify and archive |
+| SEED-PHASE-12-RETROACTIVE-BANKS-AUDIT | "Trivially satisfied by D-01" | CLOSED — verify and archive |
+| SEED-PHASE-12-TITLE-ZONE-PATH-A-SCENE-RENDER-DEFECT | "closed (2026-05-23)" | CLOSED — verify and archive |
+| SEED-PHASE-12-PLAYER-LEVITATING-NOT-GROUNDED | "active blocker" | Likely CLOSED by Phase 12.6/12.7 — re-verify |
+| SEED-014 | gate says "hasSportRacing only" | PARTIALLY FIXED: `hasZoneSceneBinder` check already present at GBDKPipeline.kt:1164-1168 — verify if INV-2 sentinel test now passes |
+| SEED-PHASE-13-PLATFORMER-INVERTED-PALETTE-BG-AND-OBJ | "OPEN" | Phase 13.8 "palette/sprite codegen hardening" APPROVED — verify platformer-template ROM before treating as open |
 
-## Data Flow
 
-### Compilation Pipeline
+### Cluster A: Banks trio (SEED-014 / SEED-015 / SEED-016)
+
+**Root cause group:** `GBDKPipeline.buildHomeFile()` banking gate + `buildTrampolinesForScene()`
+
+| Seed | File | Line range | Root cause |
+|------|------|------------|------------|
+| SEED-014 | `GBDKPipeline.kt` | 1160-1172 | `_bkg_tiles_load_banked` helper gate; the `hasZoneSceneBinder` arm was added (line 1164) but may not yet cover all multi-bank zone games; verify INV-2 sentinel in `BanksEmissionTest.kt` |
+| SEED-015 | `GBDKPipeline.kt` | `buildTrampolinesForScene()` ~3211-3290 | Trampoline emission loop retains last-banked function reference; HOME-resident scenes (small enough to fit in HOME) get wrong trampoline body pointing at previous banked scene |
+| SEED-016 | `BanksUatTest.kt` + possibly `SavestateManager.kt` | N/A | Anchor 4 SRAM round-trip test was skipped; needs execution once SEED-014 unblocks visual evidence |
+
+Fix ordering: triage SEED-014 first (gate may already be correct on master). If
+`BanksEmissionTest.kt` INV-2 sentinel is still RED, fix gate → fix 015 trampoline loop
+→ run Anchor 4 UAT for 016.
+
+New test files: add RED→GREEN assertion in `BanksEmissionTest.kt` that `title_enter_trampoline`
+body is a no-op stub, NOT a delegation to `pause_enter()`.
+
+Blast radius: WIDE — any game with zones in non-HOME banks. Requires discuss-phase + research
+before code changes (per `feedback_route_to_proper_phase_when_blast_radius_is_wide`).
+
+
+### Cluster B: Metasprite visual parity (SEED-004 / SEED-005 / SEED-006 / SEED-007)
+
+**Root cause group:** Small, independent bugs in `MetaspriteVisitor.kt` and `GameBuilder.kt`
+that all degrade the metasprites example ROM's visual output.
+
+| Seed | File | Root cause | Scope |
+|------|------|------------|-------|
+| SEED-004 | `MetaspriteVisitor.kt` `generateMetaspriteTileData()` | Tile byte-plane ordering mismatch vs png2asset; may also be 8x8 vs 8x16 sprite mode difference | Medium — needs hex-dump investigation |
+| SEED-005 | `MetaspriteBuilder.kt` OR `MetaspriteVisitor.kt` | `bgFillCheckerboard()` byte literal is a diagonal line, not a checkerboard | Small — 1-line literal replacement |
+| SEED-006 | `MetaspriteVisitor.kt` | `_elephant_subPalette` global declared but never assigned in frame loop | Small — 1-2 line Kotlin add |
+| SEED-007 | `GameBuilder.kt` line 713 | `else 0` hardcoded palette slot default instead of sequential counter (same bug fixed in SceneBuilder plan 10-16) | Small — 1-3 line change |
+
+Fix ordering: SEED-005 + SEED-006 + SEED-007 first (trivial, bounded), then SEED-004
+(needs investigation via hex comparison of generated `elephant_tiles[]` vs png2asset output).
+
+Also diagnose SEED-013 (active status: GBC palette write path visual regression introduced
+by Plans 10.1-19/20/22) in the same phase, as it shares the metasprites example ROM.
+
+Byte-identity oracle update required for metasprites example after any fix.
+
+
+### Cluster C: Metasprite structural / latent (SEED-008 / SEED-009 / SEED-010 / SEED-011)
+
+**Root cause group:** Infrastructure gaps in metasprite codegen that are latent because no
+current example uses 2+ metasprites or an actor+metasprite combination simultaneously.
+
+| Seed | File | Root cause | Scope |
+|------|------|------------|-------|
+| SEED-008 | `GBDKPipeline.kt` `buildSpriteDataLoadStatements` + `buildMetaspriteTileDataLoadStatements` | Both start `nextTile = 0` independently; actor tiles silently overwritten by metasprite tiles when both are present | Medium — unify into single function with shared counter |
+| SEED-009 | `GBDKPipeline.kt` bank file header builder | `<gbdk/metasprites.h>` only added to `main.c`; banked scene files using `move_metasprite_*` don't include it | Small — scan bank ops; add conditional include |
+| SEED-010 | `MetaspriteVisitor.kt` `generateMetaspriteDescriptor()` + `generateMetaspriteFrameSwitch()` | Symbols not namespaced by metasprite ID; two metasprites → duplicate global link-time error | Medium — prefix all emitted symbols with `ms.id` |
+| SEED-011 | `MetaspriteVisitor.kt` frame switch hiwater reset | `hiwater = 0` emitted per `moveMetasprite()` call; 2nd call overwrites first metasprite's OAM slots | Medium — hoist `hiwater = 0` to frame preamble, `hide_sprites_range` to frame postlude |
+
+Verification: JVM-tier tests with a 2-metasprite fixture cover all four seeds. No visual
+UAT needed (no current example triggers the bugs). New file: `TwoMetaspriteEmissionTest.kt`.
+
+
+### Cluster D: Sprite transparency / tRNS outline (SEED-PHASE-13-SPRITE-OUTLINE-LOST-NONZERO-TRNS-INDEX)
+
+**Root cause:** `ConvertSpritesTask.buildPng2AssetArgs()` passes `-keep_palette_order`
+without validating that the source PNG's tRNS-declared transparent color is at palette
+index 0. When tRNS is on a non-zero index (as in `elephant.png`, where the outline color
+is at index 0 and the transparent color is at index 4), the outline collapses into the
+transparent OBJ slot and renders see-through.
+
+**Files:**
+- `gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/ConvertSpritesTask.kt`
+  `buildPng2AssetArgs()` (~line 739-751)
+- `gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/PngUtils.kt`
+  (tRNS chunk reading + palette permutation)
+
+**Fix direction:** Read the tRNS chunk index in `PngUtils`; when tRNS index != 0, reorder
+the source palette to move tRNS color to index 0 before invoking png2asset. The platformer
+player sprite (`player-character-gbapduck-sprites.png`, has index-0 as the orange background,
+fixed by Phase 12.9 with `-keep_palette_order`) is the regression oracle and must not regress.
+
+Verification: metasprites elephant renders with solid dark outline + no see-through, AND
+platformer player sprite remains transparent-correct. Binding visual UAT + 7-target
+buildRom sweep.
+
+
+### Cluster E: Platformer visitor wiring gaps (SEED-PHASE-12-PLATFORMER-VISITOR-AUTO-EMISSION-GAPS)
+
+**Root cause group:** `PlatformerVisitor.kt` wave-7 codegen is incomplete; 4 gaps currently
+papered over with `cEmit()` escape hatches in `PlatformerTemplate.kt`.
+
+| Gap | File | Description |
+|-----|------|-------------|
+| Gap 1 | `PlatformerVisitor.kt` | Input → velocity wiring not auto-emitted; user workaround: inline `whenever(dpad.right.held) { playerVx set 127 }` |
+| Gap 2 | `PlatformerVisitor.kt` | `platformer_camera_update()` defined but never called; user workaround: inline `cEmit("platformer_camera_update();")` |
+| Gap 3 | `MetaspriteVisitor.kt` | Metasprite rendered at world position, not screen-relative; user workaround: inline camera-offset fudge via cEmit |
+| Gap 4 | `PlatformerVisitor.kt` | `_walkFrameIdx` declared and read but never incremented; animation frozen at frame 0 |
+
+Fix: remove the 4 `cEmit()` calls from `PlatformerTemplate.kt`; add the missing
+auto-emission in `PlatformerVisitor.kt` (and `MetaspriteVisitor.kt` for Gap 3).
+
+Bundles: SEED-PHASE-12-PLATFORMER-SPAWN-POSITION-CLARITY and SEED-platformer-template-spawn-polish
+(per-level spawn positions, same visitor area).
+
+Verification: all 3 platformer UAT anchors re-shoot with `cEmit` escapes removed;
+platformer-template `buildRom` + binding visual evidence.
+
+
+### Cluster F: Deprecation removals (SEED-023 / SEED-025)
+
+**Root cause group:** Two deprecated APIs for removal in v0.1.1 per PROJECT.md.
+
+| Seed | File | Root cause | Scope |
+|------|------|------------|-------|
+| SEED-023 | `gbkt-lang/.../ScriptBuilder.kt` | `whenever()` and `runIf()` emit identical IR; one should be deprecated with `ReplaceWith` or given distinct reactive semantics | Medium — census of `whenever` usage across examples/docs/tests; deprecation annotation; migrate call sites |
+| SEED-025 | `gbkt-genre-rpg/.../dsl/RpgExtensions.kt` ~line 421 | `combatIsInState(String, String)` String overload deprecated in v0.1.0; safe to delete now that v0.1.0 is tagged | Small — delete overload, migrate stragglers, confirm S1133 closes |
+
+Both are DSL-surface only. Zero codegen risk. Can be done in a single plans sweep,
+bundling with SEED-007 (same low-risk DSL tier) and SEED-026 (Gradle hygiene).
+
+
+## Component Boundaries — New vs Modified
+
+All v0.1.1 work is MODIFICATIONS to existing files. No new modules, no new public IR nodes,
+no new visitor interfaces (which would require changes in all 13 visitor implementations).
+
+| Work type | Modification scope | New files |
+|-----------|-------------------|-----------|
+| S3776 extract-method refactors | Private method additions within existing visitor/pipeline classes | None |
+| Seed codegen fixes | Target methods in existing visitor files | JVM-tier test files per cluster |
+| Deprecation removals | Delete/annotate existing DSL functions + migrate call sites | None |
+| DSL_REFERENCE.md reconciliation | Edit context/ doc file | None |
+| QUAL-01..03 | Edit source files per detekt violations + screen-constant replacements | None |
+| SEED-026 Gradle hygiene | Add task annotations + fix `pluginTest` dependency ordering | None |
+
+
+## Data Flow — How the Byte-Identity Oracle Protects Hardening Work
 
 ```
-Kotlin DSL source (.kt file)
+Kotlin DSL (unchanged)
     ↓
-[JVM class loading via reflection — Gradle plugin / CLI]
+GameIR tree (unchanged for S3776 refactors; modified for seed fixes)
     ↓
-gbGame("MyGame") { ... } executes
-    ↓ DSL execution inside RecordingContext
-GameBuilder captures scene builders, variable registrations, entity definitions
-    ↓ each DSL operation emits IR nodes
-GameBuilder.build() → Game (immutable data class with complete IR tree)
+Analysis passes (unchanged for all v0.1.1 work)
     ↓
-PassPipeline.run(game, targetProfile)
-    ↓ Pass 1: SemanticValidation — errors halt pipeline
-    ↓ Pass 2: ResourceInventory — count sprites, tiles, sounds
-    ↓ Pass 3: ConstraintCheck — enforce OAM/WRAM/palette limits
-    ↓ Pass 4: BankingAnalysis — assign IR nodes to ROM banks
-    ↓ Pass 5: VRAMLayout — assign tile data to VRAM addresses
-    ↓ Pass 6: OAMAllocation — assign sprite slots per scene
-    ↓ Pass 7: DeadCodeElimination — remove unreferenced IR
-    ↓ Pass 8: ConstantFolding — simplify static expressions
-    ↓ Pass 9: AnnotatedIR — attach all layout metadata
-    ↓ produces AnnotatedGameIR
-GBDKBackend.generate(annotatedGame)
-    ↓ IR visitors produce C AST node trees
-    ↓ BankAwareEmitter traverses C AST
-    ↓ emits #pragma bank directives based on node annotations (not mutable state)
-GenerationResult: Map<String, String> (filename → C source)
+GBDKPipeline + 13 visitors
+    ↓ S3776 refactors: same code path, reorganized into private helpers
+    ↓ Seed fixes: corrected code path produces different (correct) C output
+C AST → CEmitter → main.c / bank1.c / game.h / zone_bankN.c
     ↓
-[lcc compiler invoked by Gradle plugin with bank-split .c files]
+GBDK lcc → .gb ROM
     ↓
-.gb ROM file
+7-example buildRom sweep (oracle gate)
+    S3776 work: must be byte-identical to pre-refactor output
+    Seed fix work: RED→GREEN oracle transition (new correct bytes)
 ```
 
-### Key Data Flows
+For S3776 work, the oracle asserts NO change. For seed fix work, the oracle asserts
+SPECIFIC change — new byte patterns match what the fixed codegen emits, verified via
+JVM-tier emission tests before the ROM sweep.
 
-1. **DSL → IR:** RecordingContext.emit() is called by every Expr operator, scene builder, entity builder. IR nodes are appended to the current StatementRecorder. On build(), all recorders flush to the Game data class.
 
-2. **IR → Analysis annotations:** Each pass reads the prior pass's output from PassContext. Passes produce typed result objects (BankingResult, VRAMLayoutResult) stored in PassContext for downstream passes. Final AnnotatedGameIR wraps original IR plus all pass results.
+## Build Order and Work Stream Parallelism
 
-3. **AnnotatedIR → C AST:** Visitors iterate IR nodes. Visitors query AnnotatedGameIR for layout metadata (which bank? which VRAM address? which OAM slot?). C AST nodes are assembled bottom-up.
+### Parallelizable streams (no ordering dependency between them)
 
-4. **C AST → C source:** BankAwareEmitter traverses C AST. When it encounters a CFunction with `bank != currentBank`, it emits `\n#pragma bank N\n` and updates its own state. Source map entries are recorded during traversal.
+**Stream A: Docs / Static Analysis**
+Does not touch generated C. Can start immediately and run concurrently with all others.
 
----
+- A1: `context/DSL_REFERENCE.md` — prune/rewrite the 13 dead-API sections (12 "Stale-API
+  caveat" callouts + the combatEngine experimental note). Each removed subsystem tracked
+  as a v0.2.0 feature candidate per PROJECT.md.
+- A2: QUAL-01..03 — detekt violations; platform-aware screen constants replacing magic
+  numbers in `profiles/`; magic-pixel elimination in test fixtures.
+- A3: S3776 cognitive-complexity burn-down — extract-method refactors across the 8 hotspot
+  files listed above. Verify each batch with 7-target buildRom sweep for byte-identity.
 
-## Build Order for Implementation
+**Stream B: Seed Triage (prerequisite for Stream D)**
+Re-verify every seed against current master before any codegen fix work. Assign terminal
+dispositions: CLOSED (already fixed by phases 12.6-13.8), OPEN-v0.1.1 (needs a fix phase),
+or DEFERRED-v0.2.0 (explicitly out of scope per PROJECT.md). The triage report feeds all
+Stream D phases. This is the only gate between the stable master baseline and codegen fixes.
 
-This is the critical ordering for the refactoring milestones:
+**Stream C: DSL / Infrastructure (low risk)**
+Can run in parallel with A and B. No codegen impact; no oracle changes.
+
+- C1: SEED-023 + SEED-025 — deprecation removals (DSL-surface only, no C output)
+- C2: SEED-007 — `GameBuilder.kt` actor palette slot fix (1-3 lines)
+- C3: SEED-026 — Gradle plugin build hygiene (5 task annotations + `pluginTest` dependency)
+- C4: SEED-020 — `GameIRSerializer` round-trip coverage (additive tests only)
+- C5: SEED-012 — MCP `emulator_read_memory` tool (additive to `gbkt-mcp-server`)
+
+### Sequential stream (must follow seed triage; each cluster may change oracles)
+
+**Stream D: Codegen defect fixes**
+Each cluster changes C output intentionally. Sequence minimizes oracle churn:
 
 ```
-1. :ir refinement (pure data, sealed types, deepCopy, IRWalker)
-        No dependencies — pure Kotlin data classes
-        ↓
-2. :dsl stabilization (RecordingContext, operator overloads, scope markers)
-        Depends on :ir for node types
-        ↓
-3. :analysis module (AnalysisPass interface, 9 passes)
-        Depends on :ir (for GameIR) — does NOT depend on codegen
-        ↓
-4. C AST types in :codegen (CDeclaration, CStatement, CExpression, CUnit)
-        Independent — pure data classes, no IR dependency
-        ↓ (steps 3 and 4 can run in parallel)
-5. CEmitter + BankAwareEmitter in :codegen
-        Depends on C AST types (step 4)
-        ↓
-6. IR visitors in :codegen (StatementVisitor, ExpressionVisitor, domain visitors)
-        Depends on :ir (step 1) + AnnotatedGameIR (step 3) + C AST (step 4)
-        ↓
-7. GBDKCodeGenerator refactoring (orchestrates visitors → emitter)
-        Depends on all codegen pieces (steps 4-6)
-        ↓
-8. :gradle-plugin and :cli wiring
-        Depends on analysis pipeline (step 3) + backend (step 7)
-        ↓
-9. :test-runner (JVM ScriptOp interpreter)
-        Depends on :ir (step 1) + :dsl (step 2)
+B: Seed triage completes (know which seeds are actually open on master)
+    ↓
+D1: Metasprite visual parity (SEED-004/005/006/013)
+    touches MetaspriteVisitor.kt — establishes corrected metasprites baseline
+    ↓
+D2: Metasprite structural/latent (SEED-008/009/010/011)
+    extends corrected metasprites codegen without re-breaking D1's baseline
+    ↓
+D3: Banks trio (SEED-014/015/016) — REQUIRES discuss-phase + research first
+    corrects banking for all zone games; highest blast radius
+    full 7-target buildRom sweep after each change
+    ↓
+D4: Sprite transparency (SEED-PHASE-13-SPRITE-OUTLINE)
+    ConvertSpritesTask tRNS reorder; regression oracle: metasprites (D1) + platformer
+    ↓
+D5: Platformer visitor wiring (SEED-PHASE-12-PLATFORMER-VISITOR + SEED-021/022)
+    remove cEmit escapes, add PlatformerVisitor auto-emission
+    ↓
+D6: Misc small/latent (SEED-002, SEED-003, SEED-017, remaining Phase-12 seeds)
 ```
 
----
+D1 before D2: both touch `MetaspriteVisitor`. D1 fixes the byte layout; D2's symbol-
+namespacing and hiwater fixes build on the corrected layout.
 
-## Anti-Patterns
+D3 is independent of D1/D2 but has the widest blast radius. Running it after D1/D2
+means the metasprites oracle is already stable before the banking changes sweep all zone
+games.
 
-### Anti-Pattern 1: Mutable Bank State in Generator
+D4 after D1: verification requires checking metasprites elephant outline (D1 baseline)
+remains correct while the tRNS fix applies.
 
-**What people do:** Maintain `var currentBank = 0` as mutable state in GBDKCodeGenerator. Call `setBank(N)` / `returnToHome()` as side effects during code emission.
+D5 and D6 are independent of all prior D clusters except that the 7-target oracle must
+stay green throughout.
 
-**Why it's wrong:** Every codegen function must remember to call `returnToHome()` after switching banks. One forgotten call leaks bank state into all subsequent output. The bug only manifests at GBDK link time as "MBC5 unknown address" — not in Kotlin tests. This is documented in CONCERNS.md as the most fragile area.
 
-**Do this instead:** Bank assignment is an analysis pass output (step 4 in the pipeline). Each C AST node carries its bank as a field. BankAwareEmitter emits `#pragma bank` transitions by comparing adjacent nodes' bank fields. The emitter's bank state is a traversal variable, not a generator field.
+## Anti-Patterns Specific to This Hardening Milestone
 
-### Anti-Pattern 2: String-Based Codegen
+### Anti-Pattern 1: S3776 suppression instead of extract-method
 
-**What people do:** Build C code by concatenating strings inside `line("void my_func() {")` calls. Logic and formatting are interleaved.
+What people do: add `@SuppressWarnings("CognitiveComplexity")` or Sonar "Accept" marks to the
+46 findings without restructuring the code.
 
-**Why it's wrong:** Hard to test (test output is a string, not a structure). Hard to reorder declarations. Hard to add includes retroactively. Hard to verify all cases are generated correctly without parsing the output string. The current MonsterCodegen.kt at 1,705 LOC is a symptom.
+Why wrong: masks the structural debt. The detekt.yml already excludes `LongMethod` from
+`**/codegen/**` — a second exclusion signals architectural drift, not deliberate design.
 
-**Do this instead:** Visitors produce C AST data structures. CEmitter formats them. Tests assert on C AST structure, not output strings. Formatting changes require modifying only CEmitter.
+Do this instead: extract private helper methods. The resulting code is more readable and
+testable, and cognitive complexity genuinely drops.
 
-### Anti-Pattern 3: Mixed Analysis in Codegen
+### Anti-Pattern 2: Codegen fixes without a JVM-tier RED test first
 
-**What people do:** Compute banking constraints, OAM counts, VRAM assignments, and dead code inside the code generator — interleaved with C emission.
+What people do: edit `MetaspriteVisitor` or `GBDKPipeline` and verify only via buildRom
+plus UAT screenshot.
 
-**Why it's wrong:** Analysis and emission become coupled. Adding a new analysis requires modifying the emitter. Errors in analysis surface as malformed C output rather than explicit validation errors. Testing requires full codegen runs.
+Why wrong: visual UAT is slow and the emulator can mask bugs. Without a JVM-tier emission
+test capturing the defect first, the fix will silently regress later.
 
-**Do this instead:** All analysis runs before codegen. The PassPipeline produces AnnotatedGameIR. The codegen only reads the analysis results — it never computes constraints itself.
+Do this instead: add a RED JVM-tier emission test asserting the wrong current behavior
+BEFORE making the code change. Turn it GREEN. Then run the buildRom sweep.
 
-### Anti-Pattern 4: Domain-Specific Logic in Backend
+### Anti-Pattern 3: Fixing seed clusters out of triage order
 
-**What people do:** Game Boy-specific logic (OAM limits, bank layout, VRAM constraints) lives inside the codegen files rather than in platform-specific analysis passes.
+What people do: pick a seed that looks simple and fix it without first verifying whether it
+was already closed by Phases 12.6-13.8.
 
-**Why it's wrong:** Adding a second backend (GBA) requires duplicating constraint analysis or coupling backends together. The "LabyrinthOfTheDragon" coupling mentioned in the milestone context happens when domain knowledge bleeds into codegen strings.
+Why wrong: wasted effort and potential oracle churn. At least 4-7 of the 44 seeds have
+explicit "RESOLVED" or "closed" markers, and more may have been silently closed by Phase 13.x
+work (particularly the SEED-PHASE-13-PLATFORMER-INVERTED-PALETTE seed, which Phase 13.8
+palette hardening may have fully addressed).
 
-**Do this instead:** TargetProfile defines all platform constraints (already exists). Analysis passes read TargetProfile. Codegen only reads AnnotatedGameIR — it doesn't know about GB-specific limits.
+Do this instead: run seed triage first (Stream B). Build a disposition table. Only open fix
+phases for seeds with confirmed OPEN status on current master.
 
----
+### Anti-Pattern 4: S3776 refactors mixed with codegen fixes in the same commit
+
+What people do: extract a helper method AND fix a bug in the same commit.
+
+Why wrong: makes it impossible to verify the refactor was zero-C-change, because the bug fix
+also changes C output. The oracle cannot distinguish "intended change" from "accidental regression."
+
+Do this instead: separate commits. S3776 extract-method commits must be provably zero-C-change
+(byte-identical buildRom sweep). Bug fix commits intentionally change C output (verified by the
+RED→GREEN oracle cycle).
+
+### Anti-Pattern 5: Sealed-interface dispatch as a "simplification" of visitor methods
+
+What people do: refactor a visitor that dispatches on `SystemIR` subtypes using sealed `when`
+to "simplify" the branching.
+
+Why wrong: the project explicitly chose non-sealed interfaces + visitor dispatch to enable the
+multi-module split. Sealing `SystemIR` would force all genre-specific `SystemIR` implementations
+back into `gbkt-ir`, collapsing the module boundary.
+
+Do this instead: extract private helper methods within the visitor. Keep the visitor contract
+(the interface + `accept()` signature) untouched.
+
 
 ## Integration Points
 
-### External Services
+### Internal Boundaries — What Each Stream Touches
 
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| GBDK lcc compiler | Gradle exec task; ProcessBuilder (not shell) | Must validate generated C before invoking; detect GBDK_HOME at task execution time |
-| Tiled TMX files | TiledParser at DSL time; produces MapAsset IR nodes | Already exists; feeds into :assets module |
-| PNG files | Asset pipeline at DSL time; produces tile data + palette | Already exists in AssetPipeline.kt |
-| PO localization files | PoParser at DSL time; BankAllocator assigns strings to banks | Already exists; should be its own analysis pass (StringBankingPass) |
-| mGBA emulator | Gradle exec task; path auto-detection | Already exists in RunEmulatorTask |
-| IntelliJ plugin | Code completion on DSL calls; uses gbkt-core types via SDK | Reads IR node types for completion; requires stable API contract |
+| Boundary | Stream A | Stream C | Stream D |
+|----------|----------|----------|----------|
+| `gbkt-ir` (IR node types) | None | None | None — no new IR nodes |
+| `gbkt-lang` DSL builders | None | SEED-007 (GameBuilder.kt), SEED-023 (ScriptBuilder.kt) | None |
+| `gbkt-analysis` passes | None | None | None — passes unchanged |
+| `gbkt-backend-gbdk` visitors | S3776 extract-method | None | SEED-004..011, 014, 015 fixes |
+| `gbkt-backend-gbdk` pipeline | S3776 extract-method | None | SEED-014, 015 gate + trampoline fix |
+| `gbkt-genre-rpg` | None | SEED-025 (RpgExtensions.kt) | None |
+| `gbkt-genre-platformer` | S3776 (PlatformerVisitor) | None | SEED-PHASE-12 wiring gaps (SEED-021/022) |
+| `gbkt-gradle-plugin` tasks | S3776 (3 tasks) | SEED-026 (task annotations + pluginTest race) | SEED-PHASE-13-SPRITE-OUTLINE (ConvertSpritesTask) |
+| `context/DSL_REFERENCE.md` | A1 (13 sections) | None | None |
+| `gbkt-mcp-server` | None | SEED-012 (new tool) | None |
 
-### Internal Module Boundaries
+### Oracle Protection Contract
 
-| Boundary | Communication | Direction | Notes |
-|----------|---------------|-----------|-------|
-| :ir ↔ :dsl | Direct import | dsl → ir | DSL emits IR nodes; IR has no knowledge of DSL |
-| :ir ↔ :analysis | Direct import | analysis → ir | Analysis reads GameIR; produces AnnotatedGameIR |
-| :ir ↔ :codegen | Direct import | codegen → ir | Codegen reads IR nodes; IR has no knowledge of codegen |
-| :analysis ↔ :codegen | AnnotatedGameIR type | codegen reads analysis results | Codegen does not run analysis; only consumes results |
-| :codegen ↔ :backend-api | CodegenBackend interface | backend-api is the contract | Backends implement interface; API defines GenerationResult |
-| :gradle-plugin ↔ :codegen | GenerationResult type | plugin invokes backend | Plugin passes game path, gets C source files back |
-| :test-runner ↔ :ir | Direct import | runner → ir | Runner interprets IR nodes as JVM operations |
+Every phase in v0.1.1 that touches `gbkt-backend-gbdk` or `gbkt-gradle-plugin` MUST run
+the ROM-build smoke test before declaring complete (per `feedback_rom_build_smoke_test_for_codegen_phases`):
 
----
+```bash
+./gradlew :gbkt-examples:pong:clean :gbkt-examples:pong:buildRom \
+          :gbkt-examples:breakout:buildRom \
+          :gbkt-examples:simple-physics:buildRom \
+          :gbkt-examples:metasprites:buildRom \
+          :gbkt-examples:banks:buildRom \
+          :gbkt-examples:platformer-template:buildRom
+```
 
-## Scaling Considerations
-
-| Concern | Current State | At 50+ scenes / 200+ monsters | At complex multi-game SDK |
-|---------|---------------|-------------------------------|---------------------------|
-| Codegen time | Sub-second (all in-memory) | Linear growth; unlikely to exceed 10s | Parallel per-game generation feasible |
-| ROM bank overflow | Manual; error-prone (fragile area) | Analysis pass auto-detects; fails fast with diagnostic | Configurable bank strategy per TargetProfile |
-| WRAM overflow | Validated post-hoc in Validation.kt | Pre-codegen check in ConstraintCheckPass | Target-specific WRAM limit in TargetProfile |
-| IR node count | ~1,000 nodes for LabyrinthOfTheDragon | 10,000+ for complex RPGs; no performance issue (in-memory tree) | Per-game IR isolation; no cross-contamination |
-| Test coverage | Black-box string output comparison | White-box C AST assertion; faster and more precise | Per-pass unit tests; pipeline integration tests |
-
-### Scaling Priorities
-
-1. **First bottleneck:** Bank overflow at ROM link time. Fix with BankingAnalysisPass (pre-codegen, gives clear error with "X bytes over limit in bank N").
-2. **Second bottleneck:** OAM sprite limit exceeded silently. Fix with OAMAllocationPass (validates per-scene sprite counts before codegen).
-
----
-
-## Confidence Assessment
-
-| Claim | Confidence | Source |
-|-------|------------|--------|
-| Kotlin sealed interfaces require same-module subclasses | HIGH | Official KEEP proposal; Kotlin docs |
-| LLVM-style ordered pass pipeline is the standard pattern | HIGH | LLVM documentation; multiple compiler textbooks |
-| Structured C AST is superior to string concatenation | HIGH | Established compiler engineering practice; cgen library example |
-| BankAwareEmitter approach eliminates mutable bank state bugs | HIGH | Derived from CONCERNS.md analysis of current fragile areas |
-| 9-pass ordering is correct | MEDIUM | Derived from dependency analysis; specific ordering subject to revision during implementation |
-| Analysis module can be a separate Gradle module from :ir | HIGH | Analysis does not define sealed types; only reads them |
-
----
+S3776 refactor phases: all ROMs must be byte-identical to pre-refactor output.
+Seed fix phases: the target example's ROM changes intentionally (RED→GREEN oracle);
+other examples must be byte-identical (no unintended cross-example regression).
 
 ## Sources
 
-- Kotlin sealed interface module constraint: https://github.com/Kotlin/KEEP/blob/master/proposals/sealed-interface-freedom.md
-- Kotlin sealed classes official docs: https://kotlinlang.org/docs/sealed-classes.html
-- LLVM New Pass Manager (pipeline ordering): https://rocm.docs.amd.com/projects/llvm-project/en/latest/LLVM/llvm/html/NewPassManager.html
-- LLVM pass ordering constraints: https://stephenverderame.github.io/blog/scheduling_llvm/
-- Structured C AST generation (cgen library): https://github.com/inducer/cgen
-- Flattening ASTs for compiler data structures: https://www.cs.cornell.edu/~asampson/blog/flattening.html
-- Braid compiler architecture (multi-pass analysis): https://capra.cs.cornell.edu/braid/docs/hacking.html
-- Kotlin IR lowering pipeline: https://deepwiki.com/JetBrains/kotlin/7.4-native-compilation-pipeline
-- Compiler optimization pass ordering (Wikipedia): https://en.wikipedia.org/wiki/Optimizing_compiler
-- gbkt codebase ARCHITECTURE.md: /Users/michalsvacha/GitHub/personal/gbkt/.planning/codebase/ARCHITECTURE.md (HIGH confidence — direct codebase analysis)
-- gbkt codebase CONCERNS.md: /Users/michalsvacha/GitHub/personal/gbkt/.planning/codebase/CONCERNS.md (HIGH confidence — direct codebase analysis)
+- Codebase analysis: `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/` (all visitor and pipeline files, line counts and function maps)
+- `context/ARCHITECTURE.md` — module dependency graph and visitor pattern rationale
+- `.planning/PROJECT.md` — v0.1.1 milestone scope, active requirements, out-of-scope items
+- All 44 seed files in `.planning/seeds/` — defect root causes, file locations, blast radii
+- `gbkt-backend-gbdk/CLAUDE.md`, `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/pipeline/CLAUDE.md` — pipeline architecture decisions
+- `detekt.yml` — current exclusion rules and active complexity settings
 
 ---
-
-*Architecture research for: gbkt DSL-to-C compiler framework restructuring*
-*Researched: 2026-02-17*
+*Architecture research for: gbkt v0.1.1 Hardening milestone*
+*Researched: 2026-06-12*
