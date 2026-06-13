@@ -154,7 +154,7 @@ Plans:
 - [x] 18-06-PLAN.md — SONAR-01 non-emitting: gbkt-analysis batch (N-02/N-08/N-13)
 - [x] 18-07-PLAN.md — SONAR-01 non-emitting: analysis N-15 + emulator N-04/N-05
 - [x] 18-08-PLAN.md — SONAR-01 non-emitting: emulator N-09/N-16 + mcp N-01 (NOSONAR candidate)
-- [ ] 18-09-PLAN.md — SONAR-01 non-emitting: mcp-server batch (N-07/N-10/N-12)
+- [x] 18-09-PLAN.md — SONAR-01 non-emitting: mcp-server batch (N-07/N-10/N-12)
 - [ ] 18-10-PLAN.md — SONAR-01 non-emitting: test N-06 + core N-03 + lang GameBuilder N-11
 - [ ] 18-11-PLAN.md — SONAR-01 non-emitting: intellij-plugin batch (N-14/N-17)
 
@@ -282,7 +282,7 @@ Plans:
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 12/12 | Complete   | 2026-06-12 |
-| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 8/27 | In Progress|  |
+| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 9/27 | In Progress|  |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |

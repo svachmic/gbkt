@@ -4,13 +4,13 @@ milestone: v0.1.1
 milestone_name: Hardening
 status: executing
 stopped_at: Completed 18-08-PLAN.md
-last_updated: "2026-06-13T10:33:30.775Z"
+last_updated: "2026-06-13T10:43:19.603Z"
 last_activity: 2026-06-13
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 49
-  completed_plans: 30
+  completed_plans: 31
   percent: 33
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
-Plan: 9 of 27
+Plan: 10 of 27
 Status: Ready to execute
 Last activity: 2026-06-13
 
@@ -406,6 +406,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 18 P05 | 2 min | 1 tasks | 2 files |
 | Phase 18 P06 | 3 min | 3 tasks | 3 files |
 | Phase 18 P08 | 3 min | 3 tasks | 3 files |
+| Phase 18 P09 | 5min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -1011,7 +1012,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-13T10:33:30.768Z
+Last session: 2026-06-13T10:43:19.597Z
 Stopped at: Completed 18-08-PLAN.md
 
 ## Operator Next Steps
