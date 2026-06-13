@@ -35,8 +35,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Static Analysis Burn-down (SONAR)
 
-- [ ] **SONAR-01**: SonarCloud S3776 cognitive-complexity HIGH findings reduced 46 → 0 via extract-method refactoring (no threshold changes, ≤5 NOSONAR suppressions milestone-wide)
-- [ ] **SONAR-02**: Every refactor commit touching `codegen/visitor/**` or `GBDKPipeline.kt` passes a byte-identity ROM sweep (7 examples, pong PASS*)
+- [x] **SONAR-01**: SonarCloud S3776 cognitive-complexity HIGH findings reduced 46 → 0 via extract-method refactoring (no threshold changes, ≤5 NOSONAR suppressions milestone-wide)
+- [x] **SONAR-02**: Every refactor commit touching `codegen/visitor/**` or `GBDKPipeline.kt` passes a byte-identity ROM sweep (7 examples, pong PASS*)
 
 ### Codegen Defect Fixes (FIX — triage-confirmed-open seeds only)
 
@@ -115,8 +115,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUAL-01 | Phase 17 | Complete |
 | QUAL-02 | Phase 17 | Complete |
 | QUAL-03 | Phase 17 | Complete |
-| SONAR-01 | Phase 18 | Pending |
-| SONAR-02 | Phase 18 | Pending |
+| SONAR-01 | Phase 18 | Complete |
+| SONAR-02 | Phase 18 | Complete |
 | FIX-01 | Phase 19 | Pending |
 | FIX-02 | Phase 19 | Pending |
 | FIX-03 | Phase 20 | Pending |
