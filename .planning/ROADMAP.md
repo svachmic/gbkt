@@ -50,7 +50,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 
 **Wave 1**
 
-- [ ] 16-01-PLAN.md — Scaffold TRIAGE.md skeleton (47 rows), archive/backlog dirs, 6 fast-path RE-DEFERREDs (D-12)
+- [x] 16-01-PLAN.md — Scaffold TRIAGE.md skeleton (47 rows), archive/backlog dirs, 6 fast-path RE-DEFERREDs (D-12)
 - [ ] 16-02-PLAN.md — Substrate pass: serial build of 7 ROMs + full JVM suite + plugin validation, pin SHA, rebuild MCP JAR
 
 **Wave 2** *(blocked on Wave 1 completion)*
