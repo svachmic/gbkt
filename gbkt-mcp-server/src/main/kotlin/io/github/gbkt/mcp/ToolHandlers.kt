@@ -7,6 +7,7 @@
 package io.github.gbkt.mcp
 
 import io.github.gbkt.emulator.agent.Button
+import io.github.gbkt.emulator.agent.GameMetadata
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
@@ -139,54 +140,54 @@ internal object ToolHandlerLogic {
         return address
     }
 
-    suspend fun handleStart(session: McpEmulatorSession, args: JsonObject?): CallToolResult {
-        return toolResult {
-            val a = requireArgs(args)
+    private fun buildStartedResult(meta: GameMetadata?): CallToolResult {
+        val summary = buildJsonObject {
+            put("started", true)
+            if (meta != null) put("metadata", meta.toJsonObject())
+        }
+        return jsonResult(summary.toString())
+    }
 
+    private suspend fun startByGameName(
+        session: McpEmulatorSession,
+        gameName: String,
+        gbcMode: Boolean,
+    ): CallToolResult = withContext(ioDispatcher) {
+        try {
+            val result = session.startByName(gameName, gbcMode)
+            buildStartedResult(result.metadata)
+        } catch (e: IllegalStateException) {
+            errorResult(e.message ?: "Failed to start game '$gameName'")
+        }
+    }
+
+    private suspend fun startByRomFile(
+        session: McpEmulatorSession,
+        args: JsonObject,
+        romPath: String,
+        gbcMode: Boolean,
+    ): CallToolResult {
+        val romFile = File(romPath)
+        if (!romFile.exists()) return errorResult("ROM file not found: $romPath")
+        val symFile = args["symFile"]?.jsonPrimitive?.content?.let { File(it) }
+        val metadataFile = args["metadataFile"]?.jsonPrimitive?.content?.let { File(it) }
+        val result = session.start(romFile, symFile, metadataFile, gbcMode)
+        return buildStartedResult(result.metadata)
+    }
+
+    suspend fun handleStart(session: McpEmulatorSession, args: JsonObject?): CallToolResult =
+        toolResult {
+            val a = requireArgs(args)
             val gameName = a["game"]?.jsonPrimitive?.content
             val romPath = a["romFile"]?.jsonPrimitive?.content
             val gbcMode = a["gbcMode"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: false
 
-            // If game name is provided and romFile is not, use convention-based discovery
             if (gameName != null && romPath == null) {
-                return withContext(ioDispatcher) {
-                    try {
-                        val result = session.startByName(gameName, gbcMode)
-                        val meta = result.metadata
-                        val summary = buildJsonObject {
-                            put("started", true)
-                            if (meta != null) {
-                                put("metadata", meta.toJsonObject())
-                            }
-                        }
-                        jsonResult(summary.toString())
-                    } catch (e: IllegalStateException) {
-                        errorResult(e.message ?: "Failed to start game '$gameName'")
-                    }
-                }
+                return startByGameName(session, gameName, gbcMode)
             }
-
-            // Otherwise, romFile is required
-            if (romPath == null) {
-                return errorResult("romFile or game is required")
-            }
-            val romFile = File(romPath)
-            if (!romFile.exists()) return errorResult("ROM file not found: $romPath")
-
-            val symFile = a["symFile"]?.jsonPrimitive?.content?.let { File(it) }
-            val metadataFile = a["metadataFile"]?.jsonPrimitive?.content?.let { File(it) }
-
-            val result = session.start(romFile, symFile, metadataFile, gbcMode)
-            val meta = result.metadata
-            val summary = buildJsonObject {
-                put("started", true)
-                if (meta != null) {
-                    put("metadata", meta.toJsonObject())
-                }
-            }
-            jsonResult(summary.toString())
+            if (romPath == null) return errorResult("romFile or game is required")
+            startByRomFile(session, a, romPath, gbcMode)
         }
-    }
 
     suspend fun handleStop(session: McpEmulatorSession): CallToolResult {
         session.stop()
