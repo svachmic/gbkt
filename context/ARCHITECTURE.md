@@ -115,7 +115,7 @@ The full node catalog is in `gbkt-ir/CLAUDE.md`.
 ```
 game { }  →  GameBuilder  →  GameIR
   scene { enter { } frame { } }  →  SceneBuilder  →  SceneIR
-    whenever(cond) { body }      →  ScriptBuilder  →  If ScriptOp
+    runIf(cond) { body }      →  ScriptBuilder  →  If ScriptOp
       score += 10                →  AssignableVar operator  →  Assign ScriptOp
 ```
 
@@ -209,7 +209,7 @@ The `detekt.yml` excludes certain rules for specific packages — deliberate arc
 |---------|-----------|-----------|
 | `**/codegen/**` | LongMethod, TooManyFunctions | C code generation inherently produces large methods; each IR node maps to C output |
 | `**/ir/**` | TooManyFunctions | `ExpressionWrapper.kt` has 60+ operator overloads for DSL ergonomics (`playerX + 5` syntax) |
-| `**/dsl/**` | UnusedParameter | Receiver pattern intentionally has "unused" `this`; DSL functions like `whenever {}` need the receiver for scoping |
+| `**/dsl/**` | UnusedParameter | Receiver pattern intentionally has "unused" `this`; DSL functions like `runIf {}` need the receiver for scoping |
 | `**/rpg/**`, `**/entity/**` | LongParameterList | Domain models (Character, Monster, Battle) require comprehensive fields |
 
 ### Globally Disabled Rules

@@ -392,7 +392,7 @@ fun ScriptBuilder.battleUpdate(battle: BattleRef) {
  * Returns an [Expr] that evaluates to true when the combat system is in the given state.
  *
  * Produces a call to the generated `combat_is_in_state_{battleId}(state)` helper function. Use with
- * [io.github.gbkt.core.dsl.ScriptBuilder.whenever] for state-based scene logic.
+ * [io.github.gbkt.core.dsl.ScriptBuilder.runIf] for state-based scene logic.
  *
  * Usage:
  * ```kotlin
@@ -400,10 +400,10 @@ fun ScriptBuilder.battleUpdate(battle: BattleRef) {
  * scene("battle") {
  *     every.frame {
  *         battleUpdate(combat)
- *         whenever(combatIsInState(CombatStates.VICTORY, combat)) {
+ *         runIf(combatIsInState(CombatStates.VICTORY, combat)) {
  *             navigate(victoryScene)
  *         }
- *         whenever(combatIsInState(CombatStates.DEFEAT, combat)) {
+ *         runIf(combatIsInState(CombatStates.DEFEAT, combat)) {
  *             navigate(gameOverScene)
  *         }
  *     }
