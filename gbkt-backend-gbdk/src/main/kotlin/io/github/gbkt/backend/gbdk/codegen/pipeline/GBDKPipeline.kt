@@ -1243,8 +1243,8 @@ class GBDKPipeline {
 
         val allRawSections =
             buildHomeFileRawSections(
-                collectionDataRaw,
-                collectionFunctionsRaw,
+                collectionDataRaw.takeIf { it.isNotEmpty() },
+                collectionFunctionsRaw.takeIf { it.isNotEmpty() },
                 paletteDataRaw,
                 metaspriteDescriptorRaw,
                 isTileSolidHelperRaw,
@@ -1461,30 +1461,13 @@ class GBDKPipeline {
     /**
      * Assembles the ordered list of raw C sections for main.c.
      *
-     * All sections are optional (null or empty = omitted). Order is fixed: collection data →
-     * collection functions → palettes → metasprite descriptors → is_tile_solid helper →
-     * _bkg_set_level_submap helper → level spawn tables → setup_current_level function.
+     * All sections are optional (null = omitted). Callers pass non-nullable `String` sections
+     * pre-filtered via `.takeIf { it.isNotEmpty() }` before passing here. Order is fixed:
+     * collection data → collection functions → palettes → metasprite descriptors → is_tile_solid
+     * helper → _bkg_set_level_submap helper → level spawn tables → setup_current_level function.
      */
-    private fun buildHomeFileRawSections(
-        collectionDataRaw: String,
-        collectionFunctionsRaw: String,
-        paletteDataRaw: String?,
-        metaspriteDescriptorRaw: String?,
-        isTileSolidHelperRaw: String?,
-        bkgSetLevelSubmapHelperRaw: String?,
-        levelSpawnTablesRaw: String?,
-        setupCurrentLevelFunctionRaw: String?,
-    ): List<String> =
-        listOfNotNull(
-            collectionDataRaw.takeIf { it.isNotEmpty() },
-            collectionFunctionsRaw.takeIf { it.isNotEmpty() },
-            paletteDataRaw,
-            metaspriteDescriptorRaw,
-            isTileSolidHelperRaw,
-            bkgSetLevelSubmapHelperRaw,
-            levelSpawnTablesRaw,
-            setupCurrentLevelFunctionRaw,
-        )
+    private fun buildHomeFileRawSections(vararg sections: String?): List<String> =
+        sections.filterNotNull()
 
     /**
      * Returns collision functions for HOME bank; generates a stub when exploration systems exist

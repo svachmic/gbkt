@@ -390,7 +390,7 @@ private fun buildMenuDynamicItemStatements(menu: MenuDef): List<CStatement> {
             }
             result += CRawCode("} }")
         }
-        null -> {} // unreachable: caller guards dataSource != null
+        null -> Unit // unreachable: caller guards dataSource != null
     }
     return result
 }

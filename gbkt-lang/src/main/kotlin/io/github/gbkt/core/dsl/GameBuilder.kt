@@ -775,7 +775,7 @@ class GameBuilder(val name: String) {
      */
     private fun buildEffectiveNpcCollisions(
         actors: List<ActorIR>
-    ): Pair<MutableList<CollisionGroupIR>, MutableList<CollisionRuleIR>> {
+    ): Pair<List<CollisionGroupIR>, List<CollisionRuleIR>> {
         val groups = _collisionGroups.toMutableList()
         val rules = _collisionRules.toMutableList()
         val implicitNpcActors = actors.filter { actor ->
