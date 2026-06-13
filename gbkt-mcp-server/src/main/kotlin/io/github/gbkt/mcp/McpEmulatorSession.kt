@@ -331,111 +331,11 @@ class McpEmulatorSession(
         val results = mutableListOf<JsonObject>()
         var passed = 0
         var failed = 0
-        var extras: Map<String, Any> = emptyMap()
 
         for (check in checks) {
-            val (checkPassed, actual) =
-                when (check.type) {
-                    "variable_equals" -> {
-                        val name = check.args["name"]?.toString() ?: ""
-                        val expected = check.args["expected"].asIntOrNull()
-                        val actual = obs.variables[name]
-                        val pass = expected != null && actual == expected
-                        pass to actual?.toString()
-                    }
-                    "variable_in_range" -> {
-                        val name = check.args["name"]?.toString() ?: ""
-                        val min = check.args["min"].asIntOrNull()
-                        val max = check.args["max"].asIntOrNull()
-                        val actual = obs.variables[name]
-                        val pass =
-                            min != null &&
-                                max != null &&
-                                actual != null &&
-                                actual >= min &&
-                                actual <= max
-                        pass to actual?.toString()
-                    }
-                    "scene_is" -> {
-                        val expectedScene = check.args["scene"]?.toString() ?: ""
-                        val actual = obs.scene
-                        (actual == expectedScene) to actual
-                    }
-                    "text_on_screen" -> {
-                        val text = check.args["text"]?.toString() ?: ""
-                        val scrollAware =
-                            check.args["scrollAware"]?.toString()?.toBooleanStrictOrNull() ?: false
-                        // When scrollAware is requested, re-read VRAM with SCX/SCY offsets
-                        // instead of using the pre-decoded observation text.
-                        val bgRows =
-                            if (scrollAware) {
-                                a.readTextRows(
-                                    VramTextVerifier.TilemapLayer.BACKGROUND,
-                                    scrollAware = true,
-                                )
-                            } else {
-                                obs.bgText
-                            }
-                        val winRows = obs.winText // Window layer is never affected by scroll
-                        var foundX: Int? = null
-                        var foundY: Int? = null
-                        var foundLayer: String? = null
-                        for ((y, row) in bgRows.withIndex()) {
-                            val x = row.indexOf(text)
-                            if (x >= 0) {
-                                foundX = x
-                                foundY = y
-                                foundLayer = "bg"
-                                break
-                            }
-                        }
-                        if (foundLayer == null) {
-                            for ((y, row) in winRows.withIndex()) {
-                                val x = row.indexOf(text)
-                                if (x >= 0) {
-                                    foundX = x
-                                    foundY = y
-                                    foundLayer = "win"
-                                    break
-                                }
-                            }
-                        }
-                        if (foundLayer != null) {
-                            extras = mapOf("x" to foundX!!, "y" to foundY!!, "layer" to foundLayer)
-                        }
-                        (foundLayer != null) to if (foundLayer != null) "found" else "not found"
-                    }
-                    "actor_visible" -> {
-                        val name = check.args["name"]?.toString() ?: ""
-                        val visible = obs.actors.any { it.name == name }
-                        visible to if (visible) "visible" else "not visible"
-                    }
-                    "sprite_count" -> {
-                        val expected = check.args["expected"].asIntOrNull()
-                        val actual = obs.sprites.size
-                        val pass = expected != null && actual == expected
-                        pass to actual.toString()
-                    }
-                    else -> false to "unknown check type: ${check.type}"
-                }
-
-            if (checkPassed) passed++ else failed++
-            results.add(
-                buildJsonObject {
-                    put("type", check.type)
-                    put("passed", checkPassed)
-                    if (actual != null) put("actual", actual)
-                    for ((k, v) in extras) {
-                        when (v) {
-                            is Int -> put(k, v)
-                            is String -> put(k, v)
-                        }
-                    }
-                    extras = emptyMap()
-                    // Include the args for context
-                    put("args", buildJsonObject { for ((k, v) in check.args) put(k, v.toString()) })
-                }
-            )
+            val result = dispatchCheck(a, obs, check)
+            if (result.passed) passed++ else failed++
+            results.add(buildCheckResultJson(check, result))
         }
 
         buildJsonObject {
@@ -513,6 +413,122 @@ class McpEmulatorSession(
             )
         }
     }
+
+    // ── batchAssert helpers ───────────────────────────────────────────────────
+
+    /** Carries the outcome of a single assertion check performed by [batchAssert]. */
+    private data class CheckResult(
+        val passed: Boolean,
+        val actual: String?,
+        val extras: Map<String, Any> = emptyMap(),
+    )
+
+    /** Dispatches a single [AssertCheck] to the appropriate type-specific helper. */
+    private fun dispatchCheck(
+        a: StepAgent,
+        obs: Observation,
+        check: AssertCheck,
+    ): CheckResult =
+        when (check.type) {
+            "variable_equals" -> checkVariableEquals(obs, check.args)
+            "variable_in_range" -> checkVariableInRange(obs, check.args)
+            "scene_is" -> checkSceneIs(obs, check.args)
+            "text_on_screen" -> checkTextOnScreen(a, obs, check.args)
+            "actor_visible" -> checkActorVisible(obs, check.args)
+            "sprite_count" -> checkSpriteCount(obs, check.args)
+            else -> CheckResult(false, "unknown check type: ${check.type}")
+        }
+
+    private fun checkVariableEquals(obs: Observation, args: Map<String, Any>): CheckResult {
+        val name = args["name"]?.toString() ?: ""
+        val expected = args["expected"].asIntOrNull()
+        val actual = obs.variables[name]
+        return CheckResult(expected != null && actual == expected, actual?.toString())
+    }
+
+    private fun checkVariableInRange(obs: Observation, args: Map<String, Any>): CheckResult {
+        val name = args["name"]?.toString() ?: ""
+        val min = args["min"].asIntOrNull()
+        val max = args["max"].asIntOrNull()
+        val actual = obs.variables[name]
+        val pass = min != null && max != null && actual != null && actual >= min && actual <= max
+        return CheckResult(pass, actual?.toString())
+    }
+
+    private fun checkSceneIs(obs: Observation, args: Map<String, Any>): CheckResult {
+        val expectedScene = args["scene"]?.toString() ?: ""
+        return CheckResult(obs.scene == expectedScene, obs.scene)
+    }
+
+    private fun checkTextOnScreen(
+        a: StepAgent,
+        obs: Observation,
+        args: Map<String, Any>,
+    ): CheckResult {
+        val text = args["text"]?.toString() ?: ""
+        val scrollAware = args["scrollAware"]?.toString()?.toBooleanStrictOrNull() ?: false
+        // When scrollAware is requested, re-read VRAM with SCX/SCY offsets instead of using the
+        // pre-decoded observation text.
+        val bgRows =
+            if (scrollAware) {
+                a.readTextRows(VramTextVerifier.TilemapLayer.BACKGROUND, scrollAware = true)
+            } else {
+                obs.bgText
+            }
+        val winRows = obs.winText // Window layer is never affected by scroll
+        val found = findTextInRows(text, bgRows, "bg") ?: findTextInRows(text, winRows, "win")
+        val extras =
+            if (found != null) {
+                mapOf("x" to found.first, "y" to found.second, "layer" to found.third)
+            } else {
+                emptyMap()
+            }
+        return CheckResult(found != null, if (found != null) "found" else "not found", extras)
+    }
+
+    /**
+     * Searches [rows] for the first occurrence of [text] and returns a triple of
+     * (columnIndex, rowIndex, layerLabel), or null if not found.
+     */
+    private fun findTextInRows(
+        text: String,
+        rows: List<String>,
+        layer: String,
+    ): Triple<Int, Int, String>? {
+        for ((y, row) in rows.withIndex()) {
+            val x = row.indexOf(text)
+            if (x >= 0) return Triple(x, y, layer)
+        }
+        return null
+    }
+
+    private fun checkActorVisible(obs: Observation, args: Map<String, Any>): CheckResult {
+        val name = args["name"]?.toString() ?: ""
+        val visible = obs.actors.any { it.name == name }
+        return CheckResult(visible, if (visible) "visible" else "not visible")
+    }
+
+    private fun checkSpriteCount(obs: Observation, args: Map<String, Any>): CheckResult {
+        val expected = args["expected"].asIntOrNull()
+        val actual = obs.sprites.size
+        return CheckResult(expected != null && actual == expected, actual.toString())
+    }
+
+    /** Serialises a [CheckResult] plus the originating [check]'s args into a JSON object. */
+    private fun buildCheckResultJson(check: AssertCheck, result: CheckResult): JsonObject =
+        buildJsonObject {
+            put("type", check.type)
+            put("passed", result.passed)
+            if (result.actual != null) put("actual", result.actual)
+            for ((k, v) in result.extras) {
+                when (v) {
+                    is Int -> put(k, v)
+                    is String -> put(k, v)
+                }
+            }
+            // Include the args for context
+            put("args", buildJsonObject { for ((k, v) in check.args) put(k, v.toString()) })
+        }
 
     private fun requireActive(): StepAgent =
         agent ?: error("No active session. Call emulator_start first.")
