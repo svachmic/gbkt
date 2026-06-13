@@ -311,13 +311,13 @@ class GbktDocumentationProvider : AbstractDocumentationProvider() {
                     ),
 
                 // Control flow
-                "whenever" to
+                "runIf" to
                     DocEntry(
                         "Executes a block when a condition is true.",
                         """
-                        whenever(dpad.right) { player.x += 2 }
-                        whenever(buttons.a.pressed) { jump() }
-                        whenever(player collidesWith enemy) { takeDamage() }
+                        runIf(dpad.right) { player.x += 2 }
+                        runIf(buttons.a.pressed) { jump() }
+                        runIf(player collidesWith enemy) { takeDamage() }
                         """
                             .trimIndent(),
                         listOf("branch", "repeat"),
@@ -327,13 +327,13 @@ class GbktDocumentationProvider : AbstractDocumentationProvider() {
                         "Conditional branching with multiple conditions.",
                         """
                         branch {
-                            whenever(score isAtLeast 100) { showWin() }
-                            whenever(health isAtMost 0) { showGameOver() }
+                            runIf(score isAtLeast 100) { showWin() }
+                            runIf(health isAtMost 0) { showGameOver() }
                             otherwise { continueGame() }
                         }
                         """
                             .trimIndent(),
-                        listOf("whenever", "then", "otherwise"),
+                        listOf("runIf", "then", "otherwise"),
                     ),
                 "repeat" to
                     DocEntry(
@@ -503,8 +503,8 @@ class GbktDocumentationProvider : AbstractDocumentationProvider() {
                     DocEntry(
                         "D-pad input. Access directional states directly.",
                         """
-                        whenever(dpad.right) { player.x += 2 }
-                        whenever(dpad.up) { player.y -= 2 }
+                        runIf(dpad.right) { player.x += 2 }
+                        runIf(dpad.up) { player.y -= 2 }
                         """
                             .trimIndent(),
                         listOf("buttons", "pressed", "held"),
@@ -513,9 +513,9 @@ class GbktDocumentationProvider : AbstractDocumentationProvider() {
                     DocEntry(
                         "Button input. Use with .pressed, .released, or .held.",
                         """
-                        whenever(buttons.a.pressed) { jump() }
-                        whenever(buttons.b.held) { charge() }
-                        whenever(buttons.start.pressed) { pause() }
+                        runIf(buttons.a.pressed) { jump() }
+                        runIf(buttons.b.held) { charge() }
+                        runIf(buttons.start.pressed) { pause() }
                         """
                             .trimIndent(),
                         listOf("dpad", "pressed", "released", "held"),
@@ -523,19 +523,19 @@ class GbktDocumentationProvider : AbstractDocumentationProvider() {
                 "pressed" to
                     DocEntry(
                         "True on the frame a button is first pressed.",
-                        "whenever(buttons.a.pressed) { jump() }",
+                        "runIf(buttons.a.pressed) { jump() }",
                         listOf("released", "held", "buttons"),
                     ),
                 "released" to
                     DocEntry(
                         "True on the frame a button is released.",
-                        "whenever(buttons.b.released) { releaseCharge() }",
+                        "runIf(buttons.b.released) { releaseCharge() }",
                         listOf("pressed", "held", "buttons"),
                     ),
                 "held" to
                     DocEntry(
                         "True while a button is being held down.",
-                        "whenever(buttons.b.held) { charge() }",
+                        "runIf(buttons.b.held) { charge() }",
                         listOf("pressed", "released", "buttons"),
                     ),
 
@@ -543,61 +543,61 @@ class GbktDocumentationProvider : AbstractDocumentationProvider() {
                 "isEqualTo" to
                     DocEntry(
                         "Checks if a value equals another value.",
-                        "whenever(score isEqualTo 100) { showBonus() }",
+                        "runIf(score isEqualTo 100) { showBonus() }",
                         listOf("isNotEqualTo", "isAtLeast", "isAtMost"),
                     ),
                 "isNotEqualTo" to
                     DocEntry(
                         "Checks if a value does not equal another value.",
-                        "whenever(state isNotEqualTo PAUSED) { update() }",
+                        "runIf(state isNotEqualTo PAUSED) { update() }",
                         listOf("isEqualTo", "isAtLeast", "isAtMost"),
                     ),
                 "isGreaterThan" to
                     DocEntry(
                         "Checks if a value is strictly greater than another.",
-                        "whenever(score isGreaterThan highScore) { newRecord() }",
+                        "runIf(score isGreaterThan highScore) { newRecord() }",
                         listOf("isLessThan", "isAtLeast", "isAtMost"),
                     ),
                 "isLessThan" to
                     DocEntry(
                         "Checks if a value is strictly less than another.",
-                        "whenever(health isLessThan 10) { showWarning() }",
+                        "runIf(health isLessThan 10) { showWarning() }",
                         listOf("isGreaterThan", "isAtLeast", "isAtMost"),
                     ),
                 "isAtLeast" to
                     DocEntry(
                         "Checks if a value is greater than or equal to another (>=).",
-                        "whenever(score isAtLeast 100) { win() }",
+                        "runIf(score isAtLeast 100) { win() }",
                         listOf("isAtMost", "isGreaterThan", "isAbove"),
                     ),
                 "isAtMost" to
                     DocEntry(
                         "Checks if a value is less than or equal to another (<=).",
-                        "whenever(health isAtMost 0) { gameOver() }",
+                        "runIf(health isAtMost 0) { gameOver() }",
                         listOf("isAtLeast", "isLessThan", "isBelow"),
                     ),
                 "isAbove" to
                     DocEntry(
                         "Alias for isGreaterThan. Checks if value > other.",
-                        "whenever(player.x isAbove 160) { wrapAround() }",
+                        "runIf(player.x isAbove 160) { wrapAround() }",
                         listOf("isBelow", "isAtLeast", "isGreaterThan"),
                     ),
                 "isBelow" to
                     DocEntry(
                         "Alias for isLessThan. Checks if value < other.",
-                        "whenever(player.y isBelow 0) { clampPosition() }",
+                        "runIf(player.y isBelow 0) { clampPosition() }",
                         listOf("isAbove", "isAtMost", "isLessThan"),
                     ),
                 "collidesWith" to
                     DocEntry(
                         "Checks if two entities' hitboxes overlap.",
-                        "whenever(player collidesWith enemy) { takeDamage() }",
+                        "runIf(player collidesWith enemy) { takeDamage() }",
                         listOf("overlaps", "hitbox"),
                     ),
                 "overlaps" to
                     DocEntry(
                         "Checks if two rectangular areas overlap.",
-                        "whenever(playerRect overlaps dangerZone) { triggerTrap() }",
+                        "runIf(playerRect overlaps dangerZone) { triggerTrap() }",
                         listOf("collidesWith", "hitbox"),
                     ),
 
@@ -609,7 +609,7 @@ class GbktDocumentationProvider : AbstractDocumentationProvider() {
                         val player by entity {
                             tag(Tags.PLAYER)
                         }
-                        // Later: whenever(bullet collidesWith tag(Tags.ENEMY)) { ... }
+                        // Later: runIf(bullet collidesWith tag(Tags.ENEMY)) { ... }
                         """
                             .trimIndent(),
                         listOf("entity"),

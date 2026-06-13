@@ -91,13 +91,13 @@ class GbktColorSettingsPage : ColorSettingsPage {
                 }
 
                 <lifecycle>every</lifecycle>.<lifecycle>frame</lifecycle> {
-                    <control_flow>whenever</control_flow>(<input>dpad</input>.<input>right</input>) {
+                    <control_flow>runIf</control_flow>(<input>dpad</input>.<input>right</input>) {
                         player.x += 2
                     }
-                    <control_flow>whenever</control_flow>(<input>buttons</input>.<input>a</input>.<input>pressed</input>) {
+                    <control_flow>runIf</control_flow>(<input>buttons</input>.<input>a</input>.<input>pressed</input>) {
                         attack()
                     }
-                    <control_flow>whenever</control_flow>(player.<condition>collidesWith</condition>(enemy)) {
+                    <control_flow>runIf</control_flow>(player.<condition>collidesWith</condition>(enemy)) {
                         takeDamage()
                     }
                 }
@@ -105,7 +105,7 @@ class GbktColorSettingsPage : ColorSettingsPage {
 
             var score by <dsl_function>u8Var</dsl_function>(0)
 
-            <control_flow>whenever</control_flow>(score <condition>isAtLeast</condition> 100) {
+            <control_flow>runIf</control_flow>(score <condition>isAtLeast</condition> 100) {
                 win()
             }
             """

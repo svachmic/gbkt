@@ -350,7 +350,7 @@ class GbktBuilderCompletionProvider : CompletionProvider<CompletionParameters>()
             listOf(
                 "position" to "Set position",
                 "sprite" to "Add sprite",
-                "whenever" to "Conditional action",
+                "runIf" to "Conditional action",
             )
 
         private val CONTEXT_SUGGESTIONS =

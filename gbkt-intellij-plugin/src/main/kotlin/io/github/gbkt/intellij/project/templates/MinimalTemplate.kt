@@ -58,10 +58,10 @@ object MinimalTemplate : GameTemplate {
         |
         |            every.frame {
         |                // D-pad movement
-        |                whenever(dpad.right) { player.x += 1 }
-        |                whenever(dpad.left) { player.x -= 1 }
-        |                whenever(dpad.up) { player.y -= 1 }
-        |                whenever(dpad.down) { player.y += 1 }
+        |                runIf(dpad.right) { player.x += 1 }
+        |                runIf(dpad.left) { player.x -= 1 }
+        |                runIf(dpad.up) { player.y -= 1 }
+        |                runIf(dpad.down) { player.y += 1 }
         |            }
         |        }
         |

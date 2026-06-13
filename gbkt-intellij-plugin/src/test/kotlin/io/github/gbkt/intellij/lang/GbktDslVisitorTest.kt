@@ -106,8 +106,8 @@ class GbktDslVisitorTest {
     @Test
     fun `DSL_FUNCTIONS contains control flow`() {
         assertTrue(
-            "whenever should be in DSL functions",
-            "whenever" in GbktDslVisitor.DSL_FUNCTIONS,
+            "runIf should be in DSL functions",
+            "runIf" in GbktDslVisitor.DSL_FUNCTIONS,
         )
         assertTrue("branch should be in DSL functions", "branch" in GbktDslVisitor.DSL_FUNCTIONS)
         assertTrue("repeat should be in DSL functions", "repeat" in GbktDslVisitor.DSL_FUNCTIONS)

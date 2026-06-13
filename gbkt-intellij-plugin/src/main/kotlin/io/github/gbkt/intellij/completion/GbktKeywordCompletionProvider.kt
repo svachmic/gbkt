@@ -33,7 +33,7 @@ import org.jetbrains.kotlin.psi.KtStringTemplateExpression
  * - gbGame, scene, entity, dialog, camera
  * - u8Var, u16Var, i8Var, i16Var
  * - monster, ability, item, floor
- * - whenever, branch, repeat
+ * - runIf, branch, repeat
  */
 class GbktKeywordCompletionProvider : CompletionProvider<CompletionParameters>() {
 
@@ -166,7 +166,7 @@ class GbktKeywordCompletionProvider : CompletionProvider<CompletionParameters>()
                         "(\"id\")$BLOCK_BODY",
                         CaretTarget.INSIDE_QUOTES,
                     ),
-                "whenever" to
+                "runIf" to
                     KeywordTemplate(
                         "(condition) { ... }",
                         "()$BLOCK_BODY",
