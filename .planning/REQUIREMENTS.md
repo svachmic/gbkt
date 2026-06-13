@@ -53,7 +53,18 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Feature Implementation (from pruned docs)
 
-- **FEAT-XX**: Implement the 13 documented-but-absent DSL subsystems (state machines, dialog/menu property APIs, save fields, entity-pool lifecycle, tweening, camera extras, physics property API, pathfinding, battle menus, items) — each tracked as a v0.2.0 candidate by DOCS-02
+- **FEAT-STATE-MACHINES**: Implement top-level `states("player") { ... }` state machine DSL with enter/tick/on-transition blocks — see `.planning/backlog/v0.2.0/FEAT-STATE-MACHINES.md`
+- **FEAT-DIALOG-TICK-API**: Implement `DialogHandle.tick()`, `isActive`, `isComplete`, `show()`, `hide()` for frame-driven dialog state — see `.planning/backlog/v0.2.0/FEAT-DIALOG-TICK-API.md`
+- **FEAT-MENU-GRID-STYLE**: Implement `style { }` block on `MenuBuilder`, `gridMenu()`, `MenuHandle.tick()`, `isActive`, `isVisible`, `selectedIndex` — see `.planning/backlog/v0.2.0/FEAT-MENU-GRID-STYLE.md`
+- **FEAT-SAVE-DATA-FIELDS**: Implement field-level save API (`u16Field()`, `flagsField()`, `save.load()`, `save.save()`, `save.exists()`, per-field delegates) — see `.planning/backlog/v0.2.0/FEAT-SAVE-DATA-FIELDS.md`
+- **FEAT-ENTITY-POOL-LIFECYCLE**: Implement sprite/lifecycle entity pools with `onSpawn`, `onFrame`, `despawnWhen`, `spawn { }`, `forEachActive { }`, `despawnAll()` — see `.planning/backlog/v0.2.0/FEAT-ENTITY-POOL-LIFECYCLE.md`
+- **FEAT-TWEENING**: Implement `tween(target, from, to, duration, easing)` and `Easing` enum with pre-computed lookup tables — see `.planning/backlog/v0.2.0/FEAT-TWEENING.md`
+- **FEAT-CAMERA-EXTRAS**: Implement camera `offset()`, `deadzone()`, `followX/followY`, snap-to, shake-builder with decay, `camera.x/y` conditions, wipe/iris/flash transitions — see `.planning/backlog/v0.2.0/FEAT-CAMERA-EXTRAS.md`
+- **FEAT-PHYSICS-WORLD**: Implement global `physics { }` world builder, `tag()`, `physicsWorld.collide()`, `gravityZone()`, `maxVelocity`, `mass`, `useLocalFriction` — see `.planning/backlog/v0.2.0/FEAT-PHYSICS-WORLD.md`
+- **FEAT-PATHFINDING-NAVGRID**: Implement `navGrid()` builder, `player findPathTo target using navGrid` infix, weighted tiles, `Heuristic` enum, dynamic obstacles — see `.planning/backlog/v0.2.0/FEAT-PATHFINDING-NAVGRID.md`
+- **FEAT-TESTING-DSL**: Implement `testGame { }` / `testScene { }` DSL wrappers, `press(Button) { }` input simulation, fluent assertions (`expect("x").toEqual(n)`) — see `.planning/backlog/v0.2.0/FEAT-TESTING-DSL.md`
+- **FEAT-BATTLE-MENUS**: Implement `battleMenu { }` builder, `combatFormulas { }`, custom `battleState()` delegates, `battleTransition()` script op — see `.planning/backlog/v0.2.0/FEAT-BATTLE-MENUS.md`
+- **FEAT-INVENTORY-DELEGATE**: Implement game-scope `val potion by item { }` delegate, `ItemCategory` global enum, `equipSlot()`, `ContainerRef.add/remove/equip/contains/count` — see `.planning/backlog/v0.2.0/FEAT-INVENTORY-DELEGATE.md`
 
 ### Architecture / Tooling
 
