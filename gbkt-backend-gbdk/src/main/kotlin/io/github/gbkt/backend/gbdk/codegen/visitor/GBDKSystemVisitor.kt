@@ -868,23 +868,24 @@ class GBDKSystemVisitor(
      * set before onPushed callback. Gap 2: HITBOX collision shape dispatches AABB pixel check per
      * entity instead of grid-bit lookup.
      */
-    @Suppress("LongMethod")
     private fun buildEntityCollisionFunctions(
         sanitizedId: String,
         actors: List<ActorIR>,
-    ): List<CFunction> {
-        val tileSize = 8 // default tile size
+    ): List<CFunction> =
+        listOf(
+            buildEntityRegisterFunction(sanitizedId),
+            buildEntityRemoveFunction(),
+            buildEntityCheckFunction(actors),
+            buildEntityHandleBlockFunction(actors),
+            buildEntitySetCollisionModeFunction(),
+            buildEntityBumpFeedbackFunction(),
+        )
 
-        // -----------------------------------------------------------------------
-        // 1. _entity_register(entity_id, tile_x, tile_y, mode)
-        // Sets grid bit(s) for entity occupancy, stores position/mode/shape.
-        // Multi-tile: iterates tilesWide * tilesHigh.
-        // -----------------------------------------------------------------------
+    private fun buildEntityRegisterFunction(sanitizedId: String): CFunction {
         val entityIdParam = CVar("entity_id")
         val tileXParam = CVar("tile_x")
         val tileYParam = CVar("tile_y")
         val modeParam = CVar("mode")
-
         val registerBody =
             buildList<CStatement> {
                 // Store position
@@ -1005,25 +1006,23 @@ class GBDKSystemVisitor(
                 )
                 add(CExprStatement(CUnaryExpr("++", CVar("_entity_count"))))
             }
-        val entityRegister =
-            CFunction(
-                name = "_entity_register",
-                returnType = CVoid,
-                params =
-                    listOf(
-                        CParam("entity_id", CU8),
-                        CParam("tile_x", CU8),
-                        CParam("tile_y", CU8),
-                        CParam("mode", CU8),
-                    ),
-                body = registerBody,
-                sectionComment = "Entity collision functions: $sanitizedId",
-            )
+        return CFunction(
+            name = "_entity_register",
+            returnType = CVoid,
+            params =
+                listOf(
+                    CParam("entity_id", CU8),
+                    CParam("tile_x", CU8),
+                    CParam("tile_y", CU8),
+                    CParam("mode", CU8),
+                ),
+            body = registerBody,
+            sectionComment = "Entity collision functions: $sanitizedId",
+        )
+    }
 
-        // -----------------------------------------------------------------------
-        // 2. _entity_remove(entity_id)
-        // Clears grid bit, resets mode to 0xFF (PASSTHROUGH sentinel).
-        // -----------------------------------------------------------------------
+    private fun buildEntityRemoveFunction(): CFunction {
+        val entityIdParam = CVar("entity_id")
         val removeBody =
             buildList<CStatement> {
                 add(CVarDecl("tx", CU8, CArrayAccess(CVar("_entity_tile_x"), entityIdParam)))
@@ -1141,19 +1140,16 @@ class GBDKSystemVisitor(
                     add(CExprStatement(CUnaryExpr("--", CVar("_entity_count"))))
                 }
             }
-        val entityRemove =
-            CFunction(
-                name = "_entity_remove",
-                returnType = CVoid,
-                params = listOf(CParam("entity_id", CU8)),
-                body = removeBody,
-            )
+        return CFunction(
+            name = "_entity_remove",
+            returnType = CVoid,
+            params = listOf(CParam("entity_id", CU8)),
+            body = removeBody,
+        )
+    }
 
-        // -----------------------------------------------------------------------
-        // 3. _entity_check(nx, ny) — returns entity_id or 0xFF if no collision
-        // TILE path: checks bit in _entity_grid.
-        // HITBOX path (Gap 2): AABB pixel overlap per actor with shape=HITBOX.
-        // -----------------------------------------------------------------------
+    private fun buildEntityCheckFunction(actors: List<ActorIR>): CFunction {
+        val tileSize = 8 // default tile size
         val nxVar = CVar("nx")
         val nyVar = CVar("ny")
         val hasHitbox = actors.any {
@@ -1392,22 +1388,17 @@ class GBDKSystemVisitor(
                 }
                 add(CReturn(CRawExpr("0xFF")))
             }
-        val entityCheck =
-            CFunction(
-                name = "_entity_check",
-                returnType = CU8,
-                params = listOf(CParam("nx", CU8), CParam("ny", CU8)),
-                body = checkBody,
-            )
+        return CFunction(
+            name = "_entity_check",
+            returnType = CU8,
+            params = listOf(CParam("nx", CU8), CParam("ny", CU8)),
+            body = checkBody,
+        )
+    }
 
-        // -----------------------------------------------------------------------
-        // 4. _entity_handle_block(entity_id, nx, ny, direction)
-        // Switch on _entity_collision_mode[entity_id]:
-        //   BLOCK(0): bump feedback, return
-        //   BLOCK_AND_TRIGGER(2): set _blocking_entity_id, emit onBlocked ops, return
-        //   OVERLAP_TRIGGER(3): emit onOverlap ops, return
-        //   PUSH(4): set _pushed_entity_id/_push_direction, move entity if destination free
-        // -----------------------------------------------------------------------
+    @Suppress("LongMethod")
+    private fun buildEntityHandleBlockFunction(actors: List<ActorIR>): CFunction {
+        val entityIdParam = CVar("entity_id")
         val directionParam = CVar("direction")
         val modeSwitchCases =
             buildList<CSwitchCase> {
@@ -1784,23 +1775,23 @@ class GBDKSystemVisitor(
                     cases = modeSwitchCases,
                 )
             )
-        val entityHandleBlock =
-            CFunction(
-                name = "_entity_handle_block",
-                returnType = CVoid,
-                params =
-                    listOf(
-                        CParam("entity_id", CU8),
-                        CParam("nx", CU8),
-                        CParam("ny", CU8),
-                        CParam("direction", CU8),
-                    ),
-                body = handleBlockBody,
-            )
+        return CFunction(
+            name = "_entity_handle_block",
+            returnType = CVoid,
+            params =
+                listOf(
+                    CParam("entity_id", CU8),
+                    CParam("nx", CU8),
+                    CParam("ny", CU8),
+                    CParam("direction", CU8),
+                ),
+            body = handleBlockBody,
+        )
+    }
 
-        // -----------------------------------------------------------------------
-        // 5. _entity_set_collision_mode(entity_id, mode) — runtime mode change
-        // -----------------------------------------------------------------------
+    private fun buildEntitySetCollisionModeFunction(): CFunction {
+        val entityIdParam = CVar("entity_id")
+        val modeParam = CVar("mode")
         val setModeBody =
             listOf(
                 CExprStatement(
@@ -1811,33 +1802,20 @@ class GBDKSystemVisitor(
                     )
                 )
             )
-        val entitySetCollisionMode =
-            CFunction(
-                name = "_entity_set_collision_mode",
-                returnType = CVoid,
-                params = listOf(CParam("entity_id", CU8), CParam("mode", CU8)),
-                body = setModeBody,
-            )
-
-        // -----------------------------------------------------------------------
-        // 6. _entity_bump_feedback() — bump stub (sound/visual)
-        // -----------------------------------------------------------------------
-        val entityBumpFeedback =
-            CFunction(
-                name = "_entity_bump_feedback",
-                returnType = CVoid,
-                body = listOf(CComment("bump feedback: play sound/visual indicator")),
-            )
-
-        return listOf(
-            entityRegister,
-            entityRemove,
-            entityCheck,
-            entityHandleBlock,
-            entitySetCollisionMode,
-            entityBumpFeedback,
+        return CFunction(
+            name = "_entity_set_collision_mode",
+            returnType = CVoid,
+            params = listOf(CParam("entity_id", CU8), CParam("mode", CU8)),
+            body = setModeBody,
         )
     }
+
+    private fun buildEntityBumpFeedbackFunction(): CFunction =
+        CFunction(
+            name = "_entity_bump_feedback",
+            returnType = CVoid,
+            body = listOf(CComment("bump feedback: play sound/visual indicator")),
+        )
 
     /**
      * Build `exploration_encounter_check_{id}()` with weighted random encounter dispatch.
