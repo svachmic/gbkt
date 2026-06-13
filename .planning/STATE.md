@@ -4,8 +4,8 @@ milestone: v0.1.1
 milestone_name: Hardening
 status: completed
 stopped_at: Phase 19 context gathered
-last_updated: "2026-06-13T19:16:14.401Z"
-last_activity: 2026-06-13
+last_updated: "2026-06-13T19:52:07.203Z"
+last_activity: 2026-06-13 -- Phase 19 planning complete
 progress:
   total_phases: 6
   completed_phases: 3
@@ -57,7 +57,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
 Plan: 27 of 27
 Status: v0.1.1 milestone 3/6 — Phase 18 done; next: spec Phase 19 (Metasprite Cluster). PR #77 open, do NOT merge until 19/20/21 done
-Last activity: 2026-06-13
+Last activity: 2026-06-13 -- Phase 19 planning complete
 
 Resume signal: /gsd-execute-phase 18 (Plan 27 — SonarCloud scan gate remaining)
 Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable; Phase 19 (Metasprite Fixes) now unblocked

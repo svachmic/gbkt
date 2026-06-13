@@ -241,11 +241,21 @@ Plans:
   4. All metasprite fix commits are strictly separate from any S3776 commits so the byte-identity oracle can unambiguously attribute C output changes
 
 **Plans**: 4 plans
-
 Plans:
+**Wave 1**
+
 - [ ] 19-01-PLAN.md — Byte-identity BEFORE baseline + clean dual buildRom smoke (FIX-01/FIX-02 / D-07)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 19-02-PLAN.md — FIX-02 emission-guard audit (19-AUDIT-FIX-02.md) + 5 guards GREEN
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 19-03-PLAN.md — FIX-01 GBC-mode capture harness (Phase19VisualEvidenceTest) + SEED-004/005/006/013 + ROM-smoke screenshots
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 19-04-PLAN.md — Closure: byte-identity AFTER diff, seed-archive integrity, full suite GREEN, S3776 commit separation
 
 ### Phase 20: Codegen Fixes — Banks and Sprite Transparency
