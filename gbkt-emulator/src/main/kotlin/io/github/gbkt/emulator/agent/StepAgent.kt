@@ -526,25 +526,23 @@ fun Observation.toSummary(): String = buildString {
     }
     appendLine("Sprites: ${sprites.size} visible")
     // BG text
-    val bgRows = bgText.mapIndexedNotNull { i, row ->
-        if (row.any { it != '.' && it != ' ' }) "[row $i] \"$row\"" else null
-    }
-    if (bgRows.isEmpty()) {
-        appendLine("BG: (empty)")
-    } else {
-        bgRows.forEach { appendLine("BG: $it") }
-    }
+    val bgRows = nonEmptyRowsFormatted(bgText)
+    if (bgRows.isEmpty()) appendLine("BG: (empty)") else bgRows.forEach { appendLine("BG: $it") }
     // WIN text
-    val winRows = winText.mapIndexedNotNull { i, row ->
-        if (row.any { it != '.' && it != ' ' }) "[row $i] \"$row\"" else null
-    }
-    if (winRows.isEmpty()) {
-        appendLine("WIN: (empty)")
-    } else {
-        winRows.forEach { appendLine("WIN: $it") }
-    }
+    val winRows = nonEmptyRowsFormatted(winText)
+    if (winRows.isEmpty()) appendLine("WIN: (empty)") else winRows.forEach { appendLine("WIN: $it") }
     // Log
     if (newLogEntries.isNotEmpty()) {
         newLogEntries.forEach { entry -> appendLine("Log: ${entry.formatted().trimEnd()}") }
     }
 }
+
+/**
+ * Returns the non-blank rows from a tilemap layer formatted as `[row N] "..."`, for use in
+ * [toSummary]. A row is considered blank if it contains only spaces and dots (the tilemap-text
+ * decoder's empty-tile representation).
+ */
+private fun nonEmptyRowsFormatted(rows: List<String>): List<String> =
+    rows.mapIndexedNotNull { i, row ->
+        if (row.any { it != '.' && it != ' ' }) "[row $i] \"$row\"" else null
+    }
