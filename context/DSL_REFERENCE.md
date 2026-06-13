@@ -1293,122 +1293,100 @@ UINT8 level_get_collision(UINT8 tile_x, UINT8 tile_y);
 
 ## Camera System
 
-The camera system provides scrolling, smooth follow, screen shake, and transitions.
+The camera system provides automatic follow scrolling, screen shake, and position control. Configuration is declared in a `camera { }` block; runtime camera control is done with `cameraOp(CameraAction.*)` inside script blocks.
 
-> **Stale-API caveat:** the current `CameraBuilder` (in `gbkt-lang/.../dsl/SystemBuilders.kt`)
-> implements `follow(actor)` and `bounds(mapWidth, mapHeight)` only; low-level camera ops go
-> through `cameraOp(CameraAction.FOLLOW/UNFOLLOW/SHAKE/MOVE_TO)`. The smoothing/deadzone,
-> shake-builder, followX/followY, and snapTo APIs below are not implemented. Cross-check
-> before relying on details.
+### Configuration (camera { } block)
 
-### Basic Setup
+Declare the camera once at game level using `CameraBuilder`:
 
 ```kotlin
-// Define camera with configuration
-val camera = camera {
-    smoothing = 0.15f           // Lerp factor (0 = instant, 1 = slow)
-    offset(0, -16)              // Look-ahead offset from target
-    deadzone(24 x 16)           // No movement within this area
-    bounds(0..256, 0..256)      // World bounds clamp
+val cam = camera {
+    follow(player)              // Actor to center on (can also pass a String actor ID)
+    bounds(256, 256)            // Clamp scroll to a 256×256-pixel world
+    smoothing = 0.15f           // Lerp factor (0.0 = instant snap, higher = lag)
 }
+```
 
-// Use in scene
+`follow(actor)` and `follow(actorId: String)` are config-time declarations — they record the default follow target for the camera system. `bounds(mapWidth, mapHeight)` restricts scrolling to the given pixel dimensions. `smoothing` is a `Float` field (declared, applied in the camera system).
+
+### Runtime Camera Control (cameraOp)
+
+Use `cameraOp(CameraAction.*)` inside any `enter { }`, `frame { }`, or `exit { }` block to control the camera at runtime:
+
+```kotlin
 gameplayScene = scene("gameplay") {
     enter {
-        camera.follow(player)   // Start following
-        camera.fadeIn(20.frames)
+        // Start following (with optional actor arg)
+        cameraOp(CameraAction.FOLLOW, mapOf("actorId" to player.id))
+
+        // Fade in at scene start — fade() is a ScriptBuilder op, not a camera method
+        fade(fadeIn = true, frames = 20)
     }
 
     frame {
-        camera.update()         // Required: processes follow/shake/transitions
+        // Shake on hit
+        whenever(hitDetected) {
+            cameraOp(CameraAction.SHAKE, mapOf("intensity" to 4, "duration" to 10))
+        }
+    }
+
+    exit {
+        // Stop following before leaving
+        cameraOp(CameraAction.UNFOLLOW)
     }
 }
 ```
 
-### Smooth Follow
+**Available `CameraAction` values:**
 
-```kotlin
-// Simple follow - camera tracks sprite/entity position
-camera.follow(player)
-
-// Follow with custom configuration
-camera.follow(player) {
-    smoothing = 0.2f            // Override smoothing
-    offset(0, -16)              // Camera 16px above target
-}
-
-// Follow single axis
-camera.followX(player)          // Only follow horizontally
-camera.followY(player)          // Only follow vertically
-
-// Stop following
-camera.stopFollow()
-```
-
-### Screen Shake
-
-```kotlin
-// Basic shake - intensity in pixels, duration in frames
-camera.shake(4, 10.frames)
-
-// With decay configuration
-camera.shake {
-    intensity = 6
-    duration = 20.frames
-    decay = Decay.EXPONENTIAL   // or LINEAR, NONE
-}
-
-// Quick impact shake (short, punchy)
-camera.impact(4)
-
-// Stop shake
-camera.stopShake()
-```
-
-### Transitions
-
-Screen fades are a script-level op (`ScriptBuilder.fade`), not a camera method. Wipe, iris,
-and flash transitions are not implemented in the current DSL.
-
-```kotlin
-// Fade out over 30 frames, then navigate (continuation runs after fade completes)
-fade(fadeIn = false, frames = 30) {
-    navigate(gameoverScene)
-}
-
-// Fade in over 20 frames
-fade(fadeIn = true, frames = 20)
-```
-
-### Direct Positioning
-
-```kotlin
-// Set camera position directly
-camera.setPosition(100, 50)
-
-// Snap instantly to target (no smoothing)
-camera.snapTo(player)
-camera.snapTo(100, 50)
-
-// Read camera position
-whenever(camera.x isAbove 100) { /* ... */ }
-```
+| Action | Effect |
+|--------|--------|
+| `CameraAction.FOLLOW` | Start centering on the configured actor |
+| `CameraAction.UNFOLLOW` | Stop following (camera holds its last position) |
+| `CameraAction.SHAKE` | Apply screen shake (pass `intensity` and `duration` in `args`) |
+| `CameraAction.MOVE_TO` | Move camera to a specific position (pass `x`, `y` in `args`) |
 
 ### Automatic Sprite Offsetting
 
-When a camera is defined, all sprite positions are automatically offset by the camera position. This means you can use world coordinates for sprites and they'll be correctly positioned on screen.
+When a camera is defined, all sprite positions are automatically offset by the camera scroll position. Use world coordinates for actors — the framework subtracts the camera position before rendering:
 
 ```kotlin
-// Player at world position (200, 100)
+// Player at world position (200, 100), camera scrolled to (100, 50)
+// Player appears at screen position (100, 50) automatically
 player.x set 200
 player.y set 100
-
-// Camera at world position (100, 50)
-camera.setPosition(100, 50)
-
-// Player appears at screen position (100, 50) = (200-100, 100-50)
-// This happens automatically - no manual offsetting needed!
 ```
+
+## Camera Transitions
+
+Screen fades are a `ScriptBuilder` method (`fade()`), not a camera method. There is no camera handle object in the DSL — `fade()` is called directly in the enclosing script block.
+
+### Fade
+
+`fade(fadeIn, frames)` fades the screen to/from black. Pass an optional continuation block to run after the fade completes (e.g., to navigate to a new scene):
+
+```kotlin
+gameplayScene = scene("gameplay") {
+    enter {
+        // Fade in when the scene starts
+        fade(fadeIn = true, frames = 20)
+    }
+
+    frame {
+        whenever(buttons.start.pressed) {
+            // Fade out, then navigate (continuation runs after fade completes)
+            fade(fadeIn = false, frames = 30) {
+                navigate(menuScene)
+            }
+        }
+    }
+}
+```
+
+**Parameters:**
+- `fadeIn: Boolean` — `true` = fade from black to normal; `false` = fade from normal to black
+- `frames: Int` — duration of the fade in frames (60 fps)
+- `after: ScriptBuilder.() -> Unit` — optional block executed after the fade (e.g., `navigate(...)`)
 
 ## Physics
 
