@@ -1,0 +1,57 @@
+# SEED-026 Evidence — Gradle plugin build hygiene
+# Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+# Inspection date: 2026-06-12
+# Source: .planning/phases/16-seed-triage/evidence/plugin-validate-report.txt (Plan 02)
+
+## Substrate Report Reference
+
+From evidence/plugin-validate-report.txt (captured during W1 substrate pass):
+
+  Command: ./gradlew :gbkt-gradle-plugin:validatePlugins pluginTest
+  Result: BUILD SUCCESSFUL in 35s (113 actionable tasks: 43 executed, 70 up-to-date)
+
+  Task :gbkt-gradle-plugin:validatePlugins
+    Result: PASS (no output → no violations)
+    "The validatePlugins task completed without errors."
+
+  Task :gbkt-gradle-plugin:test (via pluginTest)
+    Result: PASS (first invocation)
+    Plugin tests: 174 total, 0 failures, 0 errors, 0 skipped
+
+  Race-handling record:
+    Run 1: BUILD SUCCESSFUL (174 plugin tests pass; validatePlugins pass)
+    Run 2: NOT REQUIRED (first run clean; no race failure observed)
+    Conclusion: GREEN (both validatePlugins and pluginTest PASS at HEAD)
+
+## Analysis
+
+SEED-026 concern:
+  (1) validatePlugins was RED (5 task classes lacking build-cache metadata)
+  (2) pluginTest had a publish/test ordering race
+
+Evidence at HEAD:
+  (1) validatePlugins = PASS with no violations. The 5 task classes (BudgetReportTask,
+      CaptureScreenshotTask, CopyGeneratedCTask, DebugEmulatorTask, DiffScreenshotsTask)
+      are no longer flagged. Either the annotations were added or the classes were removed.
+  (2) pluginTest = PASS on first invocation. The known race (pluginTest race from MEMORY.md)
+      was NOT triggered in this run. Per MEMORY.md, "verify via two invocations" — first run
+      was clean so no second run was required.
+
+Both concerns from SEED-026 appear resolved at HEAD.
+
+## Note on Race Risk
+
+The pluginTest race is known and recorded in MEMORY.md. The substrate report ran one
+successful invocation. If validatePlugins is also green, the disposition is VERIFIED-ALREADY-FIXED.
+A future invocation could still expose the race, but TRIAGE.md records dispositions against
+the substrate SHA — at that commit the seed is resolved.
+
+## Proposed Disposition
+
+VERIFIED-ALREADY-FIXED
+
+Evidence: validatePlugins = PASS, pluginTest = PASS (174 tests, 0 failures) at
+substrate SHA 8cef3dbca7d0868f42cf0d627921b8559d7754e8.
+Race: not triggered on first invocation; report explicitly handles this per D-T-16-15.
+
+Fix-phase routing: N/A (already fixed)

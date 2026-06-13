@@ -1,0 +1,64 @@
+# SEED-023 Source Inspection — whenever/runIf unification
+# Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+# Inspection date: 2026-06-12
+# Tool: mcp__serena__find_symbol whenever in gbkt-lang/src/main/kotlin
+
+## Query
+
+mcp__serena__find_symbol: name_path_pattern="ScriptBuilder/whenever"
+  in gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ScriptBuilder.kt
+  (include_body=true)
+
+## Result
+
+ScriptBuilder/whenever at lines 194-213:
+
+    /**
+     * Sugar for a one-armed conditional that lowers to [IfOp] with empty otherwise list.
+     *
+     * Use [whenever] for top-level reactive triggers (e.g. button-held, collision, game-state
+     * checks) that are evaluated every frame as independent guards.
+     *
+     * For **single-frame imperative conditionals** (clamps after mutation, wrap-after-increment),
+     * prefer [runIf] / [unless] / [orElse] — they read as control flow, not reactive triggers.
+     *
+     * Equivalent to `runIf(condition) { ... }` in the generated C.
+     *
+     * Tier-3 roadmap: a future phase will unify `whenever` → `runIf` for reactive sites; tracked as
+     * SEED-023-whenever-runif-unification. Not deprecated this phase.
+     */
+    fun whenever(condition: Expr, block: ScriptBuilder.() -> Unit) {
+        val loc = captureV2Location()
+        val bodyBuilder = ScriptBuilder()
+        ScriptBuilderContext.with(bodyBuilder) { bodyBuilder.block() }
+        ops += IfOp(condition, bodyBuilder.build(), emptyList(), sourceLocation = loc)
+    }
+
+File: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ScriptBuilder.kt:194-213
+
+## Analysis
+
+1. @Deprecated annotation: ABSENT — whenever() is NOT annotated with @Deprecated
+2. KDoc explicitly says: "Not deprecated this phase"
+3. KDoc references SEED-023 as the tracking record
+4. runIf and whenever emit IDENTICAL IR: both produce IfOp(condition, body, emptyList())
+5. Two names for identical semantic causes DSL surface bloat and completion noise
+
+Additionally, ActorPoolBuilder.kt has a separate collision-handling overload of whenever
+(also without @Deprecated) — any deprecation plan must handle that overload too.
+
+## Verdict
+
+SEED-023 concern: "whenever() and runIf() emit identical IR; one should be deprecated"
+
+Evidence at HEAD: whenever() is NOT @Deprecated. The KDoc acknowledges the issue and
+explicitly defers deprecation to a future phase. The SEED-023 tracking comment is present
+but no deprecation cycle has been started.
+
+## Proposed Disposition
+
+CONFIRMED-OPEN
+
+Routing: Phase 18 DEPR-01 (deprecation/unification sweep)
+Decision in discuss-phase: either @Deprecated(ReplaceWith("runIf")) or give whenever()
+real reactive/edge-triggered semantics (RAM cost on GB — spec before committing).
