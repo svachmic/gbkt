@@ -252,7 +252,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 19-03-PLAN.md — FIX-01 GBC-mode capture harness (Phase19VisualEvidenceTest) + SEED-004/005/006/013 + ROM-smoke screenshots
+- [x] 19-03-PLAN.md — FIX-01 GBC-mode capture harness (Phase19VisualEvidenceTest) + SEED-004/005/006/013 + ROM-smoke screenshots
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -299,6 +299,6 @@ Plans:
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 12/12 | Complete   | 2026-06-12 |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 30/27 | Complete   | 2026-06-13 |
-| 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 2/4 | In Progress|  |
+| 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 3/4 | In Progress|  |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |
