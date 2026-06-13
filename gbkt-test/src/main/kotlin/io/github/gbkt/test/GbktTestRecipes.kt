@@ -263,14 +263,10 @@ data class MetadataExpectation(
  * @param expectation The expected metadata values to verify against.
  * @param currentSceneVar The variable name for the current scene (default `"current_scene"`).
  */
-@Suppress("CyclomaticComplexMethod", "ThrowsCount")
 fun GbktTestExtension.verifyMetadataSymbolAgreement(
     expectation: MetadataExpectation,
     currentSceneVar: String = "current_scene",
 ) {
-    // 7 independent metadata-vs-symbol-table cross-checks, each fails fast via AssertionError.
-    // Cyclomatic + Throws thresholds are inherent to the validation surface — refactoring into
-    // 7 sub-validators would only shuffle complexity without improving readability.
     val metadataFile = File("build/gbkt/generated/game_metadata.json")
     val symFile = File("build/gbkt/output/$gameName.noi")
     val gameHeader = File("build/gbkt/generated/game.h")
@@ -293,7 +289,15 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
     val inspector = VariableInspector(zeroMemory, symFile)
     val loadedVars = inspector.listVariables()
 
-    // 1. Actor X/Y variables exist in the .noi symbol table
+    verifyActorXySymbols(metadata, loadedVars)
+    verifyCurrentSceneSymbol(currentSceneVar, loadedVars)
+    verifySceneHeaderConsistency(metadata, gameHeader)
+    verifySceneExpectations(metadata, expectation)
+    verifyOamNoOverlaps(metadata)
+}
+
+/** Checks that every actor's X/Y variable names exist in the .noi symbol table. */
+private fun verifyActorXySymbols(metadata: GameMetadata, loadedVars: List<String>) {
     for (actor in metadata.actors) {
         if (actor.xVar !in loadedVars) {
             throw AssertionError(
@@ -308,41 +312,44 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
             )
         }
     }
+}
 
-    // 2. currentSceneVar exists in .noi
+/** Checks that [currentSceneVar] exists in the .noi symbol table. */
+private fun verifyCurrentSceneSymbol(currentSceneVar: String, loadedVars: List<String>) {
     if (currentSceneVar !in loadedVars) {
         throw AssertionError(
             "verifyMetadataSymbolAgreement: '$currentSceneVar' not found in .noi symbols. " +
                 "Available: $loadedVars"
         )
     }
+}
 
-    // 3. Scene names/indices match between metadata and game.h
-    if (gameHeader.exists()) {
-        val headerSceneMap = SceneMap.fromGameHeader(gameHeader)
-        val metadataSceneNames = metadata.scenes.sceneNames
-        val headerSceneNames = headerSceneMap.sceneNames
-
-        if (metadataSceneNames != headerSceneNames) {
+/** Checks that scene names and indices agree between game_metadata.json and game.h. */
+private fun verifySceneHeaderConsistency(metadata: GameMetadata, gameHeader: File) {
+    if (!gameHeader.exists()) return
+    val headerSceneMap = SceneMap.fromGameHeader(gameHeader)
+    val metadataSceneNames = metadata.scenes.sceneNames
+    val headerSceneNames = headerSceneMap.sceneNames
+    if (metadataSceneNames != headerSceneNames) {
+        throw AssertionError(
+            "verifyMetadataSymbolAgreement: scene names mismatch — " +
+                "metadata=$metadataSceneNames, game.h=$headerSceneNames"
+        )
+    }
+    for (name in metadataSceneNames) {
+        val metaIndex = metadata.scenes.indexOf(name)
+        val headerIndex = headerSceneMap.indexOf(name)
+        if (metaIndex != headerIndex) {
             throw AssertionError(
-                "verifyMetadataSymbolAgreement: scene names mismatch — " +
-                    "metadata=$metadataSceneNames, game.h=$headerSceneNames"
+                "verifyMetadataSymbolAgreement: scene '$name' index mismatch — " +
+                    "metadata=$metaIndex, game.h=$headerIndex"
             )
         }
-
-        for (name in metadataSceneNames) {
-            val metaIndex = metadata.scenes.indexOf(name)
-            val headerIndex = headerSceneMap.indexOf(name)
-            if (metaIndex != headerIndex) {
-                throw AssertionError(
-                    "verifyMetadataSymbolAgreement: scene '$name' index mismatch — " +
-                        "metadata=$metaIndex, game.h=$headerIndex"
-                )
-            }
-        }
     }
+}
 
-    // 4. Scene count and names match expectation
+/** Checks scene count, expected scene names, expected actors, OAM counts, and total OAM. */
+private fun verifySceneExpectations(metadata: GameMetadata, expectation: MetadataExpectation) {
     val actualSceneCount = metadata.scenes.sceneNames.size
     if (actualSceneCount != expectation.expectedSceneCount) {
         throw AssertionError(
@@ -358,8 +365,6 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
             )
         }
     }
-
-    // 5. Expected actors exist (with OAM counts if specified)
     for (actorName in expectation.expectedActors) {
         val actor =
             metadata.actor(actorName)
@@ -375,8 +380,6 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
             )
         }
     }
-
-    // 6. Total OAM count
     if (expectation.expectedTotalOam != null) {
         val totalOam = metadata.actors.sumOf { it.oamCount }
         if (totalOam != expectation.expectedTotalOam) {
@@ -386,8 +389,10 @@ fun GbktTestExtension.verifyMetadataSymbolAgreement(
             )
         }
     }
+}
 
-    // 7. No OAM slot overlaps between any two actors
+/** Checks that no two actors have overlapping OAM slot ranges. */
+private fun verifyOamNoOverlaps(metadata: GameMetadata) {
     for (i in metadata.actors.indices) {
         for (j in i + 1 until metadata.actors.size) {
             val a = metadata.actors[i]
