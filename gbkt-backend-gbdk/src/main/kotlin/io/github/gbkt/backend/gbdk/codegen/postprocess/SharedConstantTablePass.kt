@@ -119,6 +119,42 @@ object SharedConstantTablePass {
     )
 
     /**
+     * Find the index of the closing brace that matches the opening brace at [openBracePos].
+     *
+     * Walks forward from [openBracePos] tracking brace depth. The first `{` increments depth to 1;
+     * when depth returns to 0 on a `}`, that is the matching close. Returns -1 if no match is found
+     * before the end of the string.
+     */
+    private fun findMatchingCloseBrace(cContent: String, openBracePos: Int): Int {
+        var depth = 0
+        var pos = openBracePos
+        while (pos < cContent.length) {
+            when (cContent[pos]) {
+                '{' -> depth++
+                '}' -> {
+                    depth--
+                    if (depth == 0) return pos
+                }
+            }
+            pos++
+        }
+        return -1
+    }
+
+    /**
+     * Find the index of the `;` that immediately follows the closing brace at [closeBracePos]
+     * (skipping any intervening space characters).
+     *
+     * Returns the index of the `;`, or -1 if the next non-space character is not `;` or the end of
+     * the string is reached.
+     */
+    private fun findSemicolonAfterBrace(cContent: String, closeBracePos: Int): Int {
+        var pos = closeBracePos + 1
+        while (pos < cContent.length && cContent[pos] == ' ') pos++
+        return if (pos < cContent.length && cContent[pos] == ';') pos else -1
+    }
+
+    /**
      * Extract all constant array declarations from the C text. Handles both single-line and
      * multi-line arrays.
      */
@@ -139,43 +175,21 @@ object SharedConstantTablePass {
                 continue
             }
 
-            // Find the matching closing brace followed by semicolon
-            // Track brace depth starting from opening brace
-            var depth = 0
-            var pos = openBracePos
-            var closeBracePos = -1
-
-            while (pos < cContent.length) {
-                when (cContent[pos]) {
-                    '{' -> depth++
-                    '}' -> {
-                        depth--
-                        if (depth == 0) {
-                            closeBracePos = pos
-                            break
-                        }
-                    }
-                }
-                pos++
-            }
-
+            // Find the matching closing brace
+            val closeBracePos = findMatchingCloseBrace(cContent, openBracePos)
             if (closeBracePos == -1) {
                 searchFrom = match.range.last + 1
                 continue
             }
 
             // Check for semicolon after closing brace (skip whitespace)
-            var afterBrace = closeBracePos + 1
-            while (afterBrace < cContent.length && cContent[afterBrace] == ' ') {
-                afterBrace++
-            }
-
-            if (afterBrace >= cContent.length || cContent[afterBrace] != ';') {
+            val semicolonPos = findSemicolonAfterBrace(cContent, closeBracePos)
+            if (semicolonPos == -1) {
                 searchFrom = match.range.last + 1
                 continue
             }
 
-            val declarationEnd = afterBrace + 1 // inclusive of semicolon
+            val declarationEnd = semicolonPos + 1 // inclusive of semicolon
             val initializer = cContent.substring(openBracePos + 1, closeBracePos)
 
             results.add(ConstArrayEntry(arrayName, initializer, declarationStart, declarationEnd))
