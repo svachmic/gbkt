@@ -1,0 +1,56 @@
+# SEED-PHASE-12-RETROACTIVE-BANKS-AUDIT — Evidence at HEAD
+# Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+# Evidence source: gbkt-examples/banks/build/gbkt/generated/bank1.c (substrate build)
+# Phase 16 banks cluster agent — generated C inspection (D-16: no re-invocation)
+
+## Context
+
+The seed claims: "Trivially satisfied by D-01 — no action required unless Banks adopts
+tilemap rendering." The D-06 bar requires executable evidence at HEAD, not bare text.
+
+## Substrate Build Status
+
+Banks ROM built GREEN in substrate pass (substrate-buildrom-report.txt):
+  gbkt-examples/banks:buildRom — EXIT 0
+
+BanksEmissionTest ran GREEN:
+  INV-7 — play_enter calls set_bkg_data before _bkg_tiles_load_banked with include() — PASS
+  All 7 executable tests PASS; INV-8 skipped (4-byte tilemap stub — expected)
+
+## Generated C Inspection: bank1.c
+
+File: gbkt-examples/banks/build/gbkt/generated/bank1.c
+
+Relevant lines (evidence of correct tileset data referencing):
+
+  Line 7:  #include "_zone_playZone_tileset.h"
+  Line 25: set_bkg_data(0u, _zone_playZone_tileset_count, _zone_playZone_tileset);
+  Line 26: _bkg_tiles_load_banked(2u, 0u, 0u, _zone_playZone_tilemap_WIDTH,
+                                   _zone_playZone_tilemap_HEIGHT, _zone_playZone_tilemap);
+
+Interpretation:
+  - `#include "_zone_playZone_tileset.h"` — header with symbolic count and tileset reference
+  - `set_bkg_data(0u, _zone_playZone_tileset_count, _zone_playZone_tileset)` — loads pixel
+    bytes from the REAL tileset array (D-01 Path A: checker.png → _zone_playZone_tileset[])
+  - `_bkg_tiles_load_banked(2u, ...)` — loads tilemap indices (2x2 checker pattern from
+    checker.png → _zone_playZone_tilemap[]) with SWITCH_ROM(2) wrapper
+
+## Stub Pattern Absent
+
+No `/* Stub sprite data */` or `/* placeholder */` or hardcoded stub arrays found.
+No synthetic modulo-tiled patterns found.
+The tileset data comes from the real `checker.png` asset via D-01 Path A.
+
+## Disposition
+
+SEED-PHASE-12-RETROACTIVE-BANKS-AUDIT disposition: VERIFIED-ALREADY-FIXED
+
+Rationale:
+  D-01 Path A (Phase 12.2) produces correct tileset + tilemap data for Banks without
+  any DSL modification (checker.png is treated as both tileset and tilemap source).
+  The generated C at HEAD (bank1.c) correctly references the real tileset data via
+  symbolic constants, not hardcoded stubs. INV-7 GREEN confirms the emission ordering.
+
+  The seed was right: trivially satisfied by D-01. The executable evidence at HEAD
+  confirms this holds (D-06 bar met).
+  Route: No further action required. VERIFIED.

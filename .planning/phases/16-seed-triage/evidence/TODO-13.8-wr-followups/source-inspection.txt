@@ -1,0 +1,121 @@
+# TODO-13.8 palette/bank codegen follow-ups — Source Inspection
+# Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+# Evidence sources:
+#   WR-01: gbkt-backend-gbdk/.../codegen/visitor/SceneVisitor.kt
+#   WR-02: gbkt-backend-gbdk/.../codegen/pipeline/GBDKPipeline.kt
+#   WR-03: gbkt-gradle-plugin/.../tasks/PngUtils.kt
+# Phase 16 banks cluster agent — source inspection (D-16: no re-invocation)
+
+## WR-01 — SceneIR.allocatedZoneBank single-zone assumption
+
+File: gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/visitor/SceneVisitor.kt
+Lines: 186-198
+
+Source extract:
+  // Phase 13.8 Plan 06 (D-01 / Req 6): Read bank from scene.allocatedZoneBank
+  // (the single-source field populated by buildCFiles after allocateZoneBanks).
+  // Falls back to zoneBankAllocation[zoneId] for:
+  //   - Pre-field callers that do not populate the field (backward compat)
+  //   - Multi-zone scenes where allocatedZoneBank stores only the first zone's
+  // bank
+  val bank =
+      scene.allocatedZoneBank
+          ?: zoneBankAllocation[zoneId]
+          ?: error(
+              "Zone '$zoneId' is bound to scene '${scene.id}' but has no bank " +
+                  "allocation. Run BankingAnalysisPass first."
+          )
+
+Analysis:
+  The `?:` (Elvis) operator short-circuits: for a multi-zone scene, `scene.allocatedZoneBank`
+  holds the first zone's bank only. The second ?: arm (`zoneBankAllocation[zoneId]`) is
+  reached for the second+ zone. For multi-zone scenes whose zones land in different banks,
+  this produces the correct zone-specific bank ONLY if allocatedZoneBank is null AND
+  zoneBankAllocation is populated per-zone.
+
+  The comment "Multi-zone scenes where allocatedZoneBank stores only the first zone's bank"
+  is truthful but potentially misleading to future implementers who add multi-zone support
+  and assume the field gives them per-zone banks.
+
+  Currently INERT because SceneBuilder hard-limits scenes to one zone. The risk is
+  architectural: a future implementer of multi-zone-per-scene could read allocatedZoneBank
+  and get the FIRST zone's bank for ALL zones.
+
+  WR-01 gap CONFIRMED PRESENT: The field is a single Int? not a Map<String, Int>.
+
+Proposed disposition: CONFIRMED-OPEN
+Routing: Phase 19/20 (whoever implements multi-zone-per-scene or touches SceneVisitor)
+
+---
+
+## WR-02 — No slot-collision guard for MetaspriteIR.initialSubPaletteSlot
+
+File: gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/pipeline/GBDKPipeline.kt
+Lines: 5134-5141 (procedural arm) and 5183-5187 (asset-driven arm)
+
+Source extract (procedural arm):
+  val proceduralStatements = proceduralMetasprites.mapIndexed { listIdx, ms ->
+      val slot = ms.initialSubPaletteSlot ?: listIdx
+      CRawCode("set_sprite_palette(${slot}u, 1u, ${ms.id}_palettes);")
+  }
+
+Source extract (asset-driven arm):
+  val slot = ms.initialSubPaletteSlot ?: (proceduralCount + idx)
+  CRawCode("set_sprite_palette(${slot}u, 1u, ${ms.id}_palettes);")
+
+Analysis:
+  Both arms read `ms.initialSubPaletteSlot` without checking for duplicate slots across
+  metasprites. If two metasprites declare the same `initialSubPaletteSlot`, both arms
+  will silently emit `set_sprite_palette(N, 1u, ...)` for the same slot N, overwriting
+  the first upload with the second. No validation pass, no codegen-time assertion.
+
+  WR-02 gap CONFIRMED PRESENT: No collision guard exists in either arm.
+
+Proposed disposition: CONFIRMED-OPEN
+Routing: Phase 19 (metasprites cluster — whoever adds multi-metasprite support)
+
+---
+
+## WR-03 — Lenient RGB555 integer-fallback parsing in PngUtils
+
+File: gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/PngUtils.kt
+Lines: 397-406
+
+Source extract:
+  // Fallback: raw decimal/hex integers
+  body.split(",").forEach { token ->
+      val trimmed = token.trim()
+      val v =
+          trimmed.toIntOrNull()
+              ?: trimmed.removePrefix("0x").toLongOrNull(16)?.toInt()
+              ?: trimmed.removePrefix("0X").toLongOrNull(16)?.toInt()
+      if (v != null) result.add(v)
+  }
+  return if (result.isEmpty()) null else result
+
+Analysis:
+  The fallback path accepts ANY integer value that `toIntOrNull()` parses (full Int range:
+  -2147483648 to 2147483647) without checking that it is in the valid RGB555 range
+  (0..0x7FFF). An out-of-range value (e.g., 0x8000 or negative) would be silently
+  accepted and added to the result list.
+
+  Similarly `toLongOrNull(16)?.toInt()` can produce values outside 0..0x7FFF for long hex
+  literals without a bounds check.
+
+  The WR-03 recommendation: "Add a 0..31 (per channel) / 0..0x7FFF bound and surface a
+  clear error on violation."
+
+  WR-03 gap CONFIRMED PRESENT: No range check in the integer fallback path.
+
+Proposed disposition: CONFIRMED-OPEN
+Routing: Phase 20 (sprite transparency / palette cluster — any PngUtils touch)
+
+---
+
+## Summary of WR Dispositions
+
+| WR   | Description                              | Status in source     | Proposed disposition | Routing    |
+|------|------------------------------------------|---------------------|----------------------|------------|
+| WR-01 | allocatedZoneBank single-zone field     | PRESENT (see above) | CONFIRMED-OPEN       | Phase 19/20 |
+| WR-02 | No initialSubPaletteSlot collision guard | PRESENT (see above) | CONFIRMED-OPEN       | Phase 19   |
+| WR-03 | RGB555 integer fallback no range check   | PRESENT (see above) | CONFIRMED-OPEN       | Phase 20   |
