@@ -40,12 +40,12 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Codegen Defect Fixes (FIX — triage-confirmed-open seeds only)
 
-- [ ] **FIX-01**: Metasprite visual-parity cluster (SEED-004/005/006/013) fixed or verified-already-fixed with screenshot evidence
-- [ ] **FIX-02**: Metasprite structural latents (SEED-007/008/009/010/011) fixed with emission-test guards
-- [ ] **FIX-03**: Banks trio (SEED-014/015/016) resolved — discuss-phase gated due to blast radius; SEED-014 first re-verified against master (`hasZoneSceneBinder` guard may already satisfy it)
-- [ ] **FIX-04**: Sprite-outline tRNS≠index-0 defect (SEED-PHASE-13-SPRITE-OUTLINE) fixed without regressing platformer player transparency
-- [ ] **FIX-05**: Platformer seeds resolved — `cEmit()` escapes replaced by PlatformerVisitor auto-emission, spawn-position polish, sub-pixel sink (UAT anchors re-shot in GBC mode)
-- [ ] **FIX-06**: Small DSL/tooling seeds dispositioned: SEED-002 (moveTo Expr overload), 003 (bounds clamp), 012 (MCP read_memory), 017 (sport-zone pipeline unification), 020 (serializer round-trip), 021 (pivot_adjust), 022 (collision predicate consolidation), 026 (build hygiene), zone magic-string migration, one-way tile / shared-tileset / per-zone-banks (fix or explicit re-defer)
+- [ ] **FIX-01**: Metasprite visual-parity cluster — closed by Phase 16 triage (see TRIAGE.md): SEED-004 VERIFIED-ALREADY-FIXED (user override; elephant renders correctly), SEED-005 VERIFIED-ALREADY-FIXED (checkerboard present, Phase 10.1 fix), SEED-006 VERIFIED-ALREADY-FIXED (sub-palette assignment confirmed in main.c), SEED-013 VERIFIED-ALREADY-FIXED (GBC colors correct, Phase 10.2 fix). All 4 seeds moved to seeds/archive/. Phase 19 FIX-01 scope = screenshot evidence confirmation only.
+- [ ] **FIX-02**: Metasprite structural latents — closed by Phase 16 triage (see TRIAGE.md): SEED-007 VERIFIED-ALREADY-FIXED (actorPaletteAutoSlot counter present), SEED-008 VERIFIED-ALREADY-FIXED (monotonic VRAM allocator confirmed), SEED-009 VERIFIED-ALREADY-FIXED (metasprites.h include present in bank1.c), SEED-010 VERIFIED-ALREADY-FIXED (namespaced symbol arrays confirmed), SEED-011 VERIFIED-ALREADY-FIXED (hiwater=0 once per frame, Route A fix confirmed). All 5 seeds moved to seeds/archive/. Phase 19 FIX-02 scope = emission-test guards for confirmed-already-fixed behavior.
+- [ ] **FIX-03**: Banks trio — closed by Phase 16 triage (see TRIAGE.md): SEED-014 VERIFIED-ALREADY-FIXED (INV-2+INV-6 GREEN; hasZoneSceneBinder guard sufficient), SEED-015 VERIFIED-ALREADY-FIXED (INV-5 GREEN; title_enter deduplicated correctly), SEED-016 VERIFIED-ALREADY-FIXED (Anchor 4 @Test present; ran in substrate). All 3 seeds moved to seeds/archive/. Phase 20 FIX-03 scope = re-verify + guard; discuss-phase gate may be scoped down.
+- [ ] **FIX-04**: Sprite-outline tRNS — closed by Phase 16 triage (see TRIAGE.md): SEED-PHASE-13-SPRITE-OUTLINE VERIFIED-ALREADY-FIXED (Phase 13.6 tRNS auto-route confirmed; visual closure oracle deferred to Phase 20 D-08). Seed moved to seeds/archive/. Phase 20 FIX-04 scope = visual oracle confirmation only.
+- [ ] **FIX-05**: Platformer seeds — Phase 16 triage disposition: SEED-021 CONFIRMED-OPEN (pivot_adjust hardcoded, Phase 21), SEED-PHASE-12-PLATFORMER-SPAWN-POSITION-CLARITY CONFIRMED-OPEN (Phase 21), SEED-PHASE-13-PLAYER-SUB-PIXEL-OFFSET-OR-COLLISION-MASK CONFIRMED-OPEN (Phase 21, LOCKED visual review), SEED-platformer-template-spawn-polish CONFIRMED-OPEN (Phase 21, LOCKED visual review). All 4 remain in seeds/. UAT anchors re-shot scope unchanged.
+- [ ] **FIX-06**: Small DSL/tooling seeds — Phase 16 triage disposition: SEED-002 VERIFIED-ALREADY-FIXED (→ archive), SEED-003 RE-DEFERRED (→ backlog/v0.2.0), SEED-012 VERIFIED-ALREADY-FIXED (→ archive), SEED-017 CONFIRMED-OPEN (sport-zone dual pipeline, stays in seeds/), SEED-020 CONFIRMED-OPEN (serializer stubs, stays in seeds/), SEED-021 CONFIRMED-OPEN (pivot_adjust, routed to FIX-05/Phase 21), SEED-022 CONFIRMED-OPEN (collision predicate, stays in seeds/), SEED-026 VERIFIED-ALREADY-FIXED (→ archive), zone magic-string CONFIRMED-OPEN (stays in seeds/), one-way tile RE-DEFERRED (→ backlog/v0.2.0), shared-tileset RE-DEFERRED (→ backlog/v0.2.0), per-zone-banks RE-DEFERRED (→ backlog/v0.2.0). Phase 21 FIX-06 active scope: SEED-017/020/022 + ZONE-MAGIC-STRING.
 
 ## Future Requirements (v0.2.0+)
 
@@ -57,11 +57,21 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Architecture / Tooling
 
-- **ARCH-01**: SEED-RAW-C-CODEGEN-AST-MIGRATION — migrate remaining raw-C emission to typed C AST (own architecture phase)
-- **ARCH-02**: SEED-PHASE-X-CPAREN — precedence-aware paren emission (~50+ fixture re-snapshots)
-- **IDE-01**: SEED-019/024 — IntelliJ plugin test framework coverage + BuildLogPanel export dialog
-- **IDE-02**: SEED-001 — IDE feature enhancements (v2.0 trigger)
-- **RPG-01**: SEED-018 — RPG character codegen extern/decl mismatch (dormant with archived dungeon/explorer games)
+- **ARCH-01**: SEED-RAW-C-CODEGEN-AST-MIGRATION — migrate remaining raw-C emission to typed C AST (own architecture phase) — see `.planning/backlog/v0.2.0/SEED-RAW-C-CODEGEN-AST-MIGRATION.md`
+- **ARCH-02**: SEED-PHASE-X-CPAREN — precedence-aware paren emission (~50+ fixture re-snapshots) — see `.planning/backlog/v0.2.0/SEED-PHASE-X-CPAREN-EXPR-IN-C-AST.md`
+- **IDE-01**: SEED-019/024 — IntelliJ plugin test framework coverage + BuildLogPanel export dialog — see `.planning/backlog/v0.2.0/SEED-019-intellij-plugin-test-framework-coverage.md`, `.planning/backlog/v0.2.0/SEED-024-buildlog-export-save-dialog.md`
+- **IDE-02**: SEED-001 — IDE feature enhancements (v2.0 trigger) — see `.planning/backlog/v0.2.0/SEED-001-ide-and-tooling.md`
+- **RPG-01**: SEED-018 — RPG character codegen extern/decl mismatch (dormant with archived dungeon/explorer games) — see `.planning/backlog/v0.2.0/SEED-018-rpg-character-codegen-extern-decl-mismatch.md`
+
+### Examples Polish (from triage re-deferred)
+
+- **EXAMPLES-01**: SEED-003 — simple-physics playability polish (reference-faithful behavior; trigger is "playable demos" milestone) — see `.planning/backlog/v0.2.0/SEED-003-simple-physics-playability-polish.md`
+
+### Platformer Extensions (from triage re-deferred)
+
+- **PLAT-EXT-01**: SEED-PHASE-12-ONE-WAY-TILE — one-way tile collision not implemented (revival requires triggering platformer port) — see `.planning/backlog/v0.2.0/SEED-PHASE-12-ONE-WAY-TILE.md`
+- **PLAT-EXT-02**: SEED-PHASE-12-PER-ZONE-TILEMAP-BANKS — per-zone tilemap separate banks (trigger: bank overflow guard trips; 8216 bytes headroom remains) — see `.planning/backlog/v0.2.0/SEED-PHASE-12-PER-ZONE-TILEMAP-BANKS.md`
+- **PLAT-EXT-03**: SEED-PHASE-12-SHARED-TILESET — shared tileset deduplication (trigger: ROM size pressure; 64KB within 2x threshold) — see `.planning/backlog/v0.2.0/SEED-PHASE-12-SHARED-TILESET.md`
 
 ## Out of Scope
 
@@ -82,9 +92,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRIAGE-01 | Phase 16 | Complete |
-| TRIAGE-02 | Phase 16 | Complete |
-| TRIAGE-03 | Phase 16 | Pending |
+| TRIAGE-01 | Phase 16 | Complete — 47 rows finalized (24 VERIFIED-ALREADY-FIXED, 12 CONFIRMED-OPEN, 10 RE-DEFERRED, 1 TODO-VERIFIED) |
+| TRIAGE-02 | Phase 16 | Complete — 10 visual seeds closed with runtime screenshots; D-08 visual review gate PASSED 2026-06-12 |
+| TRIAGE-03 | Phase 16 | Complete — seeds/ holds 10 CONFIRMED-OPEN seeds; 10 RE-DEFERRED moved to backlog/v0.2.0/ (Plan 16-10) |
 | DOCS-01 | Phase 17 | Pending |
 | DOCS-02 | Phase 17 | Pending |
 | DOCS-03 | Phase 17 | Pending |

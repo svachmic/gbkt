@@ -71,7 +71,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 16-10-PLAN.md — Move seeds to archive/backlog + REQUIREMENTS.md/ROADMAP.md D-11 reconciliation
+- [x] 16-10-PLAN.md — Move seeds to archive/backlog + REQUIREMENTS.md/ROADMAP.md D-11 reconciliation
 
 ### Phase 17: Docs Reconciliation and Quality Cleanup
 
@@ -108,10 +108,11 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 **Goal**: Metasprite codegen bugs confirmed open by Phase 16 triage are fixed — visual-parity issues closed with screenshot evidence, structural latent issues closed with emission test guards; FIX phases only address triage-confirmed-open seeds (several may already be VERIFIED-ALREADY-FIXED)
 **Depends on**: Phase 16
 **Requirements**: FIX-01, FIX-02
+**D-11 Phase 16 triage note**: All SEED-004/005/006/013 (FIX-01) and SEED-007/008/009/010/011 (FIX-02) are VERIFIED-ALREADY-FIXED (see TRIAGE.md). Phase 19 scope = screenshot and emission-test evidence confirmation of already-fixed behavior, not new fixes.
 **Success Criteria** (what must be TRUE):
 
-  1. SEED-004/005/006/013 visual-parity issues are each closed: fixed seeds have a runtime screenshot at HEAD showing correct rendering; seeds verified-already-fixed have HEAD screenshot evidence confirming closure
-  2. SEED-007/008/009/010/011 structural latent issues are each closed: confirmed-open seeds are fixed and guarded by a JVM emission test (RED → GREEN cycle)
+  1. SEED-004/005/006/013 visual-parity issues are each confirmed closed: HEAD screenshot evidence for each (Phase 16 triage already verified — Phase 19 provides formal screenshot artifacts per FIX-01 requirement); seeds moved to seeds/archive/ by Plan 16-10
+  2. SEED-007/008/009/010/011 structural latent issues are each confirmed closed: JVM emission tests guard already-fixed behavior (RED → GREEN cycle proves no regression); seeds moved to seeds/archive/ by Plan 16-10
   3. The metasprites example ROM builds successfully and renders correctly, confirmed by a runtime screenshot
   4. All metasprite fix commits are strictly separate from any S3776 commits so the byte-identity oracle can unambiguously attribute C output changes
 
@@ -122,12 +123,13 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 **Goal**: The banks trio seeds (SEED-014/015/016) are resolved after a mandatory discuss-phase gate; the tRNS sprite outline defect is fixed without regressing platformer player transparency; SEED-014 re-verified first since the `hasZoneSceneBinder` guard may already satisfy it on master
 **Depends on**: Phase 19
 **Requirements**: FIX-03, FIX-04
+**D-11 Phase 16 triage note**: SEED-014 VERIFIED-ALREADY-FIXED (INV-2+INV-6 GREEN), SEED-015 VERIFIED-ALREADY-FIXED (INV-5 GREEN), SEED-016 VERIFIED-ALREADY-FIXED (Anchor 4 @Test confirmed); SEED-PHASE-13-SPRITE-OUTLINE VERIFIED-ALREADY-FIXED (Phase 13.6 tRNS auto-route). All 4 seeds moved to seeds/archive/ by Plan 16-10. Phase 20 scope = formal re-verification evidence + visual oracle D-08 confirmation; discuss-phase gate may be scoped down given triage findings.
 **Success Criteria** (what must be TRUE):
 
-  1. SEED-014 is re-verified against current master with the `BanksEmissionTest.kt` INV-2 sentinel — closed VERIFIED-ALREADY-FIXED if the `hasZoneSceneBinder` guard satisfies it; otherwise fixed with a targeted change
-  2. SEED-015 and SEED-016 are resolved per the discuss-phase specification, or explicitly re-deferred to v0.2.0 with documented rationale (discuss-phase gate required before any code changes due to blast radius)
-  3. The sprite-outline tRNS defect (SEED-PHASE-13-SPRITE-OUTLINE) is fixed — a runtime screenshot at HEAD confirms the outline renders without corruption
-  4. Platformer player transparency is confirmed unchanged — a runtime screenshot at HEAD after the tRNS fix shows no regression
+  1. SEED-014 confirmed closed: BanksEmissionTest.kt INV-2 sentinel GREEN (already verified in Phase 16); formal Phase 20 evidence artifact; seed in seeds/archive/
+  2. SEED-015 and SEED-016 confirmed closed: formal evidence artifacts per triage findings; discuss-phase gate reviews scope given VERIFIED-ALREADY-FIXED disposition (may confirm guard sufficiency rather than requiring new fix)
+  3. The sprite-outline tRNS defect (SEED-PHASE-13-SPRITE-OUTLINE) confirmed closed — a runtime screenshot at HEAD confirms the outline renders without corruption (D-08 visual oracle for Phase 13.6 fix)
+  4. Platformer player transparency is confirmed unchanged — a runtime screenshot at HEAD after the tRNS confirmation shows no regression
   5. A 7-example byte-identity ROM sweep passes after every commit in this phase
 
 **Plans**: TBD
@@ -137,12 +139,15 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 **Goal**: All platformer `cEmit()` escape hatches are replaced by proper `PlatformerVisitor.kt` auto-emission; all remaining open seeds from FIX-06 reach terminal disposition; `.planning/seeds/` is empty at phase close
 **Depends on**: Phase 20
 **Requirements**: FIX-05, FIX-06
+**D-11 Phase 16 triage note (FIX-05)**: CONFIRMED-OPEN: SEED-021 (pivot_adjust hardcoded), SEED-PHASE-12-PLATFORMER-SPAWN-POSITION-CLARITY, SEED-PHASE-13-PLAYER-SUB-PIXEL-OFFSET-OR-COLLISION-MASK (LOCKED visual), SEED-platformer-template-spawn-polish (LOCKED visual). cEmit gaps VERIFIED-ALREADY-FIXED (Phase 13.5). FIX-05 active scope = pivot_adjust auto-derive + spawn position polish + sub-pixel fix + UAT re-shoot.
+**D-11 Phase 16 triage note (FIX-06)**: VERIFIED-ALREADY-FIXED (→ archive): SEED-002, SEED-012, SEED-026. RE-DEFERRED (→ backlog/v0.2.0): SEED-003, one-way tile, shared-tileset, per-zone-banks. CONFIRMED-OPEN (active FIX-06 scope): SEED-017 (sport-zone dual pipeline), SEED-020 (serializer stubs), SEED-022 (collision predicate consolidation), SEED-ZONE-MAGIC-STRING-DELEGATE-MIGRATION.
 **Success Criteria** (what must be TRUE):
 
-  1. All `cEmit()` escape hatches in the platformer template are replaced by corresponding `PlatformerVisitor.kt` auto-emission with no regression in platformer ROM behavior
+  1. All `cEmit()` escape hatches in the platformer template are replaced by corresponding `PlatformerVisitor.kt` auto-emission with no regression in platformer ROM behavior (cEmit gaps VERIFIED-ALREADY-FIXED by Phase 13.5; this criterion is pre-satisfied — Phase 21 adds UAT re-verification)
   2. Three platformer UAT anchor screenshots are re-shot in GBC mode (gbcMode=true) and all three pass assertion
-  3. Every seed from FIX-06 (SEED-002, 003, 012, 017, 020, 021, 022, 026, zone magic-string migration, one-way tile / shared-tileset / per-zone-banks) is dispositioned with evidence — fixed or explicitly re-deferred to v0.2.0
-  4. `.planning/seeds/` is empty at phase close; all re-deferred items are recorded in the v0.2.0 backlog record
+  3. FIX-06 active seeds dispositioned: SEED-017 (sport-zone pipeline unification), SEED-020 (serializer round-trip stubs), SEED-022 (collision predicate consolidation), SEED-ZONE-MAGIC-STRING-DELEGATE-MIGRATION fixed or explicitly re-deferred with evidence; SEED-021 (FIX-05/platformer scope) closes there
+  4. FIX-05 platformer seeds resolved: SEED-021 pivot_adjust auto-derive, SEED-PHASE-12-PLATFORMER-SPAWN-POSITION-CLARITY + SEED-platformer-template-spawn-polish spawn polish, SEED-PHASE-13-PLAYER-SUB-PIXEL-OFFSET-OR-COLLISION-MASK sub-pixel fix
+  5. `.planning/seeds/` is empty at phase close; all re-deferred items are already in v0.2.0 backlog (Plan 16-10 pre-moved: SEED-003, one-way tile, shared-tileset, per-zone-banks)
 
 **Plans**: TBD
 
