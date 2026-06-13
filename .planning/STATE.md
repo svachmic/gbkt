@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: completed
-stopped_at: Phase 19 context gathered
-last_updated: "2026-06-13T19:52:07.203Z"
-last_activity: 2026-06-13 -- Phase 19 planning complete
+status: executing
+stopped_at: Completed 19-01-PLAN.md
+last_updated: "2026-06-13T20:03:02.320Z"
+last_activity: 2026-06-13 -- Phase 19 execution started
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 49
-  completed_plans: 52
+  total_plans: 53
+  completed_plans: 53
   percent: 50
 ---
 
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** The framework automatically manages Game Boy hardware resources (VRAM, banking, OAM, RAM) so the developer writes only declarative Kotlin DSL — like Jetpack Compose for Game Boy.
-**Current focus:** Phase 18 — deprecation-removals-and-sonar-burn-down
+**Current focus:** Phase 19 — codegen-fixes-metasprite-cluster
 
 ## Deferred Items
 
@@ -54,10 +54,10 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
-Plan: 27 of 27
-Status: v0.1.1 milestone 3/6 — Phase 18 done; next: spec Phase 19 (Metasprite Cluster). PR #77 open, do NOT merge until 19/20/21 done
-Last activity: 2026-06-13 -- Phase 19 planning complete
+Phase: 19 (codegen-fixes-metasprite-cluster) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-06-13 -- Phase 19 execution started
 
 Resume signal: /gsd-execute-phase 18 (Plan 27 — SonarCloud scan gate remaining)
 Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable; Phase 19 (Metasprite Fixes) now unblocked
@@ -420,6 +420,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 18-deprecation-removals-and-sonar-burn-down P19 | 12 | 2 tasks | 1 files |
 | Phase 18 P21 | 8 min | 1 tasks | 1 files |
 | Phase 18 P24 | 90 | 2 tasks | 2 files |
+| Phase 19 P01 | 2 min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -934,6 +935,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Promoted walkOps from local closure to top-level private fun with explicit result parameter (E-13+E-19); extracted three buildHeaderFile sub-builders as value-returning functions (E-15)
 - [Phase 18]: Per-type puzzle helpers return PuzzleObjectOutput(vars, functions, perFrameCalls) — value-returning extract-method with no shared-mutable accumulation — Pitfall 1 compliance: extracting each sealed-interface branch into a focused helper that returns its contribution as data (not side-effecting a shared list) preserves emission order and enables future independent testing of each puzzle type
 - [Phase ?]: E-02 MenuVisitor.buildMenuFunction (cc90) decomposed: 11 class methods + 5 file-level privates; 7-example byte-identity sweep passes
+- [Phase ?]: D-07 byte-identity oracle baseline captured at phase start; before.sha256 records 3 generated C hashes from clean dual buildRom
 
 ### Pending Todos
 
@@ -1029,8 +1031,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-13T19:16:14.389Z
-Stopped at: Phase 19 context gathered
+Last session: 2026-06-13T20:03:02.310Z
+Stopped at: Completed 19-01-PLAN.md
 
 ## Operator Next Steps
 

@@ -244,7 +244,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 19-01-PLAN.md — Byte-identity BEFORE baseline + clean dual buildRom smoke (FIX-01/FIX-02 / D-07)
+- [x] 19-01-PLAN.md — Byte-identity BEFORE baseline + clean dual buildRom smoke (FIX-01/FIX-02 / D-07)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -299,6 +299,6 @@ Plans:
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 12/12 | Complete   | 2026-06-12 |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 30/27 | Complete   | 2026-06-13 |
-| 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
+| 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 1/4 | In Progress|  |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |
