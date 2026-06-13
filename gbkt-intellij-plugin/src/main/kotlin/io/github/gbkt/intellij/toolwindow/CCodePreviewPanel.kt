@@ -414,26 +414,39 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
             FileDocumentManagerListener.TOPIC,
             object : FileDocumentManagerListener {
                 override fun beforeDocumentSaving(document: com.intellij.openapi.editor.Document) {
-                    if (!autoRefreshCheckbox.isSelected) return
-                    if (isDisposed) return
-
-                    // Check if the saved file is a gbkt file
-                    val file = FileDocumentManager.getInstance().getFile(document)
-                    if (file != null && file.name.endsWith(".gbkt.kts")) {
-                        // Verify the file belongs to this project to avoid triggering
-                        // generation for files in other open projects
-                        val projectPath = project.basePath
-                        if (projectPath != null && file.path.startsWith(projectPath)) {
-                            ApplicationManager.getApplication().invokeLater {
-                                if (!isDisposed) {
-                                    refreshCode()
-                                }
-                            }
-                        }
-                    }
+                    onDslFileSaved(document)
                 }
             },
         )
+    }
+
+    /**
+     * Called when any document is about to be saved. Guards on auto-refresh enabled and disposed
+     * state, then delegates to project-scoped refresh trigger if the file is a .gbkt.kts DSL file.
+     */
+    private fun onDslFileSaved(document: com.intellij.openapi.editor.Document) {
+        if (!autoRefreshCheckbox.isSelected) return
+        if (isDisposed) return
+
+        val file = FileDocumentManager.getInstance().getFile(document)
+        if (file != null && file.name.endsWith(".gbkt.kts")) {
+            triggerRefreshIfInProject(file)
+        }
+    }
+
+    /**
+     * Triggers an async code refresh if [file] belongs to this project. Verifies the file path
+     * starts with the project base path to avoid cross-project interference.
+     */
+    private fun triggerRefreshIfInProject(file: com.intellij.openapi.vfs.VirtualFile) {
+        val projectPath = project.basePath
+        if (projectPath != null && file.path.startsWith(projectPath)) {
+            ApplicationManager.getApplication().invokeLater {
+                if (!isDisposed) {
+                    refreshCode()
+                }
+            }
+        }
     }
 
     /**
