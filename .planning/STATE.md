@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: executing
-stopped_at: Completed 17-10-PLAN.md
-last_updated: "2026-06-12T21:03:03.684Z"
+status: verifying
+stopped_at: Completed 17-12-PLAN.md
+last_updated: "2026-06-12T21:09:42.301Z"
 last_activity: 2026-06-12 -- Phase 17 Plan 06 complete (detekt zero violations, QUAL-01 closed)
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 22
-  completed_plans: 21
-  percent: 17
+  completed_plans: 22
+  percent: 33
 ---
 
 # Project State
@@ -56,7 +56,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 Phase: 17 (docs-reconciliation-and-quality-cleanup) — EXECUTING
 Plan: 12 of 12
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-12 -- Phase 17 Plan 06 complete (detekt zero violations, QUAL-01 closed)
 
 Resume signal: /gsd-execute-phase 17 (Docs + QUAL) or /gsd-execute-phase 18 (DEPR + SONAR) — both parallel-capable with each other; Phase 19 depends on Phase 16
@@ -399,6 +399,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 17 P09 | 5min | 2 tasks | 1 files |
 | Phase 17 P10 | 70s | 2 tasks | 1 files |
 | Phase 17 P11 | 45 | 3 tasks | 5 files |
+| Phase 17 P12 | 3 | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -903,6 +904,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Camera System (#7) rewritten with CameraBuilder config + cameraOp(CameraAction.*) table
 - [Phase ?]: Physics (#9) rewritten: per-actor gravity(n)/velocity/bounce/maxFallSpeed/platformerMode() + physicsUpdate()
 - [Phase ?]: All 13 stale-API sections rewritten across plans 17-08/09/10
+- [Phase ?]: D-16 cross-doc pass: zero stale-API references in any non-DSL_REFERENCE doc; FEAT-* provenance D-11 complete with real removal-commit hashes
 
 ### Pending Todos
 
@@ -998,8 +1000,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-12T21:03:03.678Z
-Stopped at: Completed 17-10-PLAN.md
+Last session: 2026-06-12T21:09:42.295Z
+Stopped at: Completed 17-12-PLAN.md
 
 ## Operator Next Steps
 
