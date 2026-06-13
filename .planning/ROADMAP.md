@@ -30,7 +30,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 - [x] **Phase 16: Seed Triage** - Establish terminal dispositions for all 44 seeds against current master; gate for all codegen fix phases — COMPLETE 2026-06-12 (47 dispositions: 24 VERIFIED-FIXED, 12 CONFIRMED-OPEN, 10 RE-DEFERRED; seeds/ is live confirmed-open queue)
 - [x] **Phase 17: Docs Reconciliation and Quality Cleanup** - DSL_REFERENCE.md accuracy restored; detekt clean; magic-pixel literals eliminated (completed 2026-06-12)
 - [x] **Phase 18: Deprecation Removals and Sonar Burn-down** - `whenever`/`runIf` unified and deprecated `combatIsInState` overload removed; S3776 HIGH findings reduced to 0 (completed 2026-06-13)
-- [ ] **Phase 19: Codegen Fixes — Metasprite Cluster** - Visual-parity and structural latent metasprite bugs fixed with emission test coverage
+- [x] **Phase 19: Codegen Fixes — Metasprite Cluster** - Visual-parity and structural latent metasprite bugs fixed with emission test coverage (completed 2026-06-13)
 - [ ] **Phase 20: Codegen Fixes — Banks and Sprite Transparency** - Banks trio resolved (discuss-phase gated); tRNS sprite outline fixed
 - [ ] **Phase 21: Codegen Fixes — Platformer and Remaining Seeds** - Platformer cEmit escapes replaced; all remaining seeds dispositioned; seeds directory empty
 
@@ -256,7 +256,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 19-04-PLAN.md — Closure: byte-identity AFTER diff, seed-archive integrity, full suite GREEN, S3776 commit separation
+- [x] 19-04-PLAN.md — Closure: byte-identity AFTER diff, seed-archive integrity, full suite GREEN, S3776 commit separation
 
 ### Phase 20: Codegen Fixes — Banks and Sprite Transparency
 
@@ -299,6 +299,6 @@ Plans:
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 12/12 | Complete   | 2026-06-12 |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 30/27 | Complete   | 2026-06-13 |
-| 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 3/4 | In Progress|  |
+| 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete   | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |
