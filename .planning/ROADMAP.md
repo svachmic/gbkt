@@ -200,15 +200,15 @@ Plans:
 
 **Wave 12** *(blocked on Wave 11 completion)*
 
-- [ ] 18-22-PLAN.md — SONAR EMITTING SceneVisitor E-07 + CombatVisitor E-16
+- [x] 18-22-PLAN.md — SONAR EMITTING SceneVisitor E-07 + CombatVisitor E-16
 
 **Wave 13** *(blocked on Wave 12 completion)*
 
-- [ ] 18-23-PLAN.md — SONAR EMITTING NOSONAR decisions: CEmitter E-12 + SoundVisitor E-06 (D-05)
+- [x] 18-23-PLAN.md — SONAR EMITTING NOSONAR decisions: CEmitter E-12 + SoundVisitor E-06 (D-05)
 
 **Wave 14** *(blocked on Wave 13 completion)*
 
-- [ ] 18-24-PLAN.md — SONAR EMITTING HudVisitor E-18 + ActorVisitor E-21
+- [x] 18-24-PLAN.md — SONAR EMITTING HudVisitor E-18 + ActorVisitor E-21
 
 **Wave 15** *(blocked on Wave 14 completion)*
 
@@ -282,7 +282,7 @@ Plans:
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 12/12 | Complete   | 2026-06-12 |
-| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 21/27 | In Progress|  |
+| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 24/27 | In Progress|  |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |
