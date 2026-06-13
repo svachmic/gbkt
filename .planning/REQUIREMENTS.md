@@ -17,7 +17,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Docs Reconciliation (DOCS)
 
-- [ ] **DOCS-01**: Each of the 13 stale-API sections in `context/DSL_REFERENCE.md` is audited per-method against source; implemented APIs keep accurate, corrected documentation
+- [x] **DOCS-01**: Each of the 13 stale-API sections in `context/DSL_REFERENCE.md` is audited per-method against source; implemented APIs keep accurate, corrected documentation
 - [ ] **DOCS-02**: Unimplemented/aspirational API content is removed from DSL_REFERENCE.md and archived as tracked v0.2.0 feature candidates (no spec value silently lost)
 - [ ] **DOCS-03**: The 2 doc-only fixes are applied (deprecated-API example block, `subpixel {}` no-op clarification)
 
@@ -95,7 +95,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRIAGE-01 | Phase 16 | Complete — 47 rows finalized (24 VERIFIED-ALREADY-FIXED, 12 CONFIRMED-OPEN, 10 RE-DEFERRED, 1 TODO-VERIFIED) |
 | TRIAGE-02 | Phase 16 | Complete — 10 visual seeds closed with runtime screenshots; D-08 visual review gate PASSED 2026-06-12 |
 | TRIAGE-03 | Phase 16 | Complete — seeds/ holds 10 CONFIRMED-OPEN seeds; 10 RE-DEFERRED moved to backlog/v0.2.0/ (Plan 16-10) |
-| DOCS-01 | Phase 17 | Pending |
+| DOCS-01 | Phase 17 | Complete |
 | DOCS-02 | Phase 17 | Pending |
 | DOCS-03 | Phase 17 | Pending |
 | DEPR-01 | Phase 18 | Pending |
