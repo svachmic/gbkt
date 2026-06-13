@@ -422,6 +422,52 @@ To avoid name collisions in multi-file games:
 
 ---
 
+## API Deprecation Convention
+
+gbkt follows a two-tier rule for deprecating and removing public API. The tier is determined by the milestone type, not by calendar time.
+
+### Tier 1: Post-1.0 / Once Shipped to Consumers (Default)
+
+When a public API has real adopters:
+
+1. Add `@Deprecated(level = WARNING, message = "...", replaceWith = ReplaceWith("..."))` in version N.
+2. Remove in version N+1 (one full release cycle of grace).
+3. Record a `### Removed` or `### Changed` entry in [CHANGELOG.md](CHANGELOG.md) for the removal version.
+
+```kotlin
+// Step 1: deprecate in v1.2
+@Deprecated(
+    message = "Use newApi() instead",
+    replaceWith = ReplaceWith("newApi()"),
+    level = DeprecationLevel.WARNING,
+)
+fun oldApi() = newApi()
+
+// Step 2: remove in v1.3 — delete the above block entirely
+```
+
+### Tier 2: Pre-1.0 / Explicitly-Labeled Hardening Milestones
+
+When the project is pre-1.0 **or** when a milestone is explicitly labeled "Hardening" and adoption is near-zero:
+
+1. **Hard removal with no `@Deprecated` shim is permitted.** The shim overhead is not worth the cost when call sites are entirely in-tree.
+2. Migrate every in-tree call site in the same commit or PR.
+3. A `### Removed` / `### Changed` entry in [CHANGELOG.md](CHANGELOG.md) is the **minimum bar** — this is the only notice adopters receive.
+
+**Worked examples from the v0.1.1 Hardening milestone:**
+
+| Seed | Removed API | Replacement | CHANGELOG Section |
+|------|-------------|-------------|-------------------|
+| SEED-023 | `whenever(condition, block)` / `whenever(collision, block)` | `runIf(condition, block)` | Removed |
+| SEED-025 | `combatIsInState(stateId: String, battleId: String)` | `combatIsInState(CombatStateId, BattleRef)` | Removed |
+| SEED-028 | `config { ramBanks = N }` (property setter) | `config { ramBanks(N) }` (function call) | Changed |
+
+### Canonical Breaking-Change Record
+
+All removals and breaking changes are recorded in the root [CHANGELOG.md](CHANGELOG.md) in [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. The CHANGELOG entry is the single source of truth for adopters migrating between versions.
+
+---
+
 ## Code Review Checklist
 
 Before submitting a PR, verify:
