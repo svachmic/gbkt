@@ -808,7 +808,7 @@ class LevelCardSceneBuilder(val id: String) {
             // Append the Start-press lifecycle handler last so it composes
             // with any user-authored frame logic without clobbering it.
             frame {
-                whenever(buttons.start.pressed) {
+                runIf(buttons.start.pressed) {
                     // Phase 13.5 Req #17: typed BindCurrentLevel IR node.
                     bindCurrentLevel()
                     navigate(gameplay)

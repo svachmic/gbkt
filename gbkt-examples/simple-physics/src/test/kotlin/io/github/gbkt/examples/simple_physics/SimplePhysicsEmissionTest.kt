@@ -143,7 +143,7 @@ class SimplePhysicsEmissionTest {
             "Plan 04 contract: emitted body MUST NOT contain `_spdX > 64u`. " +
                 "Unsigned RHS makes signed `_spdX > 64u` produce SDCC warning 94 " +
                 "(comparison always-false). Bug A site — DSL-authored " +
-                "`whenever(spdX isAbove 64)` lowers Literal(64) to CLiteral(64) " +
+                "`runIf(spdX isAbove 64)` lowers Literal(64) to CLiteral(64) " +
                 "(emits `64u`); Plan 04 must route signed-comparison RHS to CIntLiteral. " +
                 "play_frame body:\n${frameBody.take(4000)}",
         )

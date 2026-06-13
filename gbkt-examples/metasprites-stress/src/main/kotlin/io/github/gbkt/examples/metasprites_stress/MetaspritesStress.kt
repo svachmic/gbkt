@@ -130,7 +130,7 @@ val metaspritesStress =
         val titleScene =
             scene("title") {
                 enter { showSprites() }
-                frame { whenever(buttons.start.pressed) { navigate(playScene) } }
+                frame { runIf(buttons.start.pressed) { navigate(playScene) } }
             }
 
         // Reference the actor so analysis sees it as a participant (silences any

@@ -115,24 +115,24 @@ val metasprites =
                     rot set 0
                 }
                 frame {
-                    whenever(dpad.up.held) {
+                    runIf(dpad.up.held) {
                         spdY -= ACCEL
                         runIf(spdY isBelow -MAX_SPEED) { spdY set -MAX_SPEED }
                     }
-                    whenever(dpad.down.held) {
+                    runIf(dpad.down.held) {
                         spdY += ACCEL
                         runIf(spdY isAbove MAX_SPEED) { spdY set MAX_SPEED }
                     }
-                    whenever(dpad.left.held) {
+                    runIf(dpad.left.held) {
                         spdX -= ACCEL
                         runIf(spdX isBelow -MAX_SPEED) { spdX set -MAX_SPEED }
                     }
-                    whenever(dpad.right.held) {
+                    runIf(dpad.right.held) {
                         spdX += ACCEL
                         runIf(spdX isAbove MAX_SPEED) { spdX set MAX_SPEED }
                     }
-                    whenever(buttons.b.pressed) { idx++ }
-                    whenever(buttons.a.pressed) { rot++ }
+                    runIf(buttons.b.pressed) { idx++ }
+                    runIf(buttons.a.pressed) { rot++ }
                     posX += spdX
                     posY += spdY
                     moveMetasprite(elephant)

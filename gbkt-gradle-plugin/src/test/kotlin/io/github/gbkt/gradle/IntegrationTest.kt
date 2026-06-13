@@ -671,16 +671,16 @@ class IntegrationTest {
                     }
 
                     frame {
-                        whenever(buttons.a.pressed) {
+                        runIf(buttons.a.pressed) {
                             player.y -= 5
                         }
 
-                        whenever(player.collides(enemy)) {
+                        runIf(player.collides(enemy)) {
                             lives -= 1
                             score += 10
                         }
 
-                        whenever(lives isEqualTo 0) {
+                        runIf(lives isEqualTo 0) {
                             navigate(gameoverScene)
                         }
                     }
@@ -703,7 +703,7 @@ class IntegrationTest {
     /**
      * Creates a simple-physics-shaped game fixture.
      *
-     * Single scene with a frame loop, one actor, two i16 variables, and three `whenever(...)`
+     * Single scene with a frame loop, one actor, two i16 variables, and three `runIf(...)`
      * conditions that mirror the player-movement pattern from `gbkt-examples/simple-physics`. The
      * game is small enough that `estimatedBytes <= HOME_BANK_SCENE_BUDGET` so BankingAnalysisPass
      * takes the single-scene-fits-HOME fast-path and folds bank1.c out of the emission set — the
@@ -724,9 +724,9 @@ class IntegrationTest {
 
                 val playScene = scene("play") {
                     frame {
-                        whenever(dpad.left.held) { posX -= 16 }
-                        whenever(dpad.right.held) { posX += 16 }
-                        whenever(posX isBelow 0) { posX set 0 }
+                        runIf(dpad.left.held) { posX -= 16 }
+                        runIf(dpad.right.held) { posX += 16 }
+                        runIf(posX isBelow 0) { posX set 0 }
                     }
                 }
 
@@ -747,7 +747,7 @@ class IntegrationTest {
     private fun createTwoSceneGameFixture() {
         val gameFile = File(srcDir, "test/TestGame.kt")
         gameFile.parentFile.mkdirs()
-        // NOTE: ScriptBuilder.whenever{} evaluates its body lambda synchronously during DSL
+        // NOTE: ScriptBuilder.runIf{} evaluates its body lambda synchronously during DSL
         // construction (see ScriptBuilderContext.with). Forward references to SceneRef via a
         // nullable var that is assigned after the referencing scene is built therefore NPE at
         // DSL evaluation time — not at runtime. Avoid forward-reference patterns: define mainScene
@@ -770,7 +770,7 @@ class IntegrationTest {
                 val titleScene = scene("title") {
                     enter { clear() }
                     frame {
-                        whenever(buttons.start.pressed) { navigate(mainScene) }
+                        runIf(buttons.start.pressed) { navigate(mainScene) }
                     }
                 }
 

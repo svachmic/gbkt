@@ -192,7 +192,7 @@ class LevelCardSceneEmissionTest {
                 val titleScene =
                     scene("title") {
                         enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                        frame { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                     }
 
                 // Gameplay scene — MUST be declared BEFORE `levelCardScene { }` per
@@ -202,7 +202,7 @@ class LevelCardSceneEmissionTest {
                     scene("gameplay") {
                         zone(gameplayZone1)
                         frame {
-                            whenever(buttons.start.pressed) { navigate(SceneRef("nextLevelScene")) }
+                            runIf(buttons.start.pressed) { navigate(SceneRef("nextLevelScene")) }
                         }
                     }
 
@@ -212,7 +212,7 @@ class LevelCardSceneEmissionTest {
                 // to hit ≥2). Modeled after LevelSwitchEmissionTest's `gameplay2` scene.
                 scene("gameplay2") {
                     zone(gameplayZone2)
-                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                    frame { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                 }
 
                 // The Plan 12.6-04 DSL surface under test — delegate-pattern helper
@@ -301,7 +301,7 @@ class LevelCardSceneEmissionTest {
         // D-02 reference-accuracy contract — strict ordering. The Plan 12.6-04 helper's
         // materialize() block calls `cEmit("setup_current_level();")` BEFORE
         // `navigate(gameplay)` (PlatformerExtensions.kt:800-801); both lower into the
-        // same `whenever(buttons.start.pressed) { ... }` then-branch, preserving
+        // same `runIf(buttons.start.pressed) { ... }` then-branch, preserving
         // declaration order. A regression that flipped these (e.g., reordered the
         // RawOp/NavigateTo emission) would re-introduce the same-frame stomp at the
         // new emission site, defeating the whole DEFECT-1 fix.
@@ -597,14 +597,14 @@ class LevelCardSceneEmissionTest {
                 val titleScene =
                     scene("title") {
                         enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                        frame { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                     }
 
                 val gameplayScene =
                     scene("gameplay") {
                         zone(gameplayZone1)
                         frame {
-                            whenever(buttons.start.pressed) { navigate(SceneRef("nextLevelScene")) }
+                            runIf(buttons.start.pressed) { navigate(SceneRef("nextLevelScene")) }
                         }
                     }
 

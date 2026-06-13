@@ -140,11 +140,11 @@ class LevelSwitchEmissionTest {
                     scene("title") {
                         zone(titleZone)
                         enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                        frame { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                     }
                 scene("gameplay") {
                     zone(gameplayZone1)
-                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("nextLevel")) } }
+                    frame { runIf(buttons.start.pressed) { navigate(SceneRef("nextLevel")) } }
                 }
                 // 2nd gameplay zone surfaces in the setup_current_level switch as case 1.
                 // It is bound to a zone-only scene (no enter / no frame) per the
@@ -155,14 +155,14 @@ class LevelSwitchEmissionTest {
                 scene("nextLevel") {
                     zone(nextLevelZone)
                     enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
-                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                    frame { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                 }
                 // Hidden scene binding the 2nd gameplay zone so it shows up in gameIR.zones.
                 // The setup_current_level switch dispatches on (_current_level % zoneCount) so
                 // ≥2 cases proves the dispatch table is non-degenerate.
                 scene("gameplay2") {
                     zone(gameplayZone2)
-                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                    frame { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                 }
                 start = titleScene
             }
@@ -585,11 +585,11 @@ class LevelSwitchEmissionTest {
                     val titleScene =
                         scene("title") {
                             frame {
-                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                                runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
                             }
                         }
                     scene("gameplay") {
-                        frame { whenever(buttons.start.pressed) { navigate(titleScene) } }
+                        frame { runIf(buttons.start.pressed) { navigate(titleScene) } }
                     }
                     // Note: nextLevel scene also OMITTED — both halves of the double-gate are
                     // off, locking the strictest gate-off shape.

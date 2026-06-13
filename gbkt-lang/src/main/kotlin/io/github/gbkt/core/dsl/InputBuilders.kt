@@ -20,8 +20,8 @@ import io.github.gbkt.core.ir.VarRef
  * Typed reference to a hardware input (d-pad direction or button).
  *
  * Wraps a GBDK joypad constant name (e.g. "J_UP", "J_A") and produces [Expr] instances for use in
- * [ScriptBuilder.runIf] conditions. Use [held] for continuous input, [pressed] for
- * edge-triggered input, and [released] for falling-edge (key-up) input.
+ * [ScriptBuilder.runIf] conditions. Use [held] for continuous input, [pressed] for edge-triggered
+ * input, and [released] for falling-edge (key-up) input.
  *
  * Example:
  * ```kotlin

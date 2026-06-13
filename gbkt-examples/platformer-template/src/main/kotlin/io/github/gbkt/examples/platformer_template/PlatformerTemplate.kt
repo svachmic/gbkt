@@ -360,7 +360,7 @@ val platformerTemplate =
                 // matches the reference's `joypadCurrent & J_START && !(joypadPrevious & J_START)`.
                 // 13.4 D-07: navigate(ref) form. gameplayScene is declared after titleScene so
                 // SceneRef("gameplay") provides a forward ref (resolved at game build() time).
-                frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                frame { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
             }
 
         // Gameplay scene — Plan 12-18 wires per-frame physics + camera updates (the
@@ -403,8 +403,8 @@ val platformerTemplate =
                     // Facing rotation via D-pad held (D-04).
                     // rot=0 ⇒ right-facing (no flip); rot=3 ⇒ left-facing (flipX) per Phase 10.1's
                     // MetaspriteVisitor rot >> 2 → flipX path.
-                    whenever(dpad.right.held) { facingRot set 0 }
-                    whenever(dpad.left.held) { facingRot set 3 }
+                    runIf(dpad.right.held) { facingRot set 0 }
+                    runIf(dpad.left.held) { facingRot set 3 }
 
                     // Per-frame metasprite render. PlatformerVisitor's auto-emitted input +
                     // physics + camera update happens automatically (Phase 12.3 codegen wiring).

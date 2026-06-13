@@ -249,12 +249,12 @@ class AutoExitSynthesisTest {
                     val play =
                         scene("play") {
                             frame {
-                                whenever(buttons.start.pressed) { navigate(SceneRef("title")) }
+                                runIf(buttons.start.pressed) { navigate(SceneRef("title")) }
                             }
                         }
                     val title =
                         scene("title") {
-                            frame { whenever(buttons.start.pressed) { navigate(play) } }
+                            frame { runIf(buttons.start.pressed) { navigate(play) } }
                         }
                     start = title
                 }
@@ -267,12 +267,12 @@ class AutoExitSynthesisTest {
                     val play =
                         scene("play") {
                             frame {
-                                whenever(buttons.start.pressed) { navigate(SceneRef("title")) }
+                                runIf(buttons.start.pressed) { navigate(SceneRef("title")) }
                             }
                         }
                     val title =
                         scene("title") {
-                            frame { whenever(buttons.start.pressed) { navigate(play) } }
+                            frame { runIf(buttons.start.pressed) { navigate(play) } }
                         }
                     start = title
                 }

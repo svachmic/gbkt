@@ -37,7 +37,7 @@ import kotlin.test.assertTrue
 //                a proper `bgFill()` primitive lands in Phase 13).
 //
 //   Second-half: title_frame navigates to gameplay on Start press — the
-//                `whenever(buttons.start.pressed) { navigate(gameplayScene) }`
+//                `runIf(buttons.start.pressed) { navigate(gameplayScene) }`
 //                lowers to `navigate_to_scene(SCENE_GAMEPLAY)` via
 //                ScriptOpVisitor.visitNavigateTo (ScriptOpVisitor.kt:675+).
 //
@@ -134,7 +134,7 @@ class TitleSceneEmissionTest {
     // POSITIVE — title_frame emits navigate_to_scene (D-16 #1 second-half)
     //
     // Production mechanism (ScriptOpVisitor.kt:675-678 — visitNavigateTo):
-    // `whenever(buttons.start.pressed) { navigate(gameplayScene) }` lowers via
+    // `runIf(buttons.start.pressed) { navigate(gameplayScene) }` lowers via
     // `NavigateTo("gameplay")` → `CCall("navigate_to_scene",
     // [CVar("SCENE_GAMEPLAY")])`. Within the title scene's frame body the call
     // sits inside the button-press conditional, so the brace-walked title_frame
@@ -185,7 +185,7 @@ class TitleSceneEmissionTest {
                                 cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);")
                             }
                             frame {
-                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                                runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
                             }
                         }
                     scene("gameplay") {
@@ -198,11 +198,11 @@ class TitleSceneEmissionTest {
                             // No-op frame body — content is irrelevant to the title-side
                             // invariant under test, but a frame block is required for
                             // SceneVisitor to emit the function.
-                            whenever(buttons.start.pressed) { navigate(titleScene) }
+                            runIf(buttons.start.pressed) { navigate(titleScene) }
                         }
                     }
                     scene("nextLevel") {
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                        frame { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                     }
                     start = titleScene
                 }
@@ -226,7 +226,7 @@ class TitleSceneEmissionTest {
         assertTrue(
             titleFrameBody.isNotEmpty(),
             "title_frame must be emitted in bank1.c (the frame body lowers " +
-                "`whenever(buttons.start.pressed) { navigate(\"gameplay\") }` via SceneVisitor). " +
+                "`runIf(buttons.start.pressed) { navigate(\"gameplay\") }` via SceneVisitor). " +
                 "bank1.c head:\n${bank1C.take(2000)}",
         )
 
@@ -307,12 +307,12 @@ class TitleSceneEmissionTest {
                             zone(titleZone)
                             enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
                             frame {
-                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                                runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
                             }
                         }
                     scene("gameplay") {
                         zone(gameplayZone)
-                        frame { whenever(buttons.start.pressed) { navigate(titleScene) } }
+                        frame { runIf(buttons.start.pressed) { navigate(titleScene) } }
                     }
                     start = titleScene
                 }
@@ -449,11 +449,11 @@ class TitleSceneEmissionTest {
                     val titleScene =
                         scene("title") {
                             frame {
-                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                                runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
                             }
                         }
                     scene("gameplay") {
-                        frame { whenever(buttons.start.pressed) { navigate(titleScene) } }
+                        frame { runIf(buttons.start.pressed) { navigate(titleScene) } }
                     }
                     start = titleScene
                 }

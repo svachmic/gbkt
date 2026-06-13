@@ -84,13 +84,13 @@ val simplePhysics =
                     // ------------------------------------------------------
                     // Y axis: UP/DOWN accel + clamp (phys.c L67-L73)
                     // ------------------------------------------------------
-                    whenever(dpad.up.held) {
+                    runIf(dpad.up.held) {
                         spdY -= Y_ACCELERATION_IN_SUBPIXELS
                         runIf(spdY isBelow -MAX_Y_SPEED_IN_SUBPIXELS) {
                             spdY set -MAX_Y_SPEED_IN_SUBPIXELS
                         }
                     }
-                    whenever(dpad.down.held) {
+                    runIf(dpad.down.held) {
                         spdY += Y_ACCELERATION_IN_SUBPIXELS
                         runIf(spdY isAbove MAX_Y_SPEED_IN_SUBPIXELS) {
                             spdY set MAX_Y_SPEED_IN_SUBPIXELS
@@ -100,13 +100,13 @@ val simplePhysics =
                     // ------------------------------------------------------
                     // X axis: LEFT/RIGHT accel + clamp (phys.c L74-L80)
                     // ------------------------------------------------------
-                    whenever(dpad.left.held) {
+                    runIf(dpad.left.held) {
                         spdX -= X_ACCELERATION_IN_SUBPIXELS
                         runIf(spdX isBelow -MAX_X_SPEED_IN_SUBPIXELS) {
                             spdX set -MAX_X_SPEED_IN_SUBPIXELS
                         }
                     }
-                    whenever(dpad.right.held) {
+                    runIf(dpad.right.held) {
                         spdX += X_ACCELERATION_IN_SUBPIXELS
                         runIf(spdX isAbove MAX_X_SPEED_IN_SUBPIXELS) {
                             spdX set MAX_X_SPEED_IN_SUBPIXELS
@@ -116,7 +116,7 @@ val simplePhysics =
                     // ------------------------------------------------------
                     // A pressed (edge) → jump impulse (phys.c L82-L84)
                     // ------------------------------------------------------
-                    whenever(buttons.a.pressed) { spdY set -JUMP_ACCELERATION_IN_SUBPIXELS }
+                    runIf(buttons.a.pressed) { spdY set -JUMP_ACCELERATION_IN_SUBPIXELS }
 
                     // ------------------------------------------------------
                     // Position integration (phys.c L87)

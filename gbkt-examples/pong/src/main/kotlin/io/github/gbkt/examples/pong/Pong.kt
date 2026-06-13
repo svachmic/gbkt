@@ -108,7 +108,7 @@ val pong =
                     print("PRESS START", position = PositionDef(5, 13))
                 }
                 frame {
-                    whenever(buttons.start.pressed) {
+                    runIf(buttons.start.pressed) {
                         p1Score set 0
                         p2Score set 0
                         // Navigate back to title — uses forward-declared titleRef (SceneRef)
@@ -141,19 +141,19 @@ val pong =
                 }
                 frame {
                     // P1 d-pad controls for paddle1 (clamped to screen: 16..112)
-                    whenever(dpad.up.held) {
-                        whenever(paddle1.y isAbove 16) { moveBy(paddle1, 0, -2) }
+                    runIf(dpad.up.held) {
+                        runIf(paddle1.y isAbove 16) { moveBy(paddle1, 0, -2) }
                     }
-                    whenever(dpad.down.held) {
-                        whenever(paddle1.y isBelow 112) { moveBy(paddle1, 0, 2) }
+                    runIf(dpad.down.held) {
+                        runIf(paddle1.y isBelow 112) { moveBy(paddle1, 0, 2) }
                     }
 
                     // Simple AI for paddle2 — track ball to paddle CENTER (y+8), speed 2px/frame
-                    whenever((paddle2.y + 8) isAbove ball.y) {
-                        whenever(paddle2.y isAbove 16) { moveBy(paddle2, 0, -2) }
+                    runIf((paddle2.y + 8) isAbove ball.y) {
+                        runIf(paddle2.y isAbove 16) { moveBy(paddle2, 0, -2) }
                     }
-                    whenever((paddle2.y + 8) isBelow ball.y) {
-                        whenever(paddle2.y isBelow 112) { moveBy(paddle2, 0, 2) }
+                    runIf((paddle2.y + 8) isBelow ball.y) {
+                        runIf(paddle2.y isBelow 112) { moveBy(paddle2, 0, 2) }
                     }
 
                     // Ball movement
@@ -161,11 +161,11 @@ val pong =
                     ball.y += ballDy
 
                     // Top / bottom wall bounce (below score bar at y=16, above bottom at y=120)
-                    whenever(ball.y isBelow 16) {
+                    runIf(ball.y isBelow 16) {
                         ballDy set 1
                         playSound(bounceSfx)
                     }
-                    whenever(ball.y isAbove 120) {
+                    runIf(ball.y isAbove 120) {
                         ballDy set -1
                         playSound(bounceSfx)
                     }
@@ -173,10 +173,10 @@ val pong =
                     // Left paddle collision — bounce only in paddle zone (x 2..8) with Y overlap
                     // Exception to ball.collides() pattern: Pong uses coordinate-range checks
                     // (x 2..8, x 148..156) for tighter gameplay feel than AABB hitbox overlap.
-                    whenever(ball.x isBelow 8) {
-                        whenever(ball.x isAtLeast 2) {
-                            whenever(ball.y isAtLeast paddle1.y) {
-                                whenever(ball.y isBelow (paddle1.y + 16)) {
+                    runIf(ball.x isBelow 8) {
+                        runIf(ball.x isAtLeast 2) {
+                            runIf(ball.y isAtLeast paddle1.y) {
+                                runIf(ball.y isBelow (paddle1.y + 16)) {
                                     ballDx set 1
                                     playSound(bounceSfx)
                                 }
@@ -186,10 +186,10 @@ val pong =
 
                     // Right paddle collision — bounce only in paddle zone (x 148..156) with Y
                     // overlap
-                    whenever(ball.x isAbove 148) {
-                        whenever(ball.x isBelow 156) {
-                            whenever(ball.y isAtLeast paddle2.y) {
-                                whenever(ball.y isBelow (paddle2.y + 16)) {
+                    runIf(ball.x isAbove 148) {
+                        runIf(ball.x isBelow 156) {
+                            runIf(ball.y isAtLeast paddle2.y) {
+                                runIf(ball.y isBelow (paddle2.y + 16)) {
                                     ballDx set -1
                                     playSound(bounceSfx)
                                 }
@@ -198,7 +198,7 @@ val pong =
                     }
 
                     // Scoring — ball exits left side past paddle (P2 scores)
-                    whenever(ball.x isBelow 2) {
+                    runIf(ball.x isBelow 2) {
                         p2Score += 1
                         playSound(scoreSfx)
                         // Visual feedback: flash sprites off/on, update score, reset ball
@@ -218,7 +218,7 @@ val pong =
                     }
 
                     // Scoring — ball exits right side (P1 scores)
-                    whenever(ball.x isAbove 156) {
+                    runIf(ball.x isAbove 156) {
                         p1Score += 1
                         playSound(scoreSfx)
                         hideSprites()
@@ -237,11 +237,11 @@ val pong =
                     }
 
                     // Win condition — navigate to gameover via SceneRef
-                    whenever(p1Score isAtLeast 5) {
+                    runIf(p1Score isAtLeast 5) {
                         playSound(winSfx)
                         navigate(gameoverScene)
                     }
-                    whenever(p2Score isAtLeast 5) {
+                    runIf(p2Score isAtLeast 5) {
                         playSound(winSfx)
                         navigate(gameoverScene)
                     }
@@ -262,7 +262,7 @@ val pong =
                     print("PRESS START", position = PositionDef(5, 10))
                     print("FIRST TO 5", position = PositionDef(5, 13))
                 }
-                frame { whenever(buttons.start.pressed) { navigate(gameScene) } }
+                frame { runIf(buttons.start.pressed) { navigate(gameScene) } }
             }
 
         start = titleScene

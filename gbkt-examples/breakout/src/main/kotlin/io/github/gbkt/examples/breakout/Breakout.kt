@@ -134,7 +134,7 @@ val breakout =
                     print(PRESS_START_TEXT, position = PositionDef(5, 13))
                 }
                 // Navigate to title — uses forward-declared titleRef (SceneRef)
-                frame { whenever(buttons.start.pressed) { navigate(titleRef) } }
+                frame { runIf(buttons.start.pressed) { navigate(titleRef) } }
             }
 
         // -------------------------------------------------------------------------
@@ -151,7 +151,7 @@ val breakout =
                     print(PRESS_START_TEXT, position = PositionDef(5, 13))
                 }
                 // Navigate to title — uses forward-declared titleRef (SceneRef)
-                frame { whenever(buttons.start.pressed) { navigate(titleRef) } }
+                frame { runIf(buttons.start.pressed) { navigate(titleRef) } }
             }
 
         // -------------------------------------------------------------------------
@@ -187,11 +187,11 @@ val breakout =
                 }
                 frame {
                     // Paddle movement — type-safe d-pad API (clamped to screen: 0..136)
-                    whenever(dpad.left.held) {
-                        whenever(paddle.x isAbove 3) { moveBy(paddle, -3, 0) }
+                    runIf(dpad.left.held) {
+                        runIf(paddle.x isAbove 3) { moveBy(paddle, -3, 0) }
                     }
-                    whenever(dpad.right.held) {
-                        whenever(paddle.x isBelow 136) { moveBy(paddle, 3, 0) }
+                    runIf(dpad.right.held) {
+                        runIf(paddle.x isBelow 136) { moveBy(paddle, 3, 0) }
                     }
 
                     // Ball movement
@@ -199,29 +199,29 @@ val breakout =
                     ball.y += ballDy
 
                     // Left/right wall bounce
-                    whenever(ball.x isBelow 4) {
+                    runIf(ball.x isBelow 4) {
                         ballDx set 1
                         playSound(hitSfx)
                     }
-                    whenever(ball.x isAbove 152) {
+                    runIf(ball.x isAbove 152) {
                         ballDx set -1
                         playSound(hitSfx)
                     }
 
                     // Top wall bounce (below HUD at y=16)
-                    whenever(ball.y isBelow 16) {
+                    runIf(ball.y isBelow 16) {
                         ballDy set 1
                         playSound(hitSfx)
                     }
 
                     // Paddle collision — bounce upward on AABB overlap
-                    whenever(ball.collides(paddle)) {
+                    runIf(ball.collides(paddle)) {
                         ballDy set -1
                         playSound(hitSfx)
                     }
 
                     // Ball below paddle — lose a life
-                    whenever(ball.y isAbove 144) {
+                    runIf(ball.y isAbove 144) {
                         lives -= 1
                         playSound(loseSfx)
                         // Update HUD
@@ -242,20 +242,20 @@ val breakout =
                         ballDx set 1
                         ballDy set -1
                         // Check game over via SceneRef
-                        whenever(lives isEqualTo 0) { navigate(gameoverScene) }
+                        runIf(lives isEqualTo 0) { navigate(gameoverScene) }
                     }
 
                     // Brick hit — positional collision with tile-based brick grid
                     // Brick grid: tiles (5,3)-(14,5) = pixels x[40,120) y[24,48)
                     // col = (ball.x - 40) >> 3, row = (ball.y - 24) >> 3 (8px tiles)
-                    whenever((ball.y isAtLeast 24) logicalAnd (ball.y isBelow 48)) {
-                        whenever((ball.x isAtLeast 40) logicalAnd (ball.x isBelow 120)) {
+                    runIf((ball.y isAtLeast 24) logicalAnd (ball.y isBelow 48)) {
+                        runIf((ball.x isAtLeast 40) logicalAnd (ball.x isBelow 120)) {
                             // Calculate brick column and row from ball position
                             bc set ((ball.x - 40) shr 3)
                             brow set ((ball.y - 24) shr 3)
                             bidx set (brow * 10 + bc)
-                            whenever(bidx isBelow 30) {
-                                whenever(bricks[bidx] isEqualTo 1) {
+                            runIf(bidx isBelow 30) {
+                                runIf(bricks[bidx] isEqualTo 1) {
                                     bricks[bidx] = 0
                                     // Erase the brick character from the BG tile layer
                                     gotoxy(bc + 5, brow + 3)
@@ -276,7 +276,7 @@ val breakout =
                     }
 
                     // Win condition — navigate via SceneRef
-                    whenever(bricksLeft isEqualTo 0) {
+                    runIf(bricksLeft isEqualTo 0) {
                         playSound(winSfx)
                         navigate(winScene)
                     }
@@ -296,7 +296,7 @@ val breakout =
                     print("BREAKOUT", position = PositionDef(6, 6))
                     print(PRESS_START_TEXT, position = PositionDef(5, 10))
                 }
-                frame { whenever(buttons.start.pressed) { navigate(gameScene) } }
+                frame { runIf(buttons.start.pressed) { navigate(gameScene) } }
             }
 
         start = titleScene

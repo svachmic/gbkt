@@ -209,7 +209,7 @@ class BanksUatTest {
 
             // Press Start on title — HOME→bank-1 BANKED `play_enter()` trampoline
             // fires through the navigate_to_scene dispatch. Edge-triggered
-            // (single-frame press) per Banks.kt's `whenever(buttons.start.pressed)`.
+            // (single-frame press) per Banks.kt's `runIf(buttons.start.pressed)`.
             agent.step(setOf(Button.START))
 
             // Wait for the cross-bank BANKED play_enter() call to land —

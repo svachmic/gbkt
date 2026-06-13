@@ -51,11 +51,11 @@ val entityGame =
                     enemy.x += enemy.velX
 
                     // Wrap around
-                    whenever(player.x isAbove 160) { player.x set 0 }
-                    whenever(enemy.x isBelow 0) { enemy.x set 160 }
+                    runIf(player.x isAbove 160) { player.x set 0 }
+                    runIf(enemy.x isBelow 0) { enemy.x set 160 }
 
                     // Collision
-                    whenever(player collidesWith enemy) {
+                    runIf(player collidesWith enemy) {
                         score += 10
                         enemy.x set 160
                     }

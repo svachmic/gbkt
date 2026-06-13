@@ -478,19 +478,19 @@ class GenericPoolCodegenTest {
                 actorTemplateId = "enemy",
                 config = ActorPoolConfig(maxSize = 4),
             )
-        // Scene with whenever(bullet.collides(enemy)) — both pool templates
+        // Scene with runIf(bullet.collides(enemy)) — both pool templates
         val bothPoolCollision =
             IfOp(
                 condition = CallExpr("collides", listOf(VarRef("bullet"), VarRef("enemy"))),
                 then = listOf(Literal(1).let { io.github.gbkt.core.ir.Assign("score", it) }),
             )
-        // Scene with whenever(enemy.collides(player)) — one pool template, one normal actor
+        // Scene with runIf(enemy.collides(player)) — one pool template, one normal actor
         val onePoolCollision =
             IfOp(
                 condition = CallExpr("collides", listOf(VarRef("enemy"), VarRef("player"))),
                 then = emptyList(),
             )
-        // Scene with whenever(player.collides(player)) — no pool templates (regression)
+        // Scene with runIf(player.collides(player)) — no pool templates (regression)
         val noPoolCollision =
             IfOp(
                 condition = CallExpr("collides", listOf(VarRef("player"), VarRef("player"))),
@@ -511,7 +511,7 @@ class GenericPoolCodegenTest {
 
     @Test
     fun `both-pool-template collision generates nested for-loops`() {
-        // whenever(bullet.collides(enemy)) — both are pool templates
+        // runIf(bullet.collides(enemy)) — both are pool templates
         // Should generate nested loops iterating _pool_bulletPool_active and _pool_enemyPool_active
         val gameIR = buildTwoPoolGameIR()
         ScriptOpVisitor.setGameIR(gameIR)
@@ -574,7 +574,7 @@ class GenericPoolCodegenTest {
 
     @Test
     fun `one-pool-template collision generates single for-loop`() {
-        // whenever(enemy.collides(player)) — enemy is pool template, player is not
+        // runIf(enemy.collides(player)) — enemy is pool template, player is not
         // Should generate single loop over _pool_enemyPool_active, AABB against _player_x
         val gameIR = buildTwoPoolGameIR()
         ScriptOpVisitor.setGameIR(gameIR)
@@ -605,7 +605,7 @@ class GenericPoolCodegenTest {
 
     @Test
     fun `no-pool-template collision unchanged single AABB check regression`() {
-        // whenever(player.collides(player)) — neither is a pool template
+        // runIf(player.collides(player)) — neither is a pool template
         // Should generate the existing single AABB check (no regression)
         val gameIR = buildTwoPoolGameIR()
         ScriptOpVisitor.setGameIR(gameIR)
@@ -637,7 +637,7 @@ class GenericPoolCodegenTest {
     @Test
     fun `both-pool-template collision body can call destroy on each pool with auto-named slot vars`() {
         // F-A: collision body needs access to outer/inner loop indices to destroy the colliding
-        // instances. The DSL's typed `whenever(poolA.collides(poolB)) { idxA, idxB -> ... }`
+        // instances. The DSL's typed `runIf(poolA.collides(poolB)) { idxA, idxB -> ... }`
         // overload emits PoolDestroyActor ops with slotExpr=VarRef("pool_<short>i"), matching the
         // codegen's auto-derived loop variable names. Verify the generated C contains
         //   pool_bulletPool_destroy(_pool_bi);

@@ -152,7 +152,7 @@ class ScriptBuilderTest {
 
     @Test
     fun `whenever produces IfOp with condition and body`() {
-        val ops = buildScript { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+        val ops = buildScript { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
 
         assertEquals(1, ops.size)
         val op = assertIs<IfOp>(ops[0])
@@ -190,7 +190,7 @@ class ScriptBuilderTest {
                     val gameScene =
                         scene("game") {
                             enter { hideSprites() }
-                            frame { whenever(buttons.start.pressed) { navigate(SceneRef("game")) } }
+                            frame { runIf(buttons.start.pressed) { navigate(SceneRef("game")) } }
                         }
                     start = gameScene
                 }

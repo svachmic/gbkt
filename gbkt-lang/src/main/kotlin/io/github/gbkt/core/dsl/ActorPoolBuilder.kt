@@ -65,9 +65,9 @@ class ActorPoolRef(val poolId: String, val maxSize: Int = 0, val actorTemplateId
 // =============================================================================
 
 /**
- * Typed wrapper produced by [ActorPoolRef.collides]. Carries both pool refs so the [runIf]
- * overload can derive iterator slot variable names matching the codegen's auto-named loop variables
- * (e.g. `_pool_bi`, `_pool_ei`).
+ * Typed wrapper produced by [ActorPoolRef.collides]. Carries both pool refs so the [runIf] overload
+ * can derive iterator slot variable names matching the codegen's auto-named loop variables (e.g.
+ * `_pool_bi`, `_pool_ei`).
  *
  * DSL-only — the IR-level form emitted by [runIf] is the existing `CallExpr("collides",
  * [VarRef(templateA), VarRef(templateB)])` shape that `tryBuildPoolCollisionStatement` already
@@ -339,8 +339,8 @@ fun ScriptBuilder.forEachActive(
 /**
  * Returns an [Expr] expression evaluating to the number of active slots in the pool.
  *
- * Emits `pool_<poolId>_active_count()` in generated C. Usable in `runIf()` conditions and
- * variable assignments.
+ * Emits `pool_<poolId>_active_count()` in generated C. Usable in `runIf()` conditions and variable
+ * assignments.
  *
  * ```kotlin
  * runIf(bulletPool.activeCount isEqualTo 0) { navigate(winScene) }

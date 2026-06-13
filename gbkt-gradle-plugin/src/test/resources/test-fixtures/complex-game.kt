@@ -87,7 +87,7 @@ val complexGame =
                     printCentered("PRESS START") at 10
                 }
 
-                every.frame { whenever(buttons.start.pressed) { scene("gameplay") } }
+                every.frame { runIf(buttons.start.pressed) { scene("gameplay") } }
             }
 
         val gameplayScene =
@@ -105,31 +105,31 @@ val complexGame =
 
                 every.frame {
                     // Player movement
-                    whenever(buttons.dpad.left.pressed) { player.x -= gameSpeed }
-                    whenever(buttons.dpad.right.pressed) { player.x += gameSpeed }
-                    whenever(buttons.a.pressed) { player.y -= 5 }
+                    runIf(buttons.dpad.left.pressed) { player.x -= gameSpeed }
+                    runIf(buttons.dpad.right.pressed) { player.x += gameSpeed }
+                    runIf(buttons.a.pressed) { player.y -= 5 }
 
                     // Enemy movement
                     enemy.x -= gameSpeed
 
                     // Collision
-                    whenever(player collidesWith enemy) {
+                    runIf(player collidesWith enemy) {
                         lives -= 1
                         score += 10
                         narrator.say("Hit! Lives: ", lives)
                     }
 
                     // Game over condition
-                    whenever(lives isEqualTo 0) { scene("gameover") }
+                    runIf(lives isEqualTo 0) { scene("gameover") }
 
                     // Speed increase
-                    whenever((score isAbove 0) and ((score rem 500) isEqualTo 0)) {
-                        whenever(gameSpeed isBelow 6) { gameSpeed += 1 }
+                    runIf((score isAbove 0) and ((score rem 500) isEqualTo 0)) {
+                        runIf(gameSpeed isBelow 6) { gameSpeed += 1 }
                     }
                 }
 
                 exit {
-                    whenever(score isAbove 0) {
+                    runIf(score isAbove 0) {
                         // Save high score logic would go here
                     }
                 }
@@ -145,7 +145,7 @@ val complexGame =
                     printCentered("PRESS START") at 14
                 }
 
-                every.frame { whenever(buttons.start.pressed) { scene("title") } }
+                every.frame { runIf(buttons.start.pressed) { scene("title") } }
             }
 
         // Set starting scene

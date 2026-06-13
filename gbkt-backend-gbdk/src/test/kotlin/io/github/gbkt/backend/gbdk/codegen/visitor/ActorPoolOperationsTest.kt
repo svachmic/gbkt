@@ -739,7 +739,7 @@ class ActorPoolOperationsTest {
 
     @Test
     fun `forEachActive body condition on template actor property redirects to per-instance array`() {
-        // whenever(bullet.y isBelow 4) inside forEachActive should emit _pool_bulletPool_y[_bi] <
+        // runIf(bullet.y isBelow 4) inside forEachActive should emit _pool_bulletPool_y[_bi] <
         // 4u
         // (not _bullet_y < 4u)
         val gameIR = buildBulletGameIR()

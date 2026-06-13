@@ -73,7 +73,7 @@ val banks =
         val pauseScene =
             scene("pause") {
                 enter { clear() }
-                frame { whenever(buttons.start.pressed) { navigate(playSceneRef) } }
+                frame { runIf(buttons.start.pressed) { navigate(playSceneRef) } }
             }
 
         // Play scene — UAT anchor 4 save trigger (Select) + cross-bank navigation to pause
@@ -88,8 +88,8 @@ val banks =
                 zone(playZone)
                 enter { showSprites() }
                 frame {
-                    whenever(buttons.select.pressed) { triggerSystem(saves) }
-                    whenever(buttons.start.pressed) { navigate(pauseScene) }
+                    runIf(buttons.select.pressed) { triggerSystem(saves) }
+                    runIf(buttons.start.pressed) { navigate(pauseScene) }
                 }
             }
 
@@ -98,7 +98,7 @@ val banks =
         val titleScene =
             scene("title") {
                 enter { clear() }
-                frame { whenever(buttons.start.pressed) { navigate(playScene) } }
+                frame { runIf(buttons.start.pressed) { navigate(playScene) } }
             }
 
         // 13.4 D-07: SceneRef migration target from Plan 13.4-03.
