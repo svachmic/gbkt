@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 18-11-PLAN.md
-last_updated: "2026-06-13T12:00:00.000Z"
+stopped_at: Completed 18-08-PLAN.md
+last_updated: "2026-06-13T11:11:36.130Z"
 last_activity: 2026-06-13
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 49
-  completed_plans: 35
-  percent: 35
+  completed_plans: 34
+  percent: 33
 ---
 
 # Project State
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
-Plan: 12 of 27
+Plan: 13 of 27
 Status: Ready to execute
 Last activity: 2026-06-13
 
@@ -408,6 +408,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 18 P08 | 3 min | 3 tasks | 3 files |
 | Phase 18 P09 | 5min | 3 tasks | 2 files |
 | Phase 18 P10 | 10 | 3 tasks | 3 files |
+| Phase 18 P12 | 5 | 1 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -1013,7 +1014,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-13T10:55:45.965Z
+Last session: 2026-06-13T11:11:36.124Z
 Stopped at: Completed 18-08-PLAN.md
 
 ## Operator Next Steps
