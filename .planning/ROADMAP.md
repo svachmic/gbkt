@@ -137,7 +137,40 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
   4. SonarCloud S3776 HIGH finding count is 0, with at most 5 NOSONAR suppressions used across the entire milestone
   5. Every S3776 refactor commit touching `codegen/visitor/**` or `GBDKPipeline.kt` has a passing 7-example byte-identity ROM sweep as exit evidence; S3776 commits are never combined with seed-fix commits
 
-**Plans**: TBD
+**Phase 17 code-review carry-ins** (developer-decided 2026-06-13, fold into discuss-phase scope):
+  - **SEED-027** (WR-01): align `GAME_BOY_COLOR_SCREEN.bitsPerPixel` 4→2 + narrow the "MUST derive" KDoc to width/height. Trivial constants/KDoc fix, byte-identical (zero consumers). See `.planning/seeds/SEED-027-gbc-screen-bitsperpixel-correctness.md`.
+  - **SEED-028** (WR-04/05): accept the ConfigBuilder hard removal (no `@Deprecated` shim) + add a v0.1.1 migration note + fix the 4 stale `config { ramBanks = N }` guidance strings. See `.planning/seeds/SEED-028-configbuilder-removal-migration-guidance.md`.
+
+**Plans**: 27 plans
+
+Plans:
+- [ ] 18-01-PLAN.md — DEPR-01 code: remove whenever, relocate pool-collision runIf overload, migrate all call sites
+- [ ] 18-02-PLAN.md — DEPR-01 docs: migrate whenever→runIf in context/DSL_REFERENCE.md
+- [ ] 18-03-PLAN.md — DEPR-02: remove combatIsInState(String) overload + migrate sole test site
+- [ ] 18-04-PLAN.md — DEPR-03 CONTRIBUTING deprecation convention + new root CHANGELOG.md (D-09)
+- [ ] 18-05-PLAN.md — SEED-027: GBC bitsPerPixel 4→2 + KDoc narrowing (D-07)
+- [ ] 18-06-PLAN.md — SONAR-01 non-emitting: gbkt-analysis batch (N-02/N-08/N-13)
+- [ ] 18-07-PLAN.md — SONAR-01 non-emitting: analysis N-15 + emulator N-04/N-05
+- [ ] 18-08-PLAN.md — SONAR-01 non-emitting: emulator N-09/N-16 + mcp N-01 (NOSONAR candidate)
+- [ ] 18-09-PLAN.md — SONAR-01 non-emitting: mcp-server batch (N-07/N-10/N-12)
+- [ ] 18-10-PLAN.md — SONAR-01 non-emitting: test N-06 + core N-03 + lang GameBuilder N-11
+- [ ] 18-11-PLAN.md — SONAR-01 non-emitting: intellij-plugin batch (N-14/N-17)
+- [ ] 18-12-PLAN.md — SEED-028: fix 4 stale ramBanks guidance strings (D-08)
+- [ ] 18-13-PLAN.md — SONAR EMITTING GBDKPipeline: E-03/E-04 (per-commit ROM sweep)
+- [ ] 18-14-PLAN.md — SONAR EMITTING GBDKPipeline: E-13/E-19 (walkOps promotion) + E-15
+- [ ] 18-15-PLAN.md — SONAR EMITTING GBDKPipeline: E-17/E-20/E-24
+- [ ] 18-16-PLAN.md — SONAR EMITTING GBDKPipeline: E-25/E-27 (file cleared)
+- [ ] 18-17-PLAN.md — SONAR EMITTING GBDKSystemVisitor: E-01 (cc92)
+- [ ] 18-18-PLAN.md — SONAR EMITTING GBDKSystemVisitor: E-05/E-08
+- [ ] 18-19-PLAN.md — SONAR EMITTING GBDKSystemVisitor: E-09/E-10
+- [ ] 18-20-PLAN.md — SONAR EMITTING GBDKSystemVisitor: E-11/E-14 (file cleared)
+- [ ] 18-21-PLAN.md — SONAR EMITTING MenuVisitor: E-02 (cc90)
+- [ ] 18-22-PLAN.md — SONAR EMITTING SceneVisitor E-07 + CombatVisitor E-16
+- [ ] 18-23-PLAN.md — SONAR EMITTING NOSONAR decisions: CEmitter E-12 + SoundVisitor E-06 (D-05)
+- [ ] 18-24-PLAN.md — SONAR EMITTING HudVisitor E-18 + ActorVisitor E-21
+- [ ] 18-25-PLAN.md — SONAR EMITTING Collection E-22 + SharedConstant E-23 + Dialog E-26
+- [ ] 18-26-PLAN.md — SONAR EMITTING TrackSynthesizer E-28 (sport) + RpgVisitor E-29
+- [ ] 18-27-PLAN.md — Phase-end consolidated sweep + full suite + SonarCloud S3776=0 gate
 
 ### Phase 19: Codegen Fixes — Metasprite Cluster
 
