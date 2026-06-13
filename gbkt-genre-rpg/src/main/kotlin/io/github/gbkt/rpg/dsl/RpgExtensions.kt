@@ -394,8 +394,6 @@ fun ScriptBuilder.battleUpdate(battle: BattleRef) {
  * Produces a call to the generated `combat_is_in_state_{battleId}(state)` helper function. Use with
  * [io.github.gbkt.core.dsl.ScriptBuilder.whenever] for state-based scene logic.
  *
- * Prefer this over the string-based overload — eliminates magic string state names.
- *
  * Usage:
  * ```kotlin
  * val combat = simpleBattle("combat") { ... }
@@ -418,27 +416,6 @@ fun ScriptBuilder.battleUpdate(battle: BattleRef) {
  */
 fun combatIsInState(state: CombatStateId, battle: BattleRef): Expr =
     CallExpr(function = "combat_is_in_state_${battle.id}", args = listOf(VarRef(state.id)))
-
-/**
- * Returns an [Expr] that evaluates to true when the combat system is in the given state.
- *
- * String-based overload for migration and escape-hatch use. Prefer the typed overload:
- * `combatIsInState(CombatStates.VICTORY, combatRef)`.
- *
- * @param stateId Raw string state constant name (e.g. `"COMBAT_STATE_VICTORY"`).
- * @param battleId Battle system string identifier.
- */
-@Deprecated(
-    message = "Use combatIsInState(CombatStateId, BattleRef) to eliminate magic strings",
-    replaceWith =
-        ReplaceWith(
-            "combatIsInState(CombatStateId(stateId), BattleRef(battleId))",
-            "io.github.gbkt.core.ir.CombatStateId",
-            "io.github.gbkt.rpg.dsl.BattleRef",
-        ),
-)
-fun combatIsInState(stateId: String, battleId: String): Expr =
-    combatIsInState(CombatStateId(stateId), BattleRef(battleId))
 
 /**
  * Configures and registers an ATB (Active Time Battle) combat system.
