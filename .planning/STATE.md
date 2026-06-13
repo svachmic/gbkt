@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 18-08-PLAN.md
-last_updated: "2026-06-13T10:55:45.971Z"
+stopped_at: Completed 18-11-PLAN.md
+last_updated: "2026-06-13T12:00:00.000Z"
 last_activity: 2026-06-13
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 49
-  completed_plans: 32
-  percent: 33
+  completed_plans: 35
+  percent: 35
 ---
 
 # Project State
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
-Plan: 11 of 27
+Plan: 12 of 27
 Status: Ready to execute
 Last activity: 2026-06-13
 

@@ -156,7 +156,7 @@ Plans:
 - [x] 18-08-PLAN.md — SONAR-01 non-emitting: emulator N-09/N-16 + mcp N-01 (NOSONAR candidate)
 - [x] 18-09-PLAN.md — SONAR-01 non-emitting: mcp-server batch (N-07/N-10/N-12)
 - [x] 18-10-PLAN.md — SONAR-01 non-emitting: test N-06 + core N-03 + lang GameBuilder N-11
-- [ ] 18-11-PLAN.md — SONAR-01 non-emitting: intellij-plugin batch (N-14/N-17)
+- [x] 18-11-PLAN.md — SONAR-01 non-emitting: intellij-plugin batch (N-14/N-17)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
