@@ -252,8 +252,7 @@ object SceneVisitor {
             // (the single-source field populated by buildCFiles after allocateZoneBanks).
             // Falls back to zoneBankAllocation[zoneId] for:
             //   - Pre-field callers that do not populate the field (backward compat)
-            //   - Multi-zone scenes where allocatedZoneBank stores only the first zone's
-            // bank
+            //   - Multi-zone scenes where allocatedZoneBank stores only the first zone's bank
             val bank =
                 scene.allocatedZoneBank
                     ?: zoneBankAllocation[zoneId]
@@ -261,229 +260,230 @@ object SceneVisitor {
                         "Zone '$zoneId' is bound to scene '${scene.id}' but has no bank " +
                             "allocation. Run BankingAnalysisPass first."
                     )
-            val zoneSanitized = zoneId.replace('-', '_').replace(' ', '_')
-            // Phase 11.2 (REQ-3, D-A3, D-claude-4): emit set_bkg_data BEFORE
-            // _bkg_tiles_load_banked when the zone has a tilesetPath (NEW path).
-            // Zones without tilesetPath (synthesized procedural tile data, e.g.
-            // sport-racing's _racing_<id>_tileset which lives on the LEGACY path —
-            // see SEED-017 / CONVENTIONS.md §"Tile pixel data emission: two paths")
-            // skip the set_bkg_data prepend — they author their own emission.
-            val pixelLoad: List<CStatement> =
-                if (zone.tilesetPath != null) {
+            buildSingleZoneLoad(scene, zone, bank, gbcTarget)
+        }
+
+    /**
+     * Assembles [CStatement] list for a single zone binding in the enter function.
+     *
+     * Extracted from [buildZoneLoadStatements] to flatten the flatMap lambda nesting (SonarCloud
+     * S3776 18-28).
+     */
+    private fun buildSingleZoneLoad(
+        scene: SceneIR,
+        zone: ZoneIR,
+        bank: Int,
+        gbcTarget: Boolean,
+    ): List<CStatement> {
+        val zoneSanitized = zone.id.replace('-', '_').replace(' ', '_')
+        // Phase 11.2 (REQ-3, D-A3, D-claude-4): emit set_bkg_data BEFORE
+        // _bkg_tiles_load_banked when the zone has a tilesetPath (NEW path).
+        val pixelLoad = buildZonePixelLoad(zone, zoneSanitized)
+        // Phase 12.9 D1 fix — trailing-DISPLAY_ON heuristic (WR-01 exact-match):
+        // Check whether the scene's enterOps already ends with a DISPLAY_ON statement
+        // (e.g., LevelCardSceneBuilder.materialize() appends cEmit("DISPLAY_ON;")).
+        // If so, omit the inline DISPLAY_ON from the zone-load block to avoid turning
+        // on the LCD BEFORE the user clear runs.
+        //
+        // WR-01 fix: use EXACT match `code.trim() == "DISPLAY_ON;"` instead of the
+        // fragile `code.contains("DISPLAY_ON")` substring check.
+        val sceneEndsWithDisplayOn =
+            scene.enterOps.lastOrNull().let {
+                it is RawOp && it.code.trim() == "DISPLAY_ON;"
+            }
+        // Phase 12.9 Polish — card-overdraw signal:
+        // Detect whether this scene's enterOps contain the full-BG-plane clear emitted
+        // by LevelCardSceneBuilder.materialize(): fill_bkg_rect(0u, 0u, 32u, 32u, 0u).
+        // When the signal is true, skip the (0,0) tilemap-place to eliminate the flash.
+        val sceneHasCardOverdraw =
+            scene.enterOps.any {
+                it is RawOp && it.code.contains("fill_bkg_rect(0u, 0u, 32u, 32u, 0u)")
+            }
+        return pixelLoad +
+            buildZoneTilemapAndPalette(
+                zone,
+                zoneSanitized,
+                bank,
+                gbcTarget,
+                sceneEndsWithDisplayOn,
+                sceneHasCardOverdraw,
+            )
+    }
+
+    /**
+     * Builds the tilemap-placement, palette-upload, and DISPLAY_ON statements for one zone.
+     *
+     * Extracted from [buildSingleZoneLoad] to keep cognitive complexity ≤ 15 (SonarCloud S3776
+     * 18-28).
+     */
+    private fun buildZoneTilemapAndPalette(
+        zone: ZoneIR,
+        zoneSanitized: String,
+        bank: Int,
+        gbcTarget: Boolean,
+        sceneEndsWithDisplayOn: Boolean,
+        sceneHasCardOverdraw: Boolean,
+    ): List<CStatement> {
+        // Phase 12.2 debug fix (D-01 Path A): NEW-path zones (tilesetPath != null)
+        // MUST use the Gradle-task-emitted `_zone_<id>_tilemap_WIDTH` /
+        // `_zone_<id>_tilemap_HEIGHT` macros for the w/h args of _bkg_tiles_load_banked.
+        // LEGACY-path zones (tilesetPath == null) fall back to the ZoneIR literal.
+        // See: .planning/debug/title-zone-path-a-render.md (Hypothesis A CONFIRMED).
+        val widthArg =
+            if (zone.tilesetPath != null) {
+                CVar("_zone_${zoneSanitized}_tilemap_WIDTH")
+            } else {
+                // Legacy path: no ConvertZoneTilesetsTask — use explicit dim or 20×18
+                // fallback (REQ-14 D-03; null sentinel means auto = 20×18).
+                CLiteral(zone.mapWidth ?: 20)
+            }
+        val heightArg =
+            if (zone.tilesetPath != null) {
+                CVar("_zone_${zoneSanitized}_tilemap_HEIGHT")
+            } else {
+                CLiteral(zone.mapHeight ?: 18)
+            }
+        // Phase 12.9 D-01 / Phase 13.5-02: screenMode superset branch.
+        // When zone.screenMode == true (synthesized by SceneBuilder.screen()), replace
+        // the (0,0) tilemap-place with the full superset:
+        //   1. hide_sprites_range(0u, MAX_HARDWARE_SPRITES) — D-06 sprite reset
+        //   2. move_bkg(0u, 0u)                             — D-06 scroll reset
+        //   3. fill_bkg_rect(0u, 0u, 32u, 32u, 0u)          — D-05 BG full-plane clear
+        //   4. _bkg_tiles_load_banked(bank, centered-x, centered-y, W, H, tilemap)
+        // DISPLAY_ON is handled by the existing inline emission below (unchanged).
+        val tilemapPlace =
+            when {
+                // Phase 13.5-02: screenMode superset — centered draw + sprite/scroll reset.
+                zone.screenMode -> {
+                    // WR-02 fix: guard against programmatically constructed ZoneIR
+                    // with screenMode=true but tilesetPath=null (the DSL always sets
+                    // tilesetPath via screen(asset(...)), but the data class is copyable).
+                    require(zone.tilesetPath != null) {
+                        "Zone '${zone.id}' has screenMode=true but tilesetPath is null. " +
+                            "screen() always sets tilesetPath; do not set screenMode=true " +
+                            "on zones without an asset."
+                    }
+                    listOf(
+                        // D-06: sprite reset — hide all hardware sprites (OAM clear).
+                        CRawCode("hide_sprites_range(0u, MAX_HARDWARE_SPRITES);"),
+                        // D-06: scroll reset — move BG to origin before centering.
+                        CExprStatement(CCall("move_bkg", listOf(CLiteral(0), CLiteral(0)))),
+                        // D-05: BG full-plane clear — wipe all 32x32 BG tile slots.
+                        // 32x32 covers the full GBC hardware-addressable BG map;
+                        // 20x18 would leave columns 20-31 with residual tile indices.
+                        CRawCode("fill_bkg_rect(0u, 0u, 32u, 32u, 0u);"),
+                        // Centered tilemap placement — exact formula from
+                        // LevelCardSceneBuilder.materialize():889-895 (PATTERNS.md
+                        // § "Don't Hand-Roll" — do NOT re-derive this formula).
+                        // widthArg/heightArg already set to _zone_<id>_tilemap_WIDTH/HEIGHT
+                        // macros (NEW-path, tilesetPath != null, ensured by screen() DSL).
+                        CExprStatement(
+                            CCall(
+                                "_bkg_tiles_load_banked",
+                                listOf(
+                                    CLiteral(bank),
+                                    CVar(
+                                        "(DEVICE_SCREEN_WIDTH - _zone_${zoneSanitized}_tilemap_WIDTH) / 2u"
+                                    ),
+                                    CVar(
+                                        "(DEVICE_SCREEN_HEIGHT - _zone_${zoneSanitized}_tilemap_HEIGHT) / 2u"
+                                    ),
+                                    widthArg,
+                                    heightArg,
+                                    CVar("_zone_${zoneSanitized}_tilemap"),
+                                ),
+                            )
+                        ),
+                    )
+                }
+                // Phase 12.9 Polish: skip the (0,0) tilemap-place when the card-overdraw
+                // signal is detected (fill_bkg_rect(0u,0u,32u,32u,0u) in enterOps).
+                // Normal scenes (sceneHasCardOverdraw == false) always include it.
+                sceneHasCardOverdraw -> emptyList()
+                // Default: normal (0,0) zone-origin placement.
+                else ->
                     listOf(
                         CExprStatement(
                             CCall(
-                                "set_bkg_data",
+                                "_bkg_tiles_load_banked",
                                 listOf(
+                                    CLiteral(bank),
                                     CLiteral(0),
-                                    CVar("_zone_${zoneSanitized}_tileset_count"),
-                                    CVar("_zone_${zoneSanitized}_tileset"),
+                                    CLiteral(0),
+                                    widthArg,
+                                    heightArg,
+                                    // Plan 11.1-17 (Phase D): NEW-path zones consume the
+                                    // Gradle-task-emitted _zone_<id>_tilemap symbol.
+                                    // LEGACY-path zones (tilesetPath == null) keep
+                                    // referencing _zone_<id>_tiles verbatim.
+                                    // See Plan 11.1-15 SUMMARY.
+                                    CVar(
+                                        if (zone.tilesetPath != null) {
+                                            "_zone_${zoneSanitized}_tilemap"
+                                        } else {
+                                            "_zone_${zoneSanitized}_tiles"
+                                        }
+                                    ),
                                 ),
                             )
                         )
                     )
-                } else {
-                    emptyList()
-                }
-            // Phase 12.2 debug fix (D-01 Path A): NEW-path zones (tilesetPath != null)
-            // MUST use the Gradle-task-emitted `_zone_<id>_tilemap_WIDTH` /
-            // `_zone_<id>_tilemap_HEIGHT` macros for the w/h args of
-            // _bkg_tiles_load_banked.
-            // Using CLiteral(zone.mapWidth) / CLiteral(zone.mapHeight) emits the ZoneIR
-            // default (32, 32) even when the actual tilemap is smaller (e.g.
-            // title-screen.png
-            // is 20x9 tiles — 180 bytes). Passing 32x32 reads 1024 tile entries from a
-            // 180-byte buffer, producing the row-doubling visual defect.
-            // ConvertZoneTilesetsTask
-            // (Phase 12.2-06) emits these macros from the actual PNG IHDR dimensions — they
-            // are
-            // the single source of truth for tilemap geometry. LEGACY-path zones
-            // (tilesetPath
-            // == null) have no emitted macros, so they fall back to the ZoneIR literal.
-            // See: .planning/debug/title-zone-path-a-render.md (Hypothesis A CONFIRMED).
-            val widthArg =
-                if (zone.tilesetPath != null) {
-                    CVar("_zone_${zoneSanitized}_tilemap_WIDTH")
-                } else {
-                    // Legacy path: no ConvertZoneTilesetsTask — use explicit dim or 20×18
-                    // fallback (REQ-14 D-03; null sentinel means auto = 20×18).
-                    CLiteral(zone.mapWidth ?: 20)
-                }
-            val heightArg =
-                if (zone.tilesetPath != null) {
-                    CVar("_zone_${zoneSanitized}_tilemap_HEIGHT")
-                } else {
-                    CLiteral(zone.mapHeight ?: 18)
-                }
-            // Phase 12.9 D1 fix — trailing-DISPLAY_ON heuristic (WR-01 exact-match):
-            // Check whether the scene's enterOps already ends with a DISPLAY_ON statement
-            // (e.g., LevelCardSceneBuilder.materialize() appends cEmit("DISPLAY_ON;")).
-            // If so, omit the inline DISPLAY_ON from the zone-load block to avoid turning
-            // on the LCD BEFORE the user clear runs.
-            //
-            // WR-01 fix: use EXACT match `code.trim() == "DISPLAY_ON;"` instead of the
-            // fragile `code.contains("DISPLAY_ON")` substring check. The substring form
-            // could accidentally suppress the LCD re-enable for a comment containing the
-            // token (e.g. cEmit("// DISPLAY_ON handled elsewhere")) or for a macro named
-            // DISPLAY_ONCE — leaving the LCD off after the scene enter → black screen.
-            val sceneEndsWithDisplayOn =
-                scene.enterOps.lastOrNull().let {
-                    it is RawOp && it.code.trim() == "DISPLAY_ON;"
-                }
+            }
+        // Re-enable the master LCD after set_bkg_data/set_bkg_tiles' implicit
+        // display_off() (clears LCDC.7 / LCDCF_ON = 0b10000000, bit 7).
+        // Phase 12.4 D-08 Rule 1 Bug fix; Phase 12.9 D1 fix: omit when scene already
+        // ends with DISPLAY_ON (sceneEndsWithDisplayOn). Prevents flip-frame 0F artifact.
+        val displayOn = if (sceneEndsWithDisplayOn) emptyList() else listOf(CRawCode("DISPLAY_ON;"))
+        return tilemapPlace + buildZonePaletteLoad(zone, zoneSanitized, gbcTarget) + displayOn
+    }
 
-            // Phase 12.9 Polish — card-overdraw signal:
-            // Detect whether this scene's enterOps contain the full-BG-plane clear emitted
-            // by LevelCardSceneBuilder.materialize(): fill_bkg_rect(0u, 0u, 32u, 32u, 0u).
-            // When the signal is true, the (0,0) tilemap-place _bkg_tiles_load_banked(bank,
-            // 0, 0, ...) is immediately wiped by the fill_bkg_rect clear and then the card
-            // redraws the tilemap CENTERED — the (0,0) place produces only a brief top-left
-            // flash before centering. Skipping the place eliminates the flash.
-            //
-            // The tile DATA load (pixelLoad = set_bkg_data) MUST be kept (the centered
-            // redraw references the loaded tile indices). The per-zone set_bkg_palette MUST
-            // be kept (palette RAM upload is independent of tile placement). Only the
-            // `_bkg_tiles_load_banked(bank, 0, 0, ...)` CExprStatement is skipped.
-            //
-            // Back-compat: non-card scenes (no full-screen clear in enterOps) keep the
-            // (0,0) tilemap-place UNCHANGED — byte-identical to pre-12.9-12 codegen.
-            val sceneHasCardOverdraw =
-                scene.enterOps.any {
-                    it is RawOp && it.code.contains("fill_bkg_rect(0u, 0u, 32u, 32u, 0u)")
-                }
-
-            // Phase 12.9 D-01: GBC-gated set_bkg_palette appends between
-            // _bkg_tiles_load_banked and DISPLAY_ON; mirrors GBDKPipeline.kt:4701
-            // _gbkt_default_bg_pal pattern.
-            //
-            // Phase 13.5-02: screenMode superset branch.
-            // When zone.screenMode == true (synthesized by SceneBuilder.screen()), replace
-            // the (0,0) tilemap-place with the full superset:
-            //   1. hide_sprites_range(0u, MAX_HARDWARE_SPRITES) — D-06 sprite reset
-            //   2. move_bkg(0u, 0u)                             — D-06 scroll reset
-            //   3. fill_bkg_rect(0u, 0u, 32u, 32u, 0u)          — D-05 BG full-plane clear
-            //   4. _bkg_tiles_load_banked(bank, centered-x, centered-y, W, H, tilemap)
-            // This one code path serves both full-screen (20x18) and banner (20x9) images —
-            // centering math auto-derives (0,0) for 20x18 and (0,4) for 20x9.
-            // DISPLAY_ON is handled by the existing inline emission below (unchanged).
-            val tilemapPlaceStatement =
-                when {
-                    // Phase 13.5-02: screenMode superset — centered draw + sprite/scroll
-                    // reset.
-                    zone.screenMode -> {
-                        // WR-02 fix: guard against programmatically constructed ZoneIR
-                        // with screenMode=true but tilesetPath=null (the DSL always sets
-                        // tilesetPath via screen(asset(...)), but the data class is
-                        // copyable).
-                        require(zone.tilesetPath != null) {
-                            "Zone '${zone.id}' has screenMode=true but tilesetPath is null. " +
-                                "screen() always sets tilesetPath; do not set screenMode=true " +
-                                "on zones without an asset."
-                        }
+    /**
+     * Builds the `set_bkg_data` pixel-load statement for a NEW-path zone, or an empty list for
+     * LEGACY-path zones ([ZoneIR.tilesetPath] == null).
+     *
+     * Phase 11.2 (REQ-3, D-A3, D-claude-4): emit set_bkg_data BEFORE _bkg_tiles_load_banked. Zones
+     * without tilesetPath (e.g. sport-racing's synthesized tile data) skip this call.
+     */
+    private fun buildZonePixelLoad(zone: ZoneIR, zoneSanitized: String): List<CStatement> =
+        if (zone.tilesetPath != null) {
+            listOf(
+                CExprStatement(
+                    CCall(
+                        "set_bkg_data",
                         listOf(
-                            // D-06: sprite reset — hide all hardware sprites (OAM clear).
-                            CRawCode("hide_sprites_range(0u, MAX_HARDWARE_SPRITES);"),
-                            // D-06: scroll reset — move BG to origin before centering.
-                            CExprStatement(CCall("move_bkg", listOf(CLiteral(0), CLiteral(0)))),
-                            // D-05: BG full-plane clear — wipe all 32x32 BG tile slots.
-                            // 32x32 covers the full GBC hardware-addressable BG map;
-                            // 20x18 would leave columns 20-31 with residual tile indices.
-                            CRawCode("fill_bkg_rect(0u, 0u, 32u, 32u, 0u);"),
-                            // Centered tilemap placement — exact formula from
-                            // LevelCardSceneBuilder.materialize():889-895 (PATTERNS.md
-                            // § "Don't Hand-Roll" — do NOT re-derive this formula).
-                            // widthArg/heightArg already set to
-                            // _zone_<id>_tilemap_WIDTH/HEIGHT
-                            // macros (NEW-path, tilesetPath != null, ensured by screen()
-                            // DSL).
-                            CExprStatement(
-                                CCall(
-                                    "_bkg_tiles_load_banked",
-                                    listOf(
-                                        CLiteral(bank),
-                                        CVar(
-                                            "(DEVICE_SCREEN_WIDTH - _zone_${zoneSanitized}_tilemap_WIDTH) / 2u"
-                                        ),
-                                        CVar(
-                                            "(DEVICE_SCREEN_HEIGHT - _zone_${zoneSanitized}_tilemap_HEIGHT) / 2u"
-                                        ),
-                                        widthArg,
-                                        heightArg,
-                                        CVar("_zone_${zoneSanitized}_tilemap"),
-                                    ),
-                                )
-                            ),
-                        )
-                    }
-                    // Phase 12.9 Polish: skip the (0,0) tilemap-place when the
-                    // card-overdraw
-                    // signal is detected (fill_bkg_rect(0u,0u,32u,32u,0u) in enterOps).
-                    // Normal scenes (sceneHasCardOverdraw == false) always include it.
-                    sceneHasCardOverdraw -> emptyList()
-                    // Default: normal (0,0) zone-origin placement.
-                    else ->
-                        listOf(
-                            CExprStatement(
-                                CCall(
-                                    "_bkg_tiles_load_banked",
-                                    listOf(
-                                        CLiteral(bank),
-                                        CLiteral(0),
-                                        CLiteral(0),
-                                        widthArg,
-                                        heightArg,
-                                        // Plan 11.1-17 (Phase D): NEW-path zones
-                                        // (zone.tilesetPath
-                                        // != null) consume the Gradle-task-emitted
-                                        // _zone_<id>_tilemap symbol (a tiled-repeat of the
-                                        // png2asset _tileset_map across mapWidth*mapHeight)
-                                        // instead of the legacy _zone_<id>_tiles stub.
-                                        // LEGACY-path zones (tilesetPath == null, e.g.
-                                        // SportVisitor's racer track which populates
-                                        // ZoneIR.tileData procedurally) keep referencing
-                                        // _zone_<id>_tiles verbatim. See Plan 11.1-15
-                                        // SUMMARY.
-                                        CVar(
-                                            if (zone.tilesetPath != null) {
-                                                "_zone_${zoneSanitized}_tilemap"
-                                            } else {
-                                                "_zone_${zoneSanitized}_tiles"
-                                            }
-                                        ),
-                                    ),
-                                )
-                            )
-                        )
-                }
-            pixelLoad +
-                tilemapPlaceStatement +
-                (
-                // Phase 12.9 D-01: GBC-gated per-zone palette upload.
-                // Upload the zone's PNG-derived palette to BG palette RAM AFTER tile data
-                // load (BCPS/BCPD writes are independent of VRAM), BEFORE DISPLAY_ON.
-                // NEW-path only (zone.tilesetPath != null): LEGACY-path zones do not have
-                // a _zone_<id>_tileset_palettes array (SEED-017 deferred unification).
-                // GBC-gated: DMG targets do not have BG palette RAM.
-                if (zone.tilesetPath != null && gbcTarget) {
-                    listOf(
-                        CRawCode(
-                            "set_bkg_palette(0u, _zone_${zoneSanitized}_tileset_PALETTE_COUNT," +
-                                " _zone_${zoneSanitized}_tileset_palettes);"
-                        )
+                            CLiteral(0),
+                            CVar("_zone_${zoneSanitized}_tileset_count"),
+                            CVar("_zone_${zoneSanitized}_tileset"),
+                        ),
                     )
-                } else {
-                    emptyList()
-                }) +
-                (
-                // Re-enable the master LCD after set_bkg_data/set_bkg_tiles' implicit
-                // display_off() (clears LCDC.7 / LCDCF_ON = 0b10000000, bit 7).
-                // SHOW_BKG only sets the BG-enable bit (LCDCF_BGON = 0b00000001, bit 0)
-                // which is already set by main()'s bootstrap — DISPLAY_ON is needed to
-                // restore bit 7 so wait_vbl_done() can receive a VBlank.
-                // Phase 12.4 D-08 Rule 1 Bug fix; same class as Phase 07.4 Plan 30.
-                //
-                // Phase 12.9 D1 fix: omit when scene already ends with DISPLAY_ON
-                // (sceneEndsWithDisplayOn hoisted above). Prevents flip-frame 0F artifact.
-                if (sceneEndsWithDisplayOn) emptyList() else listOf(CRawCode("DISPLAY_ON;")))
+                )
+            )
+        } else {
+            emptyList()
+        }
+
+    /**
+     * Builds the GBC per-zone palette upload statement, or an empty list for LEGACY-path zones
+     * ([ZoneIR.tilesetPath] == null) or non-GBC targets.
+     *
+     * Phase 12.9 D-01: GBC-gated per-zone palette upload. NEW-path only (zone.tilesetPath != null):
+     * LEGACY-path zones do not have a `_zone_<id>_tileset_palettes` array (SEED-017 deferred
+     * unification). GBC-gated: DMG targets do not have BG palette RAM.
+     */
+    private fun buildZonePaletteLoad(
+        zone: ZoneIR,
+        zoneSanitized: String,
+        gbcTarget: Boolean,
+    ): List<CStatement> =
+        if (zone.tilesetPath != null && gbcTarget) {
+            listOf(
+                CRawCode(
+                    "set_bkg_palette(0u, _zone_${zoneSanitized}_tileset_PALETTE_COUNT," +
+                        " _zone_${zoneSanitized}_tileset_palettes);"
+                )
+            )
+        } else {
+            emptyList()
         }
 
     /**
