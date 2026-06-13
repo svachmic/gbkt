@@ -2080,26 +2080,7 @@ class GBDKSystemVisitor(
     ): CFunction {
         val body =
             buildList<CStatement> {
-                val zonesWithOnExit = zones.filter { it.onExit.isNotEmpty() }
-                if (zonesWithOnExit.isNotEmpty()) {
-                    val onExitCases: List<CSwitchCase> = zones.mapIndexedNotNull { idx, zone ->
-                        val onExitOps: List<ScriptOp> = zone.onExit
-                        if (onExitOps.isNotEmpty()) {
-                            CSwitchCase(
-                                value = CLiteral(idx),
-                                body =
-                                    onExitOps.map { op -> ScriptOpVisitor.visit(op) } +
-                                        listOf(CBreak),
-                            )
-                        } else null
-                    }
-                    add(
-                        CSwitch(
-                            expr = CVar("_current_zone_id"),
-                            cases = onExitCases + CSwitchCase(value = null, body = listOf(CBreak)),
-                        )
-                    )
-                }
+                buildZoneOnExitSwitch(zones)?.let { add(it) }
                 add(
                     CIf(
                         condition = CBinaryExpr(CVar("entry_x"), "!=", CLiteral(0xFF)),
@@ -2108,56 +2089,7 @@ class GBDKSystemVisitor(
                                 CExprStatement(CBinaryExpr(playerX, "=", CVar("entry_x"))),
                                 CExprStatement(CBinaryExpr(playerY, "=", CVar("entry_y"))),
                             ),
-                        elseBody =
-                            listOf(
-                                CSwitch(
-                                    expr = CVar("edge"),
-                                    cases =
-                                        listOf(
-                                            CSwitchCase(
-                                                value = CLiteral(TransitionEdge.EAST.ordinal),
-                                                body =
-                                                    listOf(
-                                                        CExprStatement(
-                                                            CBinaryExpr(playerX, "=", CLiteral(0))
-                                                        ),
-                                                        CBreak,
-                                                    ),
-                                            ),
-                                            CSwitchCase(
-                                                value = CLiteral(TransitionEdge.WEST.ordinal),
-                                                body =
-                                                    listOf(
-                                                        CExprStatement(
-                                                            CBinaryExpr(playerX, "=", CLiteral(31))
-                                                        ),
-                                                        CBreak,
-                                                    ),
-                                            ),
-                                            CSwitchCase(
-                                                value = CLiteral(TransitionEdge.NORTH.ordinal),
-                                                body =
-                                                    listOf(
-                                                        CExprStatement(
-                                                            CBinaryExpr(playerY, "=", CLiteral(31))
-                                                        ),
-                                                        CBreak,
-                                                    ),
-                                            ),
-                                            CSwitchCase(
-                                                value = CLiteral(TransitionEdge.SOUTH.ordinal),
-                                                body =
-                                                    listOf(
-                                                        CExprStatement(
-                                                            CBinaryExpr(playerY, "=", CLiteral(0))
-                                                        ),
-                                                        CBreak,
-                                                    ),
-                                            ),
-                                            CSwitchCase(value = null, body = listOf(CBreak)),
-                                        ),
-                                )
-                            ),
+                        elseBody = listOf(buildEdgeAutoPositionSwitch(playerX, playerY)),
                     )
                 )
                 add(CExprStatement(CCall("zone_load_$sanitizedId", listOf(CVar("target_zone_id")))))
@@ -2175,6 +2107,71 @@ class GBDKSystemVisitor(
             body = body,
         )
     }
+
+    /**
+     * Builds the onExit switch dispatch for zone_transition; returns null when no zone has onExit.
+     */
+    private fun buildZoneOnExitSwitch(zones: List<ZoneIR>): CSwitch? {
+        val zonesWithOnExit = zones.filter { it.onExit.isNotEmpty() }
+        if (zonesWithOnExit.isEmpty()) return null
+        val onExitCases: List<CSwitchCase> = zones.mapIndexedNotNull { idx, zone ->
+            val onExitOps: List<ScriptOp> = zone.onExit
+            if (onExitOps.isNotEmpty()) {
+                CSwitchCase(
+                    value = CLiteral(idx),
+                    body = onExitOps.map { op -> ScriptOpVisitor.visit(op) } + listOf(CBreak),
+                )
+            } else null
+        }
+        return CSwitch(
+            expr = CVar("_current_zone_id"),
+            cases = onExitCases + CSwitchCase(value = null, body = listOf(CBreak)),
+        )
+    }
+
+    /**
+     * Builds the edge-auto-position switch used in zone_transition when entry coords are absent.
+     */
+    private fun buildEdgeAutoPositionSwitch(playerX: CVar, playerY: CVar): CSwitch =
+        CSwitch(
+            expr = CVar("edge"),
+            cases =
+                listOf(
+                    CSwitchCase(
+                        value = CLiteral(TransitionEdge.EAST.ordinal),
+                        body =
+                            listOf(
+                                CExprStatement(CBinaryExpr(playerX, "=", CLiteral(0))),
+                                CBreak,
+                            ),
+                    ),
+                    CSwitchCase(
+                        value = CLiteral(TransitionEdge.WEST.ordinal),
+                        body =
+                            listOf(
+                                CExprStatement(CBinaryExpr(playerX, "=", CLiteral(31))),
+                                CBreak,
+                            ),
+                    ),
+                    CSwitchCase(
+                        value = CLiteral(TransitionEdge.NORTH.ordinal),
+                        body =
+                            listOf(
+                                CExprStatement(CBinaryExpr(playerY, "=", CLiteral(31))),
+                                CBreak,
+                            ),
+                    ),
+                    CSwitchCase(
+                        value = CLiteral(TransitionEdge.SOUTH.ordinal),
+                        body =
+                            listOf(
+                                CExprStatement(CBinaryExpr(playerY, "=", CLiteral(0))),
+                                CBreak,
+                            ),
+                    ),
+                    CSwitchCase(value = null, body = listOf(CBreak)),
+                ),
+        )
 
     /**
      * Build `zone_check_edges_{id}()` with flag-gated edge transition dispatch.
