@@ -282,7 +282,7 @@ Plans:
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 12/12 | Complete   | 2026-06-12 |
-| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 27/27 | Complete   | 2026-06-13 |
+| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 28/27 | Complete   | 2026-06-13 |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |
