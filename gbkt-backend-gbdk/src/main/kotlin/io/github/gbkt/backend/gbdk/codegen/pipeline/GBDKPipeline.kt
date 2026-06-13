@@ -2158,37 +2158,7 @@ class GBDKPipeline {
                     val zoneId = zoneMatch.groupValues[1]
                     val bank = bankAllocation[zoneId] ?: 0
                     if (bank > 1) {
-                        // Plan 07.4-30 / D-N-SWITCHROM-RESTORE:
-                        // SWITCH_ROM inside a BANKED function (bank1.c) is unsafe. After
-                        // SWITCH_ROM(N) executes at physical 0x4000+, the CPU switches bank N
-                        // to the 0x4000-0x7FFF window. Subsequent instruction fetches (still at
-                        // 0x4000+ addresses) come from bank N data, not bank 1 code. The
-                        // SWITCH_ROM(1) "restore" in bank 1 code is never actually reached
-                        // because the CPU is already reading bank N garbage.
-                        //
-                        // Fix: route the bank-switch + set_bkg_tiles + restore through a HOME
-                        // bank (bank 0) helper function `_bkg_tiles_load_banked`. HOME bank code
-                        // lives at 0x0000-0x3FFF and is NEVER remapped by the MBC switch — the
-                        // switch only affects reads from 0x4000-0x7FFF. The helper safely:
-                        //   1. Calls SWITCH_ROM(N) while fetching from HOME (no remapping risk)
-                        //   2. Calls set_bkg_tiles (also HOME bank)
-                        //   3. Calls SWITCH_ROM(1) to restore bank 1 for the BANKED caller
-                        //   4. Returns to the BANKED caller with bank 1 properly restored
-                        val argsMatch = bkgTilesArgsPattern.find(op.code)
-                        val callRaw =
-                            if (argsMatch != null) {
-                                val x = argsMatch.groupValues[1].trim()
-                                val y = argsMatch.groupValues[2].trim()
-                                val w = argsMatch.groupValues[3].trim()
-                                val h = argsMatch.groupValues[4].trim()
-                                val tiles = argsMatch.groupValues[5].trim()
-                                "_bkg_tiles_load_banked(${bank}u, $x, $y, $w, $h, $tiles);"
-                            } else {
-                                // Fallback: can't parse args — emit original op unguarded.
-                                // This should not happen for well-formed set_bkg_tiles RawOps.
-                                op.code
-                            }
-                        result += RawOp(callRaw)
+                        result += RawOp(buildBankedBkgTilesCallRaw(op, bank, bkgTilesArgsPattern))
                         continue
                     }
                 }
@@ -2196,6 +2166,31 @@ class GBDKPipeline {
             result += op
         }
         return result
+    }
+
+    /**
+     * Builds the raw C call string for a cross-bank `set_bkg_tiles` redirection to the HOME-bank
+     * helper `_bkg_tiles_load_banked`. Falls back to the original [op] code when the args cannot be
+     * parsed (should not happen for well-formed `set_bkg_tiles` RawOps).
+     *
+     * Plan 07.4-30 / D-N-SWITCHROM-RESTORE: SWITCH_ROM inside a BANKED function (bank1.c) is unsafe
+     * — after SWITCH_ROM(N) the CPU reads bank N code at 0x4000-0x7FFF and the SWITCH_ROM(1)
+     * restore is never reached. Routing through a HOME-bank (0x0000-0x3FFF, never remapped) helper
+     * makes the sequence safe. Extracted from [guardCrossBankBgTilemapAccess] to reduce cognitive
+     * complexity (E-24).
+     */
+    private fun buildBankedBkgTilesCallRaw(
+        op: RawOp,
+        bank: Int,
+        bkgTilesArgsPattern: Regex,
+    ): String {
+        val argsMatch = bkgTilesArgsPattern.find(op.code) ?: return op.code
+        val x = argsMatch.groupValues[1].trim()
+        val y = argsMatch.groupValues[2].trim()
+        val w = argsMatch.groupValues[3].trim()
+        val h = argsMatch.groupValues[4].trim()
+        val tiles = argsMatch.groupValues[5].trim()
+        return "_bkg_tiles_load_banked(${bank}u, $x, $y, $w, $h, $tiles);"
     }
 
     /**
