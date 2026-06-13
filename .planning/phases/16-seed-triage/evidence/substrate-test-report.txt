@@ -1,0 +1,99 @@
+# Substrate Test Report — Phase 16 Seed Triage (W1)
+#
+# Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+# Run date: 2026-06-12
+# Command: ./gradlew test
+# Result: BUILD SUCCESSFUL in 2m 4s (179 actionable tasks: 99 executed, 80 up-to-date)
+#
+# ─────────────────────────────────────────────────────────────────────
+# FULL JVM SUITE SUMMARY
+# ─────────────────────────────────────────────────────────────────────
+#
+# Total test XML files:   358 (across all modules)
+# TOTAL tests:           3656
+# PASSED:                3655
+# FAILURES:                 0
+# ERRORS:                   0
+# SKIPPED:                  1  (INV-8 in BanksEmissionTest — known skip, prerequisite missing)
+#
+# Overall result: GREEN (0 failures)
+# ─────────────────────────────────────────────────────────────────────
+
+## SEED-014 Sentinel Tests: BanksEmissionTest (INV-2 + INV-6)
+
+Module: gbkt-examples/banks
+Test class: io.github.gbkt.examples.banks.BanksEmissionTest
+Total tests: 8 (7 pass, 1 skip)
+
+INV-2 — bkg_tiles_load_banked wrapper in main_c has SWITCH_ROM sequence: GREEN (PASS)
+INV-6 — play_enter in bank1 calls _bkg_tiles_load_banked for playZone: GREEN (PASS)
+INV-1 — play scene functions carry BANKED keyword in bank1: GREEN (PASS)
+INV-3 — gbkt-build_properties carries mbcType 0x1B: GREEN (PASS)
+INV-4 — save_game_saves in main_c emits ENABLE_RAM and DISABLE_RAM: GREEN (PASS)
+INV-5 — title_enter_trampoline section comment retains title_enter name (SEED-015): GREEN (PASS)
+INV-7 — play_enter calls set_bkg_data before _bkg_tiles_load_banked with include(): GREEN (PASS)
+INV-8 — _zone_playZone_tilemap is 360-byte checker: SKIPPED
+         (INV-8 prerequisite: requires screen-sized tilemap; _zone_playZone_tilemap.c has 4-byte stub)
+
+TRIAGE IMPLICATION (SEED-014):
+  INV-2 = GREEN at HEAD → SEED-014 disposition: VERIFIED-ALREADY-FIXED
+  (The hasZoneSceneBinder guard at GBDKPipeline.kt:1164-1168 is sufficient; SWITCH_ROM
+  sequence is present in the _bkg_tiles_load_banked wrapper in main.c)
+
+TRIAGE IMPLICATION (SEED-015):
+  INV-5 = GREEN at HEAD → title_enter_trampoline correctly calls title_enter() (not pause_enter())
+  SEED-015 disposition: VERIFIED-ALREADY-FIXED
+
+## SEED-020 Sentinel Tests: GameIRSerializerTest
+
+Module: gbkt-ir
+Test class: io.github.gbkt.core.ir.GameIRSerializerTest
+Total tests: 15 (15 pass, 0 skip)
+Result: GREEN (all 15 pass)
+
+Test cases (all PASS):
+  - empty game with no scenes actors or variables round-trips through JSON
+  - minimal game round-trips through JSON
+  - complex game with scenes actors and ScriptOps round-trips through JSON
+  - collections (hashTables, pools, ringBuffers, fixedSlots) round-trip through JSON
+  - scene with collision data round-trips through JSON
+  - all core ScriptOp subtypes serialize and deserialize correctly
+  - all core Expr subtypes serialize and deserialize correctly
+  - Assign with compound AssignOp variants round-trip through JSON
+  - TriggerSystem with Expr args round-trips through JSON
+  - ForOp with nested body round-trips through JSON
+  - BindCurrentLevel round-trips through GameIRSerializer as typed BindCurrentLevel not RawOp
+  - toJson output contains schemaVersion, name, and scenes keys with 2-space indentation
+  - unknown ScriptOp type in JSON produces RawOp placeholder without throwing
+  - unknown Expr type in JSON produces Literal placeholder without throwing
+  - schema version mismatch produces valid GameIR without throwing
+
+TRIAGE IMPLICATION (SEED-020):
+  GameIRSerializer round-trip tests all GREEN at HEAD.
+  SEED-020 (serializer stubs) is likely VERIFIED-ALREADY-FIXED — cluster agent must
+  confirm the specific concern (non-empty zones/systems/flags) via source inspection.
+
+## MetaspritesGeneratedSpriteByteIdentityTest (folded todo)
+
+Module: gbkt-examples/metasprites
+Test class: io.github.gbkt.examples.metasprites.MetaspritesGeneratedSpriteByteIdentityTest
+Total tests: 1 (1 pass, 0 skip)
+Result: GREEN (PASS) — UNEXPECTED
+
+Test case:
+  - generated elephant_tiles c file is byte-identical to pre-12-4 baseline: GREEN (PASS)
+
+NOTE: The folded todo "metasprites-byte-identity-baseline-stale-since-12.8" predicted this
+test would be RED (stale golden file from pre-12.8 before -keep_palette_order was added).
+However, the test is GREEN at HEAD. This means either:
+  (a) The baseline file was updated to match current output (rendering the todo moot), OR
+  (b) The -keep_palette_order flag change did not alter the byte output for elephant.c
+The test GREEN result changes the expected disposition for this folded todo —
+cluster agent must inspect the baseline file date and current elephant.c to confirm.
+Possible updated disposition: VERIFIED-ALREADY-FIXED (if baseline was updated to correct output).
+
+## Additional GameIRSerializerSubsystemsTest
+
+Module: gbkt-ir
+Test class: io.github.gbkt.core.ir.GameIRSerializerSubsystemsTest
+(Included for completeness; full result: see test-results XML)

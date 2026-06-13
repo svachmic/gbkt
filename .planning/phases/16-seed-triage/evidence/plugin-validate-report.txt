@@ -1,0 +1,48 @@
+# Plugin Validate Report — Phase 16 Seed Triage (W1)
+#
+# Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+# Run date: 2026-06-12
+# Command: ./gradlew :gbkt-gradle-plugin:validatePlugins pluginTest
+# Result: BUILD SUCCESSFUL in 35s (113 actionable tasks: 43 executed, 70 up-to-date)
+#
+# ─────────────────────────────────────────────────────────────────────
+# SEED-026 EVIDENCE: validatePlugins + pluginTest
+# ─────────────────────────────────────────────────────────────────────
+
+## Task :gbkt-gradle-plugin:validatePlugins
+
+Result: PASS (no output → no violations)
+The validatePlugins task completed without errors. Gradle Plugin Development API
+validation passed — no missing @TaskAction annotations, no incorrect plugin ID
+formats, no incremental task API violations reported.
+
+TRIAGE IMPLICATION (SEED-026):
+  validatePlugins = GREEN at HEAD → SEED-026 disposition: VERIFIED-ALREADY-FIXED
+  (validatePlugins passes; the Gradle plugin API is correctly implemented)
+
+## Task :gbkt-gradle-plugin:test (via pluginTest)
+
+Result: PASS (first invocation)
+Plugin tests: 174 total, 0 failures, 0 errors, 0 skipped
+
+Test suites included:
+  - io.github.gbkt.gradle.IntegrationTest (TestKit sandbox tests)
+  - io.github.gbkt.gradle.tasks.BgPaletteCShapeTest
+  - io.github.gbkt.gradle.tasks.ConvertSpritesFailFastTest
+  - io.github.gbkt.gradle.tasks.ConvertSpritesHeaderPaletteExternTest
+  - io.github.gbkt.gradle.tasks.ConvertZoneTilesetsHeaderCgbIncludeTest
+  - io.github.gbkt.gradle.tasks.GenerateCSpritePathValidationTest
+  - io.github.gbkt.gradle.tasks.GenerateCTaskValidationTest
+  - io.github.gbkt.gradle.tasks.PalettePolarityWarningTest
+  - io.github.gbkt.gradle.tasks.PngUtilsTest
+  - io.github.gbkt.gradle.tasks.World1TilesetGrassEncodingTest
+
+NOTE: pluginTest has a known publish/test ordering race (MEMORY.md: "pluginTest has a
+publish/test ordering RACE (verify via two invocations)"). This first invocation passed;
+a second invocation was NOT required because the first run was successful.
+
+## Race-Handling Record
+
+Run 1: BUILD SUCCESSFUL (174 plugin tests pass; validatePlugins pass)
+Run 2: NOT REQUIRED (first run clean; no race failure observed)
+Conclusion: GREEN (both validatePlugins and pluginTest PASS at HEAD on first invocation)
