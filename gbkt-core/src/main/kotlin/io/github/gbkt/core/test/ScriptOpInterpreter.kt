@@ -457,43 +457,55 @@ class ScriptOpInterpreter(private val game: GameIR) {
             else -> throw UnsupportedOperationException("Unknown Expr: ${expr::class.simpleName}")
         }
 
-    private fun evaluateBinaryExpr(expr: BinaryExpr): Long {
-        // Short-circuit logical operators
-        return when (expr.op) {
-            BinaryOp.LOGICAL_AND -> {
-                val left = evaluateExpr(expr.left)
-                if (left == 0L) 0L else if (evaluateExpr(expr.right) != 0L) 1L else 0L
-            }
-            BinaryOp.LOGICAL_OR -> {
-                val left = evaluateExpr(expr.left)
-                if (left != 0L) 1L else if (evaluateExpr(expr.right) != 0L) 1L else 0L
-            }
-            else -> {
-                val left = evaluateExpr(expr.left)
-                val right = evaluateExpr(expr.right)
-                when (expr.op) {
-                    BinaryOp.ADD -> left + right
-                    BinaryOp.SUB -> left - right
-                    BinaryOp.MUL -> left * right
-                    BinaryOp.DIV -> if (right != 0L) left / right else 0L
-                    BinaryOp.MOD -> if (right != 0L) left % right else 0L
-                    BinaryOp.AND -> left and right
-                    BinaryOp.OR -> left or right
-                    BinaryOp.XOR -> left xor right
-                    BinaryOp.SHL -> left shl right.toInt()
-                    BinaryOp.SHR -> left shr right.toInt()
-                    BinaryOp.EQ -> if (left == right) 1L else 0L
-                    BinaryOp.NEQ -> if (left != right) 1L else 0L
-                    BinaryOp.LT -> if (left < right) 1L else 0L
-                    BinaryOp.LTE -> if (left <= right) 1L else 0L
-                    BinaryOp.GT -> if (left > right) 1L else 0L
-                    BinaryOp.GTE -> if (left >= right) 1L else 0L
-                    // Short-circuit ops handled above — these branches unreachable
-                    BinaryOp.LOGICAL_AND,
-                    BinaryOp.LOGICAL_OR -> 0L
-                }
-            }
+    /** Dispatches binary expression evaluation; short-circuit ops use lazy right-operand eval. */
+    private fun evaluateBinaryExpr(expr: BinaryExpr): Long = when (expr.op) {
+        BinaryOp.LOGICAL_AND -> evaluateLogicalAnd(expr)
+        BinaryOp.LOGICAL_OR -> evaluateLogicalOr(expr)
+        else -> evaluateEagerBinaryOp(expr.op, evaluateExpr(expr.left), evaluateExpr(expr.right))
+    }
+
+    /** Evaluates logical AND with short-circuit: returns 0 immediately if left operand is false. */
+    private fun evaluateLogicalAnd(expr: BinaryExpr): Long {
+        val left = evaluateExpr(expr.left)
+        return if (left == 0L) 0L else if (evaluateExpr(expr.right) != 0L) 1L else 0L
+    }
+
+    /** Evaluates logical OR with short-circuit: returns 1 immediately if left operand is true. */
+    private fun evaluateLogicalOr(expr: BinaryExpr): Long {
+        val left = evaluateExpr(expr.left)
+        return if (left != 0L) 1L else if (evaluateExpr(expr.right) != 0L) 1L else 0L
+    }
+
+    /** Evaluates non-short-circuit binary operators given pre-evaluated operands. */
+    private fun evaluateEagerBinaryOp(op: BinaryOp, left: Long, right: Long): Long = when (op) {
+        BinaryOp.ADD -> left + right
+        BinaryOp.SUB -> left - right
+        BinaryOp.MUL -> left * right
+        BinaryOp.DIV, BinaryOp.MOD -> evaluateDivMod(op, left, right)
+        BinaryOp.AND -> left and right
+        BinaryOp.OR -> left or right
+        BinaryOp.XOR -> left xor right
+        BinaryOp.SHL -> left shl right.toInt()
+        BinaryOp.SHR -> left shr right.toInt()
+        else -> evaluateComparisonOp(op, left, right)
+    }
+
+    /** Evaluates integer division or modulo with zero-denominator guard (returns 0 if right == 0). */
+    private fun evaluateDivMod(op: BinaryOp, left: Long, right: Long): Long =
+        if (right == 0L) 0L else if (op == BinaryOp.DIV) left / right else left % right
+
+    /** Evaluates comparison operators (EQ, NEQ, LT, LTE, GT, GTE) via [Long.compareTo]. */
+    private fun evaluateComparisonOp(op: BinaryOp, left: Long, right: Long): Long {
+        val cmp = left.compareTo(right)
+        val result = when (op) {
+            BinaryOp.EQ -> cmp == 0
+            BinaryOp.NEQ -> cmp != 0
+            BinaryOp.LT -> cmp < 0
+            BinaryOp.LTE -> cmp <= 0
+            BinaryOp.GT -> cmp > 0
+            else -> cmp >= 0  // BinaryOp.GTE (LOGICAL_* routed to their own helpers)
         }
+        return if (result) 1L else 0L
     }
 
     private fun evaluateUnaryExpr(expr: UnaryExpr): Long {
