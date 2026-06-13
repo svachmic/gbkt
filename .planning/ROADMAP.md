@@ -29,7 +29,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 
 - [x] **Phase 16: Seed Triage** - Establish terminal dispositions for all 44 seeds against current master; gate for all codegen fix phases — COMPLETE 2026-06-12 (47 dispositions: 24 VERIFIED-FIXED, 12 CONFIRMED-OPEN, 10 RE-DEFERRED; seeds/ is live confirmed-open queue)
 - [x] **Phase 17: Docs Reconciliation and Quality Cleanup** - DSL_REFERENCE.md accuracy restored; detekt clean; magic-pixel literals eliminated (completed 2026-06-12)
-- [ ] **Phase 18: Deprecation Removals and Sonar Burn-down** - `whenever`/`runIf` unified and deprecated `combatIsInState` overload removed; S3776 HIGH findings reduced to 0
+- [x] **Phase 18: Deprecation Removals and Sonar Burn-down** - `whenever`/`runIf` unified and deprecated `combatIsInState` overload removed; S3776 HIGH findings reduced to 0 (completed 2026-06-13)
 - [ ] **Phase 19: Codegen Fixes — Metasprite Cluster** - Visual-parity and structural latent metasprite bugs fixed with emission test coverage
 - [ ] **Phase 20: Codegen Fixes — Banks and Sprite Transparency** - Banks trio resolved (discuss-phase gated); tRNS sprite outline fixed
 - [ ] **Phase 21: Codegen Fixes — Platformer and Remaining Seeds** - Platformer cEmit escapes replaced; all remaining seeds dispositioned; seeds directory empty
@@ -220,7 +220,7 @@ Plans:
 
 **Wave 17** *(blocked on Wave 16 completion)*
 
-- [ ] 18-27-PLAN.md — Phase-end consolidated sweep + full suite + SonarCloud S3776=0 gate
+- [x] 18-27-PLAN.md — Phase-end consolidated sweep + full suite + SonarCloud S3776=0 gate
 
 **Cross-cutting constraints:**
 
@@ -282,7 +282,7 @@ Plans:
 | 1–15 (66 incl. decimals) | v0.1.0 | 652/652 | Complete | 2026-06-09 |
 | 16. Seed Triage | v0.1.1 | 10/10 | Complete    | 2026-06-12 |
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 12/12 | Complete   | 2026-06-12 |
-| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 25/27 | In Progress|  |
+| 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 27/27 | Complete   | 2026-06-13 |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 0/TBD | Not started | - |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |
