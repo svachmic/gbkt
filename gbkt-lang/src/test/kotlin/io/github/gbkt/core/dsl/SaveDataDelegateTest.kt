@@ -113,7 +113,7 @@ class SaveDataDelegateTest {
                     @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
                     val sScene =
                         scene("s") {
-                            frame { whenever(buttons.select.pressed) { triggerSystem(saves) } }
+                            frame { runIf(buttons.select.pressed) { triggerSystem(saves) } }
                         }
                     start = sScene
                 }
@@ -121,7 +121,7 @@ class SaveDataDelegateTest {
 
         val scene = ir.scenes.first()
         val frameOps = scene.frameOps
-        // Unwrap the IfOp from whenever() to reach the TriggerSystem inside
+        // Unwrap the IfOp from runIf() to reach the TriggerSystem inside
         val triggerOps =
             frameOps
                 .filterIsInstance<io.github.gbkt.core.ir.IfOp>()

@@ -146,7 +146,7 @@ data class AssignableVar(
  * Sets [this] variable to [value] inside the active [ScriptBuilder].
  *
  * Requires that this call occurs inside a `ScriptBuilderContext.with()` block (e.g. inside `scene {
- * frame { ... } }` or inside `whenever { ... }`). Throws if no builder is active.
+ * frame { ... } }` or inside `runIf { ... }`). Throws if no builder is active.
  */
 infix fun AssignableVar.set(value: Expr) {
     ScriptBuilderContext.current?.assign(name, value, AssignOp.SET)
@@ -190,7 +190,7 @@ private fun emitWrapGuard(sb: ScriptBuilder, varName: String, n: Int) {
         sb.assign(varName, BinaryExpr(VarRef(varName), BinaryOp.AND, Literal(n - 1)), AssignOp.SET)
     } else {
         // Compare-reset: if (varName >= n) { varName = 0 }
-        sb.whenever(BinaryExpr(VarRef(varName), BinaryOp.GTE, Literal(n))) {
+        sb.runIf(BinaryExpr(VarRef(varName), BinaryOp.GTE, Literal(n))) {
             assign(varName, Literal(0), AssignOp.SET)
         }
     }
@@ -317,7 +317,7 @@ operator fun AssignableVar.rem(other: AssignableVar): Expr = toExpr() % other.to
 
 operator fun AssignableVar.unaryMinus(): Expr = -toExpr()
 
-// --- Comparison operators (return Expr for whenever/ifOp conditions) ---
+// --- Comparison operators (return Expr for runIf/ifOp conditions) ---
 
 infix fun AssignableVar.isAbove(other: Int): Expr = toExpr() isAbove other
 
@@ -601,7 +601,7 @@ fun GameBuilder.subpixel(fractionalBits: Int = 4, block: GameBuilder.() -> Unit)
  *     scene("gameplay") {
  *         frame {
  *             forOp("i", 0, bricks.size) {
- *                 whenever(bricks[varRef("i")] isEqualTo 1) {
+ *                 runIf(bricks[varRef("i")] isEqualTo 1) {
  *                     bricks[varRef("i")] = 0
  *                 }
  *             }
@@ -694,7 +694,7 @@ data class ArrayVar(val name: String, val elementType: VarType, val arraySize: I
      * Generated C: `for (INT8 _arr_<name>_i = 0; _arr_<name>_i <= N-1; _arr_<name>_i++) {
      * _name[_arr_<name>_i] = value; }`
      *
-     * Must be called inside a script builder block (enter/frame/exit/whenever/forOp/etc.).
+     * Must be called inside a script builder block (enter/frame/exit/runIf/forOp/etc.).
      */
     fun fill(value: Int) {
         val ctx =

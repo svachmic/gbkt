@@ -189,39 +189,15 @@ class ScriptBuilder {
     }
 
     // -------------------------------------------------------------------------
-    // Conditional sugar (whenever)
+    // Conditionals
     // -------------------------------------------------------------------------
 
     /**
-     * Sugar for a one-armed conditional that lowers to [IfOp] with empty otherwise list.
+     * One-armed conditional. Lowers to [IfOp] — identical to [ifOp].
      *
-     * Use [whenever] for top-level reactive triggers (e.g. button-held, collision, game-state
-     * checks) that are evaluated every frame as independent guards.
-     *
-     * For **single-frame imperative conditionals** (clamps after mutation, wrap-after-increment),
-     * prefer [runIf] / [unless] / [orElse] — they read as control flow, not reactive triggers.
-     *
-     * Equivalent to `runIf(condition) { ... }` in the generated C.
-     *
-     * Tier-3 roadmap: a future phase will unify `whenever` → `runIf` for reactive sites; tracked as
-     * SEED-023-whenever-runif-unification. Not deprecated this phase.
-     */
-    fun whenever(condition: Expr, block: ScriptBuilder.() -> Unit) {
-        val loc = captureV2Location()
-        val bodyBuilder = ScriptBuilder()
-        ScriptBuilderContext.with(bodyBuilder) { bodyBuilder.block() }
-        ops += IfOp(condition, bodyBuilder.build(), emptyList(), sourceLocation = loc)
-    }
-
-    // -------------------------------------------------------------------------
-    // Single-frame imperative conditionals
-    // -------------------------------------------------------------------------
-
-    /**
-     * Single-frame imperative conditional. Lowers to [IfOp] — identical to [ifOp].
-     *
-     * Use for clamps, guards, and post-mutation checks that execute once per frame in sequence. For
-     * top-level reactive triggers evaluated as independent guards every frame, use [whenever].
+     * Use for reactive triggers (button-held, collision, game-state checks) evaluated every frame
+     * as independent guards, as well as for single-frame imperative conditionals (clamps after
+     * mutation, wrap-after-increment).
      */
     fun runIf(condition: Expr, block: ScriptBuilder.() -> Unit) = ifOp(condition, block)
 
@@ -299,7 +275,7 @@ class ScriptBuilder {
      * ```kotlin
      * @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
      * // Inside a scene frame block:
-     * whenever(buttons.select.pressed) { triggerSystem(saves) }
+     * runIf(buttons.select.pressed) { triggerSystem(saves) }
      * ```
      */
     fun triggerSystem(ref: SystemRef, args: Map<String, Expr> = emptyMap()) {
@@ -525,7 +501,7 @@ class ScriptBuilder {
      * block.
      *
      * ```kotlin
-     * whenever(buttons.a.pressed) { setAnimationState(player, "attack") }
+     * runIf(buttons.a.pressed) { setAnimationState(player, "attack") }
      * ```
      */
     fun setAnimationState(actor: ActorRef, stateName: String) {
@@ -602,7 +578,7 @@ class ScriptBuilder {
      * Typically called every N frames in the scene's `frame { }` block:
      * ```kotlin
      * frame {
-     *     whenever((frameCount and 7) isEqualTo 0) {
+     *     runIf((frameCount and 7) isEqualTo 0) {
      *         pathfindStep(enemy, player)
      *     }
      * }
@@ -643,14 +619,14 @@ class ScriptBuilder {
      *
      * Applies acceleration, gravity, fall speed clamping, and velocity to position. The actor must
      * have a [io.github.gbkt.core.ir.PhysicsConfig] set via [ActorBuilder.physics]. Floor collision
-     * and bounce detection are game-specific — add `whenever(actor.y isAbove FLOOR_Y) { ... }` for
+     * and bounce detection are game-specific — add `runIf(actor.y isAbove FLOOR_Y) { ... }` for
      * bounce/reset logic.
      *
      * Typically called every frame in the scene's `frame { }` block:
      * ```kotlin
      * frame {
      *     physicsUpdate(ball)
-     *     whenever(ball.y isAbove 144) { ball.vy set -2 }  // floor bounce
+     *     runIf(ball.y isAbove 144) { ball.vy set -2 }  // floor bounce
      * }
      * ```
      */
@@ -754,12 +730,12 @@ class ScriptBuilder {
  * Returns an [Expr] that evaluates to the current value of the named story flag.
  *
  * Produces a [VarRef] to the `_flag_{flagName}` C global variable (non-zero = flag set). Use in
- * [ScriptBuilder.whenever] conditions to react to flag state.
+ * [ScriptBuilder.runIf] conditions to react to flag state.
  *
  * String-based overload — prefer the typed [checkFlag] overload with [FlagRef].
  *
  * ```kotlin
- * whenever(checkFlag("bossDefeated")) { navigate(victoryScene) }
+ * runIf(checkFlag("bossDefeated")) { navigate(victoryScene) }
  * ```
  *
  * @param flagName Raw flag name string.
@@ -773,7 +749,7 @@ fun checkFlag(flagName: String): Expr = VarRef("_flag_$flagName")
  *
  * ```kotlin
  * val bossDefeated = flags { page("story") { flag("bossDefeated") } }
- * whenever(checkFlag(bossDefeated)) { navigate(victoryScene) }
+ * runIf(checkFlag(bossDefeated)) { navigate(victoryScene) }
  * ```
  *
  * @param flag Typed [FlagRef] returned by [FlagPageBuilder.flag].
