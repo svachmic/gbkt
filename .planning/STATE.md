@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 18-04-PLAN.md
-last_updated: "2026-06-13T10:23:33.822Z"
+stopped_at: Completed 18-08-PLAN.md
+last_updated: "2026-06-13T10:33:30.775Z"
 last_activity: 2026-06-13
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 49
-  completed_plans: 29
+  completed_plans: 30
   percent: 33
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
-Plan: 8 of 27
+Plan: 9 of 27
 Status: Ready to execute
 Last activity: 2026-06-13
 
@@ -405,6 +405,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 18 P04 | 2 | 2 tasks | 2 files |
 | Phase 18 P05 | 2 min | 1 tasks | 2 files |
 | Phase 18 P06 | 3 min | 3 tasks | 3 files |
+| Phase 18 P08 | 3 min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -914,6 +915,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Replace whenever with runIf throughout DSL_REFERENCE.md (DEPR-01 doc half)
 - [Phase ?]: DEPR-02: Deleted typed-vs-string equivalence test; String overload removed, no meaningful re-expression possible
 - [Phase ?]: Two-tier deprecation rule: post-1.0 uses @Deprecated grace period; pre-1.0/Hardening milestones use hard removal with CHANGELOG as minimum bar (D-04)
+- [Phase ?]: N-01 batchAssert: EXTRACT-METHOD (not NOSONAR) — per-type helpers + CheckResult data class reduce cc=74 to below threshold
 
 ### Pending Todos
 
@@ -1009,8 +1011,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-13T10:23:33.817Z
-Stopped at: Completed 18-04-PLAN.md
+Last session: 2026-06-13T10:33:30.768Z
+Stopped at: Completed 18-08-PLAN.md
 
 ## Operator Next Steps
 
