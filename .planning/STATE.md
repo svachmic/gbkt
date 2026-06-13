@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 17-02-PLAN.md
-last_updated: "2026-06-12T19:18:45.324Z"
-last_activity: 2026-06-12 -- Phase 17 execution started
+stopped_at: Completed 17-04-PLAN.md
+last_updated: "2026-06-12T19:29:00Z"
+last_activity: 2026-06-12 -- Phase 17 Plan 04 complete (12 FEAT backlog seeds + REQUIREMENTS expansion)
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 22
-  completed_plans: 13
+  completed_plans: 15
   percent: 17
 ---
 
@@ -55,9 +55,9 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 17 (docs-reconciliation-and-quality-cleanup) — EXECUTING
-Plan: 4 of 12
+Plan: 5 of 12
 Status: Ready to execute
-Last activity: 2026-06-12 -- Phase 17 execution started
+Last activity: 2026-06-12 -- Phase 17 Plan 04 complete (12 FEAT backlog seeds + REQUIREMENTS expansion)
 
 Resume signal: /gsd-execute-phase 17 (Docs + QUAL) or /gsd-execute-phase 18 (DEPR + SONAR) — both parallel-capable with each other; Phase 19 depends on Phase 16
 Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable; Phase 19 (Metasprite Fixes) now unblocked
@@ -392,6 +392,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 17 P01 | 7 | 2 tasks | 1 files |
 | Phase 17 P02 | 1 | 3 tasks | 2 files |
 | Phase 17 P03 | 4 | 2 tasks | 2 files |
+| Phase 17 P04 | 7 | 2 tasks | 13 files |
 
 ## Accumulated Context
 

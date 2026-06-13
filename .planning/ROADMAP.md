@@ -95,7 +95,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 17-04-PLAN.md — Archive 12 FEAT-*.md backlog seeds (verbatim + provenance) + expand REQUIREMENTS FEAT-XX
+- [x] 17-04-PLAN.md — Archive 12 FEAT-*.md backlog seeds (verbatim + provenance) + expand REQUIREMENTS FEAT-XX
 - [ ] 17-05-PLAN.md — Replace 8 in-scope 160/144 literals + ROM byte-identity smoke + exemption table + D-06 seed
 
 **Wave 3** *(blocked on Wave 2 completion)*
