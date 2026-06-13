@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: Ready for Plan 21
-stopped_at: Completed 18-17-PLAN.md
-last_updated: "2026-06-13T12:49:28.487Z"
+status: Ready for Plan 23
+stopped_at: Completed 18-22-PLAN.md
+last_updated: "2026-06-13T13:00:44Z"
 last_activity: 2026-06-13
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 49
-  completed_plans: 43
+  completed_plans: 45
   percent: 33
 ---
 
@@ -55,8 +55,8 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
-Plan: 21 of 27 (COMPLETE)
-Status: Ready for Plan 21
+Plan: 22 of 27 (COMPLETE)
+Status: Ready for Plan 23
 Last activity: 2026-06-13
 
 Resume signal: /gsd-execute-phase 17 (Docs + QUAL) or /gsd-execute-phase 18 (DEPR + SONAR) — both parallel-capable with each other; Phase 19 depends on Phase 16
@@ -135,6 +135,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 
 | Phase/Plan | Duration | Tasks | Files |
 |------------|----------|-------|-------|
+| Phase 18 P22 | 8 min | 2 tasks | 2 files |
 | Phase 18 P20 | 3 min | 2 tasks | 1 file |
 | Phase 18 P16 | 4 min | 2 tasks | 1 file |
 | Phase 02 P04 | 12 min | 2 tasks | 5 files |
