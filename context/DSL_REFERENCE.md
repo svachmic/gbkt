@@ -42,7 +42,8 @@ val midX = (ball.x + paddle.x) / 2   // Expr arithmetic
 
 Use `i16FixedVar` when you need 12.4 fixed-point sub-pixel physics. Declare in pixels;
 the framework stores `initialPixels shl 4` internally. Extract pixel coords for rendering
-with `.toPixel()`. Group related declarations with the no-op `subpixel { }` scope.
+with `.toPixel()`. Group related declarations with `subpixel { }` (emits no IR — variables
+declared inside are recorded at the enclosing game scope, not a sub-scope).
 
 ```kotlin
 // --- BEFORE (hand-rolled) ---
@@ -55,7 +56,8 @@ var posX by i16FixedVar(64)        // declare in pixels; stores 1024 internally 
 var posY by i16FixedVar(72)        // screenCenter Y = 72 px
 ball.moveTo(posX.toPixel(), posY.toPixel())  // extracts pixel coord (>> 4u)
 
-// Optional: group declarations with subpixel { } for readability (no-op scope; same IR)
+// Optional: group declarations with subpixel { } for readability
+// (emits no IR — variables inside are at enclosing game scope, not a sub-scope)
 subpixel {
     var posX by i16FixedVar(80)
     var posY by i16FixedVar(72)
