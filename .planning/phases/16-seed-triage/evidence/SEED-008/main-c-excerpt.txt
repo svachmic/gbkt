@@ -1,0 +1,31 @@
+SEED-008 Generated-C Inspection (VRAM tile-slot collision: actors + metasprites)
+Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+Source file: gbkt-examples/metasprites-stress/build/gbkt/generated/main.c
+Note: metasprites example has no actors — metasprites-stress has player (actor) + elephant + tiger
+Inspection method: grep -n "set_sprite_data" main.c; manual scope verification in main()
+
+--- EXCERPT (metasprites-stress/build/gbkt/generated/main.c, set_sprite_data calls) ---
+
+[main.c:241]     set_sprite_data(0u, 2u, sprites_player_tiles);
+[main.c:242]     set_sprite_data(2u, sprites_elephant_tiles_count, sprites_elephant_tiles);
+[main.c:243]     set_sprite_data(2u + sprites_elephant_tiles_count, sprites_tiger_tiles_count, sprites_tiger_tiles);
+
+--- ANALYSIS ---
+
+The VRAM allocator uses a shared monotonic counter across actors and metasprites:
+- Player (actor) sprites: start at slot 0, use 2 slots → occupies 0..1
+- Elephant metasprite: starts at slot 2 (after player) → occupies 2..(2+count-1)
+- Tiger metasprite: starts at 2+elephantCount → occupies contiguously after elephant
+
+NO two set_sprite_data calls start at slot 0. The Route A fix (shared monotonic VRAM
+allocator) is implemented: GBDKPipelineV2.kt emits actor tiles first, then metasprite
+tiles continuing from where actors left off.
+
+The original defect (two independent nextTile=0 counters) would have produced:
+  set_sprite_data(0u, 2u, sprites_player_tiles);         <- slot 0
+  set_sprite_data(0u, <elephantCount>, elephant_tiles);  <- COLLIDES at slot 0 (BUG)
+
+PROPOSED DISPOSITION: VERIFIED-ALREADY-FIXED
+Evidence basis: scoped generated-C inspection in metasprites-stress main() (which exercises
+the actor + metasprite coexistence path not present in the simpler metasprites example).
+The shared monotonic VRAM allocator (Route A from seed) is confirmed present in generated C.

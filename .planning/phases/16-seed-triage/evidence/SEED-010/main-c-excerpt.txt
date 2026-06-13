@@ -1,0 +1,46 @@
+SEED-010 Generated-C Inspection (metasprite symbol collision for multi-metasprite)
+Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+Source files:
+  - gbkt-examples/metasprites-stress/build/gbkt/generated/sprites/elephant.c
+  - gbkt-examples/metasprites-stress/build/gbkt/generated/sprites/tiger.c (inferred from bank1.c refs)
+  - gbkt-examples/metasprites-stress/build/gbkt/generated/bank1.c
+Note: metasprites example has only ONE metasprite (elephant); metasprites-stress has TWO
+      (elephant + tiger) — needed to verify multi-metasprite symbol collision absence
+Inspection method: grep -n "const metasprite_t" elephant.c; grep -n "metasprites\[" bank1.c
+
+--- EXCERPT (metasprites/build/gbkt/generated/sprites/elephant.c, metasprite descriptor arrays) ---
+
+[elephant.c:65]  const metasprite_t elephant_metasprite0[] = { ... };
+[elephant.c:100] const metasprite_t elephant_metasprite1[] = { ... };
+[elephant.c:137] const metasprite_t elephant_metasprite2[] = { ... };
+[elephant.c:174] const metasprite_t elephant_metasprite3[] = { ... };
+[elephant.c:210] const metasprite_t elephant_metasprite4[] = { ... };
+[elephant.c:246] const metasprite_t* const elephant_metasprites[5] = {
+
+--- EXCERPT (metasprites-stress bank1.c, multi-metasprite frame calls) ---
+
+[bank1.c:23]  hiwater += move_metasprite_flipy(elephant_metasprites[_elephantIdx], ...);
+[bank1.c:38]  hiwater += move_metasprite_ex(elephant_metasprites[_elephantIdx], ...);
+  ...
+[bank1.c:52]  hiwater += move_metasprite_flipy(tiger_metasprites[_tigerIdx], ...);
+[bank1.c:67]  hiwater += move_metasprite_ex(tiger_metasprites[_tigerIdx], ...);
+
+--- VERDICT ---
+
+DEFECT ABSENT: The old non-namespaced pattern `sprite_metasprite_0[]` and `sprite_metasprites[]`
+(which would collide with a second metasprite) does NOT appear anywhere in generated C.
+
+Current symbols ARE namespaced by metasprite ID (derived from png2asset's native output):
+- elephant: `elephant_metasprite0[]`, ..., `elephant_metasprites[]`, `_elephantIdx`
+- tiger: `tiger_metasprite0[]`, ..., `tiger_metasprites[]`, `_tigerIdx`
+
+Two metasprites coexist in metasprites-stress with distinct, non-colliding symbol names.
+The pipeline was migrated to use png2asset's native symbol output (Path A), which naturally
+produces ID-namespaced symbols from the filename. No `sprite_metasprite_N` collision risk.
+
+Note: This is a LATENT-class seed that the single-metasprites example would NOT trigger.
+Evidence is sourced from metasprites-stress which exercises the two-metasprite path.
+
+PROPOSED DISPOSITION: VERIFIED-ALREADY-FIXED
+Evidence basis: scoped generated-C inspection of metasprites-stress (two-metasprite example);
+ID-namespaced symbols confirmed; old `sprite_metasprite_N` pattern absent.

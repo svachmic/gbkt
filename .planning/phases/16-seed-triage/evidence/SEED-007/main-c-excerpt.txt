@@ -1,0 +1,36 @@
+SEED-007 Source Inspection (actor palette slot default)
+Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+Source file: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/GameBuilder.kt
+Inspection method: grep -n "actorPalette|else 0|paletteSlot" GameBuilder.kt
+
+--- SOURCE EXCERPT (GameBuilder.kt lines 700-721, actor palette injection block) ---
+
+[GameBuilder.kt:700]         // Inject per-actor palette SetPalette ops into each scene's enter handler.
+[GameBuilder.kt:704]         // counter, not the constant 0 — otherwise every auto-slotted actor palette collapses
+[GameBuilder.kt:705]         // into slot 0 and only the LAST actor's palette is actually loaded at runtime.
+[GameBuilder.kt:709]         // incrementally; here `mapNotNull` skips actors without palettes, so we use a
+[GameBuilder.kt:710]         // standalone `actorPaletteAutoSlot++` counter rather than `mapIndexedNotNull { idx, … }`
+[GameBuilder.kt:713]         var actorPaletteAutoSlot = 0
+[GameBuilder.kt:714]         val actorPaletteOps = actors.mapNotNull { actor ->
+[GameBuilder.kt:715]             actor.palette?.let { pal ->
+[GameBuilder.kt:716]                 val slot = if (pal.slot >= 0) pal.slot else actorPaletteAutoSlot++
+[GameBuilder.kt:717]                 SetPalette(pal.name, slot, PaletteType.SPRITE)
+[GameBuilder.kt:718]             }
+[GameBuilder.kt:719]         }
+[GameBuilder.kt:721]             if (actorPaletteOps.isNotEmpty()) {
+[GameBuilder.kt:723]                 scene.copy(enterOps = actorPaletteOps + scene.enterOps)
+
+--- VERDICT ---
+
+DEFECT ABSENT: Line 716 uses `actorPaletteAutoSlot++` (incremental counter) instead of
+the old `else 0` hardcoded constant. The comment at line 704-705 explicitly documents the
+fix and the original bug it prevents. Multiple actors with auto-slot palettes now get
+sequential slots (0, 1, 2, ...) rather than all collapsing to slot 0.
+
+Note: The metasprites example uses SceneBuilder.palette() for GBC sprite palettes, not
+actor-level palette injection — so this fix path is NOT exercised by the metasprites
+generated-C artifact. Evidence is from source inspection of GameBuilder.kt.
+
+PROPOSED DISPOSITION: VERIFIED-ALREADY-FIXED
+Evidence basis: source inspection of GameBuilder.kt:716 (actorPaletteAutoSlot++ counter)
+The same fix shape as the already-merged SceneBuilder.palette() fix is confirmed present.

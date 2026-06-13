@@ -1,0 +1,35 @@
+SEED-006 Generated-C Inspection
+Substrate SHA: 8cef3dbca7d0868f42cf0d627921b8559d7754e8
+Source file: gbkt-examples/metasprites/build/gbkt/generated/main.c
+Scope: play_frame() function body (lines 243–329)
+Inspection method: grep -n "_elephant_subPalette" main.c; manual function-scope verification
+
+--- EXCERPT (play_frame body, relevant lines) ---
+
+[main.c:243] void play_frame(void) {
+[main.c:244]     uint8_t hiwater = 0u;
+  ...
+[main.c:281]     {
+[main.c:282]     uint8_t subpal = _rot >> 2;
+[main.c:283]     _elephant_subPalette = subpal;          <-- ASSIGNMENT PRESENT
+[main.c:284]     _elephant_flipX = (_rot & 0x3u) >> 0u;
+[main.c:285]     _elephant_flipY = (_rot & 0x3u) >> 1u;
+[main.c:286]     switch (_rot & 0x3u) {
+[main.c:287]         case 1:
+[main.c:288]             hiwater += move_metasprite_flipy(elephant_metasprites[_idx], 0, subpal, hiwater, ...);
+               ...
+[main.c:303]         default:
+[main.c:304]             hiwater += move_metasprite_ex(elephant_metasprites[_idx], 0, subpal, hiwater, ...);
+[main.c:305]             break;
+[main.c:306]     }
+[main.c:307] }
+
+--- VERDICT ---
+
+DEFECT ABSENT: `_elephant_subPalette = subpal;` is present at line 283, immediately after
+computing `uint8_t subpal = _rot >> 2;`, and BEFORE the move_metasprite_ex() call.
+The global is correctly assigned from the local subpal variable in the play_frame() scope.
+
+PROPOSED DISPOSITION: VERIFIED-ALREADY-FIXED
+Evidence basis: scoped generated-C inspection (function-body scope, not file-level contains)
+Fix attributed to: MetaspriteVisitor.kt — assignment added to moveMetaspriteOp emission path
