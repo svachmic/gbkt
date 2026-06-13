@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Phase 18 context gathered
-last_updated: "2026-06-13T09:58:10.755Z"
+stopped_at: Completed 18-03-PLAN.md
+last_updated: "2026-06-13T10:01:03.903Z"
 last_activity: 2026-06-13 -- Phase 18 execution started
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 49
-  completed_plans: 24
+  completed_plans: 25
   percent: 33
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 18 (deprecation-removals-and-sonar-burn-down) — EXECUTING
-Plan: 3 of 27
+Plan: 4 of 27
 Status: Ready to execute
 Last activity: 2026-06-13 -- Phase 18 execution started
 
@@ -401,6 +401,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 17 P11 | 45 | 3 tasks | 5 files |
 | Phase 17 P12 | 3 | 2 tasks | 13 files |
 | Phase 18 P02 | 4 | 1 tasks | 1 files |
+| Phase 18 P03 | 2 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -908,6 +909,7 @@ Recent decisions affecting current work:
 - [Phase ?]: D-16 cross-doc pass: zero stale-API references in any non-DSL_REFERENCE doc; FEAT-* provenance D-11 complete with real removal-commit hashes
 - [Phase ?]: D-01: Hard-remove whenever with no @Deprecated grace — pool-collision overload relocated to runIf, all 80+ call sites migrated in same atomic wave
 - [Phase ?]: Replace whenever with runIf throughout DSL_REFERENCE.md (DEPR-01 doc half)
+- [Phase ?]: DEPR-02: Deleted typed-vs-string equivalence test; String overload removed, no meaningful re-expression possible
 
 ### Pending Todos
 
@@ -1003,8 +1005,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-13T09:57:59.446Z
-Stopped at: Phase 18 context gathered
+Last session: 2026-06-13T10:01:03.897Z
+Stopped at: Completed 18-03-PLAN.md
 
 ## Operator Next Steps
 
