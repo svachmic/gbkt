@@ -313,7 +313,7 @@ Plans:
 
 **Wave 2** *(blocked on 21-01 — shares PlatformerVisitor.kt)*
 
-- [ ] 21-02-PLAN.md — D-09 SEED-022 shared gameUsesTilemapCollisionPathC util (gbkt-backend-api) + delegate both callers + lockstep test
+- [x] 21-02-PLAN.md — D-09 SEED-022 shared gameUsesTilemapCollisionPathC util (gbkt-backend-api) + delegate both callers + lockstep test
 
 **Wave 3** *(blocked on 21-01 + 21-02 — needs final ROM)*
 
@@ -338,4 +338,4 @@ Plans:
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 30/27 | Complete   | 2026-06-13 |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
-| 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 5/8 | In Progress|  |
+| 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 6/8 | In Progress|  |
