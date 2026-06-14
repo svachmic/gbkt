@@ -59,7 +59,12 @@ class PlatformerTemplateUatTest {
             "platformer-template.gb not found — run buildRom first",
         )
         EVIDENCE_DIR.mkdirs()
-        val baseConfig = AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = EVIDENCE_DIR)
+        // GBC-target ROM must capture in GBC mode; the DMG default renders a GBC-target ROM with
+        // an inverted palette. discoverFiles() wires the .noi symFile but does NOT enable gbcMode
+        // (it is an independent field defaulting to false → GameboyType.DMG), so set it explicitly.
+        val baseConfig =
+            AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = EVIDENCE_DIR)
+                .copy(gbcMode = true)
         val metadata =
             if (METADATA_FILE.exists()) GameMetadata.fromJsonFile(METADATA_FILE) else null
         val agent = StepAgent(baseConfig, metadata)

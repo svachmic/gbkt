@@ -1,6 +1,6 @@
 file: /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/21-codegen-fixes-platformer-and-remaining-seeds/evidence/uat-screenshots/anchor-5/01-nextlevel-flip.png
 dimensions: 160x144
-distinct_colours: 4
-dominant_ratio: 0.8533
-dominant_count: 19659
+distinct_colours: 7
+dominant_ratio: 0.8503
+dominant_count: 19590
 total_pixels: 23040
