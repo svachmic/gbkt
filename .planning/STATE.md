@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 20-01-PLAN.md
-last_updated: "2026-06-14T08:00:54.876Z"
-last_activity: 2026-06-14 -- Phase 20 execution started
+stopped_at: Completed 20-03-PLAN.md
+last_updated: "2026-06-14T08:06:41Z"
+last_activity: 2026-06-14 -- Phase 20 Plan 03 complete (FIX-04 visual oracle PNGs captured)
 progress:
   total_phases: 6
   completed_phases: 4
@@ -55,9 +55,9 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 20 (codegen-fixes-banks-and-sprite-transparency) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
-Last activity: 2026-06-14 -- Phase 20 execution started
+Last activity: 2026-06-14 -- Phase 20 Plan 03 complete (FIX-04 visual oracle PNGs captured)
 
 Resume signal: /gsd-execute-phase 18 (Plan 27 — SonarCloud scan gate remaining)
 Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable; Phase 19 (Metasprite Fixes) now unblocked
@@ -425,6 +425,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 19 P03 | 2 | 2 tasks | 6 files |
 | Phase 19 P04 | 2 | 2 tasks | 1 files |
 | Phase 20 P01 | 3min | 2 tasks | 4 files |
+| Phase 20 P03 | 4min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -433,6 +434,8 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- Plan 20-03: FIX-04 oracle test classes use separate Phase-20-specific test files with dedicated EVIDENCE_DIR (not new methods in existing tests) — mirrors Phase 12.8/19 clone-and-retarget precedent; avoids invasive EVIDENCE_DIR changes to production test classes
+- Plan 20-03: Both FIX-04 captures use gbcMode=true — metasprites and platformer-template both target GBC_COMPATIBLE; DMG mode produces false grayscale/green-tinted artifacts (D-05)
 - Plan 18-20: E-11/E-14 S3776 cleared via value-returning extract-method (buildZoneOnExitSwitch, buildEdgeAutoPositionSwitch, buildEncounterRollStatements, buildEncounterEntryGuard); GBDKSystemVisitor.kt S3776 = 0; byte-identity ROM sweep green
 - Plan 10.2-07: Fix shape Option B (Order-Tweaked) chosen for DEF-10.1-13-C 5th layer — swap addAll(hoistedBgFillCheckerboardStatements) before addAll(allSpriteDataLoads) in GBDKPipelineV2.kt mainBody buildList; mechanism = LCDC.4=1 shared $8000-$97FF VRAM, last-write wins, Plan 22 emit order corrupted sprite tile 0; all 5 locked tests preserved; RED test at commit 20691a7d
 - UAT_GUIDE.md created with 3 real Phase 07 debugging walkthroughs; emulator_press documented with frames+1 semantics; variable type range table added; UAT-02 requirement satisfied
