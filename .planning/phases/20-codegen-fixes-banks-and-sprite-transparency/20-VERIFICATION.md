@@ -1,8 +1,9 @@
 ---
 phase: 20-codegen-fixes-banks-and-sprite-transparency
 verified: 2026-06-14T12:00:00Z
-status: human_needed
-score: 3/5
+status: passed
+score: 5/5
+human_signoff: "2026-06-14 — both FIX-04 visual oracles (SC-3, SC-4) approved by user via 20-UAT.md (2/2 passed). Player-vs-box overlap question resolved via MCP A/B comparison against the original GBDK platformer_template (intended sprite-vs-hitbox overhang, faithful to reference)."
 overrides_applied: 0
 human_verification:
   - test: "Inspect evidence/fix-04/metasprites-sprite-outline.png and confirm the elephant metasprite renders without a black spurious outline — specifically, that transparent pixels around the elephant have no black border artifact. Accept only if the elephant silhouette shows no solid dark outline on the checkerboard background."

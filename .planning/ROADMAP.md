@@ -31,7 +31,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 - [x] **Phase 17: Docs Reconciliation and Quality Cleanup** - DSL_REFERENCE.md accuracy restored; detekt clean; magic-pixel literals eliminated (completed 2026-06-12)
 - [x] **Phase 18: Deprecation Removals and Sonar Burn-down** - `whenever`/`runIf` unified and deprecated `combatIsInState` overload removed; S3776 HIGH findings reduced to 0 (completed 2026-06-13)
 - [x] **Phase 19: Codegen Fixes — Metasprite Cluster** - Visual-parity and structural latent metasprite bugs fixed with emission test coverage (completed 2026-06-13)
-- [ ] **Phase 20: Codegen Fixes — Banks and Sprite Transparency** - Banks trio resolved (discuss-phase gated); tRNS sprite outline fixed — automated verification 3/5; SC-3/SC-4 awaiting human visual sign-off (/gsd-verify-work 20)
+- [x] **Phase 20: Codegen Fixes — Banks and Sprite Transparency** - Banks trio (SEED-014/015/016) re-verified closed; tRNS sprite outline confirmed fixed — verification 5/5, both FIX-04 visual oracles human-signed-off; security verified (0 threats) (completed 2026-06-14)
 - [ ] **Phase 21: Codegen Fixes — Platformer and Remaining Seeds** - Platformer cEmit escapes replaced; all remaining seeds dispositioned; seeds directory empty
 
 ## Phase Details
@@ -312,5 +312,5 @@ Plans:
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 12/12 | Complete   | 2026-06-12 |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 30/27 | Complete   | 2026-06-13 |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
-| 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete   | 2026-06-14 |
+| 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |

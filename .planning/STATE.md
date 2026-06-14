@@ -4,8 +4,8 @@ milestone: v0.1.1
 milestone_name: Hardening
 status: verifying
 stopped_at: Completed 20-04-PLAN.md
-last_updated: "2026-06-14T08:18:37.617Z"
-last_activity: 2026-06-14 -- Phase 20 Plan 03 complete (FIX-04 visual oracle PNGs captured)
+last_updated: "2026-06-14T11:06:22.242Z"
+last_activity: 2026-06-14
 progress:
   total_phases: 6
   completed_phases: 5
@@ -54,10 +54,10 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 20 (codegen-fixes-banks-and-sprite-transparency) — EXECUTING
-Plan: 4 of 4
+Phase: 21
+Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-06-14 -- Phase 20 Plan 03 complete (FIX-04 visual oracle PNGs captured)
+Last activity: 2026-06-14
 
 Resume signal: /gsd-execute-phase 18 (Plan 27 — SonarCloud scan gate remaining)
 Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable; Phase 19 (Metasprite Fixes) now unblocked
@@ -84,7 +84,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 
 **Velocity:**
 
-- Total plans completed: 377
+- Total plans completed: 381
 - Average duration: 6.4 min
 - Total execution time: 0.71 hours
 
@@ -126,6 +126,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | 15 | 6 | - | - |
 | 16 | 10 | - | - |
 | 19 | 4 | - | - |
+| 20 | 4 | - | - |
 
 **Recent Trend:**
 
