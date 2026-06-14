@@ -52,6 +52,15 @@ data class AgentSessionConfig(
     }
 
     companion object {
+        /** Byte offset in the ROM header where the CGB compatibility flag lives. */
+        private const val CGB_FLAG_OFFSET = 0x143L
+
+        /** CGB-enhanced ROM — runs in color on GBC, in monochrome on DMG. */
+        private const val CGB_ENHANCED = 0x80
+
+        /** GBC-only ROM — requires Game Boy Color. */
+        private const val CGB_ONLY = 0xC0
+
         /**
          * Discovers companion files (sym, metadata, source maps) based on the standard Gradle
          * plugin output layout.
@@ -59,6 +68,11 @@ data class AgentSessionConfig(
          * Convention: ROM at `build/gbkt/output/game.gb` -> sym at `build/gbkt/output/game.noi`,
          * metadata at `build/gbkt/generated/game_metadata.json`, source maps at
          * `build/gbkt/generated/`.
+         *
+         * The [AgentSessionConfig.gbcMode] field is automatically derived from the ROM header byte
+         * at offset `0x143` (CGB compatibility flag). Values `0x80` (CGB-enhanced) and `0xC0`
+         * (GBC-only) set `gbcMode = true`; all other values (including EOF for short ROMs) yield
+         * `gbcMode = false`.
          */
         fun discoverFiles(romFile: File, screenshotDir: File? = null): AgentSessionConfig {
             val outputDir = romFile.parentFile
@@ -73,12 +87,20 @@ data class AgentSessionConfig(
                 generatedDir?.let { File(it, "game_metadata.json") }?.takeIf { it.exists() }
             val sourceMapsDir = generatedDir?.takeIf { it.exists() }
 
+            val gbcMode =
+                romFile.inputStream().use { stream ->
+                    stream.skip(CGB_FLAG_OFFSET)
+                    val cgbByte = stream.read() // -1 on EOF (short ROM) → treated as DMG
+                    cgbByte == CGB_ENHANCED || cgbByte == CGB_ONLY
+                }
+
             return AgentSessionConfig(
                 romFile = romFile,
                 symFile = symFile,
                 metadataFile = metadataFile,
                 sourceMapsDir = sourceMapsDir,
                 screenshotDir = screenshotDir ?: File(outputDir ?: File("."), "screenshots"),
+                gbcMode = gbcMode,
             )
         }
     }

@@ -111,7 +111,11 @@ class AgentSessionConfigTest {
 
         val config = AgentSessionConfig.discoverFiles(rom)
 
-        assertEquals(true, config.gbcMode, "CGB-enhanced ROM (0x80 at 0x143) should yield gbcMode=true")
+        assertEquals(
+            true,
+            config.gbcMode,
+            "CGB-enhanced ROM (0x80 at 0x143) should yield gbcMode=true",
+        )
     }
 
     @Test
