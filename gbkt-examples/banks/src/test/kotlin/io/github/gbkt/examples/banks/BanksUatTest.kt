@@ -33,57 +33,36 @@ import org.junit.jupiter.api.Assumptions
  *
  * Per CLAUDE.md Visual Evidence Rule (and Phase 11 D-10): anchors 1 + 2 are VISUAL truths and MUST
  * capture a runtime screenshot at the climax frame. Variable assertions like `_current_scene ==
- * play` are NECESSARY but never SUFFICIENT — the PNG under
- * `.planning/phases/11-.../evidence/uat-screenshots/` is the binding evidence artifact. Phase 07.4
- * plans 14–18 verified SC-4 via variable evidence and burned 5 plans before user UAT revealed the
- * runtime ROM never rendered the target tilemap; this phase does NOT repeat that mistake for
- * anchors 1 + 2.
+ * play` are NECESSARY but never SUFFICIENT — the PNG under gitignored scratch is the binding
+ * evidence artifact. Phase 07.4 plans 14–18 verified SC-4 via variable evidence and burned 5 plans
+ * before user UAT revealed the runtime ROM never rendered the target tilemap; this phase does NOT
+ * repeat that mistake for anchors 1 + 2.
+ *
+ * Captures and all side artifacts (perceptual .txt, .gbst save-states) land under gitignored
+ * scratch (`build/gbkt/screenshots/` and `build/gbkt/test-evidence/`). No files are written to
+ * committed paths.
  */
 class BanksUatTest {
 
     companion object {
-        // Executor runs Gradle from repo root, but JVM tests for a subproject
-        // resolve `user.dir` to the subproject dir (`gbkt-examples/banks/`),
-        // so `../../.planning/...` climbs back to the repo root.
-        private val EVIDENCE_DIR =
-            File(
-                "../../.planning/phases/11-port-banks-gbdk-example-to-gbkt/evidence/uat-screenshots"
-            )
+        // Gitignored scratch directories for smoke captures and side artifacts.
+        private val SCRATCH_DIR = File(System.getProperty("user.dir"), "build/gbkt/screenshots")
+        private val EVIDENCE_SCRATCH_DIR =
+            File(System.getProperty("user.dir"), "build/gbkt/test-evidence")
         private val ROM_FILE = File("build/gbkt/output/banks.gb")
         private val METADATA_FILE = File("build/gbkt/generated/game_metadata.json")
     }
 
     private fun newAgent(): StepAgent {
         Assumptions.assumeTrue(ROM_FILE.exists(), "banks.gb not found — run buildRom first")
-        EVIDENCE_DIR.mkdirs()
-        val baseConfig = AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = EVIDENCE_DIR)
+        SCRATCH_DIR.mkdirs()
+        EVIDENCE_SCRATCH_DIR.mkdirs()
+        val baseConfig = AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = SCRATCH_DIR)
         val metadata =
             if (METADATA_FILE.exists()) GameMetadata.fromJsonFile(METADATA_FILE) else null
         val agent = StepAgent(baseConfig, metadata)
         agent.start()
         return agent
-    }
-
-    /**
-     * Captures a screenshot via [StepAgent.captureScreenshot] (which writes
-     * `{label}_frame{frameNumber}.png` into [EVIDENCE_DIR]) and renames the file to the plan's
-     * exact target path. JSON sidecar is renamed in lock-step to keep the evidence dir tidy.
-     * Mirrors the helper in `SimplePhysicsUatTest.captureAndRename` (Phase 09.4 Plan 02).
-     */
-    private fun captureAndRename(agent: StepAgent, label: String, targetName: String): File {
-        val captured = agent.captureScreenshot(label)
-        val target = File(EVIDENCE_DIR, targetName)
-        if (target.exists()) target.delete()
-        check(captured.renameTo(target)) {
-            "Failed to rename ${captured.absolutePath} -> ${target.absolutePath}"
-        }
-        val sidecar = File(captured.parentFile, captured.nameWithoutExtension + ".json")
-        if (sidecar.exists()) {
-            val targetJson = File(EVIDENCE_DIR, target.nameWithoutExtension + ".json")
-            if (targetJson.exists()) targetJson.delete()
-            sidecar.renameTo(targetJson)
-        }
-        return target
     }
 
     /**
@@ -166,9 +145,9 @@ class BanksUatTest {
                 "File: ${file.absolutePath}",
         )
 
-        // Write evidence sidecar so future verifiers can audit metric values
-        // without re-running the test.
-        File(EVIDENCE_DIR, "$label-perceptual.txt")
+        // Write perceptual evidence sidecar to gitignored scratch so future verifiers can audit
+        // metric values without re-running the test.
+        File(EVIDENCE_SCRATCH_DIR, "$label-perceptual.txt")
             .writeText(
                 "file: ${file.absolutePath}\n" +
                     "dimensions: ${img.width}x${img.height}\n" +
@@ -186,9 +165,8 @@ class BanksUatTest {
     // without a "MBC5 unknown address/value" trap, and the play scene must be
     // visibly rendered on screen.
     //
-    // Per CLAUDE.md Visual Evidence Rule (lines 84–119): the PNG at
-    // `evidence/uat-screenshots/anchor1-play-scene.png` is the BINDING evidence.
-    // The companion variable assertion (`Observation.scene == "play"`) is
+    // Per CLAUDE.md Visual Evidence Rule (lines 84–119): the PNG at scratch is the BINDING
+    // evidence. The companion variable assertion (`Observation.scene == "play"`) is
     // necessary but never sufficient for the "play scene is visible" truth.
     //
     // Per WR-07 (REVIEW.md) + Plan 11.1-14: the byte-length threshold
@@ -225,12 +203,7 @@ class BanksUatTest {
             // Visual evidence — the screenshot is the binding artifact per
             // CLAUDE.md Visual Evidence Rule. Without this PNG, a green
             // assertion below is insufficient (Phase 07.4 SC-4 history).
-            val screenshotPath =
-                captureAndRename(
-                    agent,
-                    label = "anchor1_play_scene",
-                    targetName = "anchor1-play-scene.png",
-                )
+            val screenshotPath = agent.captureScreenshot("anchor1_play_scene")
             assertTrue(
                 screenshotPath.exists(),
                 "anchor1 screenshot must exist after capture: ${screenshotPath.absolutePath}",
@@ -286,7 +259,7 @@ class BanksUatTest {
     // the mid-write and the loadState write were silently dropped.
     //
     // Note: StepAgent.saveState / loadState take a File (not a label String). A temp
-    // file under EVIDENCE_DIR is used so the artifact is also reviewable on disk.
+    // file under EVIDENCE_SCRATCH_DIR is used so the artifact is also reviewable on disk.
     @Test
     fun `anchor 4 SRAM persistence via GBST round-trip`() {
         newAgent().use { agent ->
@@ -303,8 +276,8 @@ class BanksUatTest {
             val preBytes = ByteArray(4) { i -> agent.readMemory(0xA000 + i).toByte() }
 
             // Snapshot emulator state to a file (StepAgent.saveState takes a File).
-            // Use EVIDENCE_DIR so the artifact is reviewable alongside other UAT evidence.
-            val stateFile = File(EVIDENCE_DIR, "anchor4-pre.gbst")
+            // Use EVIDENCE_SCRATCH_DIR so the artifact lands in gitignored scratch.
+            val stateFile = File(EVIDENCE_SCRATCH_DIR, "anchor4-pre.gbst")
             agent.saveState(stateFile)
 
             // Per CR-01 / Plan 11.1-11: explicit ENABLE_RAM so the mid-mutation writeMemory
@@ -339,8 +312,8 @@ class BanksUatTest {
             val postBytes = ByteArray(4) { i -> agent.readMemory(0xA000 + i).toByte() }
 
             // Evidence-before-assert: write the evidence text BEFORE the assertion fires so
-            // a RED test still produces a reviewable artifact on disk.
-            File(EVIDENCE_DIR, "anchor4-sram-persistence.txt")
+            // a RED test still produces a reviewable artifact on disk (under gitignored scratch).
+            File(EVIDENCE_SCRATCH_DIR, "anchor4-sram-persistence.txt")
                 .writeText(
                     "pre: ${preBytes.toList()}\n" +
                         "mid: ${midBytes.toList()}\n" +
@@ -384,8 +357,7 @@ class BanksUatTest {
     // "tilemap is visible" anchor. A variable assertion like
     // `_current_tileset_id == 1` is INSUFFICIENT — that exact pattern misfired
     // in Phase 07.4 round-2 and the SC stayed GREEN while the runtime ROM never
-    // rendered the track. The PNG under
-    // `evidence/uat-screenshots/anchor2-tilemap.png` is the BINDING evidence.
+    // rendered the track. The PNG captured to scratch is the BINDING evidence.
     //
     // Per WR-07 (REVIEW.md) + Plan 11.1-14: the byte-length threshold
     // `screenshotPath.length() > 200` was discredited — a 413-byte solid-white
@@ -412,12 +384,7 @@ class BanksUatTest {
             // `_current_tileset_id` or `_current_zone`) are INSUFFICIENT for
             // "tilemap pixels are visible" per the CLAUDE.md Visual Evidence
             // Rule. The PNG IS the evidence.
-            val screenshotPath =
-                captureAndRename(
-                    agent,
-                    label = "anchor2_tilemap",
-                    targetName = "anchor2-tilemap.png",
-                )
+            val screenshotPath = agent.captureScreenshot("anchor2_tilemap")
             assertTrue(
                 screenshotPath.exists(),
                 "anchor2 screenshot must exist: ${screenshotPath.absolutePath}",
