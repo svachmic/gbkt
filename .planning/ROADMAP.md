@@ -305,7 +305,7 @@ Plans:
 
 **Wave 1** *(parallel — no file overlap)*
 
-- [ ] 21-01-PLAN.md — D-05 pivotAdjust DSL lift (TilemapCollisionBuilder setter + visitor config-read) + snap-arithmetic emission test (D-07)
+- [x] 21-01-PLAN.md — D-05 pivotAdjust DSL lift (TilemapCollisionBuilder setter + visitor config-read) + snap-arithmetic emission test (D-07)
 - [ ] 21-03-PLAN.md — D-08 GameIRSerializer deserialize 10 stubbed collections + round-trip test (gbkt-ir)
 - [ ] 21-04-PLAN.md — D-10/D-11 SEED-027 + SEED-028 close VERIFIED-ALREADY-FIXED (structural grep + archive)
 - [ ] 21-05-PLAN.md — D-12 SEED-029 whenever→runIf doc/KDoc sweep (grep-first inventory) + archive
@@ -338,4 +338,4 @@ Plans:
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 30/27 | Complete   | 2026-06-13 |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
-| 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/8 | Planned | - |
+| 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 1/8 | In Progress|  |
