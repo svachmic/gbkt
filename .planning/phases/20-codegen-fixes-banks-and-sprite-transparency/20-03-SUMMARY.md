@@ -137,7 +137,18 @@ Both PNGs are ready for human visual sign-off at phase verification. They confir
 - Plan 20-04 (byte-identity oracle sweep) is the next plan in Phase 20 wave 1
 - No blockers
 
-## Self-Check
+## Self-Check: PASSED
+
+All files found:
+- MetaspritePhase20OracleTest.kt — FOUND
+- PlatformerTemplatePhase20OracleTest.kt — FOUND
+- metasprites-sprite-outline.png — FOUND (1423 bytes)
+- platformer-player-transparency.png — FOUND (1200 bytes)
+
+All commits exist:
+- 4c945f85 — FOUND (Task 1)
+- c8183549 — FOUND (Task 2)
+- 1fb25d74 — FOUND (metadata/SUMMARY)
 
 ---
 *Phase: 20-codegen-fixes-banks-and-sprite-transparency*
