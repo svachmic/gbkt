@@ -56,6 +56,7 @@ import io.github.gbkt.genre.platformer.domain.PlatformType
 import io.github.gbkt.genre.platformer.domain.PlatformerCameraConfig
 import io.github.gbkt.genre.platformer.domain.PlatformerPhysicsConfig
 import io.github.gbkt.genre.platformer.domain.ScrollDirection
+import io.github.gbkt.genre.platformer.dsl.TilemapCollisionBuilder
 
 // =============================================================================
 // PLATFORMER VISITOR
@@ -593,19 +594,6 @@ class PlatformerVisitor : GenreSystemVisitor {
         val vySym = "_" + ((tcSystem?.config?.get("vyVar") as? String) ?: "player_vy")
         val groundedSym = "_" + ((tcSystem?.config?.get("groundedVar") as? String) ?: "grounded")
 
-        // Round-5 H1 (Plan 12.7-19) — metasprite render-vs-hitbox-foot correction.
-        // The hitbox foot (the snap target) and the rendered metasprite-bottom can DIFFER
-        // when the metasprite's draw extent (frameHeight − pivotY) is taller than the
-        // hitbox's vertical extent (hitbox.height). For the platformer-template under
-        // SPRITES_8x16 + pivot(12, 6) + frameSize(24, 32) + hitbox(8, 24), the rendered
-        // metasprite-bottom lands `32 − 6 − 24 = 2` px BELOW the hitbox foot. Without this
-        // correction the rendered sprite overlays the top 2 px of the ground tile (user
-        // anchor-2 UAT report 2026-05-26 — Plan 12.7-15 BLOCKED).
-        //
-        // Resolution: locate the player metasprite by matching its `posYVarName` against
-        // the tilemap-collision system's `posYVar` binding (which the user-DSL sets via
-        // `tilemapCollision { position(playerX, playerY) }` and the metasprite block sets
-        // via `posY(playerY)` — both flow the SAME property-delegate name, so the strings
         // SEED-021: resolved from DSL config key set by TilemapCollisionBuilder.pivotAdjust(v).
         // This lifts resolution out of the metasprite-lookup dance into the DSL as the single
         // source of truth per Project Rule #1. Falls back to companion constants when the key
@@ -614,14 +602,19 @@ class PlatformerVisitor : GenreSystemVisitor {
         // GameIR has no pivotAdjust config key). The fallback is algebraically identical to the
         // old metasprite-lookup dance result for the reference geometry (32-6-24=2).
         val pivotAdjust: Int =
-            (tcSystem?.config?.get("pivotAdjust") as? Int)
-                ?: run {
-                    System.err.println(
-                        "WARNING: tilemapCollision bound but no pivotAdjust declared; " +
-                            "using fallback geometry ($REFERENCE_FRAME_HEIGHT, $REFERENCE_PIVOT_Y)"
-                    )
-                    (REFERENCE_FRAME_HEIGHT - REFERENCE_PIVOT_Y - height).coerceAtLeast(0)
-                }
+            if (tcSystem != null) {
+                (tcSystem.config[TilemapCollisionBuilder.CONFIG_KEY_PIVOT_ADJUST] as? Int)
+                    ?: run {
+                        System.err.println(
+                            "WARNING: tilemapCollision { } declared but no pivotAdjust set; " +
+                                "using fallback geometry ($REFERENCE_FRAME_HEIGHT, $REFERENCE_PIVOT_Y)"
+                        )
+                        (REFERENCE_FRAME_HEIGHT - REFERENCE_PIVOT_Y - height).coerceAtLeast(0)
+                    }
+            } else {
+                // Path A or Path B: no tilemapCollision system; silently use reference geometry.
+                (REFERENCE_FRAME_HEIGHT - REFERENCE_PIVOT_Y - height).coerceAtLeast(0)
+            }
 
         // Phase 12.3 Plan 02 — platformer_input GenericSystem (Plan 12.3-01 substrate)
         // carries the walkSpeed/friction/airFriction tuning numbers. Defaults match the

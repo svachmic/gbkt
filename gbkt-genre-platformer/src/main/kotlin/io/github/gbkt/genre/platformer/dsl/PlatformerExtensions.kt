@@ -579,6 +579,12 @@ fun GameBuilder.tilemapCollision(
  */
 @GbktDsl
 class TilemapCollisionBuilder(val id: String) {
+
+    companion object {
+        /** Config-map key for the pivot-adjust pixel offset. Shared constant (Project Rule #1). */
+        const val CONFIG_KEY_PIVOT_ADJUST = "pivotAdjust"
+    }
+
     private var posXVar: String? = null
     private var posYVar: String? = null
     private var vxVar: String? = null
@@ -696,7 +702,7 @@ class TilemapCollisionBuilder(val id: String) {
         configBuilder["hitboxW"] = hitboxW
         configBuilder["hitboxH"] = hitboxH
         configBuilder["solidThreshold"] = solidThreshold
-        pivotAdjust?.let { configBuilder["pivotAdjust"] = it }
+        pivotAdjust?.let { configBuilder[CONFIG_KEY_PIVOT_ADJUST] = it }
         return GenericSystem(id = id, config = configBuilder.toMap())
     }
 }
