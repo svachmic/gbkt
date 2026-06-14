@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 22-05-PLAN.md
-last_updated: "2026-06-14T21:51:11.085Z"
+stopped_at: Completed 22-06-PLAN.md
+last_updated: "2026-06-14T21:59:41.546Z"
 last_activity: 2026-06-14 -- Phase 22 Plan 01 COMPLETE (GoldenAssertions.kt + capturedAt removal)
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 79
-  completed_plans: 77
+  completed_plans: 78
   percent: 86
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 22 (golden-screenshot-and-evidence-storage-overhaul) — EXECUTING
-Plan: 10 of 14
+Plan: 11 of 14
 Status: Ready to execute
 Last activity: 2026-06-14 -- Phase 22 Plan 01 COMPLETE (GoldenAssertions.kt + capturedAt removal)
 
@@ -449,6 +449,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 22 P04 | 2 | 1 tasks | 6 files |
 | Phase 22 P05 | 2 | 1 tasks | 16 files |
 | Phase 22 P08 | 4 | 2 tasks | 2 files |
+| Phase 22 P06 | 4 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -981,6 +982,9 @@ Recent decisions affecting current work:
 - [Phase ?]: EVIDENCE_DIR redirected to build/gbkt/test-evidence across all 9 gbkt-backend-gbdk emission tests
 - [Phase ?]: Raw cp only for golden migration — sha256 equality is the binding tamper proof per T-22-04
 - [Phase ?]: Raw byte copy (cp) for golden migration — ImageIO re-encode strictly forbidden to preserve user-blessed GBC baseline bytes
+- [Phase ?]: D-07 guard is caller responsibility in GBC test helpers
+- [Phase ?]: Phase-10 behavior shots not in blessed anchor set — smoke-only, no golden
+- [Phase ?]: MetaspritePhase20OracleTest perceptual .txt to build/gbkt/test-evidence scratch (R3, no text golden)
 
 ### Pending Todos
 
@@ -1076,8 +1080,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T21:51:11.080Z
-Stopped at: Completed 22-05-PLAN.md
+Last session: 2026-06-14T21:59:41.539Z
+Stopped at: Completed 22-06-PLAN.md
 
 ## Operator Next Steps
 
