@@ -65,3 +65,5 @@ A dedicated diagnostic that:
 - `.planning/phases/12.8-grass-tileset-white-pixels-diagnostic/evidence/uat-screenshots/anchor-5/00-last-gameplay.png` (symptom capture)
 - `.planning/phases/12.8-grass-tileset-white-pixels-diagnostic/12.8-DIAGNOSTIC.md` §"G3 BINDING VERDICT" (CARRIED-AS-NEW-SEED disposition)
 - Phase 12.7-29 + 12.7-31 SUMMARY (prior closure attempt + carry-forward)
+
+> CLOSED-AS-ACCEPTED (Phase 21, plan 21-07): diagnostic ladder found no off-by-one (RESEARCH D-07); snap arithmetic locked by PlatformerSnapArithmeticEmissionTest; foot alignment signed off as intended.

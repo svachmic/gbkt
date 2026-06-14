@@ -55,3 +55,5 @@ config value. The metasprite lookup dance and the verbatim fallback constants in
 - [[SEED-022]] — the same visitor carries the duplicated
   `gameUsesTilemapCollision` predicate; a phase touching this area could absorb
   both seeds.
+
+> FIXED (Phase 21, plan 21-01): pivotAdjust lifted into tilemapCollision DSL; grounded-player GBC anchor signed off.

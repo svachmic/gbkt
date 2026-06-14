@@ -56,3 +56,5 @@ spawn for all levels.
 - `gbkt-examples/platformer-template/src/main/kotlin/io/github/gbkt/examples/platformer_template/PlatformerTemplate.kt:151`
 - Reference: `/Users/michalsvacha/gbdk/examples/cross-platform/platformer_template/src/player.c` (level_start_pos initialisation)
 - Related: [[SEED-PHASE-12-PLAYER-METASPRITE-RENDER]] (placeholder square issue is orthogonal but compounds the visual ambiguity)
+
+> FIXED (Phase 21, plan 21-07): spawn() already wired; post-fix anchor-2 confirms player grounded; binding sign-off.

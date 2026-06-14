@@ -111,3 +111,5 @@ drop the player onto the visible bottom-row tiles) OR a per-level
 - **Scope:** Out-of-scope for Phase 12.3. Phase 12.3 is "platformer visitor auto-emission wiring" — codegen-level cleanup. Spawn-position is example-content (or framework DSL surface), not codegen.
 - **Phase 12.3-13 disposition:** APPROVED by user (jump cycle visually correct), SEED captured for backlog per user instruction.
 - **Memory rule applied:** `feedback_route_to_proper_phase_when_blast_radius_is_wide` — do NOT drive inline recommendations into 12.3; route to a proper future phase.
+
+> FIXED (Phase 21, plan 21-07): per-zone spawn(40u,120u) confirmed visually; binding sign-off (supersedes SPAWN-POSITION-CLARITY).
