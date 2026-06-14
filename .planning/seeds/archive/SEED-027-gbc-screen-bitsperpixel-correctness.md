@@ -1,8 +1,10 @@
 # SEED-027 — GBC `GAME_BOY_COLOR_SCREEN` bitsPerPixel correctness
 
+> VERIFIED-ALREADY-FIXED (Phase 21): `grep -n "bitsPerPixel" TargetProfiles.kt` shows `bitsPerPixel = 2` at lines 34 and 53 (no `bitsPerPixel = 4` present); fixed by Phase 18 plan 18-05.
+
 > **Origin:** Phase 17 code review WR-01 ([17-REVIEW.md], [17-UAT.md#1]). Recorded as a developer decision 2026-06-13; routed here so the fix is scoped into Phase 18 planning.
 
-**Status:** Open — bound to **Phase 18** (Deprecation Removals and Sonar Burn-down)
+**Status:** VERIFIED-ALREADY-FIXED — closed by Phase 18 plan 18-05; archived Phase 21.
 **Routing:** Constants/KDoc correction. Trivial standalone change; rides along with the Phase 18 doc/convention work. NOT a deprecation-cycle item.
 **Blast radius:** `gbkt-core/.../constraints/TargetProfiles.kt` (one literal + one KDoc block). Zero runtime consumers today (`ScreenSpec.bitsPerPixel` has no readers), so the change is byte-identical by construction.
 

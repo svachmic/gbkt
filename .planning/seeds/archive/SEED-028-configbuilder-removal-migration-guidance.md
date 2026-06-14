@@ -1,8 +1,10 @@
 # SEED-028 — ConfigBuilder property→function setter removal: migration note + stale guidance
 
+> VERIFIED-ALREADY-FIXED (Phase 21): `grep -rn "config { ramBanks = " --include=*.kt --include=*.md .` (excluding build/ and .planning/) returns nothing — all 4 stale guidance strings corrected; CHANGELOG.md and CONTRIBUTING.md contain the migration note; fixed by Phase 18 plan 18-12.
+
 > **Origin:** Phase 17 code review WR-04/WR-05 ([17-REVIEW.md#WR-05], [17-UAT.md#2]). Recorded as a developer decision 2026-06-13; routed here so the cleanup is scoped into Phase 18 planning.
 
-**Status:** Open — bound to **Phase 18** (Deprecation Removals and Sonar Burn-down)
+**Status:** VERIFIED-ALREADY-FIXED — closed by Phase 18 plan 18-12; archived Phase 21.
 **Routing:** Fits Phase 18 naturally — that phase already opens `CONTRIBUTING.md` to document the deprecation-train convention, which is exactly the context for recording this breaking change.
 **Blast radius:** 4 stale doc/comment strings + 1 changelog/migration note. No code-behavior change.
 
