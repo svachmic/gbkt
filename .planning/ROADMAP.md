@@ -275,7 +275,7 @@ Plans:
 **Plans**: 4 plans
 **Wave 1**
 
-- [ ] 20-01-PLAN.md — FIX-03 re-verify gate (D-02): run BanksEmissionTest INV-2/5/6 + BanksUatTest Anchor 4 fresh to GREEN at HEAD
+- [x] 20-01-PLAN.md — FIX-03 re-verify gate (D-02): run BanksEmissionTest INV-2/5/6 + BanksUatTest Anchor 4 fresh to GREEN at HEAD
 - [ ] 20-03-PLAN.md — FIX-04 visual oracle (D-04/D-05): two GBC-mode UAT screenshots (metasprites sprite-outline clean; platformer player-transparency no-regression)
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -312,5 +312,5 @@ Plans:
 | 17. Docs Reconciliation and Quality Cleanup | v0.1.1 | 12/12 | Complete   | 2026-06-12 |
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 30/27 | Complete   | 2026-06-13 |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
-| 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 0/TBD | Not started | - |
+| 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 1/4 | In Progress|  |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |

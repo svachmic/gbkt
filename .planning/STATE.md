@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Phase 20 context gathered
-last_updated: "2026-06-14T07:27:51.296Z"
-last_activity: 2026-06-14 -- Phase 20 planning complete
+stopped_at: Completed 20-01-PLAN.md
+last_updated: "2026-06-14T08:00:54.876Z"
+last_activity: 2026-06-14 -- Phase 20 execution started
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 53
-  completed_plans: 56
+  total_plans: 57
+  completed_plans: 57
   percent: 67
 ---
 
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** The framework automatically manages Game Boy hardware resources (VRAM, banking, OAM, RAM) so the developer writes only declarative Kotlin DSL — like Jetpack Compose for Game Boy.
-**Current focus:** Phase 19 — codegen-fixes-metasprite-cluster
+**Current focus:** Phase 20 — codegen-fixes-banks-and-sprite-transparency
 
 ## Deferred Items
 
@@ -54,10 +54,10 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 20
-Plan: Not started
+Phase: 20 (codegen-fixes-banks-and-sprite-transparency) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-06-14 -- Phase 20 planning complete
+Last activity: 2026-06-14 -- Phase 20 execution started
 
 Resume signal: /gsd-execute-phase 18 (Plan 27 — SonarCloud scan gate remaining)
 Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable; Phase 19 (Metasprite Fixes) now unblocked
@@ -424,6 +424,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 19 P01 | 2 min | 2 tasks | 1 files |
 | Phase 19 P03 | 2 | 2 tasks | 6 files |
 | Phase 19 P04 | 2 | 2 tasks | 1 files |
+| Phase 20 P01 | 3min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -941,6 +942,7 @@ Recent decisions affecting current work:
 - [Phase ?]: D-07 byte-identity oracle baseline captured at phase start; before.sha256 records 3 generated C hashes from clean dual buildRom
 - [Phase ?]: after.sha256 byte-identity oracle CLEAN: Phase 19 introduced zero production codegen drift (D-07/Req 5)
 - [Phase ?]: D-08 commit separation confirmed: all 8 Phase 19 commits are evidence/test/doc only, zero S3776 refactors
+- [Phase ?]: D-02 gate: INV-2/INV-5/INV-6 GREEN at HEAD; SEED-014/015/016 VERIFIED-ALREADY-FIXED
 
 ### Pending Todos
 
@@ -1036,8 +1038,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T06:59:58.953Z
-Stopped at: Phase 20 context gathered
+Last session: 2026-06-14T08:00:54.870Z
+Stopped at: Completed 20-01-PLAN.md
 
 ## Operator Next Steps
 
