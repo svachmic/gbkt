@@ -1,0 +1,6 @@
+file: /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/21-codegen-fixes-platformer-and-remaining-seeds/evidence/uat-screenshots/anchor-1/02-gameplay.png
+dimensions: 160x144
+distinct_colours: 4
+dominant_ratio: 0.8645
+dominant_count: 19917
+total_pixels: 23040

@@ -38,17 +38,17 @@ class PlatformerTemplateUatTest {
     companion object {
         val ROM_FILE = java.io.File("build/gbkt/output/platformer-template.gb")
         val METADATA_FILE = java.io.File("build/gbkt/generated/game_metadata.json")
-        // Phase 12.7 D-10 — re-shoot target dir. EVIDENCE_DIR resolves to the Phase 12.7
-        // evidence directory so the anchor2/anchor5 re-shoot PNGs are written to
-        // `.planning/phases/12.7-player-levitating-physics-codegen/evidence/uat-screenshots/`.
-        // Previously resolved to Phase 12.6 (R-shoot of G1 closure); Phase 12.7's
-        // snap-to-tile-top + stuck-resolve guard (W3) closes R-02 + R-03, so this phase now
-        // owns the load-bearing PNGs.
+        // Phase 21 D-15 — re-shoot target dir. EVIDENCE_DIR resolves to the Phase 21
+        // evidence directory so the post-fix anchor screenshots are written to
+        // `.planning/phases/21-codegen-fixes-platformer-and-remaining-seeds/evidence/uat-screenshots/`.
+        // Phase 21 owns the binding visual evidence for D-05 (grounded player), D-06
+        // (spawn-polish),
+        // D-07 (sub-pixel foot alignment accepted), and Criterion 1 (cEmit fixed by Phase 13.5).
         val EVIDENCE_DIR =
             java.io
                 .File(System.getProperty("user.dir"))
                 .resolve(
-                    "../../.planning/phases/12.7-player-levitating-physics-codegen/evidence/uat-screenshots"
+                    "../../.planning/phases/21-codegen-fixes-platformer-and-remaining-seeds/evidence/uat-screenshots"
                 )
                 .normalize()
     }

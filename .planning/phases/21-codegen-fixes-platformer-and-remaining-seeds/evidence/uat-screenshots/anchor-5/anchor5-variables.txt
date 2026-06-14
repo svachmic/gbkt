@@ -1,0 +1,29 @@
+frame=1519
+# Phase 12.7 D-06 trace fields. Note: player_real_y is function-local;
+# playerY is the sub-pixel global (= player_real_y << 4) — closest observable.
+initial_current_level: 0
+initial_next_level: 0
+frames_to_trigger: 1194
+last_gameplay_frame: 1347
+last_scene_before_flip: gameplay
+last_player_x_subpixel: 7328
+last_player_real_x: 458
+next_level_after_trigger: 1
+current_level_after_guard: 0
+pre_start_scene: nextLevelScene
+post_start_scene: nextLevelScene
+post_release_scene: gameplay
+mid_level_2_current: 1
+mid_level_2_next: 1
+mid_level_2_scene: gameplay
+final_current_level: 1
+final_next_level: 1
+playerY: 1632
+playerVy: 0
+grounded: 1
+current_level: 1
+next_level: 1
+_camera_x: 0
+closed_by_phase_12.6: setup_current_level lives in levelCardScene Start-press path (D-03/D-04); main-loop guard emits navigate_to_scene only
+closed_by_phase_12.6: _playerX = _level_spawn_x[N] << 4 written by setup_current_level (D-06); same-frame trigger re-fire prevented
+closed_by_phase_12.7: snap-to-tile-top emitted in buildVerticalFootProbe (D-04); zero hover gap on grounded/landed/near-end frames
