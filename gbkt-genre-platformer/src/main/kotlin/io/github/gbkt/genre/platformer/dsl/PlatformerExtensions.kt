@@ -589,6 +589,7 @@ class TilemapCollisionBuilder(val id: String) {
     private var hitboxW: Int = 8
     private var hitboxH: Int = 24
     private var solidThreshold: Int = 17
+    private var pivotAdjust: Int? = null // null = absent from config map (back-compat)
 
     /**
      * Binds the player position to user-DSL [AssignableVar]s. The variable names
@@ -656,6 +657,22 @@ class TilemapCollisionBuilder(val id: String) {
     }
 
     /**
+     * Sets the pixel distance between the rendered metasprite's bottom edge and the hitbox foot.
+     * Derived from: `frameHeight − pivotY − hitboxH` (coerced ≥ 0).
+     *
+     * Per SEED-021 / Project Rule #1: setting this lifts pivot_adjust resolution out of the
+     * visitor's metasprite-lookup dance into the DSL as the single source of truth. When absent,
+     * [PlatformerVisitor] falls back to companion constants `REFERENCE_FRAME_HEIGHT` /
+     * `REFERENCE_PIVOT_Y` and emits a WARNING diagnostic.
+     *
+     * Example derivation for the platformer-template reference geometry: `frameSize(24, 32)` +
+     * `pivot(12, 6)` + `hitbox h=24`: `32 − 6 − 24 = 2`.
+     */
+    fun pivotAdjust(v: Int) {
+        pivotAdjust = v
+    }
+
+    /**
      * Builds a [GenericSystem] with type `"tilemap_collision"` containing the captured config keys.
      *
      * The config map carries `null` for any unset symbol binding — the visitor's `as? String`
@@ -679,6 +696,7 @@ class TilemapCollisionBuilder(val id: String) {
         configBuilder["hitboxW"] = hitboxW
         configBuilder["hitboxH"] = hitboxH
         configBuilder["solidThreshold"] = solidThreshold
+        pivotAdjust?.let { configBuilder["pivotAdjust"] = it }
         return GenericSystem(id = id, config = configBuilder.toMap())
     }
 }

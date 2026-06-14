@@ -178,6 +178,10 @@ val platformerTemplate =
             grounded(grounded)
             hitbox(0, 0, 8, 24)
             solidThreshold(17)
+            // D-05 / SEED-021: explicit pivot offset. Derivation: frameSize(24,32) + pivot(12,6)
+            // + hitboxH=24 → 32 − 6 − 24 = 2. This is the single source of truth per Project
+            // Rule #1; the visitor no longer reverse-engineers it via a metasprite scan.
+            pivotAdjust(2)
         }
 
         // -----------------------------------------------------------------
