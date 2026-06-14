@@ -67,18 +67,15 @@ class PlatformerCameraCallSiteEmissionTest {
 
     companion object {
         /**
-         * Evidence is written under the **active checkout root** (worktree-safe). Same shape as
-         * `JumpHoldEmissionTest.EVIDENCE_DIR` / `HorizontalScrollEmissionTest.EVIDENCE_DIR` — see
-         * those comments for the worktree path-safety rationale (#3099). For
-         * `:gbkt-genre-platformer:test`, `user.dir` resolves to `<repo>/gbkt-genre-platformer`; we
-         * ascend one level to the worktree root, then descend into the phase evidence directory.
+         * Evidence is written to the module's gitignored build/ scratch directory (R1 + R3).
+         *
+         * `user.dir` at `:gbkt-genre-platformer:test` runtime resolves to the
+         * `gbkt-genre-platformer` module root, so `build/gbkt/test-evidence` is the module's own
+         * gitignored build directory — no `../` ascent needed (22-PATTERNS Pitfall 5). In-test C
+         * assertions remain the gate; the txt dumps are for post-failure review only.
          */
         val EVIDENCE_DIR =
-            File(System.getProperty("user.dir"))
-                .resolve(
-                    "../.planning/phases/12.3-platformer-visitor-auto-emission-wiring-wire-input-playervx-/evidence/tier1-shape"
-                )
-                .normalize()
+            File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence").normalize()
     }
 
     private val pipeline = GBDKPipeline()
