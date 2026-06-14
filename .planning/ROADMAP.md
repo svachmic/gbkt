@@ -32,7 +32,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 - [x] **Phase 18: Deprecation Removals and Sonar Burn-down** - `whenever`/`runIf` unified and deprecated `combatIsInState` overload removed; S3776 HIGH findings reduced to 0 (completed 2026-06-13)
 - [x] **Phase 19: Codegen Fixes — Metasprite Cluster** - Visual-parity and structural latent metasprite bugs fixed with emission test coverage (completed 2026-06-13)
 - [x] **Phase 20: Codegen Fixes — Banks and Sprite Transparency** - Banks trio (SEED-014/015/016) re-verified closed; tRNS sprite outline confirmed fixed — verification 5/5, both FIX-04 visual oracles human-signed-off; security verified (0 threats) (completed 2026-06-14)
-- [ ] **Phase 21: Codegen Fixes — Platformer and Remaining Seeds** - Platformer cEmit escapes replaced; all remaining seeds dispositioned; seeds directory empty
+- [x] **Phase 21: Codegen Fixes — Platformer and Remaining Seeds** - Platformer cEmit escapes replaced; all remaining seeds dispositioned; seeds directory empty — COMPLETE 2026-06-14 (pivotAdjust DSL lift, predicate consolidation, serializer stubs, 4 re-deferrals, GBC anchor re-shoot, D-13 byte-identity CLEAN, seeds/ empty)
 
 ## Phase Details
 
@@ -321,7 +321,7 @@ Plans:
 
 **Wave 4** *(blocked on all — closeout)*
 
-- [ ] 21-08-PLAN.md — D-13 byte-identity unchanged-set sweep (pong PASS*) + D-01 seeds/ empty verification + FIX-05/FIX-06 Complete + ROADMAP finalize
+- [x] 21-08-PLAN.md — D-13 byte-identity unchanged-set sweep (pong PASS*) + D-01 seeds/ empty verification + FIX-05/FIX-06 Complete + ROADMAP finalize
 
 **Cross-cutting constraints:**
 
@@ -338,4 +338,4 @@ Plans:
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 30/27 | Complete   | 2026-06-13 |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
-| 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 7/8 | In Progress|  |
+| 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 8/8 | Complete   | 2026-06-14 |
