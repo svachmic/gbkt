@@ -39,6 +39,9 @@ tasks.test {
     // task fails/skips and the test skips gracefully via Assumptions — a genuine missing
     // prerequisite, not a failure.
     dependsOn("convertSprites")
+    if (project.hasProperty("gbkt.updateGoldens")) {
+        systemProperty("gbkt.updateGoldens", "true")
+    }
 }
 
 gbkt {

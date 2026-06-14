@@ -30,6 +30,9 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+    if (project.hasProperty("gbkt.updateGoldens")) {
+        systemProperty("gbkt.updateGoldens", "true")
+    }
 }
 
 gbkt {
