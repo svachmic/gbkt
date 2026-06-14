@@ -53,12 +53,7 @@ class SignedComparisonLiteralEmissionTest {
     private val emptyGameIR = GameIR(name = "Test", config = CartridgeConfig())
 
     companion object {
-        val EVIDENCE_DIR =
-            File(
-                findRepoRoot(),
-                ".planning/phases/07.9-c-codegen-signed-vs-unsigned-literal-discipline/" +
-                    "evidence/tier1-shape",
-            )
+        val EVIDENCE_DIR = File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence")
     }
 
     // =========================================================================

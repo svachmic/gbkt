@@ -109,11 +109,7 @@ class MetaspriteCameraOffsetEmissionTest {
          * one level to the worktree root, then descend into the phase evidence directory.
          */
         val EVIDENCE_DIR =
-            File(System.getProperty("user.dir"))
-                .resolve(
-                    "../.planning/phases/12.3-platformer-visitor-auto-emission-wiring-wire-input-playervx-/evidence/tier1-shape"
-                )
-                .normalize()
+            File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence").normalize()
     }
 
     private val pipeline = GBDKPipeline()
