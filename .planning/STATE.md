@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: complete
-stopped_at: Completed 21-08-PLAN.md — Phase 21 closeout complete (milestone v0.1.1 done)
-last_updated: "2026-06-14T14:43:00.000Z"
-last_activity: 2026-06-14 -- Phase 21 Plan 08 complete — D-13 oracle CLEAN, seeds/ empty, ROADMAP finalized
+status: completed
+stopped_at: Completed 21-04-PLAN.md
+last_updated: "2026-06-14T15:05:50.837Z"
+last_activity: 2026-06-14
 progress:
   total_phases: 6
   completed_phases: 6
@@ -54,10 +54,10 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 21 (codegen-fixes-platformer-and-remaining-seeds) — COMPLETE
-Plan: 8 of 8 (all plans done)
+Phase: 21
+Plan: Not started
 Status: Milestone v0.1.1 complete
-Last activity: 2026-06-14 -- Phase 21 Plan 08 closed — D-13 oracle CLEAN, seeds/ empty, ROADMAP finalized
+Last activity: 2026-06-14
 
 Resume signal: milestone v0.1.1 complete — advance to next milestone via /gsd-new-milestone
 
@@ -83,7 +83,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 
 **Velocity:**
 
-- Total plans completed: 381
+- Total plans completed: 389
 - Average duration: 6.4 min
 - Total execution time: 0.71 hours
 
@@ -126,6 +126,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | 16 | 10 | - | - |
 | 19 | 4 | - | - |
 | 20 | 4 | - | - |
+| 21 | 8 | - | - |
 
 **Recent Trend:**
 
