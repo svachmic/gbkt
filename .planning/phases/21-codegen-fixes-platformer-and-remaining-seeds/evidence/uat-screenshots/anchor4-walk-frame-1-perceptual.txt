@@ -1,6 +1,0 @@
-file: /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/21-codegen-fixes-platformer-and-remaining-seeds/evidence/uat-screenshots/anchor-4/02-walk-frame-1.png
-dimensions: 160x144
-distinct_colours: 7
-dominant_ratio: 0.8510
-dominant_count: 19606
-total_pixels: 23040

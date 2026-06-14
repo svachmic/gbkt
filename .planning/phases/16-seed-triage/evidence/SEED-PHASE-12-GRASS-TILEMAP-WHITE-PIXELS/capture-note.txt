@@ -1,9 +1,0 @@
-ROM: gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb
-Mode: gbcMode=true, symFile=platformer-template.noi
-Frame: 549 (mid-level traversal, world1area1, camera_x=180)
-Input: RIGHT+A traversal (multiple right+jump sequences)
-Shows: World1 grass area with ground tiles and platform blocks. Grass/ground tiles
-render in solid green without any white-pixel artifacts. The SEED reported spurious
-white pixels visible in the grass tilemap due to the Phase 12.9 diagonal-stripe
-vs checkerboard palette issue. At HEAD: no white pixels observed in grass area.
-Colors are uniformly green throughout the ground and grass sections.

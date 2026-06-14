@@ -1,9 +1,0 @@
-ROM: gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb
-Mode: gbcMode=true, symFile=platformer-template.noi
-Frame: 123 (walking right for ~30 frames after spawn)
-Input: RIGHT held for 30 frames after gameplay start
-Shows: Player walking right on ground tiles. Variable state: grounded=1, playerVy=0.
-Player is standing ON the ground, not floating. The ground tiles are visually aligned
-with the player's feet. RIGHT+A traversal used (A not needed at this early stage).
-The SEED reported the player was levitating (not touching ground tile row).
-At HEAD: grounded=1 confirmed via variable, visual confirms player on ground.

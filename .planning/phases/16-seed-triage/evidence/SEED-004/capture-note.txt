@@ -1,8 +1,0 @@
-ROM: gbkt-examples/metasprites/build/gbkt/output/metasprites.gb
-Mode: gbcMode=true, symFile=metasprites.noi
-Frame: 120 (after boot + 2 sec settle)
-Input: none (static initial scene)
-Shows: Elephant metasprite rendered at center-screen on checkerboard background.
-Sprite occupies approximately 56-104px X, 48-88px Y using 31 OAM entries.
-Visual assessment: Elephant shape is recognizable but pixel fidelity vs png2asset
-reference requires human review — possible tile-ordering defect (SEED-004 D-V1).

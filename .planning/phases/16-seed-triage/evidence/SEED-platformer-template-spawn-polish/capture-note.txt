@@ -1,9 +1,0 @@
-ROM: gbkt-examples/platformer-template/build/gbkt/output/platformer-template.gb
-Mode: gbcMode=true, symFile=platformer-template.noi
-Frame: 93 (after pressing START from title, ~30 frames settle)
-Input: START to advance from title, then no input
-Shows: Player (duck sprite) at spawn position on the left side of world1area1.
-Variable state: playerX=128, playerY=96, grounded=1, playerVy=0.
-Player is standing ON the ground (grounded=1), not floating mid-air.
-The SEED reported the spawn position may be mid-air or visually unpolished.
-At HEAD the player spawns grounded on the ground tile row. Colors are correct GBC (green).

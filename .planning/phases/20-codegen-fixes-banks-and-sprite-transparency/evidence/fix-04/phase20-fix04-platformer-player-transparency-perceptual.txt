@@ -1,6 +1,0 @@
-file: /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/20-codegen-fixes-banks-and-sprite-transparency/evidence/fix-04/platformer-player-transparency.png
-dimensions: 160x144
-distinct_colours: 7
-dominant_ratio: 0.8599
-dominant_count: 19812
-total_pixels: 23040
