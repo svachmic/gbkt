@@ -46,8 +46,8 @@ data class CombatEngineRef(val id: String)
  *     combatant("hero", CombatantSide.PLAYER)
  *     combatant("goblin", CombatantSide.ENEMY)
  *     maxCombatants(6)
- *     onVictoryWhen { whenever(score isAbove 0) { ... } }
- *     onDefeatWhen { whenever(hp isEqualTo 0) { ... } }
+ *     onVictoryWhen { runIf(score isAbove 0) { ... } }
+ *     onDefeatWhen { runIf(hp isEqualTo 0) { ... } }
  *     onVictory { navigate(victoryScene) }
  *     onDefeat { navigate(gameOverScene) }
  *     subState("PLAYER_TURN", "SELECTING_ACTION")

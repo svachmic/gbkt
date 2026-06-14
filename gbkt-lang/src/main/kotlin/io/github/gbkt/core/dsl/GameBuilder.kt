@@ -293,7 +293,7 @@ class GameBuilder(val name: String) {
      * ```kotlin
      * val titleRef = sceneRef("title")       // forward-declare
      * val gameScene = scene("game") {
-     *     frame { whenever(buttons.start.pressed) { navigate(titleRef) } }
+     *     frame { runIf(buttons.start.pressed) { navigate(titleRef) } }
      * }
      * val titleScene = scene("title") { ... } // defined later
      * ```

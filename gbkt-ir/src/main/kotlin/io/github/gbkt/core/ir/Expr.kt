@@ -113,7 +113,7 @@ data class CastExpr(
  * Expression that returns the number of active slots in an actor pool.
  *
  * Emits `pool_<poolId>_active_count()` — a generated helper function that counts set bits in the
- * active bitmap. Usable in `whenever()` conditions and assignments.
+ * active bitmap. Usable in `runIf()` conditions and assignments.
  *
  * Delegates to [CallExpr] so no new [ExprVisitorI] method is required — all existing expression
  * visitors handle this transparently.

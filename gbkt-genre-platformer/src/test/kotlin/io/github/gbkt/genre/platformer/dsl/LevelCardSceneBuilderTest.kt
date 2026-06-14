@@ -25,8 +25,8 @@ import kotlin.test.fail
  * - Property name is captured via `provideDelegate` (Project Rule #1 — no magic strings).
  * - The lowered scene's frame handler emits [BindCurrentLevel] (Phase 13.5 Req #17 — typed IR node
  *   replacing the old `cEmit` → `RawOp` approach) BEFORE `navigate_to_scene(<gameplay>)` (via
- *   `navigate` → `NavigateTo`), all inside a `whenever(buttons.start.pressed) { ... }` guard
- *   (lowered to an [IfOp]).
+ *   `navigate` → `NavigateTo`), all inside a `runIf(buttons.start.pressed) { ... }` guard (lowered
+ *   to an [IfOp]).
  *
  * Round-trip contract (PSEUDO-04 in 12.6-RESEARCH § Validation Architecture, updated for Phase 13.5
  * Plan 06): `val nextLevelScene by levelCardScene { onStartPress(gameplayScene) }` → GameIR
@@ -85,7 +85,7 @@ class LevelCardSceneBuilderTest {
                 it.then.any { op -> op is BindCurrentLevel }
             }
                 ?: fail(
-                    "Expected an IfOp (lowered from whenever(buttons.start.pressed)) in frame ops " +
+                    "Expected an IfOp (lowered from runIf(buttons.start.pressed)) in frame ops " +
                         "whose then-branch contains BindCurrentLevel (Phase 13.5 Req #17 typed IR node). " +
                         "frameOps: ${nextLevel.frameOps}"
                 )

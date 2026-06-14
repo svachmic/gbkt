@@ -44,7 +44,7 @@ import kotlin.test.assertTrue
 //
 // CLAUDE.md §"Scope-level grep gates" forbids a file-level
 // `mainC.contains("button_held(J_RIGHT)")` here because `button_held(J_RIGHT)`
-// also lands inside the gameplay scene's `whenever(dpad.right.held) { ... }`
+// also lands inside the gameplay scene's `runIf(dpad.right.held) { ... }`
 // frame-body emission in any fixture that registers dpad input ops. The
 // brace-walk extracts the `platformer_physics_update` body so the substring
 // checks fire ONLY against tokens inside the physics function (this test's
@@ -258,7 +258,7 @@ class PlatformerInputEmissionTest {
 
         // button_held(J_RIGHT) — section 0's outer `CIf(condition = CCall("button_held",
         // listOf(CVar("J_RIGHT"))), ...)`. A regression that drops the right-input gate would
-        // fail here. Scope-confined via the brace-walk — even if `whenever(dpad.right.held)`
+        // fail here. Scope-confined via the brace-walk — even if `runIf(dpad.right.held)`
         // lowered to `button_held(J_RIGHT)` in another scene's frame body, this assertion would
         // be unaffected.
         assertTrue(

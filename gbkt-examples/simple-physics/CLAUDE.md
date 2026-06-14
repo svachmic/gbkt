@@ -43,9 +43,9 @@ Mirrors `phys.c` L67-L80 clamps. Each axis bounds velocity to
 ±`MAX_*_SPEED_IN_SUBPIXELS` (= ±64 sub-pixels = ±4 pixels/frame):
 
 ```kotlin
-whenever(dpad.up.held) {
+runIf(dpad.up.held) {
     spdY -= Y_ACCELERATION_IN_SUBPIXELS
-    whenever(spdY isBelow -MAX_Y_SPEED_IN_SUBPIXELS) { spdY set -MAX_Y_SPEED_IN_SUBPIXELS }
+    runIf(spdY isBelow -MAX_Y_SPEED_IN_SUBPIXELS) { spdY set -MAX_Y_SPEED_IN_SUBPIXELS }
 }
 ```
 

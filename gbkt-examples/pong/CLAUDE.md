@@ -24,10 +24,10 @@
 ### Coordinate-Range Paddle Collision
 ```kotlin
 // Pong avoids ball.collides(paddle) — uses x-range + Y overlap for tighter feel
-whenever(ball.x isBelow 20) {
-    whenever(ball.x isAtLeast 4) {
-        whenever(ball.y isAtLeast paddle1.y) {
-            whenever(ball.y isBelow (paddle1.y + 16)) {
+runIf(ball.x isBelow 20) {
+    runIf(ball.x isAtLeast 4) {
+        runIf(ball.y isAtLeast paddle1.y) {
+            runIf(ball.y isBelow (paddle1.y + 16)) {
                 ballDx set 1
                 playSound(bounceSfx)
             }
@@ -39,8 +39,8 @@ whenever(ball.x isBelow 20) {
 ### AI Paddle Tracking
 ```kotlin
 // Track ball to paddle CENTER (y+8), 2px/frame with boundary clamp
-whenever((paddle2.y + 8) isAbove ball.y) {
-    whenever(paddle2.y isAbove 16) { moveBy(paddle2, 0, -2) }
+runIf((paddle2.y + 8) isAbove ball.y) {
+    runIf(paddle2.y isAbove 16) { moveBy(paddle2, 0, -2) }
 }
 ```
 
@@ -55,7 +55,7 @@ print("P1:%d    P2:%d", p1Score.toExpr(), p2Score.toExpr(), position = PositionD
 val titleRef = sceneRef("title")   // top of game block
 // gameoverScene defined first — navigates to titleRef without forward error
 scene("gameover") {
-    frame { whenever(buttons.start.pressed) { navigate(titleRef) } }
+    frame { runIf(buttons.start.pressed) { navigate(titleRef) } }
 }
 // titleScene defined last — titleRef resolves to it
 scene("title") { ... }
@@ -63,7 +63,7 @@ scene("title") { ... }
 
 ## How to Modify
 
-- **Change winning score:** Adjust `5` in `whenever(p1Score isAtLeast 5)`
+- **Change winning score:** Adjust `5` in `runIf(p1Score isAtLeast 5)`
 - **Change AI speed:** Replace `2` in `moveBy(paddle2, 0, 2)` / `moveBy(paddle2, 0, -2)`
 - **Add 2-player mode:** Replace AI logic with `dpad.up/down` for paddle2 (note: DMG only has one d-pad)
 - **Adjust ball speed:** Change `ballDx set 1` / `ballDy set 1` to larger values
