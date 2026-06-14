@@ -13,7 +13,7 @@ mcp-sdk = "0.9.0"
 coroutines-mcp = "1.10.1"
 serialization-json = "1.8.1"
 kotlinx-io = "0.7.0"
-slf4j = "2.0.17"
+slf4j = "2.0.18"
 # Plugin versions — single bump point for each tool
 kotlin = "2.3.20"
 junit = "5.11.4"
