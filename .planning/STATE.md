@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 22-02-PLAN.md
-last_updated: "2026-06-14T21:13:07.391Z"
+stopped_at: Completed 22-03-PLAN.md
+last_updated: "2026-06-14T21:18:07.946Z"
 last_activity: 2026-06-14 -- Phase 22 Plan 01 COMPLETE (GoldenAssertions.kt + capturedAt removal)
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 79
-  completed_plans: 70
+  completed_plans: 71
   percent: 86
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 22 (golden-screenshot-and-evidence-storage-overhaul) — EXECUTING
-Plan: 3 of 14
+Plan: 4 of 14
 Status: Ready to execute
 Last activity: 2026-06-14 -- Phase 22 Plan 01 COMPLETE (GoldenAssertions.kt + capturedAt removal)
 
@@ -444,6 +444,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 21 P04 | 2 | 1 tasks | 2 files |
 | Phase 21 P07 | 59 min | 3 tasks | 2 files |
 | Phase 22 P02 | 2 | 1 tasks | 2 files |
+| Phase 22 P03 | 2 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -971,6 +972,8 @@ Recent decisions affecting current work:
 - [Phase ?]: GBC-target ROMs must be UAT-captured with gbcMode=true; discoverFiles() does not enable GBC (DMG default inverts the palette)
 - [Phase ?]: Phase 21 plan 21-07: all four LOCKED-visual platformer seeds archived (3 FIXED, 1 CLOSED-AS-ACCEPTED) on binding GBC-mode sign-off
 - [Phase ?]: CGB_FLAG_OFFSET=0x143L named constant; discoverFiles auto-detects gbcMode from ROM header byte 0x143
+- [Phase ?]: .planning/phases/**/evidence/ gitignore rule for evidence scratch dirs
+- [Phase ?]: gbkt.updateGoldens systemProperty wiring uses project.hasProperty (opt-in boolean, no accidental re-bless)
 
 ### Pending Todos
 
@@ -1066,8 +1069,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T21:13:07.385Z
-Stopped at: Completed 22-02-PLAN.md
+Last session: 2026-06-14T21:18:07.940Z
+Stopped at: Completed 22-03-PLAN.md
 
 ## Operator Next Steps
 

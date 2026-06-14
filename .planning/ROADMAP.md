@@ -340,7 +340,7 @@ Plans:
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 8/8 | Complete    | 2026-06-14 |
-| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 2/14 | In Progress|  |
+| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 3/14 | In Progress|  |
 
 ### Phase 22: Golden Screenshot and Evidence Storage Overhaul
 
@@ -359,13 +359,13 @@ Plans:
   5. The genuine binding goldens from Phases 19/20/21 (metasprite, banks/tRNS, platformer GBC anchors) are migrated into the central goldens dir and remain the blessed baselines; the untracked archived-phase evidence garbage is removed.
   6. TESTING.md documents the goldens layout + the re-baseline command.
 
-**Plans:** 2/14 plans executed
+**Plans:** 3/14 plans executed
 
 Plans:
 
 - [x] 22-01-PLAN.md — assertGoldenMatch helper + GBKT_UPDATE_GOLDENS_PROP + drop capturedAt (gbkt-emulator) [Wave 1]
 - [x] 22-02-PLAN.md — discoverFiles GBC auto-detect from ROM byte 0x143 + tests [Wave 1]
-- [ ] 22-03-PLAN.md — .gitignore evidence rule + -Pgbkt.updateGoldens wiring + goldens dir skeletons [Wave 1]
+- [x] 22-03-PLAN.md — .gitignore evidence rule + -Pgbkt.updateGoldens wiring + goldens dir skeletons [Wave 1]
 - [ ] 22-09-PLAN.md — gbkt-backend-gbdk emission scratch redirect (9 classes) [Wave 1]
 - [ ] 22-10-PLAN.md — gbkt-genre-platformer emission scratch redirect (9 classes) [Wave 1]
 - [ ] 22-11-PLAN.md — example-module emission scratch redirect (7 classes) [Wave 1]
