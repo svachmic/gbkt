@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: completed
-stopped_at: Phase 22 context gathered
-last_updated: "2026-06-14T18:34:29.836Z"
-last_activity: 2026-06-14
+status: executing
+stopped_at: Completed 22-01-PLAN.md
+last_updated: "2026-06-14T21:14:00.000Z"
+last_activity: 2026-06-14 -- Phase 22 Plan 01 complete (GoldenAssertions + capturedAt removal)
 progress:
   total_phases: 7
   completed_phases: 6
-  total_plans: 65
-  completed_plans: 68
-  percent: 86
+  total_plans: 79
+  completed_plans: 69
+  percent: 87
 ---
 
 # Project State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** The framework automatically manages Game Boy hardware resources (VRAM, banking, OAM, RAM) so the developer writes only declarative Kotlin DSL — like Jetpack Compose for Game Boy.
-**Current focus:** Phase 22 — golden-screenshot-and-evidence-storage-overhaul (added 2026-06-14; not yet planned). Milestone v0.1.1 reopened: Phase 21 closed the seed backlog, but the milestone's own visual/emission evidence is stored via the broken per-phase EVIDENCE_DIR pattern (27 tests) and must be fixed before milestone close / PR #77 merge.
+**Current focus:** Phase 22 — golden-screenshot-and-evidence-storage-overhaul
 
 ## Deferred Items
 
@@ -54,12 +54,17 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 22
-Plan: Not planned
-Status: Milestone v0.1.1 REOPENED — Phase 22 (golden/evidence storage overhaul) added; Phases 16–21 complete
-Last activity: 2026-06-14
+Phase: 22 (golden-screenshot-and-evidence-storage-overhaul) — EXECUTING
+Plan: 2 of 14
+Status: Executing Phase 22
+Last activity: 2026-06-14 -- Phase 22 Plan 01 COMPLETE (GoldenAssertions.kt + capturedAt removal)
 
-Resume signal: Phase 22 added but not planned. Wide blast radius (27 phase-pinned test classes + harness + .gitignore + golden migration) → route /gsd-spec-phase 22 → /gsd-discuss-phase 22 → /gsd-plan-phase 22 WITH research. Do NOT execute inline. PR #77 (chore/hardening_0_1_0) should merge only after Phase 22 stores this milestone's evidence correctly.
+Resume signal: Plan 22-01 complete. Proceed with Plan 22-02 (next wave 1 plan or wave 2 plans).
+
+Decisions:
+- GBKT_UPDATE_GOLDENS_PROP = "gbkt.updateGoldens" (named constant, Project Rule #1)
+- compareOrBless uses File.copyTo for raw byte-identity bless (never ImageIO re-encode)
+- GBC-header guard (D-07) is CALLER's responsibility, not the helper's
 
 ### Roadmap Evolution
 

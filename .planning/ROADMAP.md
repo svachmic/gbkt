@@ -340,7 +340,7 @@ Plans:
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 8/8 | Complete    | 2026-06-14 |
-| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 0/14 | Planned | — |
+| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 1/14 | Executing | — |
 
 ### Phase 22: Golden Screenshot and Evidence Storage Overhaul
 
@@ -362,7 +362,7 @@ Plans:
 
 Plans:
 
-- [ ] 22-01-PLAN.md — assertGoldenMatch helper + GBKT_UPDATE_GOLDENS_PROP + drop capturedAt (gbkt-emulator) [Wave 1]
+- [x] 22-01-PLAN.md — assertGoldenMatch helper + GBKT_UPDATE_GOLDENS_PROP + drop capturedAt (gbkt-emulator) [Wave 1]
 - [ ] 22-02-PLAN.md — discoverFiles GBC auto-detect from ROM byte 0x143 + tests [Wave 1]
 - [ ] 22-03-PLAN.md — .gitignore evidence rule + -Pgbkt.updateGoldens wiring + goldens dir skeletons [Wave 1]
 - [ ] 22-09-PLAN.md — gbkt-backend-gbdk emission scratch redirect (9 classes) [Wave 1]
