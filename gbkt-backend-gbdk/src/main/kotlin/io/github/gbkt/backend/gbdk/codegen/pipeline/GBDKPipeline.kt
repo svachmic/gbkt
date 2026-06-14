@@ -7,6 +7,7 @@
 package io.github.gbkt.backend.gbdk.codegen.pipeline
 
 import io.github.gbkt.backend.api.GenreSystemVisitor
+import io.github.gbkt.backend.api.gameUsesTilemapCollisionPathC
 import io.github.gbkt.backend.gbdk.codegen.GBDKCollectionCodegen
 import io.github.gbkt.backend.gbdk.codegen.ast.CArray
 import io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr
@@ -2205,21 +2206,14 @@ class GBDKPipeline {
      * byte-identical at the codegen layer.
      */
     private fun gameUsesTilemapCollision(gameIR: GameIR): Boolean {
-        // Path C (Phase 12.1 Plan 05 Task 2) — explicit tilemap_collision GenericSystem.
-        //
-        // Registered via `GameBuilder.tilemapCollision { ... }` (gbkt-genre-platformer/
-        // PlatformerExtensions.kt:tilemapCollision). The new system is the canonical home for
-        // player-position-symbol binding (D-claude-4: separation from platformerPhysics) and
-        // the visitor (Plan 12.1-06) reads its config keys to emit the tilemap-physics path.
+        // Path C (Phase 12.1 Plan 05 Task 2 / Phase 21 Plan 02) — explicit tilemap_collision
+        // GenericSystem. Shared detection delegated to the gbkt-backend-api utility so that
+        // PlatformerVisitor.gameUsesTilemapCollision stays in lockstep (SEED-022).
         //
         // Placed BEFORE Path A so early-return saves the reflective `solidThreshold` field read
         // when the new system is present; Path A + Path B are preserved verbatim for back-compat
         // with games that opt into tilemap collision via `platformerPhysics { solidThreshold(N) }`.
-        val systemIsTilemapCollision =
-            gameIR.systems.filterIsInstance<GenericSystem>().any { sys ->
-                (sys.config["type"] as? String) == "tilemap_collision"
-            }
-        if (systemIsTilemapCollision) return true
+        if (gameUsesTilemapCollisionPathC(gameIR)) return true
 
         // Path A — platformer_physics GenericSystem with non-null solidThreshold on physicsConfig
         val systemHasThreshold =

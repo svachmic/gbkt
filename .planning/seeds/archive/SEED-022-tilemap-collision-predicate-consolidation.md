@@ -51,3 +51,10 @@ predicates over a fixture matrix and asserts identical verdicts.
   (~line 1650-1657).
 - `GBDKPipeline.gameUsesTilemapCollision` — the reflection twin (Plan 12-08).
 - [[SEED-021]] — sibling debt in the same visitor.
+
+> FIXED (Phase 21, plan 21-02): `gameUsesTilemapCollision` Path-C detection consolidated into
+> `gbkt-backend-api/TilemapCollisionGate.kt` as `gameUsesTilemapCollisionPathC(GameIR): Boolean`;
+> `PlatformerVisitor.gameUsesTilemapCollision` gains the previously-missing Path C as its first
+> check (bug fix — visitor was under-detecting tilemap-collision games); `GBDKPipeline` delegates
+> its inline Path C block to the same shared util; lockstep enforced by
+> `TilemapCollisionPredicateLockstepTest`.

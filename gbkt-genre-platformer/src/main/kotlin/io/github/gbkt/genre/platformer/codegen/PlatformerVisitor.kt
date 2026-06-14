@@ -13,6 +13,7 @@ package io.github.gbkt.genre.platformer.codegen
 
 import io.github.gbkt.backend.api.GenreSystemVisitor
 import io.github.gbkt.backend.api.GenreVisitorResult
+import io.github.gbkt.backend.api.gameUsesTilemapCollisionPathC
 import io.github.gbkt.backend.api.sanitizeCId
 import io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CBlankLine
@@ -1554,9 +1555,6 @@ class PlatformerVisitor : GenreSystemVisitor {
                 // UINT8 for _map_pos_x / _old_map_pos_x is sufficient because they index into the
                 // tilemap column (max 255 columns = 2040 px, well above any practical level).
                 //
-                // Deferred (SEED-022): consolidate gameUsesTilemapCollision() with the identical
-                // predicate in GBDKPipeline into a shared utility (e.g. TilemapCollisionGate)
-                // once the cross-genre / cross-backend pattern stabilises.
                 if (gameUsesTilemapCollision(gameIR)) {
                     add(CVarDecl(name = "_camera_x", type = CU16, initializer = CLiteral(0)))
                     add(CVarDecl(name = "_old_camera_x", type = CU16, initializer = CLiteral(0)))
@@ -1615,20 +1613,30 @@ class PlatformerVisitor : GenreSystemVisitor {
     /**
      * Phase 12 D-13 — predicate that gates the tilemap-camera mode WRAM globals.
      *
-     * Returns `true` when the game opts into tilemap-collision physics — detected via either:
+     * Returns `true` when the game opts into tilemap-collision physics — detected via:
+     * - **Path C (shared — Phase 21 Plan 02):** delegates to
+     *   [io.github.gbkt.backend.api.gameUsesTilemapCollisionPathC] — a
+     *   [io.github.gbkt.core.ir.GenericSystem] with `config["type"] == "tilemap_collision"` is
+     *   present. This is the previously-missing path (only in [GBDKPipeline], not here) fixed by
+     *   SEED-022. The shared util lives in `gbkt-backend-api` so both callers stay in lockstep.
      * - **Path A:** a `platformer_physics` `GenericSystem` whose `physicsConfig` is a
      *   `PlatformerPhysicsConfig` with a non-null `solidThreshold`.
      * - **Path B:** any `ZoneIR` in `gameIR.zones` whose `platformerPhysicsOverride` map contains a
      *   `"solidThreshold"` key.
      *
-     * Mirrors `GBDKPipeline.gameUsesTilemapCollision(gameIR)` exactly (Plan 12-08). Duplicated here
-     * because `gbkt-genre-platformer` has direct compile-time access to
-     * `PlatformerPhysicsConfig.solidThreshold` (no reflection needed), but the backend predicate
-     * uses reflection because `gbkt-backend-gbdk` does NOT depend on the platformer genre module.
-     * The two predicates MUST stay in lockstep — see SEED-022 and the consolidation note in
-     * `visitCamera`.
+     * Path C is kept in `gbkt-backend-api` because `gbkt-backend-gbdk` also needs it and does NOT
+     * depend on `gbkt-genre-platformer`. Path A is kept local here because this module has direct
+     * compile-time access to `PlatformerPhysicsConfig.solidThreshold` (no reflection required).
+     *
+     * Lockstep with `GBDKPipeline.gameUsesTilemapCollision` is structurally enforced by the shared
+     * Path C util + `TilemapCollisionPredicateLockstepTest` (Phase 21 Plan 02).
      */
     private fun gameUsesTilemapCollision(gameIR: GameIR): Boolean {
+        // Path C (Phase 21 Plan 02) — shared detection via gbkt-backend-api util (SEED-022 fix).
+        // Previously missing from this visitor; now added as the first check (same ordering as
+        // GBDKPipeline) so early-return fires before the typed Path A cast.
+        if (gameUsesTilemapCollisionPathC(gameIR)) return true
+
         // Path A — platformer_physics GenericSystem with non-null solidThreshold on physicsConfig
         val systemHasThreshold =
             gameIR.systems.filterIsInstance<GenericSystem>().any { sys ->
