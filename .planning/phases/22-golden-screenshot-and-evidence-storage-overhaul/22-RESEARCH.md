@@ -592,7 +592,9 @@ val EVIDENCE_DIR = File(System.getProperty("user.dir"))
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> All three resolved by planner decisions (2026-06-14): Q1 → classpath loading via `javaClass.getResource("/goldens/...")` (plans 22-06/07); Q2 → per-module `systemProperty` wiring (plan 22-03); Q3 → `compareRegion` preserved as supplemental gate alongside `assertGoldenMatch` (plan 22-07).
 
 1. **Golden file resolution: classpath resource vs File path?**
    - What we know: `src/test/resources/` is on the test classpath in Gradle; classpath resources are accessed via `javaClass.getResourceAsStream()` or similar.
