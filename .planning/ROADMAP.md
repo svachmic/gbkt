@@ -317,7 +317,7 @@ Plans:
 
 **Wave 3** *(blocked on 21-01 + 21-02 — needs final ROM)*
 
-- [ ] 21-07-PLAN.md — D-14/D-15 fix-first GBC 3-anchor re-shoot (EVIDENCE_DIR repoint) + binding visual sign-off (D-05/D-06/D-07) + archive 4 platformer seeds
+- [x] 21-07-PLAN.md — D-14/D-15 fix-first GBC 3-anchor re-shoot (EVIDENCE_DIR repoint) + binding visual sign-off (D-05/D-06/D-07) + archive 4 platformer seeds
 
 **Wave 4** *(blocked on all — closeout)*
 
@@ -338,4 +338,4 @@ Plans:
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 30/27 | Complete   | 2026-06-13 |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
-| 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 6/8 | In Progress|  |
+| 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 7/8 | In Progress|  |

@@ -4,13 +4,13 @@ milestone: v0.1.1
 milestone_name: Hardening
 status: executing
 stopped_at: Completed 21-04-PLAN.md
-last_updated: "2026-06-14T13:32:40.932Z"
+last_updated: "2026-06-14T14:35:53.628Z"
 last_activity: 2026-06-14 -- Phase 21 execution started
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 65
-  completed_plans: 66
+  completed_plans: 67
   percent: 83
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 21 (codegen-fixes-platformer-and-remaining-seeds) — EXECUTING
-Plan: 6 of 8
+Plan: 7 of 8
 Status: Ready to execute
 Last activity: 2026-06-14 -- Phase 21 execution started
 
@@ -432,6 +432,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 21 P01 | 3 | 2 tasks | 4 files |
 | Phase 21 P03 | 5 | - tasks | - files |
 | Phase 21 P04 | 2 | 1 tasks | 2 files |
+| Phase 21 P07 | 59 min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -956,6 +957,8 @@ Recent decisions affecting current work:
 - [Phase ?]: SEED-021 closed: pivotAdjust(Int) DSL setter is single source of truth; visitor reads from config with fallback
 - [Phase ?]: GameIRSerializer: Option 2 documented contract for 10 stubs; GenericSystem round-trips; full typed SystemIR serialize-only
 - [Phase ?]: SEED-027 + SEED-028 closed VERIFIED-ALREADY-FIXED (Phase 18); archived to seeds/archive/ with grep evidence; zero production code change
+- [Phase ?]: GBC-target ROMs must be UAT-captured with gbcMode=true; discoverFiles() does not enable GBC (DMG default inverts the palette)
+- [Phase ?]: Phase 21 plan 21-07: all four LOCKED-visual platformer seeds archived (3 FIXED, 1 CLOSED-AS-ACCEPTED) on binding GBC-mode sign-off
 
 ### Pending Todos
 
@@ -1051,7 +1054,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T13:32:40.926Z
+Last session: 2026-06-14T14:35:31.668Z
 Stopped at: Completed 21-04-PLAN.md
 
 ## Operator Next Steps
