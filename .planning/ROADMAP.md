@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v0.1.0 MVP — Compiler Pipeline Rebuild** — Phases 1–15 (shipped 2026-06-09)
-- 🚧 **v0.1.1 Hardening** — Phases 16–21 (in progress)
+- 🚧 **v0.1.1 Hardening** — Phases 16–22 (in progress)
 
 ## Phases
 
@@ -33,6 +33,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 - [x] **Phase 19: Codegen Fixes — Metasprite Cluster** - Visual-parity and structural latent metasprite bugs fixed with emission test coverage (completed 2026-06-13)
 - [x] **Phase 20: Codegen Fixes — Banks and Sprite Transparency** - Banks trio (SEED-014/015/016) re-verified closed; tRNS sprite outline confirmed fixed — verification 5/5, both FIX-04 visual oracles human-signed-off; security verified (0 threats) (completed 2026-06-14)
 - [x] **Phase 21: Codegen Fixes — Platformer and Remaining Seeds** - Platformer cEmit escapes replaced; all remaining seeds dispositioned; seeds directory empty — COMPLETE 2026-06-14 (pivotAdjust DSL lift, predicate consolidation, serializer stubs, 4 re-deferrals, GBC anchor re-shoot, D-13 byte-identity CLEAN, seeds/ empty)
+- [ ] **Phase 22: Golden Screenshot and Evidence Storage Overhaul** - Store this milestone's visual+emission evidence correctly: replace the per-phase EVIDENCE_DIR pattern (27 test classes) with central ROM+anchor-keyed immutable goldens that tests DIFF against; gitignore per-phase evidence/ scratch; GBC auto-detect from ROM 0x143; migrate the 19/20/21 binding goldens
 
 ## Phase Details
 
@@ -339,3 +340,26 @@ Plans:
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 8/8 | Complete    | 2026-06-14 |
+| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 0/0 | Not planned | — |
+
+### Phase 22: Golden Screenshot and Evidence Storage Overhaul
+
+**Goal**: This milestone's visual + emission evidence is stored as durable, immutable, ROM+anchor-keyed goldens that tests compare against — not scattered per-phase scratch. The `EVIDENCE_DIR`-pinned-to-a-phase pattern is eliminated across all UAT/emission tests, so test runs neither regenerate archived-phase directories nor churn committed sidecars, and GBC-vs-DMG capture mode is derived from the ROM rather than configured per-test.
+**Requirements**: FIX-07 (golden evidence storage scheme)
+**Depends on:** Phase 21
+
+**Why now (not v0.2.0):** The visual + emission evidence IS the output of the v0.1.1 Hardening milestone (every codegen fix is *proven* by it). Today that proof is mishandled: 27 test classes hardcode `EVIDENCE_DIR = .planning/phases/<originating-phase>/evidence`, so archived v0.1.0 phases (07.9/09/10/11/12.x/13.5) are regenerated as untracked garbage on every test run, current phases (19/20/21) churn their committed `capturedAt` sidecars, and a GBC ROM captured in DMG mode reads as a false palette regression (the 21-07 inversion). Fixing the storage of this milestone's deliverable belongs in this milestone.
+
+**Success Criteria:**
+  1. No test writes evidence into a `.planning/phases/**/evidence` path; the per-phase `EVIDENCE_DIR` constant is removed from all 27 UAT/emission test classes and replaced with a central ROM+anchor-keyed location.
+  2. Goldens are immutable + committed; UAT/emission tests capture to a gitignored scratch dir and DIFF against the committed golden, failing on mismatch. Re-baselining is an explicit, reviewed action (not a side effect of a normal test run).
+  3. `.planning/phases/**/evidence/` is gitignored; a clean `./gradlew test` leaves zero new untracked files and zero modified committed evidence (no `capturedAt` churn; no archived-phase dir regeneration).
+  4. `AgentSessionConfig.discoverFiles` auto-detects GBC mode from the ROM CGB-flag byte (0x143); the Phase 21 per-test `.copy(gbcMode = true)` workaround is removed; GBC-target example captures render with correct (non-inverted) palette.
+  5. The genuine binding goldens from Phases 19/20/21 (metasprite, banks/tRNS, platformer GBC anchors) are migrated into the central goldens dir and remain the blessed baselines; the untracked archived-phase evidence garbage is removed.
+  6. TESTING.md documents the goldens layout + the re-baseline command.
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 22 to break down)

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: completed
-stopped_at: Completed 21-04-PLAN.md
-last_updated: "2026-06-14T15:05:50.837Z"
+status: in_progress
+stopped_at: Phase 22 added (golden/evidence storage overhaul) — not yet planned
+last_updated: "2026-06-14T15:44:00.000Z"
 last_activity: 2026-06-14
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
   total_plans: 65
   completed_plans: 68
-  percent: 100
+  percent: 86
 ---
 
 # Project State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** The framework automatically manages Game Boy hardware resources (VRAM, banking, OAM, RAM) so the developer writes only declarative Kotlin DSL — like Jetpack Compose for Game Boy.
-**Current focus:** Phase 21 — codegen-fixes-platformer-and-remaining-seeds
+**Current focus:** Phase 22 — golden-screenshot-and-evidence-storage-overhaul (added 2026-06-14; not yet planned). Milestone v0.1.1 reopened: Phase 21 closed the seed backlog, but the milestone's own visual/emission evidence is stored via the broken per-phase EVIDENCE_DIR pattern (27 tests) and must be fixed before milestone close / PR #77 merge.
 
 ## Deferred Items
 
@@ -54,12 +54,15 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 21
-Plan: Not started
-Status: Milestone v0.1.1 complete
+Phase: 22
+Plan: Not planned
+Status: Milestone v0.1.1 REOPENED — Phase 22 (golden/evidence storage overhaul) added; Phases 16–21 complete
 Last activity: 2026-06-14
 
-Resume signal: milestone v0.1.1 complete — advance to next milestone via /gsd-new-milestone
+Resume signal: Phase 22 added but not planned. Wide blast radius (27 phase-pinned test classes + harness + .gitignore + golden migration) → route /gsd-spec-phase 22 → /gsd-discuss-phase 22 → /gsd-plan-phase 22 WITH research. Do NOT execute inline. PR #77 (chore/hardening_0_1_0) should merge only after Phase 22 stores this milestone's evidence correctly.
+
+### Roadmap Evolution
+- Phase 22 added 2026-06-14: Golden Screenshot and Evidence Storage Overhaul (FIX-07). Reopens v0.1.1 because the milestone's visual/emission evidence — its own proof of every codegen fix — is stored via the broken per-phase EVIDENCE_DIR pattern (archived phases regenerate as untracked garbage; current phases churn capturedAt sidecars; GBC ROMs captured in DMG render inverted). USER chose "new phase in v0.1.1, before merge". Source: backlog/v0.2.0/SEED-GOLDEN-SCREENSHOT-STORAGE-OVERHAUL.md (to be moved into the phase). See [[project_golden_screenshot_storage_decision]].
 
 ### Bisect state as of Plan 06d complete
 

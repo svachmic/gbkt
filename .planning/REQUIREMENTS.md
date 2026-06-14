@@ -46,6 +46,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **FIX-04**: Sprite-outline tRNS — closed by Phase 16 triage (see TRIAGE.md): SEED-PHASE-13-SPRITE-OUTLINE VERIFIED-ALREADY-FIXED (Phase 13.6 tRNS auto-route confirmed; visual closure oracle deferred to Phase 20 D-08). Seed moved to seeds/archive/. Phase 20 FIX-04 scope = visual oracle confirmation only.
 - [x] **FIX-05**: Platformer seeds — Phase 16 triage disposition: SEED-021 CONFIRMED-OPEN (pivot_adjust hardcoded, Phase 21), SEED-PHASE-12-PLATFORMER-SPAWN-POSITION-CLARITY CONFIRMED-OPEN (Phase 21), SEED-PHASE-13-PLAYER-SUB-PIXEL-OFFSET-OR-COLLISION-MASK CONFIRMED-OPEN (Phase 21, LOCKED visual review), SEED-platformer-template-spawn-polish CONFIRMED-OPEN (Phase 21, LOCKED visual review). All 4 remain in seeds/. UAT anchors re-shot scope unchanged.
 - [x] **FIX-06**: Small DSL/tooling seeds — Phase 16 triage disposition: SEED-002 VERIFIED-ALREADY-FIXED (→ archive), SEED-003 RE-DEFERRED (→ backlog/v0.2.0), SEED-012 VERIFIED-ALREADY-FIXED (→ archive), SEED-017 RE-DEFERRED v0.2.0 (sport-zone dual pipeline, not in Phase 21 scope; → backlog/v0.2.0), SEED-020 → FIXED (Phase 21, GameIRSerializer round-trip stubs), SEED-021 CONFIRMED-OPEN (pivot_adjust, routed to FIX-05/Phase 21), SEED-022 → FIXED (Phase 21, gameUsesTilemapCollision predicate consolidation), SEED-026 VERIFIED-ALREADY-FIXED (→ archive), SEED-ZONE-MAGIC-STRING RE-DEFERRED v0.2.0 (wide blast radius; → backlog/v0.2.0), one-way tile RE-DEFERRED (→ backlog/v0.2.0), shared-tileset RE-DEFERRED (→ backlog/v0.2.0), per-zone-banks RE-DEFERRED (→ backlog/v0.2.0). Phase 21 FIX-06 active scope: SEED-020 + SEED-022 (SEED-017 + ZONE-MAGIC-STRING re-deferred to v0.2.0 with evidence per Criterion 3).
+- [ ] **FIX-07**: Golden evidence storage scheme — the milestone's visual + emission evidence (its proof of every codegen fix) must be stored as durable, immutable, ROM+anchor-keyed goldens that tests DIFF against. Eliminate the per-phase `EVIDENCE_DIR` pattern across all 27 UAT/emission test classes (archived phases regenerate as untracked garbage; current phases churn `capturedAt` sidecars), gitignore per-phase `evidence/` scratch, auto-detect GBC mode from the ROM 0x143 header in `AgentSessionConfig.discoverFiles` (removing the Phase 21 `.copy(gbcMode=true)` workaround), and migrate the Phase 19/20/21 binding goldens into the central dir. Phase 22.
 
 ## Future Requirements (v0.2.0+)
 
@@ -123,6 +124,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FIX-04 | Phase 20 | Complete |
 | FIX-05 | Phase 21 | Complete |
 | FIX-06 | Phase 21 | Complete |
+| FIX-07 | Phase 22 | Not planned |
 
 **Coverage:**
 
