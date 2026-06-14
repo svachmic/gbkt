@@ -301,7 +301,32 @@ Plans:
   4. FIX-05 platformer seeds resolved: SEED-021 pivot_adjust auto-derive, SEED-PHASE-12-PLATFORMER-SPAWN-POSITION-CLARITY + SEED-platformer-template-spawn-polish spawn polish, SEED-PHASE-13-PLAYER-SUB-PIXEL-OFFSET-OR-COLLISION-MASK sub-pixel fix
   5. `.planning/seeds/` is empty at phase close; all re-deferred items are already in v0.2.0 backlog (Plan 16-10 pre-moved: SEED-003, one-way tile, shared-tileset, per-zone-banks)
 
-**Plans**: TBD
+**Plans**: 8 plans
+
+**Wave 1** *(parallel — no file overlap)*
+
+- [ ] 21-01-PLAN.md — D-05 pivotAdjust DSL lift (TilemapCollisionBuilder setter + visitor config-read) + snap-arithmetic emission test (D-07)
+- [ ] 21-03-PLAN.md — D-08 GameIRSerializer deserialize 10 stubbed collections + round-trip test (gbkt-ir)
+- [ ] 21-04-PLAN.md — D-10/D-11 SEED-027 + SEED-028 close VERIFIED-ALREADY-FIXED (structural grep + archive)
+- [ ] 21-05-PLAN.md — D-12 SEED-029 whenever→runIf doc/KDoc sweep (grep-first inventory) + archive
+- [ ] 21-06-PLAN.md — D-03/D-04 re-defer 4 seeds to backlog/v0.2.0 + REQUIREMENTS.md FIX-06 reconcile + evidence note
+
+**Wave 2** *(blocked on 21-01 — shares PlatformerVisitor.kt)*
+
+- [ ] 21-02-PLAN.md — D-09 SEED-022 shared gameUsesTilemapCollisionPathC util (gbkt-backend-api) + delegate both callers + lockstep test
+
+**Wave 3** *(blocked on 21-01 + 21-02 — needs final ROM)*
+
+- [ ] 21-07-PLAN.md — D-14/D-15 fix-first GBC 3-anchor re-shoot (EVIDENCE_DIR repoint) + binding visual sign-off (D-05/D-06/D-07) + archive 4 platformer seeds
+
+**Wave 4** *(blocked on all — closeout)*
+
+- [ ] 21-08-PLAN.md — D-13 byte-identity unchanged-set sweep (pong PASS*) + D-01 seeds/ empty verification + FIX-05/FIX-06 Complete + ROADMAP finalize
+
+**Cross-cutting constraints:**
+
+- D-16 commit discipline — Phase 21 commits contain ONLY seed-closure work; zero PR-#77 / S3776 refactors interleaved; executors run `:module:spotlessApply :module:detekt` per-commit
+- D-13 oracle — byte-identity only on the 5 UNTOUCHED examples; platformer-template (changed) proven by emission tests + UAT anchors; pong PASS*
 
 ## Progress
 
@@ -313,4 +338,4 @@ Plans:
 | 18. Deprecation Removals and Sonar Burn-down | v0.1.1 | 30/27 | Complete   | 2026-06-13 |
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
-| 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/TBD | Not started | - |
+| 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 0/8 | Planned | - |
