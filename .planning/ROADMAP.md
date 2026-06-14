@@ -340,7 +340,7 @@ Plans:
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 8/8 | Complete    | 2026-06-14 |
-| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 0/0 | Not planned | — |
+| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 0/14 | Planned | — |
 
 ### Phase 22: Golden Screenshot and Evidence Storage Overhaul
 
@@ -358,8 +358,21 @@ Plans:
   5. The genuine binding goldens from Phases 19/20/21 (metasprite, banks/tRNS, platformer GBC anchors) are migrated into the central goldens dir and remain the blessed baselines; the untracked archived-phase evidence garbage is removed.
   6. TESTING.md documents the goldens layout + the re-baseline command.
 
-**Plans:** 0 plans
+**Plans:** 14 plans (5 waves)
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 22 to break down)
+- [ ] 22-01-PLAN.md — assertGoldenMatch helper + GBKT_UPDATE_GOLDENS_PROP + drop capturedAt (gbkt-emulator) [Wave 1]
+- [ ] 22-02-PLAN.md — discoverFiles GBC auto-detect from ROM byte 0x143 + tests [Wave 1]
+- [ ] 22-03-PLAN.md — .gitignore evidence rule + -Pgbkt.updateGoldens wiring + goldens dir skeletons [Wave 1]
+- [ ] 22-09-PLAN.md — gbkt-backend-gbdk emission scratch redirect (9 classes) [Wave 1]
+- [ ] 22-10-PLAN.md — gbkt-genre-platformer emission scratch redirect (9 classes) [Wave 1]
+- [ ] 22-11-PLAN.md — example-module emission scratch redirect (7 classes) [Wave 1]
+- [ ] 22-04-PLAN.md — byte-identity migration of 6 metasprites anchors (sha256-proven) [Wave 2]
+- [ ] 22-05-PLAN.md — byte-identity migration of 16 platformer-template anchors (sha256-proven) [Wave 2]
+- [ ] 22-06-PLAN.md — metasprites visual-UAT swaps to assertGoldenMatch + D-07 guard [Wave 3]
+- [ ] 22-07-PLAN.md — platformer-template visual-UAT swaps (anchor4 compareRegion preserved) [Wave 3]
+- [ ] 22-08-PLAN.md — simple-physics + banks visual-UAT scratch redirect (no golden) [Wave 3]
+- [ ] 22-12-PLAN.md — git rm all tracked per-phase evidence (143 files) after goldens migrated [Wave 4]
+- [ ] 22-14-PLAN.md — TESTING.md goldens layout + re-baseline command + GBC auto-detect [Wave 4]
+- [ ] 22-13-PLAN.md — clean-tree acceptance test (R1/R5/R6 gates) + full-suite/buildRom sign-off [Wave 5]
