@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: in_progress
-stopped_at: Phase 22 added (golden/evidence storage overhaul) — not yet planned
-last_updated: "2026-06-14T15:44:00.000Z"
+status: completed
+stopped_at: Phase 22 context gathered
+last_updated: "2026-06-14T18:34:29.836Z"
 last_activity: 2026-06-14
 progress:
   total_phases: 7
@@ -62,6 +62,7 @@ Last activity: 2026-06-14
 Resume signal: Phase 22 added but not planned. Wide blast radius (27 phase-pinned test classes + harness + .gitignore + golden migration) → route /gsd-spec-phase 22 → /gsd-discuss-phase 22 → /gsd-plan-phase 22 WITH research. Do NOT execute inline. PR #77 (chore/hardening_0_1_0) should merge only after Phase 22 stores this milestone's evidence correctly.
 
 ### Roadmap Evolution
+
 - Phase 22 added 2026-06-14: Golden Screenshot and Evidence Storage Overhaul (FIX-07). Reopens v0.1.1 because the milestone's visual/emission evidence — its own proof of every codegen fix — is stored via the broken per-phase EVIDENCE_DIR pattern (archived phases regenerate as untracked garbage; current phases churn capturedAt sidecars; GBC ROMs captured in DMG render inverted). USER chose "new phase in v0.1.1, before merge". Source: backlog/v0.2.0/SEED-GOLDEN-SCREENSHOT-STORAGE-OVERHAUL.md (to be moved into the phase). See [[project_golden_screenshot_storage_decision]].
 
 ### Bisect state as of Plan 06d complete
@@ -1057,8 +1058,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T14:35:31.668Z
-Stopped at: Completed 21-04-PLAN.md
+Last session: 2026-06-14T18:34:29.829Z
+Stopped at: Phase 22 context gathered
 
 ## Operator Next Steps
 
