@@ -38,18 +38,18 @@ import org.json.JSONObject
  * The following 10 domain collections deserialize the listed fields only; all other fields default
  * safely. Full round-trip fidelity is NOT guaranteed for complex nested structures.
  *
- * |Collection        |Recovered fields                                             |Unsupported (serialize-only)                   |
- * |------------------|-------------------------------------------------------------|-----------------------------------------------|
- * |[GlobalFlagsIR]   |`id`                                                         |`pages`                                        |
- * |[ItemCategoryDef] |`id`                                                         |`defaultMaxStack` (defaults to 1)              |
- * |[ItemDef]         |`id`, `name`, `categoryId`                                   |`maxStack`, `effects`, `buyPrice`, `dropWeight`|
- * |[ContainerIR]     |`id`                                                         |`slots` (defaults to 0), `categoryFilter`      |
- * |[DropTableIR]     |`id`                                                         |`entries`                                      |
- * |[PuzzleObjectIR]  |`id` (reconstructed as [SwitchObjectIR] placeholder)         |`x`, `y`, handlers, concrete type              |
- * |[CollisionGroupIR]|`id`                                                         |—                                              |
- * |[CollisionRuleIR] |`groupA`, `groupB`, `response`                               |`interval`, `onCollide`                        |
- * |[ZoneIR]          |`id`, `name`, `spawnX`, `spawnY`, `screenMode`, `tilesetPath`|all other fields                               |
- * |[SystemIR]        |`id`, `config["type"]` (as [GenericSystem])                  |full typed systems (CombatEngineSystem, etc.)  |
+ * |Collection        |Recovered fields                                             |Unsupported (serialize-only)                                                                           |
+ * |------------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+ * |[GlobalFlagsIR]   |`id`                                                         |`pages`                                                                                                |
+ * |[ItemCategoryDef] |`id`                                                         |`defaultMaxStack` (defaults to 1)                                                                      |
+ * |[ItemDef]         |`id`                                                         |`name` (defaults to ""), `categoryId` (defaults to ""), `maxStack`, `effects`, `buyPrice`, `dropWeight`|
+ * |[ContainerIR]     |`id`                                                         |`slots` (defaults to 0), `categoryFilter`                                                              |
+ * |[DropTableIR]     |`id`                                                         |`entries`                                                                                              |
+ * |[PuzzleObjectIR]  |`id` (reconstructed as [SwitchObjectIR] placeholder)         |`x`, `y`, handlers, concrete type                                                                      |
+ * |[CollisionGroupIR]|`id`                                                         |—                                                                                                      |
+ * |[CollisionRuleIR] |`groupA`, `groupB`, `response`                               |`interval`, `onCollide`                                                                                |
+ * |[ZoneIR]          |`id`, `name`, `spawnX`, `spawnY`, `screenMode`, `tilesetPath`|all other fields                                                                                       |
+ * |[SystemIR]        |`id`, `config["type"]` (as [GenericSystem])                  |full typed systems (CombatEngineSystem, etc.)                                                          |
  *
  * Full round-trip fidelity is guaranteed for all other types: scenes, actors, variables, arrays,
  * collections, dialogs, menus, HUDs, music, actor pools, assets, palettes, sound effects, structs,
@@ -218,7 +218,7 @@ object GameIRSerializer {
                     val rawSpawnY =
                         if (obj.has("spawnY")) obj.optInt("spawnY", 0).toUByte() else null
                     ZoneIR(
-                        id = obj.getString("id"),
+                        id = obj.optString("id", ""),
                         name = obj.optString("name", ""),
                         tilesetPath = obj.optString("tilesetPath", null)?.takeIf { it != "null" },
                         screenMode = obj.optBoolean("screenMode", false),
@@ -228,18 +228,18 @@ object GameIRSerializer {
                 },
             flags =
                 deserializeList(json.optJSONArray("flags")) { obj ->
-                    GlobalFlagsIR(id = obj.getString("id"))
+                    GlobalFlagsIR(id = obj.optString("id", ""))
                 },
             itemCategories =
                 deserializeList(json.optJSONArray("itemCategories")) { obj ->
-                    ItemCategoryDef(id = obj.getString("id"))
+                    ItemCategoryDef(id = obj.optString("id", ""))
                 },
             items =
                 deserializeList(json.optJSONArray("items")) { obj ->
                     // Recovered: id, name (empty string default), categoryId (empty string
                     // default).
                     ItemDef(
-                        id = obj.getString("id"),
+                        id = obj.optString("id", ""),
                         name = obj.optString("name", ""),
                         categoryId = obj.optString("categoryId", ""),
                     )
@@ -247,21 +247,21 @@ object GameIRSerializer {
             containers =
                 deserializeList(json.optJSONArray("containers")) { obj ->
                     // slots defaults to 0 (not serialized in the simple stub shape).
-                    ContainerIR(id = obj.getString("id"), slots = obj.optInt("slots", 0))
+                    ContainerIR(id = obj.optString("id", ""), slots = obj.optInt("slots", 0))
                 },
             dropTables =
                 deserializeList(json.optJSONArray("dropTables")) { obj ->
-                    DropTableIR(id = obj.getString("id"))
+                    DropTableIR(id = obj.optString("id", ""))
                 },
             puzzleObjects =
                 deserializeList(json.optJSONArray("puzzleObjects")) { obj ->
                     // PuzzleObjectIR is sealed; the simple serialize stub emits only {type, id}.
                     // Reconstruct as SwitchObjectIR placeholder (x=0, y=0) — concrete type is lost.
-                    SwitchObjectIR(id = obj.getString("id"), x = 0, y = 0)
+                    SwitchObjectIR(id = obj.optString("id", ""), x = 0, y = 0)
                 },
             collisionGroups =
                 deserializeList(json.optJSONArray("collisionGroups")) { obj ->
-                    CollisionGroupIR(id = obj.getString("id"))
+                    CollisionGroupIR(id = obj.optString("id", ""))
                 },
             collisionRules =
                 deserializeList(json.optJSONArray("collisionRules")) { obj ->
