@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 22-01-PLAN.md
-last_updated: "2026-06-14T21:14:00.000Z"
-last_activity: 2026-06-14 -- Phase 22 Plan 01 complete (GoldenAssertions + capturedAt removal)
+stopped_at: Completed 22-02-PLAN.md
+last_updated: "2026-06-14T21:13:07.391Z"
+last_activity: 2026-06-14 -- Phase 22 Plan 01 COMPLETE (GoldenAssertions.kt + capturedAt removal)
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 79
-  completed_plans: 69
-  percent: 87
+  completed_plans: 70
+  percent: 86
 ---
 
 # Project State
@@ -55,13 +55,14 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 22 (golden-screenshot-and-evidence-storage-overhaul) — EXECUTING
-Plan: 2 of 14
-Status: Executing Phase 22
+Plan: 3 of 14
+Status: Ready to execute
 Last activity: 2026-06-14 -- Phase 22 Plan 01 COMPLETE (GoldenAssertions.kt + capturedAt removal)
 
 Resume signal: Plan 22-01 complete. Proceed with Plan 22-02 (next wave 1 plan or wave 2 plans).
 
 Decisions:
+
 - GBKT_UPDATE_GOLDENS_PROP = "gbkt.updateGoldens" (named constant, Project Rule #1)
 - compareOrBless uses File.copyTo for raw byte-identity bless (never ImageIO re-encode)
 - GBC-header guard (D-07) is CALLER's responsibility, not the helper's
@@ -442,6 +443,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 21 P03 | 5 | - tasks | - files |
 | Phase 21 P04 | 2 | 1 tasks | 2 files |
 | Phase 21 P07 | 59 min | 3 tasks | 2 files |
+| Phase 22 P02 | 2 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -968,6 +970,7 @@ Recent decisions affecting current work:
 - [Phase ?]: SEED-027 + SEED-028 closed VERIFIED-ALREADY-FIXED (Phase 18); archived to seeds/archive/ with grep evidence; zero production code change
 - [Phase ?]: GBC-target ROMs must be UAT-captured with gbcMode=true; discoverFiles() does not enable GBC (DMG default inverts the palette)
 - [Phase ?]: Phase 21 plan 21-07: all four LOCKED-visual platformer seeds archived (3 FIXED, 1 CLOSED-AS-ACCEPTED) on binding GBC-mode sign-off
+- [Phase ?]: CGB_FLAG_OFFSET=0x143L named constant; discoverFiles auto-detects gbcMode from ROM header byte 0x143
 
 ### Pending Todos
 
@@ -1063,8 +1066,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T18:34:29.829Z
-Stopped at: Phase 22 context gathered
+Last session: 2026-06-14T21:13:07.385Z
+Stopped at: Completed 22-02-PLAN.md
 
 ## Operator Next Steps
 

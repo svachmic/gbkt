@@ -340,7 +340,7 @@ Plans:
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 8/8 | Complete    | 2026-06-14 |
-| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 1/14 | Executing | — |
+| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 2/14 | In Progress|  |
 
 ### Phase 22: Golden Screenshot and Evidence Storage Overhaul
 
@@ -351,6 +351,7 @@ Plans:
 **Why now (not v0.2.0):** The visual + emission evidence IS the output of the v0.1.1 Hardening milestone (every codegen fix is *proven* by it). Today that proof is mishandled: 27 test classes hardcode `EVIDENCE_DIR = .planning/phases/<originating-phase>/evidence`, so archived v0.1.0 phases (07.9/09/10/11/12.x/13.5) are regenerated as untracked garbage on every test run, current phases (19/20/21) churn their committed `capturedAt` sidecars, and a GBC ROM captured in DMG mode reads as a false palette regression (the 21-07 inversion). Fixing the storage of this milestone's deliverable belongs in this milestone.
 
 **Success Criteria:**
+
   1. No test writes evidence into a `.planning/phases/**/evidence` path; the per-phase `EVIDENCE_DIR` constant is removed from all 27 UAT/emission test classes and replaced with a central ROM+anchor-keyed location.
   2. Goldens are immutable + committed; UAT/emission tests capture to a gitignored scratch dir and DIFF against the committed golden, failing on mismatch. Re-baselining is an explicit, reviewed action (not a side effect of a normal test run).
   3. `.planning/phases/**/evidence/` is gitignored; a clean `./gradlew test` leaves zero new untracked files and zero modified committed evidence (no `capturedAt` churn; no archived-phase dir regeneration).
@@ -358,12 +359,12 @@ Plans:
   5. The genuine binding goldens from Phases 19/20/21 (metasprite, banks/tRNS, platformer GBC anchors) are migrated into the central goldens dir and remain the blessed baselines; the untracked archived-phase evidence garbage is removed.
   6. TESTING.md documents the goldens layout + the re-baseline command.
 
-**Plans:** 14 plans (5 waves)
+**Plans:** 2/14 plans executed
 
 Plans:
 
 - [x] 22-01-PLAN.md — assertGoldenMatch helper + GBKT_UPDATE_GOLDENS_PROP + drop capturedAt (gbkt-emulator) [Wave 1]
-- [ ] 22-02-PLAN.md — discoverFiles GBC auto-detect from ROM byte 0x143 + tests [Wave 1]
+- [x] 22-02-PLAN.md — discoverFiles GBC auto-detect from ROM byte 0x143 + tests [Wave 1]
 - [ ] 22-03-PLAN.md — .gitignore evidence rule + -Pgbkt.updateGoldens wiring + goldens dir skeletons [Wave 1]
 - [ ] 22-09-PLAN.md — gbkt-backend-gbdk emission scratch redirect (9 classes) [Wave 1]
 - [ ] 22-10-PLAN.md — gbkt-genre-platformer emission scratch redirect (9 classes) [Wave 1]
