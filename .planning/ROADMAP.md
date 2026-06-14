@@ -272,7 +272,11 @@ Plans:
   4. Platformer player transparency is confirmed unchanged — a runtime screenshot at HEAD after the tRNS confirmation shows no regression
   5. A 7-example byte-identity ROM sweep passes after every commit in this phase
 
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 20-01-PLAN.md — FIX-03 re-verify gate (D-02): run BanksEmissionTest INV-2/5/6 + BanksUatTest Anchor 4 fresh to GREEN at HEAD
+- [ ] 20-02-PLAN.md — FIX-03 audit doc (D-01/D-03): produce 20-AUDIT-FIX-03.md mapping the banks trio to existing guards (zero new guards expected)
+- [ ] 20-03-PLAN.md — FIX-04 visual oracle (D-04/D-05): two GBC-mode UAT screenshots (metasprites sprite-outline clean; platformer player-transparency no-regression)
+- [ ] 20-04-PLAN.md — Byte-identity oracle (D-06): per-commit affected-example diffs + full 7-example generated-C sweep at phase close
 
 ### Phase 21: Codegen Fixes — Platformer and Remaining Seeds
 
