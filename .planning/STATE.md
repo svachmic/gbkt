@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 21-03-PLAN.md
-last_updated: "2026-06-14T13:04:20.419Z"
+stopped_at: Completed 21-04-PLAN.md
+last_updated: "2026-06-14T13:07:55.532Z"
 last_activity: 2026-06-14 -- Phase 21 execution started
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 65
-  completed_plans: 62
+  completed_plans: 63
   percent: 83
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 21 (codegen-fixes-platformer-and-remaining-seeds) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 Status: Ready to execute
 Last activity: 2026-06-14 -- Phase 21 execution started
 
@@ -431,6 +431,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 20 P04 | 2 | 2 tasks | 4 files |
 | Phase 21 P01 | 3 | 2 tasks | 4 files |
 | Phase 21 P03 | 5 | - tasks | - files |
+| Phase 21 P04 | 2 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -954,6 +955,7 @@ Recent decisions affecting current work:
 - [Phase ?]: D-06 two-tier byte-identity proof: per-commit baselines (tier 1) + phase-close 7-example sweep (tier 2) — all 14 .c files stable, zero generated-C drift
 - [Phase ?]: SEED-021 closed: pivotAdjust(Int) DSL setter is single source of truth; visitor reads from config with fallback
 - [Phase ?]: GameIRSerializer: Option 2 documented contract for 10 stubs; GenericSystem round-trips; full typed SystemIR serialize-only
+- [Phase ?]: SEED-027 + SEED-028 closed VERIFIED-ALREADY-FIXED (Phase 18); archived to seeds/archive/ with grep evidence; zero production code change
 
 ### Pending Todos
 
@@ -1049,8 +1051,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T13:04:20.412Z
-Stopped at: Completed 21-03-PLAN.md
+Last session: 2026-06-14T13:07:55.526Z
+Stopped at: Completed 21-04-PLAN.md
 
 ## Operator Next Steps
 
