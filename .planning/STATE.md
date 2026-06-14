@@ -4,13 +4,13 @@ milestone: v0.1.1
 milestone_name: Hardening
 status: executing
 stopped_at: Completed 22-05-PLAN.md
-last_updated: "2026-06-14T21:44:12.005Z"
+last_updated: "2026-06-14T21:51:11.085Z"
 last_activity: 2026-06-14 -- Phase 22 Plan 01 COMPLETE (GoldenAssertions.kt + capturedAt removal)
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 79
-  completed_plans: 76
+  completed_plans: 77
   percent: 86
 ---
 
@@ -55,7 +55,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 22 (golden-screenshot-and-evidence-storage-overhaul) — EXECUTING
-Plan: 9 of 14
+Plan: 10 of 14
 Status: Ready to execute
 Last activity: 2026-06-14 -- Phase 22 Plan 01 COMPLETE (GoldenAssertions.kt + capturedAt removal)
 
@@ -448,6 +448,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 22 P09 | 2 | 2 tasks | 9 files |
 | Phase 22 P04 | 2 | 1 tasks | 6 files |
 | Phase 22 P05 | 2 | 1 tasks | 16 files |
+| Phase 22 P08 | 4 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -1075,7 +1076,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T21:44:11.999Z
+Last session: 2026-06-14T21:51:11.080Z
 Stopped at: Completed 22-05-PLAN.md
 
 ## Operator Next Steps
