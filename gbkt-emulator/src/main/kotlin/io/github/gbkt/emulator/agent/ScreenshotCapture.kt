@@ -24,7 +24,6 @@ import org.json.JSONObject
  * {
  *   "frameNumber": 42,
  *   "label": "battle_start",
- *   "capturedAt": 1700000000000,
  *   "variables": { "score": 100, "lives": 3 }
  * }
  * ```
@@ -103,7 +102,6 @@ object ScreenshotCapture {
             JSONObject()
                 .put("frameNumber", frameNumber)
                 .put("label", label)
-                .put("capturedAt", System.currentTimeMillis())
                 .put("variables", variables)
         if (debugLogEntries.isNotEmpty()) {
             val logArray = org.json.JSONArray()
