@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: executing
-stopped_at: Completed 20-01-PLAN.md
-last_updated: "2026-06-14T08:12:53.281Z"
+status: verifying
+stopped_at: Completed 20-04-PLAN.md
+last_updated: "2026-06-14T08:18:37.617Z"
 last_activity: 2026-06-14 -- Phase 20 Plan 03 complete (FIX-04 visual oracle PNGs captured)
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 57
-  completed_plans: 59
-  percent: 67
+  completed_plans: 60
+  percent: 83
 ---
 
 # Project State
@@ -56,7 +56,7 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 Phase: 20 (codegen-fixes-banks-and-sprite-transparency) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-14 -- Phase 20 Plan 03 complete (FIX-04 visual oracle PNGs captured)
 
 Resume signal: /gsd-execute-phase 18 (Plan 27 — SonarCloud scan gate remaining)
@@ -427,6 +427,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 20 P01 | 3min | 2 tasks | 4 files |
 | Phase 20 P03 | 4min | 2 tasks | 6 files |
 | Phase 20 P02 | 2 | 1 tasks | 1 files |
+| Phase 20 P04 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -947,6 +948,7 @@ Recent decisions affecting current work:
 - [Phase ?]: after.sha256 byte-identity oracle CLEAN: Phase 19 introduced zero production codegen drift (D-07/Req 5)
 - [Phase ?]: D-08 commit separation confirmed: all 8 Phase 19 commits are evidence/test/doc only, zero S3776 refactors
 - [Phase ?]: D-02 gate: INV-2/INV-5/INV-6 GREEN at HEAD; SEED-014/015/016 VERIFIED-ALREADY-FIXED
+- [Phase ?]: D-06 two-tier byte-identity proof: per-commit baselines (tier 1) + phase-close 7-example sweep (tier 2) — all 14 .c files stable, zero generated-C drift
 
 ### Pending Todos
 
@@ -1042,8 +1044,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T08:12:53.274Z
-Stopped at: Completed 20-01-PLAN.md
+Last session: 2026-06-14T08:18:37.611Z
+Stopped at: Completed 20-04-PLAN.md
 
 ## Operator Next Steps
 
