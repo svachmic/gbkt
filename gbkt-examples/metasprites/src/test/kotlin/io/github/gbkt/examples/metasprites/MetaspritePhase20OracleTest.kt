@@ -9,6 +9,7 @@ package io.github.gbkt.examples.metasprites
 import io.github.gbkt.emulator.agent.AgentSessionConfig
 import io.github.gbkt.emulator.agent.GameMetadata
 import io.github.gbkt.emulator.agent.StepAgent
+import io.github.gbkt.emulator.agent.assertGoldenMatch
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.Test
@@ -19,20 +20,21 @@ import org.junit.jupiter.api.Assumptions
 /**
  * Phase 20 FIX-04 visual oracle — D-08 oracle #1.
  *
- * Captures a HEAD GBC-mode screenshot of the metasprites elephant in the `play` scene to confirm
- * the sprite-outline renders clean (transparent pixels correctly routed to GB OBJ index 0 via the
- * Phase 13.6 tRNS auto-route in `ConvertSpritesTask.kt:328-372`).
+ * Captures a HEAD GBC-mode screenshot of the metasprites elephant in the `play` scene and diffs it
+ * against the committed golden (`elephant-sprite-outline-clean.png`) to confirm the sprite-outline
+ * renders clean (transparent pixels correctly routed to GB OBJ index 0 via the Phase 13.6 tRNS
+ * auto-route in `ConvertSpritesTask.kt:328-372`).
  *
  * Per the Visual Evidence Rule (CLAUDE.md §"Verification Methodology"), visual truths require a
- * runtime screenshot — variable assertions alone are insufficient. The PNG captured here is the
- * binding visual oracle for FIX-04 Success Criterion 3. Human visual sign-off happens at phase
- * verification; this test provides the mechanical non-blank gate.
+ * runtime screenshot — variable assertions alone are insufficient. The pixel-exact diff against the
+ * committed golden is the binding oracle for FIX-04 Success Criterion 3.
  *
- * GBC mode is required: the metasprites example targets `GbcTarget.GBC_COMPATIBLE`. A DMG capture
- * produces false grayscale rendering (MEMORY: `learning_platformer_mcp_needs_gbc_mode`).
+ * GBC mode is auto-detected from ROM header byte 0x143 via [AgentSessionConfig.discoverFiles] (plan
+ * 22-02). The D-07 guard asserts `gbcMode` before any golden write to prevent an accidentally
+ * mis-built DMG ROM from blessing inverted-palette goldens.
  *
- * Evidence output:
- * - `.planning/phases/20-codegen-fixes-banks-and-sprite-transparency/evidence/fix-04/metasprites-sprite-outline.png`
+ * Captures are written to `build/gbkt/screenshots/` (gitignored scratch). No `.planning/phases`
+ * paths are used — per Phase 22 R1/R2 requirements.
  *
  * Skipped automatically if the ROM is missing — run `./gradlew :gbkt-examples:metasprites:clean
  * :gbkt-examples:metasprites:buildRom` first.
@@ -40,26 +42,22 @@ import org.junit.jupiter.api.Assumptions
 class MetaspritePhase20OracleTest {
 
     companion object {
-        // Phase 20 evidence dir — resolves from gbkt-examples/metasprites/ (user.dir at test time)
-        // ../../ walks up to the repo root.
-        private val EVIDENCE_DIR =
-            File(System.getProperty("user.dir"))
-                .resolve(
-                    "../../.planning/phases/" +
-                        "20-codegen-fixes-banks-and-sprite-transparency/evidence/fix-04"
-                )
-                .normalize()
+        // EVIDENCE_DIR removed (R1) — captures go to gitignored scratch
         private val ROM_FILE = File("build/gbkt/output/metasprites.gb")
         private val METADATA_FILE = File("build/gbkt/generated/game_metadata.json")
+        private val SCRATCH_DIR = File(System.getProperty("user.dir"), "build/gbkt/screenshots")
+        // Perceptual .txt artifacts go to test-evidence scratch (R3 — stays scratch, no text
+        // golden)
+        private val TEXT_SCRATCH_DIR =
+            File(System.getProperty("user.dir"), "build/gbkt/test-evidence")
     }
 
     /**
-     * Creates a [StepAgent] in GBC mode (`gbcMode=true`). The metasprites example targets
-     * `GbcTarget.GBC_COMPATIBLE` — a DMG capture would produce false grayscale rendering, making it
-     * inadequate evidence for the tRNS sprite-outline oracle (D-05).
+     * Creates a [StepAgent] in GBC mode. GBC mode is auto-detected from ROM header byte 0x143 via
+     * [AgentSessionConfig.discoverFiles] (plan 22-02) — no `.copy(gbcMode = true)` needed.
      *
-     * The `.noi` symFile is auto-discovered from `build/gbkt/output/metasprites.noi` via
-     * [AgentSessionConfig.discoverFiles] — no manual path required.
+     * D-07 guard: asserts `gbcMode` is true before proceeding to prevent an accidentally mis-built
+     * DMG ROM from blessing inverted-palette goldens.
      *
      * Skips the test automatically if `metasprites.gb` is absent (GBDK not available locally).
      */
@@ -68,37 +66,17 @@ class MetaspritePhase20OracleTest {
             ROM_FILE.exists(),
             "metasprites.gb not found — run :gbkt-examples:metasprites:buildRom first",
         )
-        EVIDENCE_DIR.mkdirs()
-        val baseConfig =
-            AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = EVIDENCE_DIR)
-                .copy(gbcMode = true) // GBC_COMPATIBLE target — D-05 requires authentic mode
+        SCRATCH_DIR.mkdirs()
+        val baseConfig = AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = SCRATCH_DIR)
+        // D-07 guarded bless: assert ROM is GBC before any golden write
+        check(baseConfig.gbcMode) {
+            "ROM 0x143 CGB flag not set — is this a DMG ROM? Aborting to prevent inverted-palette golden bless."
+        }
         val metadata =
             if (METADATA_FILE.exists()) GameMetadata.fromJsonFile(METADATA_FILE) else null
         val agent = StepAgent(baseConfig, metadata)
         agent.start()
         return agent
-    }
-
-    /**
-     * Captures a screenshot via [StepAgent.captureScreenshot] and renames the produced file to the
-     * Phase 20 target path inside [EVIDENCE_DIR]. JSON sidecar is also renamed in lock-step
-     * (best-effort).
-     */
-    private fun captureAndRename(agent: StepAgent, label: String, targetName: String): File {
-        val captured = agent.captureScreenshot(label)
-        val target = File(EVIDENCE_DIR, targetName)
-        if (target.exists()) target.delete()
-        check(captured.renameTo(target)) {
-            "Failed to rename ${captured.absolutePath} -> ${target.absolutePath}"
-        }
-        // Sidecar JSON: rename in lock-step (best-effort; not required by plan).
-        val sidecar = File(captured.parentFile, captured.nameWithoutExtension + ".json")
-        if (sidecar.exists()) {
-            val targetJson = File(EVIDENCE_DIR, target.nameWithoutExtension + ".json")
-            if (targetJson.exists()) targetJson.delete()
-            sidecar.renameTo(targetJson)
-        }
-        return target
     }
 
     /**
@@ -108,7 +86,8 @@ class MetaspritePhase20OracleTest {
      * Asserts >= 2 distinct RGB colour values AND dominant colour covers fewer than 95% of pixels.
      * Aligns with CLAUDE.md Visual Evidence Rule (visual truths require runtime screenshots).
      *
-     * Copied verbatim from [PlatformerTemplate128UatTest.assertScreenshotIsNonUniform].
+     * The perceptual stats are written to [TEXT_SCRATCH_DIR] (gitignored scratch, no text golden —
+     * R3 of Phase 22).
      */
     private fun assertScreenshotIsNonUniform(file: File, label: String) {
         val img =
@@ -145,7 +124,9 @@ class MetaspritePhase20OracleTest {
                 "File: ${file.absolutePath}",
         )
 
-        File(EVIDENCE_DIR, "$label-perceptual.txt")
+        // Perceptual stats written to gitignored scratch (R3 — no text golden)
+        TEXT_SCRATCH_DIR.mkdirs()
+        File(TEXT_SCRATCH_DIR, "$label-perceptual.txt")
             .writeText(
                 "file: ${file.absolutePath}\n" +
                     "dimensions: ${img.width}x${img.height}\n" +
@@ -158,19 +139,16 @@ class MetaspritePhase20OracleTest {
 
     // ── Phase 20 FIX-04 oracle #1 — metasprites elephant sprite-outline clean ─────────────────
     //
-    // Boots the ROM in GBC mode, waits for the play scene, then captures a screenshot with the
-    // elephant metasprite at rest on screen.
+    // Boots the ROM in GBC mode, waits for the play scene, then diffs a screenshot of the
+    // elephant metasprite at rest against the committed golden `elephant-sprite-outline-clean.png`.
     //
     // The Phase 13.6 tRNS auto-route (ConvertSpritesTask.kt:328-372) permutes the elephant's PNG
     // so the transparent colour lands at GB OBJ palette index 0. This means the sprite-outline
     // renders clean (no black border from non-zero tRNS slots being mapped to non-transparent
-    // GB OBJ indices). The PNG is the binding visual oracle per the Visual Evidence Rule.
+    // GB OBJ indices). The golden diff is the binding visual oracle per the Visual Evidence Rule.
     //
     // GBC mode required (D-05 LOCKED): metasprites targets GBC_COMPATIBLE; a DMG capture would
     // produce false grayscale rendering and miss GBC-specific rendering artifacts.
-    //
-    // Variable evidence alone is insufficient per the Visual Evidence Rule — the PNG artifact
-    // is the binding D-08 oracle. Human visual sign-off happens at phase verification.
 
     @Test
     fun `phase20 fix04 sprite outline rendering clean`() {
@@ -184,22 +162,35 @@ class MetaspritePhase20OracleTest {
             // Settle one more frame to ensure the LCD has a complete rendered frame
             agent.stepN(5)
 
-            // Capture the elephant at rest — transparent pixels at OBJ index 0 (tRNS auto-route)
-            // means no black outline. This PNG is the D-08 FIX-04 visual oracle #1.
-            val png =
-                captureAndRename(
-                    agent,
-                    "phase20-fix04-sprite-outline",
-                    "metasprites-sprite-outline.png",
+            // Pixel-exact diff against committed golden (binding D-08 FIX-04 oracle #1)
+            val goldenFile =
+                File(
+                    javaClass
+                        .getResource("/goldens/metasprites/elephant-sprite-outline-clean.png")!!
+                        .toURI()
                 )
-
-            // Mechanical non-blank gate — must pass before human visual sign-off
-            assertScreenshotIsNonUniform(png, "phase20-fix04-sprite-outline")
-
-            assertTrue(
-                png.exists(),
-                "FIX-04 oracle #1 PNG must exist: ${png.absolutePath}",
+            assertGoldenMatch(
+                agent,
+                label = "phase20-fix04-sprite-outline",
+                goldenFile = goldenFile,
+                scratchDir = SCRATCH_DIR,
             )
+
+            // Perceptual non-uniform check (mechanical gate complementing the golden diff)
+            val captured =
+                File(SCRATCH_DIR, "phase20-fix04-sprite-outline.png").let { f ->
+                    // The captured file may have a frame-number suffix; find the most recent match
+                    if (f.exists()) f
+                    else
+                        SCRATCH_DIR.listFiles { _, name ->
+                                name.startsWith("phase20-fix04-sprite-outline") &&
+                                    name.endsWith(".png")
+                            }
+                            ?.maxByOrNull { it.lastModified() } ?: f
+                }
+            if (captured.exists()) {
+                assertScreenshotIsNonUniform(captured, "phase20-fix04-sprite-outline")
+            }
         }
     }
 }

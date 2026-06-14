@@ -10,6 +10,7 @@ import io.github.gbkt.emulator.agent.AgentSessionConfig
 import io.github.gbkt.emulator.agent.Button
 import io.github.gbkt.emulator.agent.GameMetadata
 import io.github.gbkt.emulator.agent.StepAgent
+import io.github.gbkt.emulator.agent.assertGoldenMatch
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,20 +19,19 @@ import org.junit.jupiter.api.Assumptions
 
 /**
  * Phase 19 visual evidence capture — fresh HEAD GBC-mode screenshots for FIX-01 seeds
- * (SEED-004/005/006/013) and the Req-3 ROM-smoke shot, all captured against a clean-built ROM.
+ * (SEED-004/005/006/013) and the Req-3 ROM-smoke shot, all diffed against committed golden PNGs.
  *
  * Visual truths require runtime screenshot evidence (Visual Evidence Rule, CLAUDE.md §
  * "Verification Methodology"); variable assertions are insufficient. Every capture uses
- * [newGbcAgent] (`gbcMode=true`) because the metasprites example targets `GbcTarget.GBC_COMPATIBLE`
- * — a DMG-mode capture produces false grayscale rendering (MEMORY:
- * `learning_platformer_mcp_needs_gbc_mode`).
+ * [newGbcAgent] (GBC mode auto-detected from ROM 0x143 via `AgentSessionConfig.discoverFiles`)
+ * because the metasprites example targets `GbcTarget.GBC_COMPATIBLE` — a DMG-mode capture produces
+ * false grayscale rendering (MEMORY: `learning_platformer_mcp_needs_gbc_mode`).
  *
- * Evidence outputs (under `.planning/phases/19-codegen-fixes-metasprite-cluster/evidence/`):
- * - `SEED-004/screenshot.png` — elephant tiles uncorrupted (boot frame)
- * - `SEED-005/screenshot.png` — BG checkerboard, not diagonal (boot frame)
- * - `SEED-006/screenshot.png` — elephant sub-palette assigned correctly (rot=8, cyan)
- * - `SEED-013/screenshot.png` — correct GBC sub-palette colors (rot=8, cyan)
- * - `ROM-smoke/screenshot.png` — metasprites ROM renders correctly at HEAD (Req 3)
+ * Diffs performed via [assertGoldenMatch] against committed goldens under
+ * `src/test/resources/goldens/metasprites/` (migrated in Plan 22-04, byte-identical).
+ *
+ * Captures are written to `build/gbkt/screenshots/` (gitignored scratch). No `.planning/phases`
+ * paths are used — per Phase 22 R1/R2 requirements.
  *
  * Skipped automatically if the ROM is missing — run `./gradlew :gbkt-examples:metasprites:clean
  * :gbkt-examples:metasprites:buildRom` first.
@@ -39,60 +39,35 @@ import org.junit.jupiter.api.Assumptions
 class Phase19VisualEvidenceTest {
 
     companion object {
-        // Evidence directory — user.dir resolves to gbkt-examples/metasprites/ at test runtime;
-        // ../../ walks up to the repo root.
-        private val EVIDENCE_DIR =
-            File("../../.planning/phases/" + "19-codegen-fixes-metasprite-cluster/evidence")
+        // EVIDENCE_DIR removed (R1) — captures go to gitignored scratch
         private val ROM_FILE = File("build/gbkt/output/metasprites.gb")
         private val METADATA_FILE = File("build/gbkt/generated/game_metadata.json")
+        private val SCRATCH_DIR = File(System.getProperty("user.dir"), "build/gbkt/screenshots")
     }
 
     /**
-     * Creates a [StepAgent] in GBC mode (`gbcMode=true`). ALL Phase 19 captures use this helper —
-     * the metasprites example targets `GbcTarget.GBC_COMPATIBLE` and a DMG capture would produce
-     * false grayscale rendering, making it inadequate evidence for sub-palette seed coverage.
+     * Creates a [StepAgent] in GBC mode. GBC mode is auto-detected from ROM header byte 0x143 via
+     * [AgentSessionConfig.discoverFiles] (plan 22-02) — no `.copy(gbcMode = true)` needed.
      *
-     * The `.noi` symFile is auto-discovered from `build/gbkt/output/metasprites.noi` via
-     * [AgentSessionConfig.discoverFiles] — no manual path required.
+     * D-07 guard: asserts `gbcMode` is true before proceeding to prevent an accidentally mis-built
+     * DMG ROM from blessing inverted-palette goldens.
      */
     private fun newGbcAgent(): StepAgent {
         Assumptions.assumeTrue(
             ROM_FILE.exists(),
             "metasprites.gb not found — run :gbkt-examples:metasprites:buildRom first",
         )
-        EVIDENCE_DIR.mkdirs()
-        val baseConfig =
-            AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = EVIDENCE_DIR)
-                .copy(gbcMode = true)
+        SCRATCH_DIR.mkdirs()
+        val baseConfig = AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = SCRATCH_DIR)
+        // D-07 guarded bless: assert ROM is GBC before any golden write
+        check(baseConfig.gbcMode) {
+            "ROM 0x143 CGB flag not set — is this a DMG ROM? Aborting to prevent inverted-palette golden bless."
+        }
         val metadata =
             if (METADATA_FILE.exists()) GameMetadata.fromJsonFile(METADATA_FILE) else null
         val agent = StepAgent(baseConfig, metadata)
         agent.start()
         return agent
-    }
-
-    /**
-     * Captures a screenshot via [StepAgent.captureScreenshot] and renames it to the per-seed target
-     * path inside [EVIDENCE_DIR]. The per-seed subdirectory is created before rename so paths like
-     * `SEED-004/screenshot.png` resolve correctly. JSON sidecar is also renamed in lock-step
-     * (best-effort).
-     */
-    private fun captureAndRename(agent: StepAgent, label: String, targetName: String): File {
-        val captured = agent.captureScreenshot(label)
-        val target = File(EVIDENCE_DIR, targetName)
-        target.parentFile.mkdirs()
-        if (target.exists()) target.delete()
-        check(captured.renameTo(target)) {
-            "Failed to rename ${captured.absolutePath} -> ${target.absolutePath}"
-        }
-        // Sidecar JSON: rename in lock-step (best-effort; not required by plan).
-        val sidecar = File(captured.parentFile, captured.nameWithoutExtension + ".json")
-        if (sidecar.exists()) {
-            val targetJson = File(target.parentFile, target.nameWithoutExtension + ".json")
-            if (targetJson.exists()) targetJson.delete()
-            sidecar.renameTo(targetJson)
-        }
-        return target
     }
 
     // ── Boot frame — SEED-004 (elephant tiles uncorrupted) + SEED-005 (BG checkerboard) ────
@@ -107,7 +82,7 @@ class Phase19VisualEvidenceTest {
     // A DMG capture would omit any GBC-specific rendering artifacts that might indicate regression.
     //
     // ROM-smoke (Req 3) reuses this test method's boot frame — same ROM, same scene entry, same
-    // rendering path. Captured separately as ROM-smoke/screenshot.png for traceability.
+    // rendering path. Captured separately as a named golden for traceability.
 
     @Test
     fun `bootFrame capturesSeed004And005`() {
@@ -122,24 +97,42 @@ class Phase19VisualEvidenceTest {
             )
 
             // SEED-004: elephant tiles uncorrupted on a clean boot frame
-            val seed004 = captureAndRename(agent, "seed004-boot", "SEED-004/screenshot.png")
-            assertTrue(
-                seed004.length() > 0,
-                "Phase 19 SEED-004 screenshot must be non-empty: ${seed004.absolutePath}",
+            assertGoldenMatch(
+                agent,
+                label = "seed004-boot",
+                goldenFile =
+                    File(
+                        javaClass
+                            .getResource("/goldens/metasprites/elephant-boot-seed004.png")!!
+                            .toURI()
+                    ),
+                scratchDir = SCRATCH_DIR,
             )
 
             // SEED-005: same boot frame — BG checkerboard visible
-            val seed005 = captureAndRename(agent, "seed005-boot", "SEED-005/screenshot.png")
-            assertTrue(
-                seed005.length() > 0,
-                "Phase 19 SEED-005 screenshot must be non-empty: ${seed005.absolutePath}",
+            assertGoldenMatch(
+                agent,
+                label = "seed005-boot",
+                goldenFile =
+                    File(
+                        javaClass
+                            .getResource(
+                                "/goldens/metasprites/elephant-boot-seed005-checkerboard.png"
+                            )!!
+                            .toURI()
+                    ),
+                scratchDir = SCRATCH_DIR,
             )
 
             // ROM-smoke: same boot frame proves the ROM renders correctly at HEAD (Req 3)
-            val romSmoke = captureAndRename(agent, "rom-smoke", "ROM-smoke/screenshot.png")
-            assertTrue(
-                romSmoke.length() > 0,
-                "Phase 19 ROM-smoke screenshot must be non-empty: ${romSmoke.absolutePath}",
+            assertGoldenMatch(
+                agent,
+                label = "rom-smoke",
+                goldenFile =
+                    File(
+                        javaClass.getResource("/goldens/metasprites/rom-smoke-boot.png")!!.toURI()
+                    ),
+                scratchDir = SCRATCH_DIR,
             )
         }
     }
@@ -220,19 +213,29 @@ class Phase19VisualEvidenceTest {
             )
 
             // SEED-006: subPalette global correctly set before moveMetasprite() — cyan visible
-            val seed006 = captureAndRename(agent, "seed006-subpalette", "SEED-006/screenshot.png")
-            assertTrue(
-                seed006.length() > 0,
-                "Phase 19 SEED-006 screenshot must be non-empty (should show cyan, not grayscale): " +
-                    seed006.absolutePath,
+            assertGoldenMatch(
+                agent,
+                label = "seed006-subpalette",
+                goldenFile =
+                    File(
+                        javaClass
+                            .getResource("/goldens/metasprites/elephant-cyan-subpalette.png")!!
+                            .toURI()
+                    ),
+                scratchDir = SCRATCH_DIR,
             )
 
             // SEED-013: correct GBC sub-palette colors — same climax frame
-            val seed013 = captureAndRename(agent, "seed013-gbccolors", "SEED-013/screenshot.png")
-            assertTrue(
-                seed013.length() > 0,
-                "Phase 19 SEED-013 screenshot must be non-empty (should show cyan, not grayscale): " +
-                    seed013.absolutePath,
+            assertGoldenMatch(
+                agent,
+                label = "seed013-gbccolors",
+                goldenFile =
+                    File(
+                        javaClass
+                            .getResource("/goldens/metasprites/elephant-gbc-colors.png")!!
+                            .toURI()
+                    ),
+                scratchDir = SCRATCH_DIR,
             )
         }
     }
