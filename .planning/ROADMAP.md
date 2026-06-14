@@ -340,7 +340,7 @@ Plans:
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 8/8 | Complete    | 2026-06-14 |
-| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 11/14 | In Progress|  |
+| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 13/14 | In Progress|  |
 
 ### Phase 22: Golden Screenshot and Evidence Storage Overhaul
 
@@ -359,7 +359,7 @@ Plans:
   5. The genuine binding goldens from Phases 19/20/21 (metasprite, banks/tRNS, platformer GBC anchors) are migrated into the central goldens dir and remain the blessed baselines; the untracked archived-phase evidence garbage is removed.
   6. TESTING.md documents the goldens layout + the re-baseline command.
 
-**Plans:** 11/14 plans executed
+**Plans:** 13/14 plans executed
 
 Plans:
 
@@ -375,5 +375,5 @@ Plans:
 - [x] 22-07-PLAN.md — platformer-template visual-UAT swaps (anchor4 compareRegion preserved) [Wave 3]
 - [x] 22-08-PLAN.md — simple-physics + banks visual-UAT scratch redirect (no golden) [Wave 3]
 - [x] 22-12-PLAN.md — git rm all tracked per-phase evidence (143 files) after goldens migrated [Wave 4]
-- [ ] 22-14-PLAN.md — TESTING.md goldens layout + re-baseline command + GBC auto-detect [Wave 4]
+- [x] 22-14-PLAN.md — TESTING.md goldens layout + re-baseline command + GBC auto-detect [Wave 4]
 - [ ] 22-13-PLAN.md — clean-tree acceptance test (R1/R5/R6 gates) + full-suite/buildRom sign-off [Wave 5]
