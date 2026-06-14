@@ -34,8 +34,7 @@ import org.junit.jupiter.api.io.TempDir
  */
 class GoldenAssertionsTest {
 
-    @TempDir
-    lateinit var tempDir: File
+    @TempDir lateinit var tempDir: File
 
     // ─── helpers ──────────────────────────────────────────────────────────────
 
@@ -63,9 +62,10 @@ class GoldenAssertionsTest {
         val goldenFile = File(tempDir, "goldens/missing.png") // does not exist
         val scratchDir = File(tempDir, "scratch")
 
-        val ex = assertThrows<AssertionError> {
-            compareOrBless(goldenFile, capturedFile, scratchDir)
-        }
+        val ex =
+            assertThrows<AssertionError> {
+                compareOrBless(goldenFile, capturedFile, scratchDir)
+            }
 
         // Message must contain the golden path AND the re-baseline property name (D-05)
         assertTrue(
@@ -98,11 +98,13 @@ class GoldenAssertionsTest {
         val goldenDir = File(tempDir, "goldens").also { it.mkdirs() }
         val scratchDir = File(tempDir, "scratch")
         val golden = writePng(goldenDir, "anchor", 0xFF0000) // red
-        val captured = writePng(scratchDir, "anchor_captured", 0x00FF00) // green — all pixels differ
+        val captured =
+            writePng(scratchDir, "anchor_captured", 0x00FF00) // green — all pixels differ
 
-        val ex = assertThrows<AssertionError> {
-            compareOrBless(golden, captured, scratchDir)
-        }
+        val ex =
+            assertThrows<AssertionError> {
+                compareOrBless(golden, captured, scratchDir)
+            }
 
         // Message must name diffCount
         assertTrue(
@@ -118,9 +120,10 @@ class GoldenAssertionsTest {
         val golden = writePng(goldenDir, "anchor", 0xFF0000)
         val captured = writePng(scratchDir, "anchor_captured", 0x00FF00)
 
-        val ex = assertThrows<AssertionError> {
-            compareOrBless(golden, captured, scratchDir)
-        }
+        val ex =
+            assertThrows<AssertionError> {
+                compareOrBless(golden, captured, scratchDir)
+            }
         // Diff image path should be in message when diffOutputDir was provided
         assertNotNull(ex.message, "AssertionError should have a message")
     }
