@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: executing
-stopped_at: Completed 21-04-PLAN.md
-last_updated: "2026-06-14T14:35:53.628Z"
-last_activity: 2026-06-14 -- Phase 21 execution started
+status: complete
+stopped_at: Completed 21-08-PLAN.md — Phase 21 closeout complete (milestone v0.1.1 done)
+last_updated: "2026-06-14T14:43:00.000Z"
+last_activity: 2026-06-14 -- Phase 21 Plan 08 complete — D-13 oracle CLEAN, seeds/ empty, ROADMAP finalized
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 65
-  completed_plans: 67
-  percent: 83
+  completed_plans: 68
+  percent: 100
 ---
 
 # Project State
@@ -54,13 +54,12 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 21 (codegen-fixes-platformer-and-remaining-seeds) — EXECUTING
-Plan: 7 of 8
-Status: Ready to execute
-Last activity: 2026-06-14 -- Phase 21 execution started
+Phase: 21 (codegen-fixes-platformer-and-remaining-seeds) — COMPLETE
+Plan: 8 of 8 (all plans done)
+Status: Milestone v0.1.1 complete
+Last activity: 2026-06-14 -- Phase 21 Plan 08 closed — D-13 oracle CLEAN, seeds/ empty, ROADMAP finalized
 
-Resume signal: /gsd-execute-phase 18 (Plan 27 — SonarCloud scan gate remaining)
-Parallel options: Phase 17 (Docs + QUAL) and Phase 18 (DEPR + SONAR) are parallel-capable; Phase 19 (Metasprite Fixes) now unblocked
+Resume signal: milestone v0.1.1 complete — advance to next milestone via /gsd-new-milestone
 
 ### Bisect state as of Plan 06d complete
 
