@@ -61,3 +61,5 @@ Either of these is an acceptable terminal state (decide in discuss-phase):
 - `GameIRSerializer.kt` — `// Deferred: … — SEED-020` markers on each stubbed
   collection (lines ~178-187) and on `serializeSystemIR` (~line 1247).
 - `gbkt-ir/CLAUDE.md` — module doc for IR types.
+
+> FIXED (Phase 21, plan 21-03): the 10 stubbed deserialize() collections now reconstruct the supported subset; round-trip test guards it in `GameIRSerializerRoundTripTest.kt`; contained to gbkt-ir (no codegen blast radius). Option 2 (explicit documented contract) was chosen — GenericSystem id+type round-trips; full typed SystemIR (CombatEngineSystem etc.) remains serialize-only per documentation in KDoc.
