@@ -1,5 +1,7 @@
 # SEED-017 — Unify sport and zone tileset pipelines
 
+> **Re-deferred to v0.2.0 (Phase 21):** Moderate sport-genre dual-pipeline refactor; no shipping example exercises it heavily; INV-8 lock-test stays GREEN. Needs its own discuss/spec phase.
+
 > **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-017](.planning/phases/16-seed-triage/TRIAGE.md#SEED-017) · 2026-06-12
 
 **Origin phase:** 11.2 (tileset-pipeline-set-bkg-data-emission)

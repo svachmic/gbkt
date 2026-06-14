@@ -1,5 +1,7 @@
 # SEED: `zone(id: String)` magic-string violation — convert to delegate-pattern
 
+> **Re-deferred to v0.2.0 (Phase 21):** Wide blast radius — touches gbkt-lang + gbkt-engine IR + every zone() call site across all games; needs its own discuss/spec phase, not a hardening-release close.
+
 > **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-ZONE-MAGIC-STRING-DELEGATE-MIGRATION](.planning/phases/16-seed-triage/TRIAGE.md#SEED-ZONE-MAGIC-STRING-DELEGATE-MIGRATION) · 2026-06-12
 
 **Created:** 2026-05-25 (Phase 12.6 discuss-phase — user-surfaced during DEFECT-2 fix DSL placement question)

@@ -1,5 +1,7 @@
 # SEED-025 — Remove deprecated `combatIsInState(String, String)` overload in v0.2.0
 
+> **Re-deferred to v0.2.0 (Phase 21):** combatIsInState(String,String) overload removal scheduled v0.2.0 by design — cannot remove until one release after its deprecation ships (v0.1.0 shipped the deprecated overload).
+
 > **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-025](.planning/phases/16-seed-triage/TRIAGE.md#SEED-025) · 2026-06-12
 
 **Origin:** SonarCloud Info-issue sweep of PR #33 (`feat/d_and_d_gaps`), 2026-06-10 — the single S1133 finding ("remove this deprecated code someday")

@@ -1,5 +1,7 @@
 # SEED-023 — Unify `whenever` → `runIf` for reactive script sites
 
+> **Re-deferred to v0.2.0 (Phase 21):** whenever→runIf DSL unification needs a full deprecation cycle; functional API already removed in Phase 18 DEPR-01 but removal can't ship until one release after deprecation lands.
+
 > **Triage:** CONFIRMED-OPEN — [TRIAGE.md#SEED-023](.planning/phases/16-seed-triage/TRIAGE.md#SEED-023) · 2026-06-12
 
 **Origin:** SonarCloud Info-issue sweep of PR #33 (`feat/d_and_d_gaps`), 2026-06-10. The `ScriptBuilder.whenever()` KDoc claimed this was "tracked as a pending todo" — no such todo existed; this seed is now the tracker.
