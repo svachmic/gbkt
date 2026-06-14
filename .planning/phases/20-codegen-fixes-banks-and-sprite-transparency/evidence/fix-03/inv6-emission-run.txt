@@ -1,0 +1,39 @@
+# INV-6 BanksEmissionTest GREEN Evidence
+# Phase 20 Plan 01 — D-02 Re-verify gate
+# Date: 2026-06-14
+# Branch: chore/hardening_0_1_0
+# Command: ./gradlew :gbkt-examples:banks:test --tests "io.github.gbkt.examples.banks.BanksEmissionTest.INV-6*"
+# Test: INV-6 play_enter in bank1 calls _bkg_tiles_load_banked for playZone
+# SEED: SEED-014
+# Guard: hasZoneSceneBinder at GBDKPipeline.kt:1428 (companion to INV-2)
+#
+# Result: BUILD SUCCESSFUL — INV-6 PASSED (0 failures, 0 errors)
+#
+# Test assertion summary:
+#   - enterBody.isNotEmpty() (play_enter emitted in bank1.c)
+#   - enterBody.contains("_bkg_tiles_load_banked(") (play_enter calls the HOME-bank wrapper)
+#   - enterBody.contains("_bkg_tiles_load_banked(2u,") (bank arg is 2 — playZone allocated to bank 2)
+#
+# Scope-level grep gate: extractFunctionBody(bank1C, "play_enter") — asserts ONLY inside play_enter,
+# not against other bank1.c functions.
+#
+# Full run output (per-assertion filter run):
+
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders UP-TO-DATE
+[... all UP-TO-DATE tasks ...]
+> Task :gbkt-examples:banks:test
+
+BUILD SUCCESSFUL in 1s
+45 actionable tasks: 1 executed, 44 up-to-date
+
+# Test XML result:
+# testsuite tests="1" skipped="0" failures="0" errors="0"
+# testcase name="INV-6 play_enter in bank1 calls _bkg_tiles_load_banked for playZone()" PASSED
+#
+# VERDICT: GREEN — SEED-014 play_enter -> _bkg_tiles_load_banked(2u,...) emission CONFIRMED
+#
+# Full BanksEmissionTest suite (all 8 tests, 1 skipped) was also run and verified:
+# Command: ./gradlew :gbkt-examples:banks:test --tests "*.BanksEmissionTest"
+# testsuite tests="8" skipped="1" failures="0" errors="0"
+# All INV-2, INV-5, INV-6 PASSED. D-02 gate SATISFIED.
