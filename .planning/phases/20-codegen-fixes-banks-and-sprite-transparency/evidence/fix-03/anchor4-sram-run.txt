@@ -1,0 +1,64 @@
+# Anchor 4 BanksUatTest GREEN Evidence
+# Phase 20 Plan 01 — SEED-016 re-verify
+# Date: 2026-06-14
+# Branch: chore/hardening_0_1_0
+# Command: ./gradlew :gbkt-examples:banks:clean :gbkt-examples:banks:buildRom :gbkt-examples:banks:test --tests "*.BanksUatTest"
+# Test: anchor 4 SRAM persistence via GBST round-trip
+# SEED: SEED-016
+# GBDK_HOME: /Users/michalsvacha/gbdk
+# ROM: banks.gb (64 KB) — freshly rebuilt from clean
+#
+# Result: BUILD SUCCESSFUL — Anchor 4 PASSED (0 failures, 0 errors, 0 skipped)
+#
+# Test assertion summary (SRAM non-tautological round-trip):
+#   1. Press SELECT -> save_game_saves runs (ENABLE_RAM -> SRAM write -> DISABLE_RAM)
+#   2. Capture preBytes (4 bytes at 0xA000-0xA003)
+#   3. agent.saveState(stateFile) — snapshot emulator state
+#   4. writeMemory(0x0000, 0x0A) -> ENABLE_RAM
+#   5. writeMemory(0xA000, 99) — mid-mutation sentinel
+#   6. Verify midBytes[0] == 99 (mutation landed in SRAM)
+#   7. agent.loadState(stateFile) — restore snapshot
+#   8. Verify postBytes == preBytes (SRAM restored from snapshot)
+#   9. Verify postBytes[0] != 99 (mutation was overwritten — non-tautological gate)
+#
+# ROM build evidence:
+#   Banking: 4 banks (highest bank: 2), MBC: 0x1B
+#   RAM banks: 2
+#   Compiling ROM: 5 source files -> banks.gb
+#   ROM created: banks.gb (64 KB)
+#
+# Full run output (clean + buildRom + BanksUatTest):
+
+> Task :gbkt-examples:banks:clean
+> Task :gbkt-examples:banks:processAssets  [... asset processing ...]
+  Processing: checker.png (4 tiles -> 2 unique tiles)
+> Task :gbkt-examples:banks:generateC
+  Generated: main.c (287 lines), bank1.c (48 lines), game.h (127 lines), zone_bank2.c (5 lines), game_metadata.json
+  Generated 5 C files (530 total lines)
+> Task :gbkt-examples:banks:convertZoneTilesets
+  ConvertZoneTilesetsTask: Converting 1 zone tileset(s)
+  Converting zone playZone: checker.png -> _zone_playZone_tileset.c
+> Task :gbkt-examples:banks:compileRom
+  Banking: 4 banks (highest bank: 2), MBC: 0x1B
+  RAM banks: 2
+  Compiling ROM: 5 source files -> banks.gb
+  ROM created: banks.gb (64 KB)
+> Task :gbkt-examples:banks:buildRom
+  ROM built successfully!
+  Output: /Users/michalsvacha/GitHub/personal/gbkt/gbkt-examples/banks/build/gbkt/output/banks.gb
+> Task :gbkt-examples:banks:test
+
+BUILD SUCCESSFUL in 6s
+49 actionable tasks: 12 executed, 37 up-to-date
+
+# Test XML result:
+# testsuite tests="3" skipped="0" failures="0" errors="0"
+#   testcase "anchor 1 cross-bank scene navigation()" PASSED (0.132s)
+#   testcase "anchor 2 banked zone tilemap visible()" PASSED (0.661s)
+#   testcase "anchor 4 SRAM persistence via GBST round-trip()" PASSED (0.797s)
+#
+# Warnings (expected, not test failures):
+#   WARN coffeegb.core.memory.cart.Rom - RAM bank is defined to 0. Overriding to 1. (x3, one per test)
+#
+# VERDICT: GREEN — SEED-016 SRAM round-trip (Anchor 4) CONFIRMED VERIFIED-ALREADY-FIXED at HEAD
+# GBDK available: GBDK_HOME=/Users/michalsvacha/gbdk — not a skip scenario
