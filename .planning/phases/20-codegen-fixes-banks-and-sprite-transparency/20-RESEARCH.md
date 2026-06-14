@@ -542,7 +542,9 @@ Security enforcement not applicable to this phase. Phase 20 produces evidence ar
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> RESOLVED during planning — both recommendations were adopted by Plan 20-03 (GBC-mode captures; new standalone `*Phase20OracleTest` classes).
 
 1. **Metasprites capture mode (DMG vs GBC) for FIX-04 sprite-outline check**
    - What we know: metasprites targets GBC_COMPATIBLE; tRNS transparency visible in both modes; `learning_platformer_mcp_needs_gbc_mode` warns about DMG-mode artifacts for GBC-target games
