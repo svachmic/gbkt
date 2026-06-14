@@ -93,10 +93,10 @@ val game = GbktTestExtension("platformer-template") { agent ->
 }
 ```
 
-**`gbcMode`** — Required for ROMs compiled with `-Wm-yc` (GBC_COMPATIBLE) or `-Wm-yC` (GBC_ONLY):
+**`gbcMode`** — Enables GBC emulation. This is optional for `GbktTestExtension` because `AgentSessionConfig.discoverFiles` (used internally for all bespoke visual UAT captures) now auto-detects GBC mode from the ROM CGB-flag byte at offset `0x143`: values `0x80` (GBC-enhanced) and `0xC0` (GBC-only) set `gbcMode = true` automatically. You only need to set this constructor parameter when bypassing `discoverFiles` entirely, e.g. with a `customRomFile` workflow that constructs its own `AgentSessionConfig` manually:
 
 ```kotlin
-val game = GbktTestExtension("platformer-template", gbcMode = true)
+val game = GbktTestExtension("platformer-template", gbcMode = true) // only if not using discoverFiles
 ```
 
 ### Lifecycle
@@ -132,6 +132,104 @@ game.agent.describeGame()     // Returns GameMetadata?
 game.metadata?.scenes?.sceneNames
 game.metadata?.terminalScenes
 ```
+
+---
+
+## Visual Goldens
+
+Emulator tests that verify **visual output** (pixel content, color palettes, sprite rendering) use
+a central, committed, golden-PNG baseline flow — not per-phase evidence directories.
+
+### Layout
+
+Goldens live alongside each example module's tests:
+
+```
+gbkt-examples/<module>/src/test/resources/goldens/<rom>/<anchor>.png
+```
+
+Examples:
+- `gbkt-examples/metasprites/src/test/resources/goldens/metasprites/elephant-cyan-subpalette.png`
+- `gbkt-examples/platformer-template/src/test/resources/goldens/platformer-template/world1-boot.png`
+
+Anchor names are **descriptive and phase-agnostic** — they describe what the golden shows, not
+which phase or seed produced it. Each example module owns its own goldens; co-located with the
+test sources that reference them.
+
+**Scratch (gitignored):** Captured PNGs and diff images are written to
+`build/gbkt/screenshots/` inside the example module. This directory is gitignored; nothing in
+it is ever committed. Similarly, emission-test `.txt` C-code dumps go to gitignored
+`build/gbkt/test-evidence/` — the in-test C assertion is the correctness gate, not the dump.
+
+**Note on `.planning/phases/**/evidence/`:** This directory is gitignored scratch used for
+historical development evidence. It is NOT the golden store and must NOT be referenced as such
+in test code. All visual baseline PNGs belong under `src/test/resources/goldens/`.
+
+### The `assertGoldenMatch` Helper
+
+```kotlin
+import io.github.gbkt.emulator.agent.assertGoldenMatch
+
+// In a visual UAT test
+val goldenFile = File("src/test/resources/goldens/platformer-template/world1-boot.png")
+val scratchDir  = File("build/gbkt/screenshots")
+assertGoldenMatch(agent, label = "world1-boot", goldenFile = goldenFile, scratchDir = scratchDir)
+```
+
+The helper:
+1. Captures the current LCD frame via `agent.captureScreenshot(label)` into `scratchDir`.
+2. Diffs the captured PNG against `goldenFile` at **exact pixel match** (tolerance `0.0`).
+3. On mismatch: throws `AssertionError` reporting pixel-diff count and the path of the red diff
+   image written to `scratchDir`.
+4. On match: returns normally (pass).
+
+### Missing Golden
+
+When `goldenFile` does not exist and update-mode is off, `assertGoldenMatch` throws:
+
+```
+GOLDEN MISSING: .../goldens/platformer-template/world1-boot.png
+— run with -Pgbkt.updateGoldens to bless the current capture as the golden
+```
+
+A plain `./gradlew test` never auto-creates or modifies a golden file.
+
+### Re-Baseline Command
+
+To bless the current capture as the new golden:
+
+```bash
+./gradlew test -Pgbkt.updateGoldens
+```
+
+When this Gradle project property is set, `assertGoldenMatch` (and its internal `compareOrBless`
+delegate) writes the captured PNG to `goldenFile` via a raw byte-copy (`File.copyTo`) instead of
+diffing — preserving exact pixel bytes. It then passes normally.
+
+Combine with `--tests` to re-bless only a subset:
+
+```bash
+./gradlew :gbkt-examples:platformer-template:test -Pgbkt.updateGoldens \
+    --tests "*PlatformerVisualAnchorTest*"
+```
+
+A plain `./gradlew test` (flag absent) **never** writes a golden. This is the only sanctioned
+re-baseline path — do not copy PNGs manually.
+
+### GBC-Header Guard (Guarded Bless)
+
+Even in update mode, GBC-target tests must assert the ROM is truly a GBC ROM before blessing.
+`AgentSessionConfig.discoverFiles` auto-detects `gbcMode` from the CGB-flag byte at ROM offset
+`0x143` (`0x80` = GBC-enhanced, `0xC0` = GBC-only). A mis-built DMG ROM produces an
+inverted-palette capture; the GBC-header assertion in GBC-target tests catches this **before**
+that capture can overwrite the golden.
+
+```kotlin
+val config = AgentSessionConfig.discoverFiles(romFile, scratchDir)
+check(config.gbcMode) { "Expected a GBC ROM — refusing to bless a DMG-mode capture" }
+```
+
+This prevents the Phase 13.5 / 21-07 wrong-mode capture class from being immortalized as a baseline.
 
 ---
 
