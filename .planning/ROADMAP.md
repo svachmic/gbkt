@@ -374,6 +374,6 @@ Plans:
 - [x] 22-06-PLAN.md — metasprites visual-UAT swaps to assertGoldenMatch + D-07 guard [Wave 3]
 - [x] 22-07-PLAN.md — platformer-template visual-UAT swaps (anchor4 compareRegion preserved) [Wave 3]
 - [x] 22-08-PLAN.md — simple-physics + banks visual-UAT scratch redirect (no golden) [Wave 3]
-- [ ] 22-12-PLAN.md — git rm all tracked per-phase evidence (143 files) after goldens migrated [Wave 4]
+- [x] 22-12-PLAN.md — git rm all tracked per-phase evidence (143 files) after goldens migrated [Wave 4]
 - [ ] 22-14-PLAN.md — TESTING.md goldens layout + re-baseline command + GBC auto-detect [Wave 4]
 - [ ] 22-13-PLAN.md — clean-tree acceptance test (R1/R5/R6 gates) + full-suite/buildRom sign-off [Wave 5]

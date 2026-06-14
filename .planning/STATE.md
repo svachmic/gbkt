@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
 status: executing
-stopped_at: Completed 22-06-PLAN.md
-last_updated: "2026-06-14T22:22:52.835Z"
-last_activity: 2026-06-14 -- Phase 22 Plan 01 COMPLETE (GoldenAssertions.kt + capturedAt removal)
+stopped_at: Completed 22-12-PLAN.md
+last_updated: "2026-06-14T22:24:57Z"
+last_activity: 2026-06-14 -- Phase 22 Plan 12 COMPLETE (git rm --cached 143 tracked evidence files)
 progress:
   total_phases: 7
   completed_phases: 6
@@ -55,11 +55,11 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 ## Current Position
 
 Phase: 22 (golden-screenshot-and-evidence-storage-overhaul) — EXECUTING
-Plan: 12 of 14
+Plan: 13 of 14
 Status: Ready to execute
-Last activity: 2026-06-14 -- Phase 22 Plan 01 COMPLETE (GoldenAssertions.kt + capturedAt removal)
+Last activity: 2026-06-14 -- Phase 22 Plan 12 COMPLETE (git rm --cached 143 tracked evidence files)
 
-Resume signal: Plan 22-01 complete. Proceed with Plan 22-02 (next wave 1 plan or wave 2 plans).
+Resume signal: Plan 22-12 complete. Proceed with Plan 22-13.
 
 Decisions:
 
