@@ -1,11 +1,17 @@
 ---
-id: triggersystem-ref-registry-validation
+id: SEED-TRIGGERSYSTEM-REF-VALIDATION
+status: dormant
+planted: 2026-06-15
+planted_during: "v0.1.1 / milestone close cleanup"
+trigger_when: "v0.2.0"
+scope: medium
+triage_disposition: RE-DEFERRED
+triage_date: 2026-06-15
+original_id: triggersystem-ref-registry-validation
 title: Validate triggerSystem(SystemRef) against the ref registry at build()
-created: 2026-06-03
 source: phase-13.1-code-review
-status: pending
-priority: high
-scope: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ScriptBuilder.kt, GameBuilder.kt
+area: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ScriptBuilder.kt, GameBuilder.kt
+original_priority: high
 ---
 
 ## Context

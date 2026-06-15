@@ -1,11 +1,17 @@
 ---
-id: easetozero-oscillates-when-by-greater-than-one
+id: SEED-EASETOZERO-OSCILLATION
+status: dormant
+planted: 2026-06-15
+planted_during: "v0.1.1 / milestone close cleanup"
+trigger_when: "v0.2.0"
+scope: medium
+triage_disposition: RE-DEFERRED
+triage_date: 2026-06-15
+original_id: easetozero-oscillates-when-by-greater-than-one
 title: easeToZero(by > 1) oscillates around zero instead of settling
-created: 2026-06-03
 source: phase-13.2-code-review
-status: pending
-priority: medium
-scope: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ExprBuilder.kt
+area: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ExprBuilder.kt
+original_priority: medium
 ---
 
 ## Context

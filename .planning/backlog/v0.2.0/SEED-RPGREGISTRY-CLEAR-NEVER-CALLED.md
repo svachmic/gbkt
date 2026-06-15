@@ -1,11 +1,17 @@
 ---
-id: rpgregistry-clear-never-called
+id: SEED-RPGREGISTRY-CLEAR-NEVER-CALLED
+status: dormant
+planted: 2026-06-15
+planted_during: "v0.1.1 / milestone close cleanup"
+trigger_when: "v0.2.0"
+scope: low
+triage_disposition: RE-DEFERRED
+triage_date: 2026-06-15
+original_id: rpgregistry-clear-never-called
 title: Call RpgRegistry.clear() on game{} teardown (or remove dead method)
-created: 2026-06-03
 source: phase-13.1-code-review
-status: pending
-priority: low
-scope: gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/RpgExtensions.kt
+area: gbkt-genre-rpg/src/main/kotlin/io/github/gbkt/rpg/dsl/RpgExtensions.kt
+original_priority: low
 ---
 
 ## Context

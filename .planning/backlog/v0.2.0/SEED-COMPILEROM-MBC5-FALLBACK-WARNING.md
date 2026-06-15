@@ -1,11 +1,17 @@
 ---
-id: compilerom-silent-mbc5-fallback-warning
+id: SEED-COMPILEROM-MBC5-FALLBACK-WARNING
+status: dormant
+planted: 2026-06-15
+planted_during: "v0.1.1 / milestone close cleanup"
+trigger_when: "v0.2.0"
+scope: medium
+triage_disposition: RE-DEFERRED
+triage_date: 2026-06-15
+original_id: compilerom-silent-mbc5-fallback-warning
 title: Warn (not silently fall back to MBC5) when cartridge metadata is missing
-created: 2026-06-03
 source: phase-13.1-code-review
-status: pending
-priority: medium
-scope: gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/CompileRomTask.kt
+area: gbkt-gradle-plugin/src/main/kotlin/io/github/gbkt/gradle/tasks/CompileRomTask.kt
+original_priority: medium
 ---
 
 ## Context

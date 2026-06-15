@@ -1,10 +1,15 @@
 ---
-type: todo
-created: 2026-06-05
+id: SEED-CONVERTSPRITES-HARDENING-FOLLOWUPS
+status: dormant
+planted: 2026-06-15
+planted_during: "v0.1.1 / milestone close cleanup"
+trigger_when: "v0.2.0"
+scope: low
+triage_disposition: RE-DEFERRED
+triage_date: 2026-06-15
 source: 13.6-07-REVIEW.md / 13.6-VERIFICATION.md
 area: gbkt-gradle-plugin / ConvertSpritesTask + PngUtils
-priority: low
-status: pending
+original_priority: low
 ---
 
 # ConvertSprites deterministic-permute hardening follow-ups

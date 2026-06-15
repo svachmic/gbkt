@@ -1,11 +1,17 @@
 ---
-id: wrapat-decrement-asymmetry-mask-vs-compare
+id: SEED-WRAPAT-DECREMENT-ASYMMETRY
+status: dormant
+planted: 2026-06-15
+planted_during: "v0.1.1 / milestone close cleanup"
+trigger_when: "v0.2.0"
+scope: medium
+triage_disposition: RE-DEFERRED
+triage_date: 2026-06-15
+original_id: wrapat-decrement-asymmetry-mask-vs-compare
 title: wrapAt decrement underflow differs between mask and compare-reset paths
-created: 2026-06-03
 source: phase-13.2-code-review
-status: pending
-priority: medium
-scope: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/VariableBuilders.kt
+area: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/VariableBuilders.kt
+original_priority: medium
 ---
 
 ## Context

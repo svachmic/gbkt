@@ -1,11 +1,17 @@
 ---
-id: orelse-may-attach-to-wrap-guard-ifop
+id: SEED-ORELSE-WRAP-GUARD-ATTACH
+status: dormant
+planted: 2026-06-15
+planted_during: "v0.1.1 / milestone close cleanup"
+trigger_when: "v0.2.0"
+scope: medium
+triage_disposition: RE-DEFERRED
+triage_date: 2026-06-15
+original_id: orelse-may-attach-to-wrap-guard-ifop
 title: orElse can silently attach to an auto-emitted wrap-guard IfOp
-created: 2026-06-03
 source: phase-13.2-code-review
-status: pending
-priority: medium
-scope: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ScriptBuilder.kt
+area: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/ScriptBuilder.kt
+original_priority: medium
 ---
 
 ## Context

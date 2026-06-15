@@ -1,10 +1,15 @@
 ---
-type: todo
-created: 2026-06-06
+id: SEED-PALETTE-BANK-CODEGEN-FOLLOWUPS
+status: dormant
+planted: 2026-06-15
+planted_during: "v0.1.1 / milestone close cleanup"
+trigger_when: "v0.2.0"
+scope: low
+triage_disposition: RE-DEFERRED
+triage_date: 2026-06-15
 source: 13.8-REVIEW.md / 13.8-VERIFICATION.md
 area: gbkt-backend-gbdk (GBDKPipelineV2 / SceneVisitor) + gbkt-gradle-plugin (PngUtils)
-priority: low
-status: pending
+original_priority: low
 ---
 
 # Phase 13.8 palette/bank codegen follow-ups (advisory, non-blocking)

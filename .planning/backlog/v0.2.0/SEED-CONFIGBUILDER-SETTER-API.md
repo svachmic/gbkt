@@ -1,11 +1,17 @@
 ---
-id: configbuilder-cartridge-setter-api-consistency
+id: SEED-CONFIGBUILDER-SETTER-API
+status: dormant
+planted: 2026-06-15
+planted_during: "v0.1.1 / milestone close cleanup"
+trigger_when: "v0.2.0"
+scope: low
+triage_disposition: RE-DEFERRED
+triage_date: 2026-06-15
+original_id: configbuilder-cartridge-setter-api-consistency
 title: Unify ConfigBuilder setter convention (function vs var per field)
-created: 2026-06-03
 source: phase-13.1-code-review
-status: pending
-priority: low
-scope: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/SystemBuilders.kt
+area: gbkt-lang/src/main/kotlin/io/github/gbkt/core/dsl/SystemBuilders.kt
+original_priority: low
 ---
 
 ## Context
