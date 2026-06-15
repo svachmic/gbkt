@@ -109,3 +109,13 @@ No new threat surface introduced. The D-07 guard `check(baseConfig.gbcMode)` is 
 ---
 *Phase: 22-golden-screenshot-and-evidence-storage-overhaul*
 *Completed: 2026-06-14*
+
+## Self-Check: PASSED
+
+- FOUND: 22-06-SUMMARY.md
+- FOUND: Phase19VisualEvidenceTest.kt
+- FOUND: MetaspritePhase20OracleTest.kt
+- FOUND: MetaspriteUatTest.kt
+- FOUND commit: 6ecca5c0 (Task 1)
+- FOUND commit: 98597f89 (Task 2)
+- FOUND commit: 02101a0b (metadata)
