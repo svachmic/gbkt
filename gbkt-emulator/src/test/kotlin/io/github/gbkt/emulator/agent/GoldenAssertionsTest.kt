@@ -153,6 +153,48 @@ class GoldenAssertionsTest {
         )
     }
 
+    // ─── Test 5: update-mode remaps build/resources/test → src/test/resources ──
+
+    @Test
+    fun `compareOrBless blesses into src test resources when golden path is under build resources test`() {
+        // Simulate a classpath-resolved golden under the gitignored build copy.
+        val buildGolden = File(tempDir, "build/resources/test/goldens/metasprites/anchor.png")
+        val expectedSrcGolden = File(tempDir, "src/test/resources/goldens/metasprites/anchor.png")
+        val scratchDir = File(tempDir, "scratch")
+        val capturedFile = writePng(scratchDir, "anchor_captured", 0x654321)
+
+        System.setProperty(GBKT_UPDATE_GOLDENS_PROP, "true")
+        try {
+            assertDoesNotThrow { compareOrBless(buildGolden, capturedFile, scratchDir) }
+        } finally {
+            System.clearProperty(GBKT_UPDATE_GOLDENS_PROP)
+        }
+
+        assertTrue(
+            expectedSrcGolden.exists(),
+            "Update mode should write the blessed golden into src/test/resources, not the " +
+                "gitignored build copy. Expected: ${expectedSrcGolden.absolutePath}",
+        )
+        assertFalse(
+            buildGolden.exists(),
+            "Update mode must NOT write into build/resources/test (the throwaway copy)",
+        )
+        assertTrue(
+            sha256(expectedSrcGolden).contentEquals(sha256(capturedFile)),
+            "Blessed golden bytes must equal captured bytes (raw copy, no re-encoding)",
+        )
+    }
+
+    @Test
+    fun `sourceGoldenDestination leaves non-build paths unchanged`() {
+        val plainGolden = File(tempDir, "goldens/anchor.png")
+        assertTrue(
+            sourceGoldenDestination(plainGolden).invariantSeparatorsPath ==
+                plainGolden.invariantSeparatorsPath,
+            "A path with no build/resources/test segment should be returned unchanged",
+        )
+    }
+
     // ─── Constant contract ────────────────────────────────────────────────────
 
     @Test

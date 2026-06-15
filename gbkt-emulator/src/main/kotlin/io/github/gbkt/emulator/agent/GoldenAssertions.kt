@@ -62,10 +62,18 @@ fun assertGoldenMatch(
  *   match: returns normally (pass).
  *
  * In **update mode** ([GBKT_UPDATE_GOLDENS_PROP] system property set):
- * - Creates parent directories of [goldenFile] if needed.
- * - Raw-copies [capturedFile] to [goldenFile] via [File.copyTo] (NEVER re-encodes through ImageIO —
- *   raw copy preserves byte identity, which is the only correct bless strategy; see Phase 22
- *   research Pitfall 2).
+ * - Resolves the **source-tree** golden destination via [sourceGoldenDestination]. Real callers
+ *   resolve `goldenFile` from the classpath (`javaClass.getResource("/goldens/…")`), which points
+ *   at the gitignored `build/resources/test/…` copy that `processTestResources` regenerates from
+ *   `src/`. Writing the blessed PNG there silently no-ops (the next `clean`/`build` wipes it and
+ *   the committed golden never changes). To make `-Pgbkt.updateGoldens` actually persist, any
+ *   `goldenFile` path under the standard Gradle `build/resources/test` segment is remapped to the
+ *   matching `src/test/resources` path before writing. Non-build paths (e.g. unit tests passing a
+ *   plain `File`) are written as-is.
+ * - Creates parent directories of the resolved destination if needed.
+ * - Raw-copies [capturedFile] to the destination via [File.copyTo] (NEVER re-encodes through
+ *   ImageIO — raw copy preserves byte identity, which is the only correct bless strategy; see Phase
+ *   22 research Pitfall 2).
  * - Returns normally (pass) — no diff is performed.
  *
  * @param goldenFile Committed golden PNG (read in diff mode, written in update mode).
@@ -81,8 +89,9 @@ fun compareOrBless(
     val updateMode = System.getProperty(GBKT_UPDATE_GOLDENS_PROP) != null
 
     if (updateMode) {
-        goldenFile.parentFile?.mkdirs()
-        capturedFile.copyTo(goldenFile, overwrite = true)
+        val destination = sourceGoldenDestination(goldenFile)
+        destination.parentFile?.mkdirs()
+        capturedFile.copyTo(destination, overwrite = true)
         return
     }
 
@@ -112,4 +121,30 @@ fun compareOrBless(
                 "run with -P$GBKT_UPDATE_GOLDENS_PROP to update the golden"
         )
     }
+}
+
+/** Gradle's processed test-resources segment; classpath URLs resolve goldens under here. */
+private const val BUILD_TEST_RESOURCES_SEGMENT = "build/resources/test"
+
+/** Source-tree test-resources segment that `processTestResources` copies into the build dir. */
+private const val SRC_TEST_RESOURCES_SEGMENT = "src/test/resources"
+
+/**
+ * Resolves the **source-tree** destination a blessed golden must be written to.
+ *
+ * Real callers obtain [goldenFile] via `javaClass.getResource("/goldens/…")`, which resolves to the
+ * gitignored `build/resources/test/goldens/…` copy that Gradle's `processTestResources` regenerates
+ * from `src/`. Writing a blessed PNG there silently no-ops (it is wiped on the next
+ * `clean`/`build`).
+ *
+ * This maps any path containing the standard `build/resources/test` segment to the matching
+ * `src/test/resources` path so `-Pgbkt.updateGoldens` updates the committed golden. The check is
+ * OS-invariant ([File.invariantSeparatorsPath] normalizes `\` to `/`). Paths that do not contain
+ * the build segment (e.g. unit tests passing a plain `File`) are returned unchanged.
+ */
+internal fun sourceGoldenDestination(goldenFile: File): File {
+    val invariant = goldenFile.invariantSeparatorsPath
+    if (!invariant.contains(BUILD_TEST_RESOURCES_SEGMENT)) return goldenFile
+    val remapped = invariant.replace(BUILD_TEST_RESOURCES_SEGMENT, SRC_TEST_RESOURCES_SEGMENT)
+    return File(remapped)
 }
