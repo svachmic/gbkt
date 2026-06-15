@@ -87,11 +87,23 @@ data class AgentSessionConfig(
                 generatedDir?.let { File(it, "game_metadata.json") }?.takeIf { it.exists() }
             val sourceMapsDir = generatedDir?.takeIf { it.exists() }
 
+            // Read the CGB flag deterministically. `InputStream.skip` may skip fewer bytes than
+            // requested (its contract permits short skips), which would mis-read the offset and
+            // could
+            // misclassify a DMG ROM as GBC — and this auto-detect is the only D-07 guard against
+            // blessing an inverted-palette golden. `readNBytes` reads fully unless EOF is hit, so a
+            // short ROM still yields the DMG default.
             val gbcMode =
                 romFile.inputStream().use { stream ->
-                    stream.skip(CGB_FLAG_OFFSET)
-                    val cgbByte = stream.read() // -1 on EOF (short ROM) → treated as DMG
-                    cgbByte == CGB_ENHANCED || cgbByte == CGB_ONLY
+                    val headerLen = CGB_FLAG_OFFSET.toInt() + 1
+                    val buf = ByteArray(headerLen)
+                    val read = stream.readNBytes(buf, 0, headerLen)
+                    if (read < headerLen) {
+                        false // short ROM → DMG default
+                    } else {
+                        val cgbByte = buf[CGB_FLAG_OFFSET.toInt()].toInt() and 0xFF
+                        cgbByte == CGB_ENHANCED || cgbByte == CGB_ONLY
+                    }
                 }
 
             return AgentSessionConfig(
