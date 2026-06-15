@@ -1,9 +1,15 @@
 ---
-status: diagnosed
+status: resolved
 trigger: "racer-bg-tilemap-not-rendered — at HEAD post Plan 18, racer ROM in mGBA shows dark BG (no track tiles), AI rival frozen at spawn, player car drifts freely. Round-2 (Plan 14) MCP play-through previously verified working state. Find what regressed."
 created: 2026-05-10T00:00:00Z
-updated: 2026-05-10T00:00:00Z
+updated: 2026-06-15T00:00:00Z
 ---
+
+## Resolution 2026-06-15: WON'T-FIX — racer example retired in Phase 14 (dead code)
+
+The `racer` example was retired in Phase 14 and is no longer part of the active example corpus. The debug session investigated a symptom in a game that no longer ships. Root cause was found (user-authored `clear()` in scene enter wipes the BG painted by the genre splice), but no fix will be applied since the example is dead code.
+
+This session is archived for historical reference only.
 
 ## Current Focus
 
