@@ -544,16 +544,16 @@ class IntegrationTest {
             }
 
             // Defeat the changing-module SNAPSHOT cache (default 24h TTL) so this nested
-            // GradleRunner sandbox always re-resolves the freshly-republished 0.1.0-SNAPSHOT
+            // GradleRunner sandbox always re-resolves the freshly-republished 0.1.1-SNAPSHOT
             // artifacts. Without this, gbkt-ir and gbkt-backend-gbdk can desync in the Gradle
             // module cache and link mismatched SceneIR.copy${'$'}default arities → NoSuchMethodError
             // (Phase 15 F1 / D-05; pluginTest republishes ~/.m2 but the cache, not ~/.m2, is read).
             configurations.all { resolutionStrategy.cacheChangingModulesFor(0, "seconds") }
 
             dependencies {
-                implementation("io.github.gbkt:gbkt-core:0.1.0-SNAPSHOT")
-                implementation("io.github.gbkt:gbkt-backend-api:0.1.0-SNAPSHOT")
-                runtimeOnly("io.github.gbkt:gbkt-backend-gbdk:0.1.0-SNAPSHOT")
+                implementation("io.github.gbkt:gbkt-core:0.1.1-SNAPSHOT")
+                implementation("io.github.gbkt:gbkt-backend-api:0.1.1-SNAPSHOT")
+                runtimeOnly("io.github.gbkt:gbkt-backend-gbdk:0.1.1-SNAPSHOT")
             }
 
             kotlin {
