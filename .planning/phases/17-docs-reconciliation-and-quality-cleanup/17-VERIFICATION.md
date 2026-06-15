@@ -1,16 +1,10 @@
 ---
 phase: 17-docs-reconciliation-and-quality-cleanup
 verified: 2026-06-12T22:00:00Z
-status: human_needed
+status: passed
 score: 5/5 must-haves verified
 overrides_applied: 0
-human_verification:
-  - test: "Confirm WR-01 is advisory: GAME_BOY_COLOR_SCREEN bpp=4 vs shipped profile bpp=2"
-    expected: "Developer either acknowledges the preset is forward-looking only (and downgrades MUST to SHOULD in KDoc) or aligns with GameBoyColorProfile before milestone close"
-    why_human: "WR-01 from 17-REVIEW is a real correctness concern (wrong bitsPerPixel in the labeled canonical preset) but GAME_BOY_COLOR_SCREEN has zero current consumers — it cannot cause a runtime regression until SEED-TARGETPROFILE-SCREEN-THREADING lands. Whether the advisory is a blocker for milestone sign-off requires developer judgment."
-  - test: "Confirm WR-04 / WR-05 are advisory for v0.1.1 (ConfigBuilder property-to-function-setter breaking change)"
-    expected: "Developer confirms no external consumers exist on v0.1.0 that would break on upgrade, OR approves @Deprecated shim plan for v0.1.2"
-    why_human: "WR-04 (removed public mutable properties with no deprecation cycle) and WR-05 (stale deprecation guidance in GbktExtension.kt KDoc, CompileRomTask comment, and example comments still using old property-setter syntax) are user-visible but only affect external callers of the v0.1.0 DSL. Cannot verify mechanically whether any external callers exist."
+human_verification_resolved: 2026-06-15
 ---
 
 # Phase 17: Docs Reconciliation and Quality Cleanup Verification Report
@@ -110,7 +104,17 @@ No formal probe-*.sh scripts declared. The ROM byte-identity sweep was executed 
 | 7-example ROM sweep (17-05) | ./gradlew :pong:buildRom :platformer-template:buildRom :metasprites:buildRom :breakout:buildRom :banks:buildRom :simple-physics:buildRom :metasprites-stress:buildRom | All 7 BUILD SUCCESSFUL (QUAL-LITERALS.md) | PASS |
 | 7-example ROM sweep (17-11) | Same chained invocation | All 7 BUILD SUCCESSFUL (17-11-SUMMARY.md) | PASS |
 
-### Human Verification Required
+## Human Verification — Resolved 2026-06-15
+
+**WR-01 (GAME_BOY_COLOR_SCREEN bitsPerPixel):** ALREADY FIXED. `grep -n bitsPerPixel TargetProfiles.kt` confirms `bitsPerPixel = 2` at both lines 34 and 53. Fix was applied by Phase 18 plan 18-05. Tracked in `.planning/seeds/archive/SEED-027-gbc-screen-bitsperpixel-correctness.md` with status VERIFIED-ALREADY-FIXED.
+
+**WR-04/WR-05 (ConfigBuilder property→function-setter breaking change + stale guidance):** ADVISORY, ACCEPTED for v0.1.1. Rationale: personal project, no known external consumers of the v0.1.0 DSL. The stale doc strings (4 sites) were corrected by Phase 18 plan 18-12; archived as `.planning/seeds/archive/SEED-028-configbuilder-removal-migration-guidance.md` with status VERIFIED-ALREADY-FIXED. The remaining API-consistency work (uniform setter convention across all `ConfigBuilder` fields) is deferred as a v0.2.0 seed (migrated from `todos/pending/configbuilder-cartridge-setter-api-consistency.md`).
+
+Both human-verification items are fully resolved. No further action required for milestone close.
+
+---
+
+### Human Verification Required (Original — superseded by resolution above)
 
 #### 1. WR-01: GAME_BOY_COLOR_SCREEN bitsPerPixel correctness vs advisory status
 
