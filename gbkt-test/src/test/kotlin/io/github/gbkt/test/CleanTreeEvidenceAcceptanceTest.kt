@@ -7,6 +7,7 @@
 package io.github.gbkt.test
 
 import java.io.File
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -212,17 +213,29 @@ class CleanTreeEvidenceAcceptanceTest {
     fun `R6 zero tracked evidence files under planning-phases evidence dirs`() {
         val root = findRepoRoot()
 
-        // Prefer git ls-files for accuracy (only committed files, not untracked).
+        // Prefer git ls-files for accuracy (only committed files, not untracked). stdout (the file
+        // list) and stderr (git diagnostics) are kept separate so a `fatal:` line is NOT parsed as
+        // a
+        // file path. The exit code is checked (WR-02) and the wait is bounded (WR-03) so a non-zero
+        // git result or a hang on a held .git/index.lock falls through to the filesystem fallback
+        // instead of firing R6 on a git error or hanging the suite forever.
         val gitOutput =
             runCatching {
                     val process =
                         ProcessBuilder("git", "ls-files", ".planning/phases/**/evidence/**")
                             .directory(root)
-                            .redirectErrorStream(true)
                             .start()
-                    process.inputStream.bufferedReader().readText().trim().also {
-                        process.waitFor()
+                    val stdout = process.inputStream.bufferedReader().readText().trim()
+                    val stderr = process.errorStream.bufferedReader().readText().trim()
+                    if (!process.waitFor(30, TimeUnit.SECONDS)) {
+                        process.destroyForcibly()
+                        error("git ls-files timed out after 30s (held .git/index.lock?)")
                     }
+                    val exit = process.exitValue()
+                    if (exit != 0) {
+                        error("git ls-files failed with exit $exit: ${stderr.ifBlank { stdout }}")
+                    }
+                    stdout
                 }
                 .getOrNull()
 
