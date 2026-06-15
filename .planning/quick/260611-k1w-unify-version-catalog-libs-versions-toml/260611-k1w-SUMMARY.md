@@ -1,5 +1,6 @@
 ---
 phase: quick-260611-k1w
+status: complete
 plan: 01
 subsystem: build
 tags: [version-catalog, gradle, plugin-versions, kotlin, junit, refactor]
