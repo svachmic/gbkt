@@ -1131,22 +1131,19 @@ The framework automatically manages Game Boy hardware resources (VRAM, banking, 
 
 ## Current State
 
-**v0.1.0 MVP shipped 2026-06-09** — the compiler pipeline rebuild is complete and released. The string-concatenating prototype is replaced by a layered pipeline (Kotlin DSL → non-sealed IR + visitor dispatch → 9 ordered analysis passes → structured C AST → GBDK C), validated end-to-end against four GBDK SDK reference examples. The full JVM test suite is green (`./gradlew test --continue` + `./gradlew pluginTest`, 0 failures) as a hard release gate, reached diagnose-first with zero threshold-weakening. 20-module architecture with ServiceLoader genre plugins (RPG, platformer, puzzle, sport), an embedded Coffee-GB emulator, JVM test runner, and an MCP server for agent-driven UAT.
+**v0.1.1 Hardening shipped 2026-06-15** — the v0.1.0 deferred-debt backlog is fully drained. All 47 seeds reached terminal dispositions (24 verified-already-fixed, 10 confirmed-fixed with new coverage, 13 explicitly re-deferred to v0.2.0); `.planning/seeds/` is empty. DSL_REFERENCE.md is accurate across all 13 previously-stale sections. `./gradlew detekt` passes with zero violations, no baselines. SonarCloud S3776 HIGH findings: 46 → 0 via extract-method discipline (0 NOSONAR). Visual + emission evidence is now stored as durable central ROM+anchor-keyed goldens (Phase 22) — per-phase `EVIDENCE_DIR` scatter eliminated.
 
-See `.planning/MILESTONES.md` and `.planning/milestones/v0.1.0-ROADMAP.md` for the full record.
+**v0.1.0 MVP shipped 2026-06-09** — the compiler pipeline rebuild. The string-concatenating prototype replaced by a layered pipeline (Kotlin DSL → non-sealed IR + visitor dispatch → 9 ordered analysis passes → structured C AST → GBDK C), validated end-to-end against four GBDK SDK reference examples.
 
-## Current Milestone: v0.1.1 Hardening
+See `.planning/MILESTONES.md` for the full record. Full phase detail is archived in `.planning/milestones/`.
 
-**Goal:** Drain the v0.1.0 deferred-debt backlog — every seed gets a terminal disposition (fixed, verified-closed, or explicitly re-routed), the docs tell the truth, and static-analysis debt is burned down.
+## Next Milestone: v0.2.0
 
-**Progress:** Phase 16 (Seed Triage) complete 2026-06-12 — all 47 entries (44 seeds + 3 folded todos) terminally dispositioned against substrate SHA `8cef3dbc`: 24 verified-already-fixed (archived), 10 re-deferred to v0.2.0 backlog, 10 confirmed-open remaining in `.planning/seeds/` as the live fix queue for Phases 19–21. D-08 binding visual review passed (10 verdicts human-locked). Phase 19 (Codegen Fixes — Metasprite Cluster) complete 2026-06-13 — FIX-01 closed with fresh GBC-mode HEAD screenshots (SEED-004/005/006/013 + ROM-smoke; SEED-006/013 confirmed cyan sub-palette) captured via a committed UAT scaffold against a clean build; FIX-02 discharged as a 1:1 seed→guard audit with all 5 emission guards GREEN. Byte-identity oracle CLEAN (no codegen drift), D-08 commit separation intact, verifier 4/4. Phase 22 (Golden Screenshot & Evidence Storage Overhaul — FIX-07, the final v0.1.1 phase) complete 2026-06-15 — replaced the per-phase `EVIDENCE_DIR` pattern (27 test classes) with central immutable ROM+anchor-keyed goldens that tests DIFF against (capture to gitignored `build/` scratch), gitignored + untracked the 143 archived-phase evidence files, dropped `capturedAt` sidecar churn, added GBC auto-detect from ROM byte 0x143, and migrated 22 binding goldens (6 metasprites + 16 platformer) byte-identically from Phase 19/20/21. Verifier 10/10; full suite green with empty git delta; binding USER visual sign-off on the cyan-elephant + platformer goldens. Code review fixed 5 Warnings (incl. a broken `-Pgbkt.updateGoldens` bless path); the regression gate caught and fixed a metasprites DMG-build gap (same class as the platformer 22-07 fix) so its golden tests now execute against a real GBC ROM.
-
-**Target features:**
-- Seed triage & closure — all 44 seeds end fixed, closed-with-evidence, or re-deferred with an explicit v0.2.0 disposition; `.planning/seeds/` is empty at milestone close. Stale status hints (written before Phases 12.6–13.8 shipped) must be re-verified against current master, not trusted.
-- Deprecation removals pulled forward — SEED-023 (whenever/runIf unification) and SEED-025 (remove deprecated combat String overload) land in v0.1.1
-- DSL_REFERENCE.md reconciliation — prune/rewrite the 13 dead-API sections so docs match the implemented DSL; each removed subsystem becomes a tracked v0.2.0 feature candidate; apply the 2 doc-only fixes
-- QUAL-01..03 cleanup — detekt violations, platform-aware screen constants, magic-pixel elimination (the deferred Phase 08 scope)
-- Sonar S3776 burn-down — clear the 46 cognitive-complexity HIGH findings
+Candidates live in `.planning/backlog/v0.2.0/` (~37 seeds including 10 newly re-deferred from v0.1.1). Primary tracks expected:
+- Feature implementation for the 13 documented-but-absent DSL subsystems (state machines, dialog/menu property APIs, save fields, entity-pool lifecycle, tweening, camera extras, physics property API, pathfinding, battle menus, items)
+- RPG character codegen extern/decl mismatch (SEED-018) — own phase per blast-radius rule
+- SEED-RAW-C-CODEGEN-AST-MIGRATION, IntelliJ plugin enhancements (IDE-01..04), genre-codegen phases 07.5–07.8
+- 4 re-deferred v0.1.1 seeds: SEED-017 (sport-zone pipeline), SEED-ZONE-MAGIC-STRING, one-way tile, shared-tileset
 
 ## Requirements
 
@@ -1164,14 +1161,12 @@ See `.planning/MILESTONES.md` and `.planning/milestones/v0.1.0-ROADMAP.md` for t
 - ✓ Asset pipeline integrated into Gradle (PNG → tiles, TMX/LDtk → tilemaps, sprite slicing, hUGETracker music) — v0.1.0
 - ✓ JVM test runner for game logic (ScriptOp interpreter, simulated environment) — v0.1.0
 - ✓ Framework codegen correctness validated against 4 GBDK SDK reference examples (simple_physics → metasprites → banks → platformer_template) via the Phases 9–13 reference-port track with binding visual UAT — v0.1.0
-
-### Active (v0.1.1)
-
-- [ ] Seed triage & closure — every seed fixed, verified-closed with evidence, or re-deferred with an explicit v0.2.0 disposition; seeds directory empty at close
-- [ ] Deprecation removals — SEED-023 (whenever/runIf unification), SEED-025 (remove deprecated combat String overload)
-- [ ] DSL_REFERENCE.md reconciliation — prune/rewrite the 13 dead-API sections; removed subsystems tracked as v0.2.0 feature candidates
-- [ ] QUAL-01..03 — detekt violations, platform-aware screen constants, magic-pixel elimination (deferred Phase 08 scope)
-- [ ] Sonar S3776 burn-down — 46 cognitive-complexity HIGH findings
+- ✓ Seed triage & closure — all 47 entries terminally dispositioned (24 VERIFIED-ALREADY-FIXED, 10 CONFIRMED-OPEN fixed with coverage, 13 RE-DEFERRED to v0.2.0); seeds/ empty — v0.1.1 (TRIAGE-01/02/03, FIX-01..07)
+- ✓ Deprecation removals — `whenever` unified to `runIf` (80+ call sites); `combatIsInState(String,String)` removed; deprecation convention documented in CONTRIBUTING.md — v0.1.1 (DEPR-01/02/03)
+- ✓ DSL_REFERENCE.md reconciliation — 13 stale sections rewritten; unimplemented subsystems archived as v0.2.0 feature candidates; 2 doc-only fixes applied — v0.1.1 (DOCS-01/02/03)
+- ✓ QUAL-01..03 — detekt zero violations (no baselines); `GameBoyConstants.SCREEN_WIDTH/HEIGHT` single source of truth; 8 in-scope magic-pixel literals replaced — v0.1.1
+- ✓ Sonar S3776 burn-down — 46 HIGH findings → 0 via extract-method, 0 NOSONAR used — v0.1.1 (SONAR-01/02)
+- ✓ Golden evidence storage overhaul — per-phase EVIDENCE_DIR pattern eliminated; central ROM+anchor-keyed immutable goldens; GBC auto-detect from ROM 0x143; clean-tree gate — v0.1.1 (FIX-07)
 
 ### Out of Scope
 
@@ -1187,7 +1182,7 @@ See `.planning/MILESTONES.md` and `.planning/milestones/v0.1.0-ROADMAP.md` for t
 
 ## Constraints
 
-- **Tech stack**: Kotlin 2.3.0, Gradle 9.0, JVM 21, GBDK-2020 for compilation
+- **Tech stack**: Kotlin 2.3.20, Gradle 9.5.1, JVM 21, GBDK-2020 for compilation
 - **Backward compatibility**: None required — breaking changes are acceptable during rebuild
 - **No constraints on timeline**: Quality over speed
 
@@ -1221,7 +1216,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-15 — Phase 22 (Golden Screenshot & Evidence Storage Overhaul — FIX-07) complete: central immutable ROM+anchor goldens replace per-phase EVIDENCE_DIR, GBC auto-detect from ROM 0x143, 22 goldens migrated byte-identically, verifier 10/10, clean-tree gate green, binding USER visual sign-off. Final v0.1.1 phase.*
+*Last updated: 2026-06-15 after v0.1.1 milestone — v0.1.1 Hardening shipped (7 phases / 79 plans / 110 tasks): entire v0.1.0 deferred-debt backlog drained; seeds/ empty; docs accurate; detekt + Sonar debt cleared; golden evidence storage overhauled. Next: v0.2.0 (candidates in .planning/backlog/v0.2.0/).*
 
 *Prior: 2026-06-12 — Phase 16 (Seed Triage) complete: 47/47 dispositions final, TRIAGE.md canonical, 10 confirmed-open seeds queued for Phases 19–21.*
 

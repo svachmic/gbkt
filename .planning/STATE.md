@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v0.1.1
 milestone_name: Hardening
-status: verifying
+status: Awaiting next milestone
 stopped_at: Completed 22-06-PLAN.md
-last_updated: "2026-06-15T07:04:43.920Z"
-last_activity: 2026-06-15
+last_updated: "2026-06-15T13:45:42.241Z"
+last_activity: 2026-06-15 — Milestone v0.1.1 completed and archived
 progress:
   total_phases: 7
   completed_phases: 7
@@ -54,18 +54,10 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 22
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-06-15
-
-Resume signal: Plan 22-12 complete. Proceed with Plan 22-13.
-
-Decisions:
-
-- GBKT_UPDATE_GOLDENS_PROP = "gbkt.updateGoldens" (named constant, Project Rule #1)
-- compareOrBless uses File.copyTo for raw byte-identity bless (never ImageIO re-encode)
-- GBC-header guard (D-07) is CALLER's responsibility, not the helper's
+Phase: Milestone v0.1.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-15 — Milestone v0.1.1 completed and archived
 
 ### Roadmap Evolution
 

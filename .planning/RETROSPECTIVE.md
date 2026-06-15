@@ -43,6 +43,54 @@
 
 ---
 
+## Milestone: v0.1.1 — Hardening
+
+**Shipped:** 2026-06-15
+**Phases:** 7 | **Plans:** 79 | **Tasks:** 110
+
+### What Was Built
+
+- **Phase 16 — Seed Triage:** A 47-row TRIAGE.md with every seed terminally dispositioned against a pinned substrate SHA (24 VERIFIED-ALREADY-FIXED, 12 CONFIRMED-OPEN, 10 RE-DEFERRED). A binding human visual review gate (D-08) locked all 10 visual-seed verdicts. This became the authoritative gate for the four FIX phases that followed.
+- **Phase 17 — Docs Reconciliation and Quality Cleanup:** 13 stale DSL_REFERENCE.md sections rewritten to match the implemented DSL; `TargetProfiles.GAME_BOY_SCREEN` canonical preset added; 8 in-scope magic-pixel literals replaced with `GameBoyConstants.SCREEN_WIDTH/HEIGHT`; `./gradlew detekt` driven to zero violations with zero baseline files.
+- **Phase 18 — Deprecation Removals and Sonar Burn-down:** `whenever` API hard-removed (80+ call sites migrated to `runIf`); deprecated `combatIsInState(String,String)` overload removed; CONTRIBUTING.md deprecation convention documented; 46 SonarCloud S3776 HIGH findings cleared to 0 via extract-method across 29 EMITTING commits — zero NOSONAR annotations used.
+- **Phases 19–21 — Codegen Fix Cluster:** FIX-01..06 — metasprite visual parity + structural emission guards; banks trio re-verified; tRNS sprite outline confirmed fixed; `pivotAdjust(Int)` DSL lift; `gameUsesTilemapCollisionPathC` predicate consolidated; GameIRSerializer 10 deserialization stubs replaced with real round-trip tests. `.planning/seeds/` reached empty.
+- **Phase 22 — Golden Evidence Storage Overhaul:** Replaced the per-phase `EVIDENCE_DIR` pattern (27 test classes, 143 tracked files) with central ROM+anchor-keyed immutable goldens; `discoverFiles` GBC auto-detect from ROM byte 0x143 so per-test `.copy(gbcMode = true)` is gone; 22 binding goldens migrated byte-identically from Phases 19/20/21; clean-tree `./gradlew test` leaves zero new untracked files.
+
+### What Worked
+
+- **Triage-first discipline (Phase 16 gate).** Running a binding diagnostic triage before any fix work meant the four FIX phases knew exactly what was already fixed and what required new coverage — preventing redundant work and confirming scope accurately. Most "open" seeds turned out to be VERIFIED-ALREADY-FIXED, which the gate surfaced cheaply.
+- **Byte-identity oracle across 17 Sonar waves.** Requiring a 7-example byte-identity ROM sweep per S3776 commit made it safe to do 29 consecutive extract-method refactors in the codegen visitor layer with zero regressions — each commit was independently verified. The discipline also made the Phase 22 golden migration straightforward: "byte-identical" is a falsifiable claim.
+- **Extract-method as the S3776 fix strategy.** All 46 findings closed via pure extract-method (no NOSONAR). This produced cleaner, more testable code rather than hiding complexity.
+- **Phase 22 timing.** Closing the evidence-storage overhaul as the final v0.1.1 phase — before merging the PR — prevented the "archived phases regenerate as untracked garbage" problem from entering the main branch. The fix of the root cause lived in the same milestone as the evidence it was meant to preserve.
+
+### What Was Inefficient
+
+- **Phase 18 sprawl (27 plans, 17 waves).** Breaking Sonar burn-down into per-finding plans was granular enough to maintain oracle hygiene but created a long sequential wave chain. A coarser batch strategy with a shared ROM sweep at the wave boundary would have been faster.
+- **Triage underestimated the CONFIRMED-OPEN work.** Phase 16 dispositioned 12 CONFIRMED-OPEN seeds; four FIX phases were needed. The research-phase scope model held, but it would have been faster to budget 2-3 combined FIX phases from the start rather than four separate phase directories.
+- **Phase 22 arrived late.** The per-phase evidence-dir pattern was present since Phase 07.9. Addressing it earlier would have prevented 143 tracked per-phase evidence files accumulating across the milestone.
+
+### Patterns Established
+
+- **Triage gate before FIX phases.** A structured triage with evidence-backed dispositions, pinned substrate SHA, and binding human visual sign-off is required before any codegen-fix phase. Without it, fix work risks re-fixing already-closed issues or closing seeds with insufficient evidence.
+- **Byte-identity oracle per emitting commit.** Every commit that touches visitor codegen or GBDKPipeline.kt must carry a 7-example byte-identity ROM sweep as exit evidence. This is now a first-class process rule, not an optional check.
+- **Evidence storage must be central and immutable.** Per-phase `EVIDENCE_DIR` patterns scatter proof across an ever-growing directory tree; archived phases regenerate on every test run. Central ROM+anchor-keyed goldens with a dedicated re-baseline command are the correct model — establish at the start of a milestone, not the end.
+- **Zero-NOSONAR S3776 remediation.** Extract-method can close every S3776 finding in the codebase without NOSONAR annotations; the annotations should not be used for complexity-hiding.
+
+### Key Lessons
+
+1. A triage phase is worth its weight. Running Phase 16 before any fix work saved significant time by confirming 24 of 44 seeds as already-fixed before a single production line was touched.
+2. Evidence hygiene is a first-class deliverable. The Phase 22 root cause — 27 test classes hardcoding per-phase paths — accumulated silently over 7 phases because evidence storage was treated as a detail, not a deliverable. Establish the storage pattern at milestone start.
+3. Long sequential Sonar waves work but are slow. Per-finding granularity is correct for the oracle, but the bottleneck is the wave chain length, not the per-wave cost. Batch by visitor file, not by finding.
+4. The Visual Evidence Rule held perfectly. Every visual seed (FIX-01..04) required a fresh GBC-mode runtime screenshot as closure evidence. No variable-state assertion was accepted as a substitute.
+
+### Cost Observations
+
+- Sessions / model usage: not tracked (instrument for v0.2.0).
+- S3776 strategy: 29 EMITTING commits + 11 non-emitting commits; zero NOSONAR; every emitting commit byte-identity checked.
+- Phase 22 code-review: 5 Warnings fixed in-phase (incl. broken `-Pgbkt.updateGoldens` bless path; regression gate caught metasprites DMG-build gap same class as platformer 22-07 fix).
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -50,14 +98,18 @@
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
 | v0.1.0 | n/t | 66 | Established diagnose-first, byte-identity oracles, Visual Evidence Rule, and the full-green release gate |
+| v0.1.1 | n/t | 7 | Added triage-gate-before-fix pattern; zero-NOSONAR S3776 discipline; central immutable golden evidence storage |
 
 ### Cumulative Quality
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
 | v0.1.0 | full JVM suite green (`test --continue` 0 failures; pluginTest IntegrationTest 19/0/0/0) | n/t | gbkt-ir (zero-dependency leaf module) |
+| v0.1.1 | full JVM suite green; detekt zero violations; SonarCloud S3776 HIGH → 0 | n/t | central goldens dir (22 immutable binding goldens); `GameBoyConstants` screen constants |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. Codegen GREEN is necessary but never sufficient for visual truths — demand runtime evidence. *(established v0.1.0; verify it holds next milestone)*
-2. Gate releases on the full suite continuously; deferred red tests compound. *(established v0.1.0)*
+1. Codegen GREEN is necessary but never sufficient for visual truths — demand runtime evidence. *(established v0.1.0; confirmed v0.1.1)*
+2. Gate releases on the full suite continuously; deferred red tests compound. *(established v0.1.0; confirmed v0.1.1)*
+3. A triage gate before fix work is worth its weight — confirms which bugs are already fixed before any production line is touched. *(established v0.1.1)*
+4. Evidence storage is a first-class deliverable, not a detail. Per-phase scatter accumulates silently; establish central immutable goldens at milestone start. *(established v0.1.1)*
