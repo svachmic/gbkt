@@ -33,7 +33,7 @@ Full phase-by-phase detail (goals, plans, success criteria) is archived in **`.p
 - [x] **Phase 19: Codegen Fixes — Metasprite Cluster** - Visual-parity and structural latent metasprite bugs fixed with emission test coverage (completed 2026-06-13)
 - [x] **Phase 20: Codegen Fixes — Banks and Sprite Transparency** - Banks trio (SEED-014/015/016) re-verified closed; tRNS sprite outline confirmed fixed — verification 5/5, both FIX-04 visual oracles human-signed-off; security verified (0 threats) (completed 2026-06-14)
 - [x] **Phase 21: Codegen Fixes — Platformer and Remaining Seeds** - Platformer cEmit escapes replaced; all remaining seeds dispositioned; seeds directory empty — COMPLETE 2026-06-14 (pivotAdjust DSL lift, predicate consolidation, serializer stubs, 4 re-deferrals, GBC anchor re-shoot, D-13 byte-identity CLEAN, seeds/ empty)
-- [ ] **Phase 22: Golden Screenshot and Evidence Storage Overhaul** - Store this milestone's visual+emission evidence correctly: replace the per-phase EVIDENCE_DIR pattern (27 test classes) with central ROM+anchor-keyed immutable goldens that tests DIFF against; gitignore per-phase evidence/ scratch; GBC auto-detect from ROM 0x143; migrate the 19/20/21 binding goldens
+- [x] **Phase 22: Golden Screenshot and Evidence Storage Overhaul** - Store this milestone's visual+emission evidence correctly: replace the per-phase EVIDENCE_DIR pattern (27 test classes) with central ROM+anchor-keyed immutable goldens that tests DIFF against; gitignore per-phase evidence/ scratch; GBC auto-detect from ROM 0x143; migrate the 19/20/21 binding goldens (completed 2026-06-15)
 
 ## Phase Details
 
@@ -340,7 +340,7 @@ Plans:
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 8/8 | Complete    | 2026-06-14 |
-| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 13/14 | In Progress|  |
+| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 14/14 | Complete   | 2026-06-15 |
 
 ### Phase 22: Golden Screenshot and Evidence Storage Overhaul
 
@@ -359,7 +359,7 @@ Plans:
   5. The genuine binding goldens from Phases 19/20/21 (metasprite, banks/tRNS, platformer GBC anchors) are migrated into the central goldens dir and remain the blessed baselines; the untracked archived-phase evidence garbage is removed.
   6. TESTING.md documents the goldens layout + the re-baseline command.
 
-**Plans:** 13/14 plans executed
+**Plans:** 14/14 plans complete
 
 Plans:
 
@@ -376,4 +376,4 @@ Plans:
 - [x] 22-08-PLAN.md — simple-physics + banks visual-UAT scratch redirect (no golden) [Wave 3]
 - [x] 22-12-PLAN.md — git rm all tracked per-phase evidence (143 files) after goldens migrated [Wave 4]
 - [x] 22-14-PLAN.md — TESTING.md goldens layout + re-baseline command + GBC auto-detect [Wave 4]
-- [ ] 22-13-PLAN.md — clean-tree acceptance test (R1/R5/R6 gates) + full-suite/buildRom sign-off [Wave 5]
+- [x] 22-13-PLAN.md — clean-tree acceptance test (R1/R5/R6 gates) + full-suite/buildRom sign-off [Wave 5]
