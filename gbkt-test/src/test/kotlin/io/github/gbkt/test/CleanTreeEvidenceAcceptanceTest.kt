@@ -73,7 +73,7 @@ class CleanTreeEvidenceAcceptanceTest {
         return root
             .walkTopDown()
             .filter { it.isFile && it.extension == "kt" && it.name != selfName }
-            .filter { it.path.contains("/src/test/") }
+            .filter { it.invariantSeparatorsPath.contains("/src/test/") }
             .toList()
     }
 
@@ -240,7 +240,8 @@ class CleanTreeEvidenceAcceptanceTest {
                     .walkTopDown()
                     .filter { it.isFile }
                     .filter {
-                        it.path.contains("/.planning/phases/") && it.path.contains("/evidence/")
+                        val p = it.invariantSeparatorsPath
+                        p.contains("/.planning/phases/") && p.contains("/evidence/")
                     }
                     .toList()
             assertTrue(
@@ -263,7 +264,7 @@ class CleanTreeEvidenceAcceptanceTest {
                 .resolve("gbkt-examples")
                 .walkTopDown()
                 .filter { it.isFile && it.extension == "png" }
-                .filter { it.path.contains("/src/test/resources/goldens/") }
+                .filter { it.invariantSeparatorsPath.contains("/src/test/resources/goldens/") }
                 .toList()
 
         val goldenPaths = goldens.map { it.relativeTo(root).path }.sorted()
