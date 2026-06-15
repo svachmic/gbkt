@@ -124,13 +124,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FIX-04 | Phase 20 | Complete |
 | FIX-05 | Phase 21 | Complete |
 | FIX-06 | Phase 21 | Complete |
-| FIX-07 | Phase 22 | Not planned |
+| FIX-07 | Phase 22 | Complete |
+| ARCH-01 | v0.2.0 (deferred) | Deferred — seeded (SEED-RAW-C-CODEGEN-AST-MIGRATION) |
+| ARCH-02 | v0.2.0 (deferred) | Deferred — seeded (SEED-PHASE-X-CPAREN-EXPR-IN-C-AST) |
+| IDE-01 | v0.2.0 (deferred) | Deferred — seeded (SEED-019/SEED-024) |
+| IDE-02 | v0.2.0 (deferred) | Deferred — seeded (SEED-001) |
+| RPG-01 | v0.2.0 (deferred) | Deferred — seeded (SEED-018) |
+| EXAMPLES-01 | v0.2.0 (deferred) | Deferred — seeded (SEED-003) |
 
 **Coverage:**
 
-- v0.1.1 requirements: 20 total
+- v0.1.1 requirements: 20 total (+ 6 v0.2.0-deferred requirements listed for traceability)
 - Mapped to phases: 20/20 ✓
 - Unmapped: 0
+- v0.2.0 deferred: 6 (ARCH-01, ARCH-02, IDE-01, IDE-02, RPG-01, EXAMPLES-01 — all backed by seeds in .planning/backlog/v0.2.0/)
 
 ---
 *Requirements defined: 2026-06-12*
