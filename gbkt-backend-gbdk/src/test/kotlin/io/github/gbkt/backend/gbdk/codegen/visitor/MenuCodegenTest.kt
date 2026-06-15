@@ -316,7 +316,6 @@ class MenuCodegenTest {
         // move_sprite(38, 0, 0) hides the cursor sprite (moves off-screen to OAM top-left)
         assertTrue(output.contains("move_sprite"), "Should call move_sprite to hide cursor")
         // Look for zero-argument move_sprite calls (the hide call)
-        val hasHideCall = output.contains("move_sprite(38") || output.contains("move_sprite($38")
         assertTrue(
             output.contains("move_sprite") && (output.contains(", 0") || output.contains(",0")),
             "Should have move_sprite call with 0 coords to hide cursor",

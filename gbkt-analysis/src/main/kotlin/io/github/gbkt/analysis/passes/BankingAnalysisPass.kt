@@ -77,6 +77,13 @@ class BankingAnalysisPass : AnalysisPass {
          * work that would obsolete this single-threshold check.
          */
         const val TILEMAP_BANK_THRESHOLD = 14_336
+
+        /**
+         * Upper bound for unconstrained bank-count probing (D-06 path: romBanks set too small).
+         * MBC5 supports up to 256 ROM banks; we use this as the ceiling when no explicit
+         * [AnalysisConfig.maxBanks] is configured so the probe does not over-allocate.
+         */
+        const val MAX_MBC5_ROM_BANKS = 256
     }
 
     override fun run(context: PassContext): PassResult {
@@ -367,7 +374,7 @@ class BankingAnalysisPass : AnalysisPass {
         if (declaredRomBanks != null && declaredRomBanks <= maxBanks) {
             // D-06: author explicitly set romBanks too small. Derive the minimum needed
             // by probing with unconstrained maxBanks (type max from config).
-            val typeMax = context.config.maxBanks.coerceAtLeast(256)
+            val typeMax = context.config.maxBanks.coerceAtLeast(MAX_MBC5_ROM_BANKS)
             val probeConfig = context.config.copy(maxBanks = typeMax)
             val probeCtx =
                 context.copy(

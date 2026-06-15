@@ -27,8 +27,8 @@ import io.github.gbkt.intellij.lang.GbktLexer
  * Syntax highlighter for gbkt DSL files.
  *
  * Since gbkt files are Kotlin scripts, the Kotlin plugin handles base tokenization and
- * highlighting. DSL-specific highlighting (for keywords like `scene`, `entity`, `whenever`, etc.)
- * is provided by [GbktDslAnnotator] which examines Kotlin PSI elements and applies text attributes.
+ * highlighting. DSL-specific highlighting (for keywords like `scene`, `entity`, `runIf`, etc.) is
+ * provided by [GbktDslAnnotator] which examines Kotlin PSI elements and applies text attributes.
  *
  * This class:
  * - Provides the lexer (which delegates to KotlinLexer)
@@ -56,7 +56,7 @@ class GbktSyntaxHighlighter : SyntaxHighlighterBase() {
                 DefaultLanguageHighlighterColors.FUNCTION_DECLARATION,
             )
 
-        /** Control flow DSL keywords like whenever, branch, repeat. Purple color. */
+        /** Control flow DSL keywords like runIf, branch, repeat. Purple color. */
         @JvmField
         val DSL_CONTROL_FLOW =
             createTextAttributesKey(
@@ -153,7 +153,7 @@ object GbktKeywords {
     /** Control flow keywords. */
     val CONTROL_FLOW =
         setOf(
-            "whenever",
+            "runIf",
             "branch",
             "repeat",
             "repeatWhile",

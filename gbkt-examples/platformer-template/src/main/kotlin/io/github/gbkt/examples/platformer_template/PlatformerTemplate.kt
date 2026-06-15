@@ -58,7 +58,7 @@ val platformerTemplate =
         // D-claude-3: MBC1. Reference uses minimal `0x01` (MBC1 without RAM) and Phase
         // 12 needs ≥ 3 ROM banks (HOME + scenes + zone banks 2..N for 3 tilemaps + 2 tilesets +
         // banked title + NextLevel card). romBanks is omitted — auto-derived by BankingAnalysisPass
-        // (D-05). If the derivation undersizes and buildRom fails, add back `romBanks = 8` as a
+        // (D-05). If the derivation undersizes and buildRom fails, add back `romBanks(8)` as a
         // D-05 override (Plan 13.1-10 terminal smoke sweep confirms).
         //
         // D-claude-4: GBC_COMPATIBLE — runs on both DMG and GBC; palette load is conditional on
@@ -178,6 +178,10 @@ val platformerTemplate =
             grounded(grounded)
             hitbox(0, 0, 8, 24)
             solidThreshold(17)
+            // D-05 / SEED-021: explicit pivot offset. Derivation: frameSize(24,32) + pivot(12,6)
+            // + hitboxH=24 → 32 − 6 − 24 = 2. This is the single source of truth per Project
+            // Rule #1; the visitor no longer reverse-engineers it via a metasprite scan.
+            pivotAdjust(2)
         }
 
         // -----------------------------------------------------------------
@@ -360,7 +364,7 @@ val platformerTemplate =
                 // matches the reference's `joypadCurrent & J_START && !(joypadPrevious & J_START)`.
                 // 13.4 D-07: navigate(ref) form. gameplayScene is declared after titleScene so
                 // SceneRef("gameplay") provides a forward ref (resolved at game build() time).
-                frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                frame { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
             }
 
         // Gameplay scene — Plan 12-18 wires per-frame physics + camera updates (the
@@ -403,8 +407,8 @@ val platformerTemplate =
                     // Facing rotation via D-pad held (D-04).
                     // rot=0 ⇒ right-facing (no flip); rot=3 ⇒ left-facing (flipX) per Phase 10.1's
                     // MetaspriteVisitor rot >> 2 → flipX path.
-                    whenever(dpad.right.held) { facingRot set 0 }
-                    whenever(dpad.left.held) { facingRot set 3 }
+                    runIf(dpad.right.held) { facingRot set 0 }
+                    runIf(dpad.left.held) { facingRot set 3 }
 
                     // Per-frame metasprite render. PlatformerVisitor's auto-emitted input +
                     // physics + camera update happens automatically (Phase 12.3 codegen wiring).

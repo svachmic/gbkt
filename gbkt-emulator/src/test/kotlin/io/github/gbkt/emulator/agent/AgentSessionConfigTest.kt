@@ -100,4 +100,53 @@ class AgentSessionConfigTest {
             "metadataFile should be null for ROM outside standard layout",
         )
     }
+
+    // CGB auto-detect tests (R5)
+
+    @Test
+    fun `discoverFiles sets gbcMode true for CGB-enhanced ROM (0x80)`() {
+        val outputDir = File(tempDir, "build/gbkt/output").also { it.mkdirs() }
+        val romBytes = ByteArray(0x144).also { it[0x143] = 0x80.toByte() }
+        val rom = File(outputDir, "game.gb").also { it.writeBytes(romBytes) }
+
+        val config = AgentSessionConfig.discoverFiles(rom)
+
+        assertEquals(
+            true,
+            config.gbcMode,
+            "CGB-enhanced ROM (0x80 at 0x143) should yield gbcMode=true",
+        )
+    }
+
+    @Test
+    fun `discoverFiles sets gbcMode true for CGB-only ROM (0xC0)`() {
+        val outputDir = File(tempDir, "build/gbkt/output").also { it.mkdirs() }
+        val romBytes = ByteArray(0x144).also { it[0x143] = 0xC0.toByte() }
+        val rom = File(outputDir, "game.gb").also { it.writeBytes(romBytes) }
+
+        val config = AgentSessionConfig.discoverFiles(rom)
+
+        assertEquals(true, config.gbcMode, "GBC-only ROM (0xC0 at 0x143) should yield gbcMode=true")
+    }
+
+    @Test
+    fun `discoverFiles sets gbcMode false for DMG ROM (0x00 at 0x143)`() {
+        val outputDir = File(tempDir, "build/gbkt/output").also { it.mkdirs() }
+        val romBytes = ByteArray(0x144).also { it[0x143] = 0x00.toByte() }
+        val rom = File(outputDir, "game.gb").also { it.writeBytes(romBytes) }
+
+        val config = AgentSessionConfig.discoverFiles(rom)
+
+        assertEquals(false, config.gbcMode, "DMG ROM (0x00 at 0x143) should yield gbcMode=false")
+    }
+
+    @Test
+    fun `discoverFiles sets gbcMode false for short ROM (less than 0x144 bytes)`() {
+        val outputDir = File(tempDir, "build/gbkt/output").also { it.mkdirs() }
+        val rom = File(outputDir, "game.gb").also { it.writeBytes(ByteArray(64)) }
+
+        val config = AgentSessionConfig.discoverFiles(rom)
+
+        assertEquals(false, config.gbcMode, "Short ROM (< 0x144 bytes) should yield gbcMode=false")
+    }
 }

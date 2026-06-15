@@ -329,13 +329,13 @@ object RpgTemplate : GameTemplate {
         |
         |        every.frame {
         |            // Movement and exploration logic
-        |            whenever(dpad.right) { /* Move right */ }
-        |            whenever(dpad.left) { /* Move left */ }
-        |            whenever(dpad.up) { /* Move up */ }
-        |            whenever(dpad.down) { /* Move down */ }
+        |            runIf(dpad.right) { /* Move right */ }
+        |            runIf(dpad.left) { /* Move left */ }
+        |            runIf(dpad.up) { /* Move up */ }
+        |            runIf(dpad.down) { /* Move down */ }
         |
         |            // Pause menu on start
-        |            whenever(buttons.start.pressed) {
+        |            runIf(buttons.start.pressed) {
         |                /* Show pause menu */
         |            }
         |        }

@@ -39,12 +39,22 @@ tasks.test {
     // task fails/skips and the test skips gracefully via Assumptions — a genuine missing
     // prerequisite, not a failure.
     dependsOn("convertSprites")
+    if (project.hasProperty("gbkt.updateGoldens")) {
+        systemProperty("gbkt.updateGoldens", "true")
+    }
 }
 
 gbkt {
     game("io.github.gbkt.examples.platformer_template.PlatformerTemplateKt::platformerTemplate")
     assets("res")
     outputName.set("platformer-template")
+    // Phase 22 (22-07): gbcMode must be explicit here because the extension convention defaults to
+    // "DISABLED" and gbcMode.isPresent is always true, so CompileRomTask never falls back to the
+    // gbcMode=COMPATIBLE value written by GenerateCTask into gbkt-build.properties via
+    // target(GbcTarget.GBC_COMPATIBLE) in the DSL. Explicit set ensures -Wm-yc is passed to lcc
+    // so the ROM 0x143 byte is 0x80 (CGB_ENHANCED), which the D-07 guard in PlatformerTemplateUatTest
+    // and related oracle tests checks before blessing any golden screenshot.
+    gbcMode.set("COMPATIBLE")
     sprites {
         strictTransparency.set(true)
     }

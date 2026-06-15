@@ -17,6 +17,17 @@ package io.github.gbkt.core.optimization
  */
 class ConsoleReporter(private val config: ReporterConfig = ReporterConfig()) {
 
+    companion object {
+        /** Efficiency percentage at or above which an asset report is coloured green (healthy). */
+        private const val EFFICIENCY_GREEN_THRESHOLD = 90
+
+        /** Efficiency percentage at or above which an asset report is coloured yellow (monitor). */
+        private const val EFFICIENCY_YELLOW_THRESHOLD = 70
+
+        /** Width of the footer separator rule in characters. */
+        private const val FOOTER_SEPARATOR_WIDTH = 40
+    }
+
     /** Print the analysis report to console. */
     fun report(analysis: AssetReport) {
         if (!analysis.hasIssues && config.quietWhenOptimal) {
@@ -78,8 +89,8 @@ class ConsoleReporter(private val config: ReporterConfig = ReporterConfig()) {
 
         val efficiencyColor =
             when {
-                summary.efficiency >= 90 -> Color.GREEN
-                summary.efficiency >= 70 -> Color.YELLOW
+                summary.efficiency >= EFFICIENCY_GREEN_THRESHOLD -> Color.GREEN
+                summary.efficiency >= EFFICIENCY_YELLOW_THRESHOLD -> Color.YELLOW
                 else -> Color.RED
             }
 
@@ -246,13 +257,13 @@ class ConsoleReporter(private val config: ReporterConfig = ReporterConfig()) {
     }
 
     private fun printFooter(analysis: AssetReport) {
-        println(dim("─".repeat(40)))
+        println(dim("─".repeat(FOOTER_SEPARATOR_WIDTH)))
         println(dim("Analysis completed in ${analysis.analysisTimeMs}ms"))
         println()
     }
 
     private fun appendFooter(sb: StringBuilder, analysis: AssetReport) {
-        sb.appendLine("─".repeat(40))
+        sb.appendLine("─".repeat(FOOTER_SEPARATOR_WIDTH))
         sb.appendLine("Analysis completed in ${analysis.analysisTimeMs}ms")
         sb.appendLine()
     }

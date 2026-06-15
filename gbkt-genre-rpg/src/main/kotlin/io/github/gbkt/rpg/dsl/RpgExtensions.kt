@@ -55,12 +55,20 @@ import io.github.gbkt.rpg.domain.StatusEffectDef
 internal object RpgRegistry {
     private val holder = ThreadLocal<MutableMap<String, Any>>()
 
-    /** Returns the current registry map, initializing it if needed. */
+    /**
+     * Returns the current registry map, initializing it if needed.
+     *
+     * On first initialization in a given `game { }` scope, registers [clear] as a teardown hook
+     * with [GameBuilderContext] so that stale character/monster entries do not leak across `game{}`
+     * builds on the same thread (Gradle daemon / JUnit test runner reuse).
+     */
     private fun current(): MutableMap<String, Any> {
         return holder.get()
             ?: run {
                 val map = mutableMapOf<String, Any>()
                 holder.set(map)
+                // Register teardown so clear() is called when the enclosing game{} lambda finishes.
+                io.github.gbkt.core.dsl.GameBuilderContext.addTeardownHook(::clear)
                 map
             }
     }
@@ -73,6 +81,17 @@ internal object RpgRegistry {
     /** Registers a monster definition by ID. */
     fun registerMonster(def: MonsterDef) {
         current()["monster:${def.id}"] = def
+    }
+
+    /**
+     * Clears the thread-local registry.
+     *
+     * Called automatically on `game { }` teardown via [io.github.gbkt.core.dsl.GameBuilderContext]
+     * to prevent stale character/monster entries from leaking into subsequent `game { }`
+     * invocations on the same thread (e.g., in Gradle daemon or JUnit test suites).
+     */
+    fun clear() {
+        holder.remove()
     }
 }
 
@@ -373,9 +392,7 @@ fun ScriptBuilder.battleUpdate(battle: BattleRef) {
  * Returns an [Expr] that evaluates to true when the combat system is in the given state.
  *
  * Produces a call to the generated `combat_is_in_state_{battleId}(state)` helper function. Use with
- * [io.github.gbkt.core.dsl.ScriptBuilder.whenever] for state-based scene logic.
- *
- * Prefer this over the string-based overload — eliminates magic string state names.
+ * [io.github.gbkt.core.dsl.ScriptBuilder.runIf] for state-based scene logic.
  *
  * Usage:
  * ```kotlin
@@ -383,10 +400,10 @@ fun ScriptBuilder.battleUpdate(battle: BattleRef) {
  * scene("battle") {
  *     every.frame {
  *         battleUpdate(combat)
- *         whenever(combatIsInState(CombatStates.VICTORY, combat)) {
+ *         runIf(combatIsInState(CombatStates.VICTORY, combat)) {
  *             navigate(victoryScene)
  *         }
- *         whenever(combatIsInState(CombatStates.DEFEAT, combat)) {
+ *         runIf(combatIsInState(CombatStates.DEFEAT, combat)) {
  *             navigate(gameOverScene)
  *         }
  *     }
@@ -399,27 +416,6 @@ fun ScriptBuilder.battleUpdate(battle: BattleRef) {
  */
 fun combatIsInState(state: CombatStateId, battle: BattleRef): Expr =
     CallExpr(function = "combat_is_in_state_${battle.id}", args = listOf(VarRef(state.id)))
-
-/**
- * Returns an [Expr] that evaluates to true when the combat system is in the given state.
- *
- * String-based overload for migration and escape-hatch use. Prefer the typed overload:
- * `combatIsInState(CombatStates.VICTORY, combatRef)`.
- *
- * @param stateId Raw string state constant name (e.g. `"COMBAT_STATE_VICTORY"`).
- * @param battleId Battle system string identifier.
- */
-@Deprecated(
-    message = "Use combatIsInState(CombatStateId, BattleRef) to eliminate magic strings",
-    replaceWith =
-        ReplaceWith(
-            "combatIsInState(CombatStateId(stateId), BattleRef(battleId))",
-            "io.github.gbkt.core.ir.CombatStateId",
-            "io.github.gbkt.rpg.dsl.BattleRef",
-        ),
-)
-fun combatIsInState(stateId: String, battleId: String): Expr =
-    combatIsInState(CombatStateId(stateId), BattleRef(battleId))
 
 /**
  * Configures and registers an ATB (Active Time Battle) combat system.

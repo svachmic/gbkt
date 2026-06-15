@@ -131,7 +131,6 @@ internal inline fun forEachNestedOpList(op: ScriptOp, action: (List<ScriptOp>) -
  *
  * @return Map from source scene ID to the set of scene IDs it transitions to.
  */
-@Suppress("LongMethod") // Collects navigations from all game IR sources — by design
 internal fun buildTransitionGraph(game: GameIR): Map<String, Set<String>> {
     val graph = mutableMapOf<String, MutableSet<String>>()
 
@@ -144,33 +143,7 @@ internal fun buildTransitionGraph(game: GameIR): Map<String, Set<String>> {
     }
 
     // Non-scene transitions: collision rules, zones, menus, combat hooks, puzzle handlers
-    val globalEdges = mutableSetOf<String>()
-    for (rule in game.collisionRules) {
-        collectNavigations(rule.onCollide, globalEdges)
-    }
-    for (zone in game.zones) {
-        collectNavigations(zone.onEnter, globalEdges)
-        collectNavigations(zone.onExit, globalEdges)
-        for (obj in zone.objects) {
-            collectNavigations(obj.onInteract, globalEdges)
-        }
-    }
-    for (menu in game.menus) {
-        for (item in menu.items) {
-            collectNavigations(item.body, globalEdges)
-        }
-    }
-    for (pool in game.actorPools) {
-        collectNavigations(pool.deathCallback, globalEdges)
-    }
-    for (system in game.systems) {
-        collectSystemNavigations(system, globalEdges)
-    }
-    for (puzzleObj in game.puzzleObjects) {
-        for (handler in puzzleObj.handlers) {
-            collectNavigations(handler.actions, globalEdges)
-        }
-    }
+    val globalEdges = collectNonSceneNavigations(game)
 
     // Make global targets reachable from every scene
     if (globalEdges.isNotEmpty()) {
@@ -180,6 +153,41 @@ internal fun buildTransitionGraph(game: GameIR): Map<String, Set<String>> {
     }
 
     return graph
+}
+
+/**
+ * Collects all [NavigateTo] targets from non-scene sources: collision rules, zones, menus, actor
+ * pools, systems, and puzzle objects. Returns the collected scene IDs as a flat set.
+ */
+private fun collectNonSceneNavigations(game: GameIR): Set<String> {
+    val out = mutableSetOf<String>()
+    for (rule in game.collisionRules) {
+        collectNavigations(rule.onCollide, out)
+    }
+    for (zone in game.zones) {
+        collectNavigations(zone.onEnter, out)
+        collectNavigations(zone.onExit, out)
+        for (obj in zone.objects) {
+            collectNavigations(obj.onInteract, out)
+        }
+    }
+    for (menu in game.menus) {
+        for (item in menu.items) {
+            collectNavigations(item.body, out)
+        }
+    }
+    for (pool in game.actorPools) {
+        collectNavigations(pool.deathCallback, out)
+    }
+    for (system in game.systems) {
+        collectSystemNavigations(system, out)
+    }
+    for (puzzleObj in game.puzzleObjects) {
+        for (handler in puzzleObj.handlers) {
+            collectNavigations(handler.actions, out)
+        }
+    }
+    return out
 }
 
 /** Recursively collects all [NavigateTo] target IDs from a list of [ScriptOp]s. */

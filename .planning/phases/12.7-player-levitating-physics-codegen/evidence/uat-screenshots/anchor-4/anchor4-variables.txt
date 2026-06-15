@@ -1,2 +1,0 @@
-walkFrameIdx_distinct_values: 0,1
-facingRot_at_04: 3

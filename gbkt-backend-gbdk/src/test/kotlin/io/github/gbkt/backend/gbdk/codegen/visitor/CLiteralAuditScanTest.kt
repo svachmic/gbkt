@@ -65,12 +65,7 @@ class CLiteralAuditScanTest {
     private val emptyGameIR = GameIR(name = "Test", config = CartridgeConfig())
 
     companion object {
-        val EVIDENCE_DIR =
-            File(
-                findRepoRoot(),
-                ".planning/phases/07.9-c-codegen-signed-vs-unsigned-literal-discipline/" +
-                    "evidence/audit-scan",
-            )
+        val EVIDENCE_DIR = File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence")
 
         /**
          * Signed-variable name regex for the bucket-(a) guard. Source of truth: 07.9-AUDIT.md §

@@ -1,6 +1,0 @@
-vy_grounded: 0
-vy_mid_jump: -800
-vy_landed: 0
-frames_to_land: 61
-final_scene: gameplay
-final_frame: 220

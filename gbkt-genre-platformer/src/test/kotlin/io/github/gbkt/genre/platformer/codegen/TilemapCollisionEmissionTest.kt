@@ -47,20 +47,15 @@ class TilemapCollisionEmissionTest {
 
     companion object {
         /**
-         * Evidence is written under the **active checkout root** (worktree-safe).
+         * Evidence is written to the module's gitignored build/ scratch directory (R1 + R3).
          *
-         * `user.dir` resolves to the Gradle project's working directory, which for the
-         * `:gbkt-genre-platformer:test` task is `<repo>/gbkt-genre-platformer`. From there we
-         * ascend one level (`..`) to reach the repo (or worktree) root, then descend into the phase
-         * evidence directory. Hard-coding an absolute path would silently route evidence files
-         * outside the active worktree and miss the commit (#3099 worktree path safety).
+         * `user.dir` at `:gbkt-genre-platformer:test` runtime resolves to the
+         * `gbkt-genre-platformer` module root, so `build/gbkt/test-evidence` is the module's own
+         * gitignored build directory — no `../` ascent needed (22-PATTERNS Pitfall 5). In-test C
+         * assertions remain the gate; the txt dumps are for post-failure review only.
          */
         val EVIDENCE_DIR =
-            File(System.getProperty("user.dir"))
-                .resolve(
-                    "../.planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/tier1-shape"
-                )
-                .normalize()
+            File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence").normalize()
     }
 
     private val pipeline = GBDKPipeline()

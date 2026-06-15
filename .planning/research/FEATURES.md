@@ -1,301 +1,239 @@
 # Feature Research
 
-**Domain:** Kotlin DSL-to-C compiler framework for Game Boy / Game Boy Color
-**Researched:** 2026-02-17
-**Confidence:** HIGH (codebase + PROJECT.md are authoritative; ecosystem verified with GB Studio, ZGB, GBDK-2020, Butano)
+**Domain:** Pre-1.0 open-source compiler/DSL framework — internal hardening patch release
+**Researched:** 2026-06-12
+**Confidence:** HIGH
 
 ---
 
-## Context: What This Is
+## Context
 
-gbkt is NOT a game engine — it is a **compiler framework**. Users declare a game in Kotlin DSL; gbkt
-compiles it to GBDK-compatible C and then to a `.gb` ROM. The features below answer: what does a
-DSL-to-C compiler for retro hardware need?
+This FEATURES.md covers the v0.1.1 Hardening milestone, not a user-facing feature release. "Features" here are the hardening deliverables themselves. The template categories (table stakes / differentiators / anti-features) are applied to those deliverables: what a hardening release *must* do to be credible, what makes it exemplary, and what to exclude so it stays focused.
 
-The primary reference for feature decisions is the project's own PROJECT.md (the vision document),
-validated against what GB Studio, ZGB, and Butano each solved. Where gbkt deliberately does NOT
-follow competitors (e.g., no visual editor, no manual banking), that is noted as intentional.
+The five target deliverables, as stated in PROJECT.md, are:
+
+1. Seed triage and closure (all 44 seeds reach terminal disposition)
+2. Deprecation removals (SEED-023 whenever/runIf, SEED-025 combat String overload)
+3. DSL_REFERENCE.md reconciliation (13 stale-API sections pruned or rewritten)
+4. QUAL-01..03 (detekt violations, platform-aware screen constants, magic-pixel elimination)
+5. Sonar S3776 burn-down (46 cognitive-complexity HIGH findings)
 
 ---
 
 ## Feature Landscape
 
-### Table Stakes (Users Expect These)
+### Table Stakes (A Hardening Release Must Provide These)
 
-These are the features developers would expect from any retro game DSL framework. Missing these
-means the framework cannot produce working ROMs or cannot compete with GBDK raw C.
+| Deliverable | Why Expected | Complexity | Notes |
+|---|---|---|---|
+| Terminal disposition for every seed | "Hardening" means no loose ends. A seed left in limbo is a commitment the project cannot honor. | MEDIUM | 44 seeds; many (SEED-004..011, SEED-PHASE-12-*) may be already fixed by Phases 12–13.8 — verify against current master, not the planted-time status. Stale status hints must be explicitly re-checked. |
+| Disposition taxonomy enforced (fixed / verified-already-fixed / re-deferred-with-rationale) | A binary done/not-done collapses distinct outcomes. Fixed means code changed. Verified-already-fixed means a later phase solved it with evidence. Re-deferred means v0.2.0+ with a documented reason. Without the taxonomy, seeds are disposed ambiguously and reappear. | LOW | The taxonomy is already implied by the seed format (Status field, routing notes). Formalizing it costs one paragraph in the phase spec. |
+| Evidence artifact per closed seed | Seed closure without evidence is assertion-based. For a moving codebase (Phases 12–13.8 shipped between when most seeds were planted and now), "looks fixed" is not verifiable. | MEDIUM | Evidence minimum: unit test output, buildRom exit code, or screenshot for visual defects. The project already has the Visual Evidence Rule in `.planning/verifier-gates.md` — apply the same standard here. |
+| @Deprecated annotation on `whenever` if unifying to `runIf` | One release cycle deprecation warning before removal is a social contract for library users. Skipping it for a pre-1.0 project is tempting; skipping it for APIs already documented in DSL_REFERENCE.md is not acceptable. | LOW | SEED-023. The cheap option: `@Deprecated("Use runIf { } for single-frame conditionals", ReplaceWith("runIf(condition, block)"))`. If real reactive semantics for `whenever` are chosen instead, that is a v0.2.0 feature, not v0.1.1 scope. |
+| Deprecated `combatIsInState(String, String)` action | SEED-025 states "scheduled intent: v0.2.0". PROJECT.md says it "lands in v0.1.1". The resolution: if v0.1.0 shipped the overload WITHOUT a @Deprecated annotation (confirmed by SEED-025 text: "shipped the String overload un-deprecated"), then v0.1.1 must ADD @Deprecated (one cycle grace) and v0.2.0 removes it. Either action is legitimate; the table-stakes requirement is that the action is deliberate and documented in the release notes. | LOW | Blast radius: `RpgExtensions.kt` ~line 421 + any call sites in examples/tests. SEED-025 provides the grep recipe. |
+| DSL_REFERENCE.md matches the implemented API on every section | Docs that contradict the code are more harmful than no docs — they generate false expectations and distrust. The 13 "Stale-API caveat" blockquotes are better than silence but not sufficient; the sections themselves need rewriting or removal. | MEDIUM | 13 sections carry Stale-API caveats: State Machine DSL, Dialog System (property-style API/isActive/isComplete), Menu System (style{}/gridMenu()/menu.tick()), Save System (field-level API), Entity Pools, Tweening/Easing, Camera (shake-builder/smoothing/snapTo), Camera Transitions (wipe/iris/flash), Physics (global world/tag/gravityZone), Pathfinding (partial), Testing Framework (testGame/testScene), Battle Menu/Combat Formulas/Custom Battle States, Item & Inventory System (partial). Each needs one of: (a) rewrite to match current API, (b) stub with "not implemented; tracked as v0.2.0 candidate", or (c) move to PLANNED_APIS.md. |
+| Each pruned DSL section explicitly tracked as v0.2.0 feature candidate | Pruning without tracking is information loss. The 13 stale sections represent real design intent. These become v0.2.0 scoping raw material. | LOW | Mechanism: a seed file per removed subsystem, or a PLANNED_APIS.md aggregator. Whichever is chosen must be consistent across all 13 sections; ad-hoc deletion leaves no trail. |
+| detekt violations resolved (QUAL-01) | A static analysis tool that reports violations on every build trains developers to ignore it. The deferred Phase 08 detekt scope must close so the tool is meaningful. | MEDIUM | Scope is from the Phase 08 deferral — the specific violation classes need to be enumerated at phase-spec time; "detekt violations" without a list is too vague to gate against. |
+| Platform-aware screen constants replacing magic numbers (QUAL-02) | Magic pixel values like 160 and 144 hardcoded across the codebase are a correctness and readability gap. They conflict with Project Rule #1 (no magic strings/numbers — the same principle applies to numeric constants). | LOW | Source: deferred Phase 08 scope. Fix: `ScreenSpec.WIDTH`, `ScreenSpec.HEIGHT` constants from `gbkt-core/constraints`. Search-and-replace is mechanical once the constants are confirmed to exist and be published. |
+| Sonar S3776 burn-down (cognitive complexity) | 46 HIGH-severity findings block the Sonar quality gate from being meaningful. A quality gate perpetually red on HIGHs cannot catch new HIGHs. | HIGH | S3776 findings are in deeply nested visitors (PlatformerVisitor, MetaspriteVisitor, SportVisitor, RPG codegen). Correct fix is extract-method refactoring, not complexity threshold increase. Each extraction changes method signatures; snapshot-based codegen tests will need updating. This is the costliest deliverable in the milestone. |
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| **Scene system** | Every Game Boy game has scenes (title, gameplay, game over). Developers expect scene enter/update/exit lifecycle. GB Studio and ZGB both provide this. | MEDIUM | Scenes are the top-level organization unit. Must handle scene transitions with loading semantics. |
-| **Sprite/entity support** | Game Boy games are sprite-based. Without sprite management, you can't make a game. | MEDIUM | Must handle 8x8 and 8x16 hardware sprites. OAM slots are a hard constraint (40 total). |
-| **Input handling** | D-pad + A/B + Start/Select. Developers expect `.pressed`, `.held`, `.released` per button. | LOW | Already well-defined. Input buffering and edge detection are expected. |
-| **Tilemap/background support** | Game Boy background layer uses tilemaps. Without this, no scrolling worlds, no platformers, no RPG maps. | MEDIUM | Tiled (.tmx) is the standard map format. Must convert to GB tile data format. |
-| **Asset pipeline (PNG → tiles)** | Developers drop PNGs into assets/. They do not want to run `png2asset` manually. ZGB automates this; GB Studio automates this; users expect automation. | HIGH | PNG must be quantized to 4 colors (2bpp), sliced to 8x8 tiles, deduplicated. Critical for usability. |
-| **ROM compilation via GBDK** | The final output must be a `.gb` file. Gradle task `buildRom` is the expected interface. | LOW | Already implemented in Gradle plugin. GBDK lcc invocation is understood. |
-| **Save/load system (SRAM)** | Any game worth playing needs persistence. Developers expect a type-safe save API. | MEDIUM | Must generate correct MBC5_RAM_BATTERY cartridge config. SRAM layout must be planned automatically. |
-| **Camera system** | Scrolling games need camera follow, bounds clamping. This is table stakes for any framework above raw GBDK. | MEDIUM | Camera offset must automatically propagate to all sprite rendering. |
-| **Dialog / text rendering** | RPGs, adventures, even platformers need text. Window layer rendering is mandatory (background tile corruption otherwise). | MEDIUM | Font tiles, text placement, typewriter effect. Already implemented using window layer correctly. |
-| **Menu system** | Title screen menu, pause menu, options — every game has menus. | MEDIUM | Navigation, cursor, selection callbacks. Already implemented. |
-| **Audio (music + SFX)** | Game Boy games have music. Any framework without sound feels broken. | MEDIUM | hUGEDriver integration is the standard. Must support .uge music files and SFX triggers. |
-| **JVM build integration (Gradle)** | Target users are Kotlin/JVM developers. Gradle is non-negotiable. `./gradlew build` must produce the ROM. | LOW | Already implemented. Gradle plugin exists and works. |
-| **Working example games** | Without working examples, nobody trusts the framework. Pong, Breakout, Explorer are the minimum bar. | LOW-MEDIUM | Examples exist; they must compile through the rebuilt pipeline end-to-end. |
-| **Collision detection** | Entity-to-entity and entity-to-tilemap collision is needed for virtually every game type. | MEDIUM | AABB collision, tilemap collision layer. Already implemented. |
-| **Variable types matching hardware** | Game Boy uses u8 (0-255), u16 (0-65535), i8 (-128..127). DSL must expose these as typed delegates. | LOW | `u8Var`, `u16Var`, `i8Var` pattern already established. |
-| **Animation system** | Sprite frame sequencing with timing. Every sprite-based game needs this. | LOW | Frame indices, animation speed (frames per tick), looping/one-shot. Already implemented. |
-| **GBC color palette support** | Game Boy Color has 8 background palettes and 8 sprite palettes of 4 colors each. Framework must handle palette management. | MEDIUM | Palette assignment must be part of VRAM planning pass. |
+### Differentiators (What Makes This Hardening Release Exemplary)
 
----
+| Deliverable | Value Proposition | Complexity | Notes |
+|---|---|---|---|
+| Re-verification against current master rather than trusting planted-time status | Seeds planted during Phases 9–13 may have been silently fixed by later phases (especially Phases 12–13.8 which touched metasprites, palette, sprite codegen). A naive "mark all dormant seeds as re-deferred" misses a real fixed count. Re-verification surfaces the actual debt reduction from v0.1.0 work. | MEDIUM | Requires targeted test runs or buildRom smokes per seed, not a full suite re-run for each. The seed file usually contains a repro recipe or discovery hook — use it. |
+| Batch deprecation train convention established | Rather than ad-hoc per-API deprecation, SEED-023 and SEED-025 together establish the gbkt deprecation cycle: (1) annotate in patch, (2) remove in next minor, (3) both moves documented in CHANGELOG. This pattern becomes the template for future API evolution. | LOW | Document the convention in CONTRIBUTING.md (one paragraph). This pays forward: every future @Deprecated annotation inherits the pattern without reinventing the policy. |
+| v0.2.0 feature candidate list with scope estimates | If each pruned DSL section produces a seed with a rough complexity estimate (Small/Medium/Large), the v0.2.0 roadmap starts from known material. Dialog system, entity pools, and pathfinding are each independently scoped rather than lumped as "finish the docs." | LOW | Each seed should carry the same fields as SEED-023/025: routing, blast radius, scope estimate. Consistent format means gsd-new-milestone can ingest them directly. |
+| SEED-026 validatePlugins green (optional bandwidth item) | SEED-026 (gbkt-gradle-plugin build hygiene — validatePlugins red, pluginTest ordering race) is currently dormant and not in the v0.1.1 target list. Closing it makes the project publishable to the Gradle Plugin Portal without a blocking validation failure. | MEDIUM | Include only if seed triage and QUAL work complete ahead of schedule. Do not let it delay the seed triage gate. |
 
-### Differentiators (Competitive Advantage)
-
-These are features that no competitor provides. They are the core reason gbkt exists as a separate
-project from GB Studio, ZGB, or raw GBDK.
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **Automatic bank allocation** | The biggest DX problem in GBDK development. Developers manually manage which code goes in which ROM bank, causing cryptic bank overflow errors. gbkt automatically bin-packs code and data into banks, generates trampoline functions, and produces a build report. No other GB framework does this automatically. | HIGH | First-fit-decreasing bin packing. Scene locality optimization (scenes that transition to each other share banks). This is the "GC for hardware" core value. |
-| **Automatic VRAM planning** | VRAM is 16KB on Game Boy. Developers in GBDK manually calculate which tile indices go where. gbkt assigns tile slots per-scene, detects shared tiles across transitions, and emits an error with a count when a scene exceeds 384 unique tiles. | HIGH | Per-scene tile slot layout. Hash-based tile deduplication. Shared tile detection reduces transition cost. This converts a mysterious graphical glitch into a build error. |
-| **Automatic OAM planning** | 40 sprite slots, 10 per scanline. gbkt allocates OAM slots, analyzes scanline density, and warns when sprites will flicker. Developers don't count sprites manually. | HIGH | Per-scanline sprite density analysis. Priority ordering. Error/warning at compile time, not runtime. |
-| **Automatic RAM planning** | WRAM (4KB), HRAM (127 bytes), SRAM layout. gbkt plans all RAM usage, maps persistent variables to SRAM addresses, and errors when RAM budget is exceeded — before the ROM is compiled. | HIGH | WRAM variable layout. HRAM for performance-critical variables. SRAM save structure with checksum. |
-| **Budget audit with actionable messages** | Instead of mysterious glitches, developers get: "Scene 'dungeon' uses 401 unique tiles (max 384). Consider splitting tileset 'dungeon_walls'." This is the compile-time safety story. | MEDIUM | Budget audit pass runs last, after all planning passes. Produces human-readable build report. |
-| **Structured C AST codegen** | The current codebase uses `line("...")` string concatenation — this approach cannot be optimized, analyzed, retargeted, or source-mapped. A C AST (sealed `CStatement`/`CExpr` hierarchy) enables optimization passes, source mapping, and future non-GB backends. | HIGH | `CStatement.VarDecl`, `CStatement.If`, etc. Pretty-printer is the only place strings assemble. |
-| **JVM test runner (no emulator)** | Game logic tests run in milliseconds on JVM. No emulator boot, no ROM flash, no visual inspection. `gradle test` validates battle formulas, dialog trees, scene transitions, and encounter logic in under 5 seconds. | HIGH | `ScriptOp` interpreter. Simulated game environment. Input simulation (press/hold/release). Variable assertions. This is unique in the Game Boy homebrew ecosystem. |
-| **Semantic IR as module contract** | The IR (`GameIR`, `SceneIR`, `ActorIR`, `ScriptOp`) is a platform-agnostic game model — not a C AST. Platform annotations (bank slots, VRAM ranges, OAM slots) are nullable fields filled by analysis passes. This design allows future backends (GBA, SNES, NES) to reuse the same DSL and analysis layer, only swapping codegen. | HIGH | Sealed types for `ScriptOp` and `IRStatement`. Null platform fields. Two sealed worlds: game IR and C AST. |
-| **Tile deduplication** | Automatically detect identical tiles across all tilesets in a scene, merge them. This directly increases effective VRAM capacity. GB Studio does this; ZGB and raw GBDK do not. | MEDIUM | SHA-256 per tile, hash map deduplication. H-flip and V-flip variant detection (reuse with flip flags). |
-| **Scene transition VRAM planning** | When transitioning between scenes, gbkt pre-computes which tiles change, schedules VRAM transfers across VBlanks to avoid tearing, and recommends fade effects for high-cost transitions. | HIGH | Delta computation per transition pair. Transfer scheduling. Automatic fade selection for costly transitions. |
-| **`inlineC {}` escape hatch** | For hot paths and hardware tricks the framework doesn't cover, users can drop raw C. These blocks are clearly marked, excluded from JVM testing, and don't break the rest of the framework. Butano has `BN_DATA_EWRAM` and direct VRAM calls for the same reason. | LOW | Already partially implemented as `raw()`. Needs to be formalized as `inlineC {}` and `inlineAsm {}`. |
-| **`gradle budgetReport`** | Standalone task that runs all analysis passes and prints the budget report without compiling a ROM. Developers can check their memory budget on every commit without a full build. | LOW | Depends on analysis pass infrastructure being in place. |
-| **Compile-time ref resolution** | `ref("nonexistent_scene")` fails the build. `asset("sprites/hero.png")` fails if the file doesn't exist. Type-safe references that catch typos and broken links at build time, not runtime. | MEDIUM | All references validated in Pass 1 (Validation pass). Error messages include the source location. |
-
----
-
-### Anti-Features (Commonly Requested, Often Problematic)
+### Anti-Features (Commonly Requested, Often Counterproductive)
 
 | Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| **Visual editor / GUI** | GB Studio has one; some users will ask why gbkt doesn't | gbkt is explicitly for code-first developers who want programmatic control. A GUI would require a separate frontend app, massive scope expansion, and would compete with GB Studio on its own terms — and lose. | Use GB Studio if you want a visual editor. gbkt exists because GB Studio's visual scripting hits a ceiling for complex games. |
-| **Manual bank control (`BANKED`, `#pragma bank N`)** | Experienced GBDK developers know bank pragmas and want to use them | Exposes the platform leak gbkt is designed to eliminate. Defeats the entire value of automatic bank allocation. If users can manually set banks, the allocator must handle conflicts, partial overrides, and interaction bugs. | Provide `@BankHint` annotations as optional guidance to the allocator without hard overrides. |
-| **Float arithmetic in DSL** | Game Boy has no FPU; some developers think they can use Kotlin floats | Floats are silently wrong on the Game Boy. SDCC converts floats to software emulation routines that are enormous and slow. The framework must reject floats in `ScriptOp` at compile time. | Fixed-point types. `0.5f` in the DSL = "use Q8.8 fixed-point math". The framework generates the correct integer approximations. |
-| **Heap allocation in game logic** | Modern developers expect `new`, `ArrayList`, garbage collection | The Game Boy has no heap. Everything is stack or static. Dynamic allocation causes memory corruption. This must be a compile-time error, not a runtime crash. | Static pools. Entity pools (already implemented). Fixed-size arrays. The DSL enforces stack/static-only storage. |
-| **Unconstrained scripting (full Kotlin in onUpdate)** | Developers want to write arbitrary Kotlin in their update loops | Arbitrary Kotlin in an update loop can allocate, recurse, call external functions — all of which violate GB constraints. The framework cannot analyze or generate safe C for arbitrary code. | `ScriptOp` sealed instruction set. Known operations the compiler can reason about exhaustively. `inlineC {}` for when users genuinely need something the framework doesn't provide. |
-| **Building a game engine (scene-specific render code)** | Feature requests for custom renderers, particle systems, lighting | gbkt provides scene management, asset loading, and build tooling. Genre-specific systems (battle engines, physics) ship as optional libraries. Building a full render engine would consume all development bandwidth and still be less capable than raw GBDK for expert users. | Optional library crates: `dev.gbkt:physics-platformer`, `dev.gbkt:battle-engine`, `dev.gbkt:dialog-engine`. Core stays thin. |
-| **Multiple codegen backends in MVP** | "Can it target GBA?" — yes eventually, but not now | Adding a GBA backend before the GB backend is stable multiplies implementation complexity. Two targets means two failing integration tests, two sets of hardware constraints, two sets of analysis passes. | Architecture is designed for future backends. The IR and analysis passes are platform-agnostic. GBA codegen is a separate module that exists when GB is stable. |
+|---|---|---|---|
+| Implement any of the 13 stale DSL sections in v0.1.1 | "We are already touching those docs, might as well implement dialog property-style API / entity pools / pathfinding." | The 13 sections are stale precisely because they require significant IR + codegen + test work. Absorbing even one into v0.1.1 turns a focused hardening release into an implicit feature release, breaks the patch-release boundary, and likely pushes the milestone to the right. | Track each as a v0.2.0 seed. The docs become accurate stubs ("not implemented; see v0.2.0 roadmap") instead of aspirational fiction. |
+| Raising Sonar complexity thresholds instead of extracting methods | "46 findings is too many to fix; just increase the threshold." | Raising the threshold silences the tool without reducing actual complexity. It also sets a precedent: the next batch of complex visitors gets the same treatment, and the tool becomes noise. | Extract-method refactoring per visitor. Smaller methods are independently testable and reduce diff noise on future changes. Accept that codegen snapshot tests need re-baselining — this is expected for a structural refactor. |
+| Blanket "re-defer all uncertain seeds to v0.2.0" | Time-efficient: no re-verification work needed. | Hides real fixes (seeds that Phases 12–13.8 actually resolved) and real problems (seeds that are still broken). A seed fixed by Phase 13.5 and marked "re-deferred" is debt misclassification — it stays in the backlog forever. | Per-seed re-verification using the repro recipe in each seed file. Seeds with no repro recipe get a quick buildRom smoke; seeds with visual symptoms get a screenshot. |
+| Adding new detekt rules beyond the Phase 08 deferral scope | "While we have detekt configured, let's add X, Y, Z rules." | Scope creep on static analysis delays the milestone and may invalidate a large number of passing files. Static analysis rule changes require triage, suppression decisions, and CI stabilization. | Fix the known QUAL-01 set. New rule additions are their own phase with their own scope definition. |
+| Magic-pixel elimination beyond QUAL-02's screen-constant scope | "While we are at it, remove all numeric literals from codegen." | Not all numeric literals in codegen are magic numbers. Bank slot numbers, sprite sizes, and tile strides are intentional. Broad numeric-literal elimination creates false positives (replacing intentional constants with mis-named identifiers) and false negatives (suppressed valid constants). | Replace 160 and 144 (screen dimensions) with ScreenSpec.WIDTH/HEIGHT. Hardware constants like tile size (8, 16) can stay documented inline rather than extracted to named constants. |
+| Changelog-only deprecation (no @Deprecated annotation) | "Pre-1.0 projects do not need formal deprecation cycles." | gbkt already has users (the 7 example projects, any external adopters). A changelog entry without a @Deprecated annotation produces no IDE warning, no quickfix, and no compile-time signal. Users only discover the removal when they upgrade to v0.2.0. | Annotate with @Deprecated(ReplaceWith(...)) in v0.1.1. The annotation costs one line and provides IDE completion guidance. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Asset Pipeline (PNG → tiles)
-    └──required by──> VRAM Planning Pass
-                          └──required by──> Budget Audit Pass
-                                                └──required by──> Build Report
+[Seed Triage]
+    |--must precede--> [Deprecation Removals]
+        (seeds SEED-023/025 cannot be finalized until the full
+         seed landscape is known — other seeds may join the train)
 
-Semantic IR (GameIR, SceneIR, ScriptOp)
-    └──required by──> ALL compiler passes
-    └──required by──> JVM Test Runner
-    └──required by──> Structured C Codegen
-    └──required by──> IntelliJ Plugin (future)
+[Seed Triage]
+    |--informs--> [DSL_REFERENCE Reconciliation]
+        (seeds for metasprites, camera, physics overlap with doc
+         sections; a seed marked "fixed" changes whether its DSL
+         section stays or is pruned)
 
-Bank Allocation Pass
-    └──required by──> Structured C Codegen (needs bank assignments before emitting pragmas)
-    └──required by──> Budget Audit Pass
+[DSL_REFERENCE Reconciliation]
+    |--produces--> [v0.2.0 Feature Candidate Seeds]
+        (each pruned section becomes a new seed)
 
-OAM Planning Pass
-    └──required by──> Structured C Codegen (sprite slot assignments baked into C)
-    └──required by──> Budget Audit Pass
+[QUAL-01 detekt fix] -- independent of -- [Seed Triage]
+[QUAL-01 detekt fix] -- independent of -- [Sonar S3776]
+        (can run in parallel; different tools, different file sets)
 
-RAM Planning Pass
-    └──required by──> Structured C Codegen (WRAM variable addresses baked into C)
-    └──required by──> SRAM Layout (save data structure)
-    └──required by──> Budget Audit Pass
+[Sonar S3776 burn-down]
+    |--may touch same files as--> [QUAL-01 detekt]
+        (coordinate to avoid conflicting refactors in the same
+         visitor; sequence the two passes or scope to non-overlapping
+         modules)
 
-Validation Pass (Pass 1)
-    └──must run before──> ALL other passes (ref resolution, type checks)
-
-Structured C AST Codegen
-    └──required by──> ROM compilation (GBDK lcc)
-    └──enhances──> Optimization pass (can fold, merge, inline)
-
-JVM Test Runner
-    └──requires──> ScriptOp interpreter
-    └──enhances──> CI without emulator
-
-Example Games (Pong, Breakout, Explorer)
-    └──require──> End-to-end pipeline correctness (validates everything)
-
-Scene System
-    └──required by──> Camera System (camera scoped to scene)
-    └──required by──> VRAM Planning (per-scene tile budgets)
-    └──required by──> OAM Planning (per-scene sprite budgets)
-    └──required by──> Scene Transition Planning
-
-Save System
-    └──requires──> RAM Planning (SRAM layout)
-    └──requires──> MBC5_RAM_BATTERY cartridge config (auto-selected by framework)
-
-GBC Palette Support
-    └──requires──> VRAM Planning (palette bank 0 vs bank 1 assignment)
-    └──enhances──> Asset Pipeline (color quantization per palette)
+[QUAL-02 magic-pixel elimination]
+    |--requires--> [ScreenSpec constants confirmed in gbkt-core/constraints]
+        (verify constants are already published before searching
+         call sites; if not, add the constants first)
 ```
 
 ### Dependency Notes
 
-- **Semantic IR is the root dependency for everything.** Pass 1 (Validation) must run before any other pass. All analysis passes feed into Budget Audit. Codegen reads the fully-annotated IR output of all passes.
-- **Asset Pipeline feeds VRAM Planning.** Tile counts are only known after PNG processing. VRAM Planning cannot run without processed tile data.
-- **Bank Allocation must run before Codegen.** The C emitter needs bank assignments to emit `#pragma bank N` and trampoline function declarations.
-- **Example games are the integration test.** They do not unlock features, but they validate that all features work end-to-end. If Pong doesn't compile, the pipeline has a bug.
-- **JVM Test Runner is independent of codegen.** It requires only the IR and ScriptOp interpreter. It can be built before structured codegen and used to validate game logic correctness.
+- **Seed triage precedes deprecation**: SEED-023 and SEED-025 are part of the seed backlog. Their disposition must be confirmed before "deprecation removals" is considered complete. Other seeds (e.g., SEED-022 tilemap predicate, SEED-021 platformer pivot) may also join the v0.1.1 execution list if their scope is small and triage confirms they are not already fixed.
+- **Seed triage informs DSL docs**: Seeds SEED-004 through SEED-013 cover metasprites, GBC palette, and banks — all of which have corresponding DSL_REFERENCE.md sections. If triage confirms those seeds are fixed, the corresponding doc sections can be updated with confidence. If triage reveals they are still broken, the sections need stronger stale caveats.
+- **Sonar and detekt may share file scope**: PlatformerVisitor and MetaspriteVisitor are likely targets for both Sonar S3776 (cognitive complexity) and QUAL-01 (detekt). Running extract-method refactoring for S3776 on those files before the detekt pass avoids redundant editing of the same files.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1 — Rebuild Goal)
+### Must Reach Terminal Disposition in v0.1.1
 
-This is the rebuild milestone: bring the existing codebase to the restructured architecture with
-all three example games compiling through the new pipeline.
+- [ ] All 44 seeds disposed: fixed, verified-already-fixed, or re-deferred with rationale and v0.2.0 routing
+- [ ] Seeds directory empty at close (disposed seeds archived or deleted; no open item remains)
+- [ ] SEED-023: `whenever` receives @Deprecated(ReplaceWith("runIf(...)")) annotation; all in-tree usages in examples/tests migrated; DSL_REFERENCE.md updated
+- [ ] SEED-025: `combatIsInState(String, String)` receives @Deprecated annotation (v0.1.1 marks it deprecated; v0.2.0 removes it); CHANGELOG entry present
+- [ ] All 13 stale DSL_REFERENCE.md sections rewritten to one of: (a) match current API, (b) stub with "not implemented / tracked as v0.2.0 candidate", or (c) moved to PLANNED_APIS.md
+- [ ] Each removed/stubbed DSL section has a corresponding v0.2.0 seed or PLANNED_APIS entry
+- [ ] QUAL-01: detekt violation set from the Phase 08 deferral is clean (enumerate specific rule set at phase-spec time)
+- [ ] QUAL-02: 160/144 magic pixel literals replaced with ScreenSpec constants across codebase
+- [ ] QUAL-03: additional Phase 08 magic-pixel elimination scope resolved (enumerate at phase-spec time)
+- [ ] Sonar S3776: 46 to 0 HIGH cognitive-complexity findings via extract-method refactoring (not threshold raise)
 
-- [ ] **Semantic IR** — `GameIR`, `SceneIR`, `ActorIR`, `ScriptOp`, platform annotation fields nullable — fundamental contract between all modules
-- [ ] **Validation Pass (Pass 1)** — ref resolution, type checks, constraint enforcement at build time
-- [ ] **Asset Pipeline** — PNG → 2bpp tiles, Tiled TMX → tilemaps, sprite sheet slicing, integrated as Gradle task
-- [ ] **Bank Allocation Pass (Pass 3)** — automatic bin-packing, trampoline generation, scene locality optimization
-- [ ] **VRAM Planning Pass (Pass 4)** — per-scene tile slot assignment, tile deduplication, shared tile detection
-- [ ] **OAM Planning Pass (Pass 5)** — sprite slot allocation, scanline density analysis, warnings
-- [ ] **RAM Planning Pass (Pass 6)** — WRAM layout, SRAM save data structure, HRAM allocation
-- [ ] **Budget Audit Pass (Pass 9)** — final gate, human-readable build report with actionable errors
-- [ ] **Structured C AST Codegen** — `CStatement`/`CExpr` sealed hierarchy, pretty-printer as the only string assembly point
-- [ ] **Example games compile** — Pong (simple), Breakout (entity pools), Explorer (tilemap + collision + dungeon)
-- [ ] **JVM Test Runner** — ScriptOp interpreter, frame advance, input simulation, variable assertions
+### Add After Validation (triggers from triage; these become v0.2.0 seeds)
 
-### Add After Validation (v1.x)
+- [ ] Implement Dialog System property-style API (textSpeed, speaker, isActive, isComplete) — triggered when dialog seed is created from DSL_REFERENCE pruning
+- [ ] Implement Entity Pool DSL — triggered when entity-pool seed is created from DSL_REFERENCE pruning
+- [ ] Implement Tweening/Easing (tween(), Easing enum) — triggered when tween seed is created
+- [ ] Implement Pathfinding DSL (complete PathfindingBuilder beyond current stub) — triggered from pruning
+- [ ] SEED-022 tilemap predicate consolidation — if triage confirms it is not already resolved
+- [ ] SEED-021 platformer pivot auto-derive — if triage confirms it is not already resolved
+- [ ] SEED-026 gradle-plugin validatePlugins green — if bandwidth permits within v0.1.1 after P1 complete
 
-Features to add once the core pipeline is working and examples compile.
+### Future Consideration (v0.2.0+)
 
-- [ ] **`gradle budgetReport`** — standalone analysis task without ROM compilation (depends on analysis passes existing)
-- [ ] **Tile deduplication** — hash-based dedup, H-flip/V-flip variant detection (enhances VRAM planning)
-- [ ] **Scene transition VRAM planning** — delta computation, VBlank transfer scheduling (depends on VRAM planning pass)
-- [ ] **`inlineC {}` / `inlineAsm {}`** — formalized escape hatches replacing current `raw()` (low risk, high DX value)
-- [ ] **`dev.gbkt:physics-platformer` library** — gravity, AABB collision, moving platforms (can be built as optional library once core is stable)
-- [ ] **`dev.gbkt:dialog-engine` library** — typewriter text, choice menus, variable interpolation
-- [ ] **GBC palette system** — 8 bg palettes + 8 sprite palettes, automatic assignment in VRAM planning
-
-### Future Consideration (v2+)
-
-Features to defer until the framework is stable and adopted.
-
-- [ ] **IntelliJ plugin inspections** — real-time tile budget warnings, missing asset red underlines, unresolved ref squiggles. Depends on stable IR and analysis passes. Requires separate IntelliJ SDK development.
-- [ ] **`dev.gbkt:battle-engine` library** — turn-based battle system as an optional library (RPG engine, not framework core)
-- [ ] **`dev.gbkt:save-manager` library** — multi-slot saves with data migration
-- [ ] **GBA backend (`:codegen-gba`)** — second codegen target. Architecture is ready (IR is platform-agnostic), but adds maintenance burden. Wait until GB backend is mature.
-- [ ] **Link cable multiplayer** — specialized use case, small audience
-- [ ] **LDtk map format support** — alternative to Tiled; add when there's community demand
-- [ ] **Auto-download GBDK** — nice DX feature for onboarding; GBDK installation is currently a prerequisite but not a blocker
+- [ ] SEED-023 `whenever` removal (after one release cycle — v0.2.0)
+- [ ] SEED-025 `combatIsInState(String)` removal (v0.2.0)
+- [ ] SEED-RAW-C-CODEGEN-AST-MIGRATION — architecture-tier change (own phase, requires research)
+- [ ] SEED-PHASE-X-CPAREN — C AST parenthesized-expression; ~50+ fixture re-snapshots; own phase
+- [ ] SEED-001 IDE and tooling (v2.0 trigger)
+- [ ] SEED-019 IntelliJ plugin test framework coverage
+- [ ] SEED-024 buildlog export save dialog
+- [ ] Genre-codegen phases 07.5–07.8
+- [ ] Camera shake-builder, followX/followY, snapTo (full camera API)
+- [ ] Physics global world, tag(), gravityZone() (full physics API)
 
 ---
 
 ## Feature Prioritization Matrix
 
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Semantic IR (GameIR, ScriptOp) | HIGH | HIGH | P1 |
-| Validation pass (Pass 1) | HIGH | MEDIUM | P1 |
-| Asset pipeline (PNG → tiles) | HIGH | HIGH | P1 |
-| Bank allocation (Pass 3) | HIGH | HIGH | P1 |
-| VRAM planning (Pass 4) | HIGH | HIGH | P1 |
-| OAM planning (Pass 5) | MEDIUM | MEDIUM | P1 |
-| RAM planning (Pass 6) | HIGH | MEDIUM | P1 |
-| Budget audit (Pass 9) | HIGH | MEDIUM | P1 |
-| Structured C AST codegen | HIGH | HIGH | P1 |
-| Example games compile end-to-end | HIGH | MEDIUM | P1 |
-| JVM test runner | HIGH | HIGH | P1 |
-| `gradle budgetReport` task | MEDIUM | LOW | P2 |
-| Tile deduplication | HIGH | MEDIUM | P2 |
-| Scene transition VRAM planning | MEDIUM | HIGH | P2 |
-| `inlineC {}` escape hatch | MEDIUM | LOW | P2 |
-| GBC palette system | MEDIUM | MEDIUM | P2 |
-| Physics platformer library | MEDIUM | HIGH | P2 |
-| Dialog engine library | MEDIUM | MEDIUM | P2 |
-| IntelliJ plugin inspections | HIGH | HIGH | P3 |
-| Battle engine library | MEDIUM | HIGH | P3 |
-| GBA backend | HIGH | VERY HIGH | P3 |
-| Link cable multiplayer | LOW | HIGH | P3 |
-| LDtk format support | LOW | MEDIUM | P3 |
+| Deliverable | User Value | Implementation Cost | Priority |
+|---|---|---|---|
+| Seed triage and closure (all 44) | HIGH — technical debt cleared, no silent commitments | MEDIUM — re-verification per seed, not just re-labeling | P1 |
+| DSL_REFERENCE.md reconciliation (13 sections) | HIGH — docs that lie are worse than no docs | MEDIUM — 13 sections, most need rewrite not deletion | P1 |
+| SEED-023 whenever @Deprecated annotation | MEDIUM — API surface clarity, IDE guidance | LOW — one annotation + in-tree migration | P1 |
+| SEED-025 combatIsInState deprecation action | MEDIUM — Sonar S1133 open finding closure | LOW — one annotation | P1 |
+| QUAL-02 magic-pixel screen constants | LOW–MEDIUM — readability and correctness | LOW — mechanical search-replace | P1 |
+| Sonar S3776 burn-down (46 HIGHs) | HIGH — quality gate becomes meaningful | HIGH — extract-method per complex visitor, snapshot re-baselining | P1 |
+| QUAL-01 detekt violations | MEDIUM — tool becomes useful signal | MEDIUM — depends on Phase 08 scope enumeration | P1 |
+| QUAL-03 remaining magic-pixel scope | LOW–MEDIUM | LOW | P2 |
+| v0.2.0 seed creation from pruned DSL sections | MEDIUM — roadmap raw material | LOW — write seed files during reconciliation pass | P1 (bundled with reconciliation) |
+| SEED-026 validatePlugins / pluginTest race (optional) | MEDIUM — Plugin Portal readiness | MEDIUM | P2 |
 
-**Priority key:**
-- P1: Must have for the rebuild milestone (examples compile through new pipeline)
-- P2: Should have, add after rebuild is complete
-- P3: Future, defer until framework is stable and adopted
+---
+
+## Process Patterns (Research Findings Adapted to This Domain)
+
+These answer the four research questions. They directly inform requirements wording.
+
+### 1. Backlog Triage and Closure Process
+
+Rigorous pattern for a moving codebase (seeds planted during Phases 9–13 but not re-verified since):
+
+**Per-seed triage step, not a sweep.** Do not bulk-disposition. Each seed has a repro recipe or a discovery hook (specific file + line number). Use the repro recipe to test against current master before assigning a disposition.
+
+**Disposition taxonomy (exactly three categories):**
+- `FIXED` — A subsequent phase or commit addressed the root cause. Provide commit reference or test output as evidence. Delete or archive the seed file.
+- `VERIFIED-ALREADY-FIXED` — No explicit fix commit, but current-master behavior matches the expected state. Provide a buildRom smoke, unit test, or screenshot. Delete or archive the seed file.
+- `RE-DEFERRED` — Still reproducible OR deliberately out of v0.1.1 scope. Provide either a repro artifact (for still-broken cases) or an explicit rationale and v0.2.0 routing (for scope decisions). Update the seed's Status and Routing fields; leave the file in the backlog for the next milestone.
+
+**Evidence standards for closure:**
+- Behavioral defect: unit test green + buildRom exit 0 for the relevant example.
+- Visual defect: screenshot from the emulator (per the Visual Evidence Rule in `.planning/verifier-gates.md`).
+- Ergonomic gap (wrong DSL API): a test asserting the correct IR lowering.
+- Seeds with no explicit repro recipe: a targeted grep or buildRom smoke is sufficient; do not gold-plate verification.
+
+**Stale-status heuristic:** Seeds planted before Phase 12.6 (2026-05-25) should be treated as unverified regardless of their status field. Phases 12–13.8 significantly changed metasprite, palette, and sprite codegen. Seeds from that window (SEED-004 through SEED-013) almost certainly need re-checking.
+
+### 2. Docs Match Reality Reconciliation
+
+Pattern for removing or rewriting aspirational API sections:
+
+**Preserve the design intent in a tracking artifact.** Every section that is pruned should produce either a new seed (consistent with the existing seed format) or an entry in PLANNED_APIS.md. The content goes somewhere, not into the void.
+
+**Rewrite stubs, not deletes (preferred).** A section that reads "Not implemented in v0.1.x. Tracked as v0.2.0 candidate: [seed link]" is more useful than a deleted section. Users searching for camera shake do not want a 404; they want "not yet, here is what exists." This makes the Stale-API caveat pattern systematic and explicit rather than ad-hoc.
+
+**The implemented API section stays, the aspirational code blocks go.** For Camera, the implemented API is `follow(actor)` and `bounds(mapWidth, mapHeight)`. The section header stays; smooth-follow/deadzone/snapTo snippets are replaced with the real API signature. The removed snippets move to a seed.
+
+**Changelog entry.** The v0.1.1 changelog should have a section: "Documentation: corrected DSL_REFERENCE.md to reflect implemented APIs; aspirational sections for [list] are tracked as v0.2.0 candidates." This signals to users that the change was deliberate, not an oversight.
+
+### 3. Kotlin Deprecation Removal Conventions (Pre-1.0)
+
+Pattern applicable to gbkt even before 1.0:
+
+**Annotate first, remove second — always.** Even pre-1.0. The @Deprecated annotation costs one line; it provides IDE warnings, ReplaceWith quickfix, and a signal in the binary that the API is going away. Removing without prior annotation is a breaking change with no warning to users.
+
+**@Deprecated signature pattern.** `@Deprecated(message = "Use runIf { } for single-frame conditionals", replaceWith = ReplaceWith("runIf(condition) { block() }"), level = DeprecationLevel.WARNING)`. Use WARNING for the first release cycle, optionally ERROR for the next, then remove.
+
+**ReplaceWith must be accurate.** If the replacement requires import changes, include `imports = ["io.github.gbkt..."]` in the ReplaceWith. A ReplaceWith that produces non-compiling code after the quickfix is worse than no ReplaceWith.
+
+**Migrate all in-tree usages.** Every usage in examples, tests, and docs must be migrated in the same commit as the @Deprecated annotation. Leaving in-tree usages on the deprecated API produces build warnings immediately and sets a bad precedent.
+
+**Release notes minimum:** "v0.1.1: `whenever(condition) { }` is deprecated; use `runIf(condition) { }` instead. Will be removed in v0.2.0." and "v0.1.1: `combatIsInState(String, String)` is deprecated; use `combatIsInState(CombatStateId, BattleRef)` instead. Will be removed in v0.2.0."
+
+### 4. Patch vs Minor Release Scope (0.x Semver Convention)
+
+In 0.x, there is no formal stable API guarantee, but conventions matter for adopter trust:
+
+- **Patch (v0.1.1):** Backlog drain, documentation fixes, code-quality cleanup, static-analysis debt, deprecation *marking* (adding @Deprecated), backward-compatible bugfixes. No new public API symbols, no new DSL constructs, no behavior changes to existing working functionality.
+- **Minor (v0.2.0):** New public DSL constructs, @Deprecated *removal* (the second half of the deprecation cycle), new genre features, implemented APIs from the 13 stale sections, new analysis passes. May include breaking changes if flagged in the changelog.
+- **The rule for this milestone:** If a change adds a new exported symbol or changes observable behavior of existing working code, it belongs in v0.2.0, not v0.1.1. The only new symbol permitted in v0.1.1 is a @Deprecated annotation on an existing symbol (which is additive, not a new public API).
 
 ---
 
 ## Competitor Feature Analysis
 
-| Feature | GB Studio | ZGB | GBDK-2020 | Butano (GBA ref) | gbkt |
-|---------|-----------|-----|-----------|-----------------|------|
-| Scene system | YES (visual) | YES (game states) | NO (manual) | NO (manual) | YES (declarative DSL) |
-| Automatic banking | PARTIAL (opaque) | YES (bankpack) | NO (manual pragmas) | NO (manual) | YES (bin-packing + analysis) |
-| Automatic VRAM planning | PARTIAL (hides it) | NO | NO | PARTIAL (RAII ptrs) | YES (per-scene analysis pass) |
-| Automatic OAM | PARTIAL | NO | NO | PARTIAL | YES (slot allocation + scanline analysis) |
-| Asset pipeline | YES (drag-drop PNG) | YES (auto-convert) | NO | YES (Makefile convert) | YES (Gradle task, PNG/TMX) |
-| Tile deduplication | YES | NO | NO | N/A | YES (hash-based) |
-| Budget errors at compile time | PARTIAL (warnings) | NO | NO | PARTIAL | YES (hard errors + build report) |
-| JVM testing (no emulator) | NO | NO | NO | NO | YES (unique differentiator) |
-| Type-safe DSL | NO (visual blocks) | NO (C) | NO (C) | PARTIAL (C++ types) | YES (Kotlin sealed types) |
-| Structured C AST | NO | NO | N/A | N/A | YES (enables optimization + retargeting) |
-| Code-first approach | NO | YES (C) | YES (C) | YES (C++) | YES (Kotlin DSL) |
-| Complexity ceiling | MEDIUM | HIGH | VERY HIGH | VERY HIGH | HIGH (targeting Pokémon-scale) |
-| Learning curve | LOW | MEDIUM | HIGH | HIGH | MEDIUM (Kotlin devs) |
-| Multi-platform future | NO | NO | YES (SMS, GG, Pocket) | NO | YES (IR + codegen separation) |
-
-**Key insight from competitor analysis:**
-
-- GB Studio and ZGB each automate *some* of VRAM/banking, but neither exposes what's happening or gives compile-time errors. Users discover budget problems at runtime (graphical glitches, bank crashes).
-- Butano (GBA) is the closest architectural parallel: RAII-based resource management, automatic OAM buffering. But it targets C++ developers, not Kotlin developers, and has no budget audit system.
-- **No framework in the Game Boy ecosystem provides JVM-based game logic testing.** This is gbkt's strongest unique differentiator. Developers currently debug logic by flashing a ROM and running it in an emulator — slow feedback loops that gbkt eliminates.
+Not applicable to an internal hardening milestone. The relevant comparison is between this project's current state (44 open seeds, 13 stale doc sections, 46 Sonar HIGHs) and the target state (zero of each). The "competitor" is the previous milestone's technical debt.
 
 ---
 
 ## Sources
 
-- **gbkt PROJECT.md** — `/Users/michalsvacha/GitHub/personal/gbkt/.planning/PROJECT.md` — authoritative vision, architecture, requirements (HIGH confidence)
-- **gbkt CLAUDE.md** — codebase documentation, existing feature list (HIGH confidence)
-- **gbkt context/ARCHITECTURE.md** — IR nodes, data flow (HIGH confidence)
-- **gbkt context/DSL_REFERENCE.md** — complete DSL syntax reference (HIGH confidence)
-- **GB Studio** — [https://www.gbstudio.dev/](https://www.gbstudio.dev/) — feature comparison, event glossary (MEDIUM confidence — web fetch, current)
-- **ZGB** — [https://github.com/Zal0/ZGB](https://github.com/Zal0/ZGB) — automatic handling vs manual responsibilities (MEDIUM confidence — web fetch, current)
-- **GBDK-2020** — [https://github.com/gbdk-2020/gbdk-2020](https://github.com/gbdk-2020/gbdk-2020) — what the C layer provides, manual banking (MEDIUM confidence)
-- **Butano (GBA)** — [https://gvaliente.github.io/butano/faq.html](https://gvaliente.github.io/butano/faq.html) — RAII resource management, OAM, VRAM patterns (MEDIUM confidence — web fetch, current)
-- **gbdev.io tools guide** — [https://gbdev.io/guides/tools.html](https://gbdev.io/guides/tools.html) — ecosystem tradeoff analysis (MEDIUM confidence)
+- `.planning/seeds/` — all 44 seed files, direct inspection (HIGH)
+- `.planning/PROJECT.md` — milestone requirements and constraints, authoritative (HIGH)
+- `context/DSL_REFERENCE.md` — Stale-API caveat sections, direct inspection (HIGH)
+- `.planning/STATE.md` — deferred items and current position, direct inspection (HIGH)
+- SEED-023, SEED-025, SEED-026 — specific deprecation and build-hygiene seeds, direct inspection (HIGH)
+- Kotlin @Deprecated / ReplaceWith API conventions — inferred from Kotlin stdlib and kotlinx community patterns (HIGH for annotation mechanics; MEDIUM for pre-1.0 convention)
+- SemVer 2.0.0 spec §4 with community-standard 0.x interpretation (MEDIUM — spec permits arbitrary 0.x changes; practice is stricter)
 
 ---
 
-## Feature Categories Explained
-
-### Why the IR + Analysis Pass Architecture IS the Feature
-
-For a compiler framework, the "features" are fundamentally different from a game engine's features.
-The compiler's features are:
-
-1. What it **eliminates** from the developer's mental model (manual banking, VRAM math, OAM counting)
-2. What it **catches at build time** instead of runtime (tile overflow, bank overflow, reference errors)
-3. What it **generates automatically** (trampoline functions, VRAM load sequences, SRAM layout)
-4. What it **enables in testing** (JVM game logic execution without emulator)
-
-This is why the differentiators above are almost all compiler infrastructure, not user-visible DSL features. The DSL features (scenes, dialogs, menus, physics) are table stakes — they're what every other framework provides. What gbkt adds is the intelligence layer beneath the DSL.
-
-### The "GC for Hardware" Metaphor
-
-The JVM garbage collector is valuable not because of what it does, but because of what developers
-DON'T have to do: `malloc`, `free`, reference counting, use-after-free debugging. Similarly, gbkt
-is valuable because developers DON'T have to: add `#pragma bank N`, count VRAM tiles, assign OAM
-slots, calculate SRAM addresses, write bank trampoline functions.
-
-The analysis passes (bank allocation, VRAM planning, OAM planning, RAM planning) ARE the garbage
-collector. They observe what the game needs and assign hardware resources automatically.
-
----
-
-*Feature research for: gbkt — Kotlin DSL-to-C compiler for Game Boy*
-*Researched: 2026-02-17*
+*Feature research for: gbkt v0.1.1 Hardening milestone — backlog drain, deprecation, doc reconciliation, code quality*
+*Researched: 2026-06-12*

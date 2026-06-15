@@ -18,35 +18,28 @@ import org.junit.jupiter.api.Assumptions
 
 /**
  * Plan 10-17 UAT — runtime verification of D-01 behaviors 1+2 (DMG mode) against the built
- * `metasprites.gb` ROM, with `captureAndRename()` PNGs captured at the climax frame of each
- * behavior (Visual Evidence Rule per `CLAUDE.md`).
+ * `metasprites.gb` ROM, with captures written to `build/gbkt/screenshots/` (gitignored scratch).
  *
  * MCP-equivalent harness: the MCP `gbkt-emulator` server wraps this same [StepAgent] API, so
  * JVM-tier results are deterministically the same as MCP-tier results.
  *
- * Behavior 3 (GBC sub-palette cycling) is owned by Plan 10-18 (UAT-GBC); the [newGbcAgent]
- * placeholder helper is scaffolded here so Plan 18 can add the third test method without
- * restructuring this file.
+ * Behavior 3 (GBC sub-palette cycling) is owned by Plan 10-18 (UAT-GBC); the [newGbcAgent] helper
+ * scaffolds GBC mode via auto-detection from ROM 0x143 (plan 22-02).
+ *
+ * Phase-10 behavior shots (behavior1/2/3) are NOT in the blessed 19/20/21 golden anchor set (per
+ * 22-RESEARCH) — captures are smoke-checked for non-empty length only; no golden diff. Captures go
+ * to `build/gbkt/screenshots/` (gitignored); no `.planning/phases` paths are used.
  *
  * Skipped automatically if the ROM is missing — run `./gradlew :gbkt-examples:metasprites:buildRom`
  * first.
- *
- * Outputs:
- * - `.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/uat-screenshots/behavior1-animation-advance.png`
- * - `.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/uat-screenshots/behavior2-flip-cycle.png`
  */
 class MetaspriteUatTest {
 
     companion object {
-        // Evidence directory (worktree-safe: user.dir resolves to gbkt-examples/metasprites/
-        // when Gradle runs tests, so ../../ walks up to the worktree root).
-        private val EVIDENCE_DIR =
-            File(
-                "../../.planning/phases/" +
-                    "10-port-metasprites-gbdk-example-to-gbkt/evidence/uat-screenshots"
-            )
+        // EVIDENCE_DIR removed (R1) — captures go to gitignored scratch
         private val ROM_FILE = File("build/gbkt/output/metasprites.gb")
         private val METADATA_FILE = File("build/gbkt/generated/game_metadata.json")
+        private val SCRATCH_DIR = File(System.getProperty("user.dir"), "build/gbkt/screenshots")
     }
 
     /**
@@ -58,8 +51,8 @@ class MetaspriteUatTest {
             ROM_FILE.exists(),
             "metasprites.gb not found — run :gbkt-examples:metasprites:buildRom first",
         )
-        EVIDENCE_DIR.mkdirs()
-        val baseConfig = AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = EVIDENCE_DIR)
+        SCRATCH_DIR.mkdirs()
+        val baseConfig = AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = SCRATCH_DIR)
         val metadata =
             if (METADATA_FILE.exists()) GameMetadata.fromJsonFile(METADATA_FILE) else null
         val agent = StepAgent(baseConfig, metadata)
@@ -68,8 +61,11 @@ class MetaspriteUatTest {
     }
 
     /**
-     * Scaffold for Plan 18 (UAT-GBC, behavior 3 — sub-palette cycling). Plan 18 will implement this
-     * helper with `AgentSessionConfig(gbcMode = true)`.
+     * Creates a [StepAgent] in GBC mode for behavior 3 (sub-palette cycling). GBC mode is
+     * auto-detected from ROM header byte 0x143 via [AgentSessionConfig.discoverFiles] (plan 22-02).
+     *
+     * D-07 guard: asserts `gbcMode` is true before proceeding to prevent an accidentally mis-built
+     * DMG ROM from being used in a GBC-required test.
      */
     @Suppress("UnusedPrivateMember")
     private fun newGbcAgent(): StepAgent {
@@ -77,37 +73,17 @@ class MetaspriteUatTest {
             ROM_FILE.exists(),
             "metasprites.gb not found — run :gbkt-examples:metasprites:buildRom first",
         )
-        EVIDENCE_DIR.mkdirs()
-        val baseConfig =
-            AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = EVIDENCE_DIR)
-                .copy(gbcMode = true)
+        SCRATCH_DIR.mkdirs()
+        val baseConfig = AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = SCRATCH_DIR)
+        // D-07 guarded bless: assert ROM is GBC before any golden write
+        check(baseConfig.gbcMode) {
+            "ROM 0x143 CGB flag not set — is this a DMG ROM? Aborting to prevent inverted-palette golden bless."
+        }
         val metadata =
             if (METADATA_FILE.exists()) GameMetadata.fromJsonFile(METADATA_FILE) else null
         val agent = StepAgent(baseConfig, metadata)
         agent.start()
         return agent
-    }
-
-    /**
-     * Captures a screenshot via [StepAgent.captureScreenshot] and renames the produced file to the
-     * plan's exact target path inside [EVIDENCE_DIR]. JSON sidecar is also renamed/removed to keep
-     * the evidence dir tidy.
-     */
-    private fun captureAndRename(agent: StepAgent, label: String, targetName: String): File {
-        val captured = agent.captureScreenshot(label)
-        val target = File(EVIDENCE_DIR, targetName)
-        if (target.exists()) target.delete()
-        check(captured.renameTo(target)) {
-            "Failed to rename ${captured.absolutePath} -> ${target.absolutePath}"
-        }
-        // Sidecar JSON: rename in lock-step (best-effort; not required by plan).
-        val sidecar = File(captured.parentFile, captured.nameWithoutExtension + ".json")
-        if (sidecar.exists()) {
-            val targetJson = File(EVIDENCE_DIR, target.nameWithoutExtension + ".json")
-            if (targetJson.exists()) targetJson.delete()
-            sidecar.renameTo(targetJson)
-        }
-        return target
     }
 
     // ── Behavior 1 — B pressed (edge) → animation index advances (D-01.1) ────
@@ -151,8 +127,8 @@ class MetaspriteUatTest {
             agent.step(setOf(Button.B))
             val idxAfterSecond = agent.readVariable("idx")
 
-            // Climax-frame screenshot (binding visual evidence per Visual Evidence Rule)
-            val png = captureAndRename(agent, "behavior1", "behavior1-animation-advance.png")
+            // Climax-frame screenshot — smoke check only (no golden; Phase-10 captures not blessed)
+            val png = agent.captureScreenshot("behavior1-animation-advance")
 
             assertEquals(2, idxAfterSecond, "_idx should be 2 after second B press")
             assertTrue(
@@ -200,8 +176,8 @@ class MetaspriteUatTest {
             agent.step(setOf(Button.A))
             val rotAfterSecond = agent.readVariable("rot")
 
-            // Climax-frame screenshot (binding visual evidence per Visual Evidence Rule)
-            val png = captureAndRename(agent, "behavior2", "behavior2-flip-cycle.png")
+            // Climax-frame screenshot — smoke check only (no golden; Phase-10 captures not blessed)
+            val png = agent.captureScreenshot("behavior2-flip-cycle")
 
             assertEquals(2, rotAfterSecond, "_rot should be 2 after 2nd A press (Flip-XY)")
             assertTrue(
@@ -247,7 +223,7 @@ class MetaspriteUatTest {
     // `rot >> 2` selects palette slot 0..3 (gray / pink / cyan / green) via the
     // `moveMetasprite()` generated C. A DMG screenshot would appear identical regardless
     // of sub-palette value — making it inadequate evidence for this behavior.
-    // AgentSessionConfig(...).copy(gbcMode = true) MUST be set via [newGbcAgent].
+    // GBC mode is auto-detected from ROM 0x143 (plan 22-02); D-07 guard verifies via [newGbcAgent].
     //
     // Sub-palette mechanism (D-08):
     //   rot 0-3  → subpal 0 (gray)
@@ -329,11 +305,10 @@ class MetaspriteUatTest {
             agent.step(emptySet())
             agent.step(emptySet())
 
-            // Climax-frame screenshot in GBC mode (binding visual evidence per Visual Evidence
-            // Rule)
+            // Climax-frame screenshot — smoke check only (no golden; Phase-10 captures not blessed)
             // This screenshot MUST show color (cyan palette) — NOT grayscale.
             // If it appears monochrome, gbcMode=true did not apply correctly.
-            val png = captureAndRename(agent, "behavior3", "behavior3-subpalette-cycle-gbc.png")
+            val png = agent.captureScreenshot("behavior3-subpalette-cycle-gbc")
 
             assertEquals(8, rot8, "_rot should be 8 after 8th A press (subpal=rot>>2=2 cyan)")
             assertTrue(

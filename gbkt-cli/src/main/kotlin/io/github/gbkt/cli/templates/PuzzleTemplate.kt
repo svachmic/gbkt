@@ -70,28 +70,28 @@ object PuzzleTemplate : Template {
         |    scene("gameplay") {
         |        every.frame {
         |            // Cooldown timer for grid movement
-        |            whenever(inputCooldown isAbove 0) {
+        |            runIf(inputCooldown isAbove 0) {
         |                inputCooldown -= 1
         |            }
         |
         |            // Grid-based movement (only when cooldown is 0)
-        |            whenever(inputCooldown isEqual 0) {
-        |                whenever(button.left.isPressed and (playerGridX isAbove 0)) {
+        |            runIf(inputCooldown isEqual 0) {
+        |                runIf(button.left.isPressed and (playerGridX isAbove 0)) {
         |                    playerGridX -= 1
         |                    moveCount += 1
         |                    inputCooldown set 8
         |                }
-        |                whenever(button.right.isPressed and (playerGridX isBelow (gridWidth - 1))) {
+        |                runIf(button.right.isPressed and (playerGridX isBelow (gridWidth - 1))) {
         |                    playerGridX += 1
         |                    moveCount += 1
         |                    inputCooldown set 8
         |                }
-        |                whenever(button.up.isPressed and (playerGridY isAbove 0)) {
+        |                runIf(button.up.isPressed and (playerGridY isAbove 0)) {
         |                    playerGridY -= 1
         |                    moveCount += 1
         |                    inputCooldown set 8
         |                }
-        |                whenever(button.down.isPressed and (playerGridY isBelow (gridHeight - 1))) {
+        |                runIf(button.down.isPressed and (playerGridY isBelow (gridHeight - 1))) {
         |                    playerGridY += 1
         |                    moveCount += 1
         |                    inputCooldown set 8
@@ -103,12 +103,12 @@ object PuzzleTemplate : Template {
         |            player.y set (playerGridY * gridSize)
         |
         |            // Check win condition
-        |            whenever((playerGridX isEqual goalX) and (playerGridY isEqual goalY)) {
+        |            runIf((playerGridX isEqual goalX) and (playerGridY isEqual goalY)) {
         |                scene("win")
         |            }
         |
         |            // Reset level with SELECT
-        |            whenever(button.select.justPressed) {
+        |            runIf(button.select.justPressed) {
         |                playerGridX set 1
         |                playerGridY set 1
         |                moveCount set 0
@@ -125,7 +125,7 @@ object PuzzleTemplate : Template {
         |        text("A: Next Level", 3, 12)
         |
         |        every.frame {
-        |            whenever(button.a.justPressed) {
+        |            runIf(button.a.justPressed) {
         |                level += 1
         |                moveCount set 0
         |                playerGridX set 1
@@ -143,7 +143,7 @@ object PuzzleTemplate : Template {
         |        text("Press START", 4, 11)
         |
         |        every.frame {
-        |            whenever(button.start.justPressed) {
+        |            runIf(button.start.justPressed) {
         |                scene("gameplay")
         |            }
         |        }

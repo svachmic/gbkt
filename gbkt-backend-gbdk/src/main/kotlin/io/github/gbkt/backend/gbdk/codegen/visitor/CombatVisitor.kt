@@ -89,51 +89,86 @@ class CombatVisitor(private val gameIR: GameIR) {
     fun generateCombatFunctions(system: CombatEngineSystem): List<CFunction> {
         val id = system.id.replace('-', '_').replace(' ', '_')
         val exprVisitor = ExprVisitor(gameIR.actors)
+        return buildCoreFunctions(system, id, exprVisitor) +
+            buildAtbFunctions(system, id) +
+            buildWaveSurvivalFunctions(system, id) +
+            buildTacticalGridFunctions(system, id) +
+            generateHookFunctions(system, id, exprVisitor)
+    }
 
+    // -------------------------------------------------------------------------
+    // Per-combat-type sub-builders (extracted to reduce generateCombatFunctions CC — E-16)
+    // Each returns an empty list when the combat type does not match, so the
+    // caller assembles via list concatenation in the correct order.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Always-present functions (request-state, update, is-in-state, trigger) plus optional
+     * hierarchy and damage functions conditioned on system configuration.
+     */
+    private fun buildCoreFunctions(
+        system: CombatEngineSystem,
+        id: String,
+        exprVisitor: ExprVisitor,
+    ): List<CFunction> = buildList {
+        add(generateRequestStateFunction(id))
+        add(generateUpdateCombatFunction(system, id, exprVisitor))
+        add(generateIsInStateFunction(id))
+        if (system.stateHierarchy.isNotEmpty()) {
+            add(generateParentStateFunction(system, id))
+        }
+        add(generateTriggerFunction(id))
+        val damageFormula = system.damageFormula
+        if (damageFormula != null) {
+            add(generateDamageFunction(id, damageFormula.functionName))
+        }
+    }
+
+    /** ATB-specific functions: gauge update and optional turn-order initializer. */
+    private fun buildAtbFunctions(system: CombatEngineSystem, id: String): List<CFunction> {
+        if (system.combatType != CombatType.ATB) return emptyList()
         return buildList {
-            add(generateRequestStateFunction(id))
-            add(generateUpdateCombatFunction(system, id, exprVisitor))
-            add(generateIsInStateFunction(id))
-            if (system.stateHierarchy.isNotEmpty()) {
-                add(generateParentStateFunction(system, id))
-            }
-            add(generateTriggerFunction(id))
-            val damageFormula = system.damageFormula
-            if (damageFormula != null) {
-                add(generateDamageFunction(id, damageFormula.functionName))
-            }
-            // ATB-specific functions: gauge update and turn order
-            if (system.combatType == CombatType.ATB) {
-                add(generateAtbGaugeUpdateFunction(system, id))
-                val strategy = system.turnOrderStrategy
-                if (strategy != null) {
-                    when (strategy) {
-                        TurnOrderStrategy.SPEED_BASED ->
-                            add(generateSpeedBasedTurnOrderFunction(id, system.maxCombatants))
-                        TurnOrderStrategy.FIXED_ORDER ->
-                            add(generateFixedOrderTurnOrderFunction(id, system))
-                    }
+            add(generateAtbGaugeUpdateFunction(system, id))
+            val strategy = system.turnOrderStrategy
+            if (strategy != null) {
+                when (strategy) {
+                    TurnOrderStrategy.SPEED_BASED ->
+                        add(generateSpeedBasedTurnOrderFunction(id, system.maxCombatants))
+                    TurnOrderStrategy.FIXED_ORDER ->
+                        add(generateFixedOrderTurnOrderFunction(id, system))
                 }
             }
-            // Wave survival: additional wave management functions
-            if (system.combatType == CombatType.WAVE_SURVIVAL) {
-                val config = system.waveSurvivalConfig ?: WaveSurvivalConfig()
-                add(generateStartWaveFunction(id, config))
-                add(generateCheckWaveCompleteFunction(id))
-                add(generateBetweenWaveFunction(id, config))
-                add(generateAdvanceWaveFunction(id, config))
-            }
-            // Tactical grid: movement range BFS, LOS, optional facing/elevation, AoE
-            if (system.combatType == CombatType.TACTICAL_GRID) {
-                val cfg = system.tacticalGridConfig ?: TacticalGridConfig()
-                add(generateMovementRangeFunction(id, cfg))
-                add(generateLineOfSightFunction(id, cfg))
-                if (cfg.enableFacing) add(generateFacingBonusFunction(id, cfg))
-                if (cfg.enableElevation) add(generateElevationBonusFunction(id, cfg))
-                add(generateAoeTargetingFunction(id, cfg))
-            }
-            // Hook injection: generate hook_<point>_<id>(void) functions for each registered hook
-            addAll(generateHookFunctions(system, id, exprVisitor))
+        }
+    }
+
+    /** Wave-survival management functions: start-wave, check-complete, between-wave, advance. */
+    private fun buildWaveSurvivalFunctions(
+        system: CombatEngineSystem,
+        id: String,
+    ): List<CFunction> {
+        if (system.combatType != CombatType.WAVE_SURVIVAL) return emptyList()
+        val config = system.waveSurvivalConfig ?: WaveSurvivalConfig()
+        return listOf(
+            generateStartWaveFunction(id, config),
+            generateCheckWaveCompleteFunction(id),
+            generateBetweenWaveFunction(id, config),
+            generateAdvanceWaveFunction(id, config),
+        )
+    }
+
+    /** Tactical-grid functions: movement BFS, LOS, optional facing/elevation bonus, AoE. */
+    private fun buildTacticalGridFunctions(
+        system: CombatEngineSystem,
+        id: String,
+    ): List<CFunction> {
+        if (system.combatType != CombatType.TACTICAL_GRID) return emptyList()
+        val cfg = system.tacticalGridConfig ?: TacticalGridConfig()
+        return buildList {
+            add(generateMovementRangeFunction(id, cfg))
+            add(generateLineOfSightFunction(id, cfg))
+            if (cfg.enableFacing) add(generateFacingBonusFunction(id, cfg))
+            if (cfg.enableElevation) add(generateElevationBonusFunction(id, cfg))
+            add(generateAoeTargetingFunction(id, cfg))
         }
     }
 
@@ -380,7 +415,7 @@ class CombatVisitor(private val gameIR: GameIR) {
                 val coreStateIds = buildCoreStateIndex(system)
                 for ((parent, children) in system.stateHierarchy) {
                     val parentId = coreStateIds[parent] ?: 1
-                    for (_child in children) {
+                    repeat(children.size) {
                         add(
                             CSwitchCase(
                                 value = CLiteral(subStateIndex),

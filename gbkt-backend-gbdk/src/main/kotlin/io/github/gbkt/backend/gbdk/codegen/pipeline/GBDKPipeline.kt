@@ -7,6 +7,7 @@
 package io.github.gbkt.backend.gbdk.codegen.pipeline
 
 import io.github.gbkt.backend.api.GenreSystemVisitor
+import io.github.gbkt.backend.api.gameUsesTilemapCollisionPathC
 import io.github.gbkt.backend.gbdk.codegen.GBDKCollectionCodegen
 import io.github.gbkt.backend.gbdk.codegen.ast.CArray
 import io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr
@@ -205,26 +206,42 @@ class GBDKPipeline {
      */
     internal fun buildMetadataFile(gameIR: GameIR): String {
         val json = org.json.JSONObject()
+        json.put("scenes", buildMetadataScenesJson(gameIR))
+        json.put("actors", buildMetadataActorsJson(gameIR))
+        json.put("variables", buildMetadataVariablesJson(gameIR))
+        json.put("texts", buildMetadataTextsJson(gameIR))
+        json.put("terminalScenes", buildMetadataTerminalScenesJson(gameIR))
+        json.put("controls", buildMetadataControlsJson(gameIR))
+        json.put("transitions", buildMetadataTransitionsJson(gameIR))
+        json.put("tileDecoders", buildMetadataTileDecodersJson())
+        json.put("zoneTilesets", buildMetadataZoneTilesetsJson(gameIR))
+        json.put("sprites", buildMetadataSpritesJson(gameIR))
+        return json.toString(2)
+    }
 
-        // Scenes: name → index
+    /** Scenes section: name → index map. */
+    private fun buildMetadataScenesJson(gameIR: GameIR): org.json.JSONObject {
         val scenes = org.json.JSONObject()
         for ((index, scene) in gameIR.scenes.withIndex()) {
             scenes.put(scene.id, index)
         }
-        json.put("scenes", scenes)
+        return scenes
+    }
 
-        // Actors with OAM slot assignments
+    /**
+     * Actors section: OAM slot assignments, sprite dimensions, position-variable names.
+     *
+     * WR-02: hardware SPRITES_8x16 mode uses ONE OAM slot per 8×16 pair. An actor sprite that is
+     * 16px tall has tilesHigh=2 raw tiles but only 1 OAM entry. Uses the same derivation as the
+     * actor-sprite sidecar emission loop: tileHeight <= 8 → SPR8x8 (8px OAM slot), else SPR8x16
+     * (16px OAM slot).
+     */
+    private fun buildMetadataActorsJson(gameIR: GameIR): org.json.JSONArray {
         val actors = org.json.JSONArray()
         for (actor in gameIR.actors) {
             if (actor.sprite == null) continue
             val sprite = actor.sprite!!
             val tilesWide = (sprite.size.width + 7) / 8
-            // WR-02: hardware SPRITES_8x16 mode uses ONE OAM slot per 8×16 pair.
-            // An actor sprite that is 16px tall has tilesHigh=2 raw tiles but only
-            // 1 OAM entry (each OAM slot covers both the top and bottom 8-pixel rows).
-            // Use the same derivation as the actor-sprite sidecar emission loop
-            // (line 395 below): tileHeight <= 8 → SPR8x8 (8px OAM slot), else SPR8x16
-            // (16px OAM slot). This makes oamCount correct for emulator agent assertions.
             val oamSlotHeight = if (sprite.size.height <= 8) 8 else 16
             val oamCount = tilesWide * ((sprite.size.height + oamSlotHeight - 1) / oamSlotHeight)
             val actorJson =
@@ -241,9 +258,11 @@ class GBDKPipeline {
                     )
             actors.put(actorJson)
         }
-        json.put("actors", actors)
+        return actors
+    }
 
-        // Variables: DSL-declared variables with name and type
+    /** Variables section: DSL-declared variables with name, type, and semantic. */
+    private fun buildMetadataVariablesJson(gameIR: GameIR): org.json.JSONArray {
         val variables = org.json.JSONArray()
         for (variable in gameIR.variables) {
             variables.put(
@@ -254,26 +273,32 @@ class GBDKPipeline {
                     .put("semantic", inferVariableSemantic(variable.name))
             )
         }
-        json.put("variables", variables)
+        return variables
+    }
 
-        // Texts: literal display strings extracted from all scene scripts
+    /** Texts section: literal display strings extracted from all scene scripts. */
+    private fun buildMetadataTextsJson(gameIR: GameIR): org.json.JSONArray {
         val allOps = gameIR.scenes.flatMap { it.enterOps + it.frameOps + it.exitOps }
         val texts = org.json.JSONArray()
         for (text in collectTexts(allOps)) {
             texts.put(text)
         }
-        json.put("texts", texts)
+        return texts
+    }
 
-        // Terminal scenes: convention-based detection of game-ending scenes
+    /** Terminal scenes section: convention-based detection of game-ending scenes. */
+    private fun buildMetadataTerminalScenesJson(gameIR: GameIR): org.json.JSONArray {
         val terminalScenes = org.json.JSONArray()
         for (scene in gameIR.scenes) {
             if (scene.id.lowercase() in TERMINAL_SCENE_PATTERNS) {
                 terminalScenes.put(scene.id)
             }
         }
-        json.put("terminalScenes", terminalScenes)
+        return terminalScenes
+    }
 
-        // Controls: per-scene input mappings extracted from IfOp conditions
+    /** Controls section: per-scene input mappings extracted from IfOp conditions. */
+    private fun buildMetadataControlsJson(gameIR: GameIR): org.json.JSONObject {
         val controlsJson = org.json.JSONObject()
         for ((sceneId, mappings) in extractControls(gameIR)) {
             val mappingsArray = org.json.JSONArray()
@@ -284,34 +309,35 @@ class GBDKPipeline {
             }
             controlsJson.put(sceneId, mappingsArray)
         }
-        json.put("controls", controlsJson)
+        return controlsJson
+    }
 
-        // Transitions: scene navigation graph extracted from NavigateTo ops
+    /** Transitions section: scene navigation graph extracted from NavigateTo ops. */
+    private fun buildMetadataTransitionsJson(gameIR: GameIR): org.json.JSONArray {
         val transitionsArray = org.json.JSONArray()
         for (edge in extractTransitions(gameIR)) {
             transitionsArray.put(org.json.JSONObject().put("from", edge.from).put("to", edge.to))
         }
-        json.put("transitions", transitionsArray)
+        return transitionsArray
+    }
 
-        // Emit tile decoder config — default decoders for all games
+    /** Tile decoders section: default decoders for all games. */
+    private fun buildMetadataTileDecodersJson(): org.json.JSONObject {
         val tileDecodersObj = org.json.JSONObject()
         tileDecodersObj.put("bg", org.json.JSONObject().put("type", "gbdk_offset"))
         tileDecodersObj.put("win", org.json.JSONObject().put("type", "direct_ascii"))
-        json.put("tileDecoders", tileDecodersObj)
+        return tileDecodersObj
+    }
 
-        // Phase 11.2 (D-A4): zone tilesets manifest consumed by ConvertZoneTilesetsTask.
-        // Filtered to NEW-path consumers (zone.tilesetPath != null); procedurally-authored
-        // sport-racing zones stay on LEGACY path.
-        // Plan 11.1-17 (Phase A): also emit mapWidth + mapHeight so ConvertZoneTilesetsTask
-        // can synthesize the _zone_<id>_tilemap[] screen-tile-index array at the correct
-        // screen-tile-grid dimensions (e.g. 20 × 18 for Banks's play_zone).
-        // Phase 12.1-01 Task 1 (D-01 option b): also emit `bank` so ConvertZoneTilesetsTask
-        // can prepend `#pragma bank N` to the synthesized `_zone_<id>_tilemap.c`. This fixes
-        // Defect 2 (SDCC error 20 `Undefined identifier '__bank__zone_<id>_tilemap'`) by
-        // making SDCC synthesize the `__bank_<sym>` companion symbol that `BANK(...)`
-        // expands to. `allocateZoneBanks` is invoked side-effect-free here (RESEARCH
-        // §BankingAnalysisPass option b) — the legacy `buildTilemapBankFiles` path
-        // is independent and unaffected.
+    /**
+     * Zone tilesets section: manifest consumed by ConvertZoneTilesetsTask.
+     *
+     * Phase 11.2 (D-A4): filtered to NEW-path consumers (zone.tilesetPath != null). Phase 11.1-17:
+     * emits mapWidth + mapHeight. Phase 12.1-01: emits `bank` for #pragma bank synthesis.
+     * `allocateZoneBanks` is invoked side-effect-free (legacy `buildTilemapBankFiles` path is
+     * independent).
+     */
+    private fun buildMetadataZoneTilesetsJson(gameIR: GameIR): org.json.JSONArray {
         val zoneBankAllocation = allocateZoneBanks(gameIR)
         val zoneTilesets = org.json.JSONArray()
         for (zone in gameIR.zones) {
@@ -328,60 +354,34 @@ class GBDKPipeline {
                     .JSONObject()
                     .put("id", zone.id)
                     .put("path", path)
-                    // Phase 12.2 R-04: emit explicit JSONObject.NULL (not Kotlin null) so the
-                    // serialized JSON carries "tilemapPath": null rather than omitting the key —
-                    // lets ConvertZoneTilesetsTask use optString("tilemapPath", null) cleanly.
+                    // Phase 12.2 R-04: emit explicit JSONObject.NULL so the serialized JSON carries
+                    // "tilemapPath": null rather than omitting the key.
                     .put("tilemapPath", zone.tilemapPath ?: org.json.JSONObject.NULL)
                     .put("sanitizedSymbol", sanitized)
                     // Plan 13.4-02: emit explicit JSONObject.NULL when the sentinel is null so the
-                    // JSON key is present (not omitted) — ConvertZoneTilesetsTask reads it via
-                    // isNull("mapWidth"). Mirrors the tilemapPath JSONObject.NULL idiom at :333.
+                    // JSON key is present (not omitted).
                     .put("mapWidth", zone.mapWidth ?: org.json.JSONObject.NULL)
                     .put("mapHeight", zone.mapHeight ?: org.json.JSONObject.NULL)
                     .put("bank", bank)
             )
         }
-        json.put("zoneTilesets", zoneTilesets)
+        return zoneTilesets
+    }
 
-        // Phase 12.4 D-02: sprites[] manifest consumed by ConvertSpritesTask (sidecar reader
-        // replacing
-        // main.c parseSpriteIncludes/isMetaspriteBound/isMirrorDedupOptIn helpers). Includes:
-        //   1. Metasprites with explicit sprite(asset(...)) binding (spritePath != null) per D-01b.
-        //   2. Actor sprites (actor { sprite(asset(...)) }) — these also produce #include
-        // "sprites/X.h"
-        //      in main.c and require ConvertSpritesTask to generate the matching .c/.h tile data
-        // files.
-        //      Actor sprites always use mirrorDedup=false (no mirror-pair dedup opt-in at actor
-        // level).
-        //      Plan 12.4-13 Rule 1 regression fix: Phase 12.4-03 sidecar refactor dropped actor
-        // sprites
-        //      from the sprites[] manifest; ConvertSpritesTask then skipped them, leaving the
-        // #include
-        //      directives dangling and breaking :buildRom for pong, breakout, banks,
-        // simple-physics.
-        //
-        // Each entry carries:
-        //   - "id": sprite identifier (metasprite id, or PNG stem for actor sprites)
-        //   - "spritePath": relative path to source PNG from res/ (used to locate the file)
-        //   - "includePath": relative path where the .h file must land under cSourceDir
-        //                    (matches the #include directive in generated C — may differ from
-        // spritePath
-        //                     when a metasprite's PNG lives under graphics/ but is included as
-        // sprites/<id>.h)
-        //   - "mirrorDedup": true → png2asset mirror-pair tile dedup enabled; false → -noflip added
+    /**
+     * Sprites section: manifest consumed by ConvertSpritesTask (Phase 12.4 D-02).
+     *
+     * Includes metasprites with explicit sprite binding (spritePath != null) and actor sprites.
+     * Actor sprites always use mirrorDedup=false. Plan 12.4-13 Rule 1: actor sprites were
+     * previously dropped, leaving #include directives dangling.
+     */
+    private fun buildMetadataSpritesJson(gameIR: GameIR): org.json.JSONArray {
         val sprites = org.json.JSONArray()
         for (ms in gameIR.metasprites) {
             val spritePath = ms.spritePath ?: continue
-            // main.c #include uses "sprites/<id>.h" (from metaspriteSpriteIncludes convention).
-            // The PNG may live anywhere (e.g. "graphics/player-character-gbapduck-sprites.png").
-            // includePath must match the #include directive so ConvertSpritesTask places the header
-            // at the correct location relative to cSourceDir.
+            // main.c #include uses "sprites/<id>.h"; includePath must match so ConvertSpritesTask
+            // places the header at the correct location relative to cSourceDir.
             val includePath = "sprites/${ms.id}.h"
-            // Phase 12.5 D-05 — png2asset cutting flags in sidecar
-            // Phase 13.3 D-07 — frameCount field for build-time cross-validation in
-            // ConvertSpritesTask
-            // Phase 13.3 D-01 — isMetasprite flag so ConvertSpritesTask can emit the native array
-            // extern
             val spriteEntry =
                 org.json
                     .JSONObject()
@@ -400,25 +400,16 @@ class GBDKPipeline {
             }
             sprites.put(spriteEntry)
         }
-        // Actor sprite entries carry cutting flags derived from actor.sprite.size (Rule 1 fix:
-        // ConvertSpritesTask now always passes -px/-py/-sw/-sh; without flags in the sidecar the
-        // defaults SPR8x16 + frameHeight=8 conflict for 8x8 sprites). Cutting flags are derived
-        // from the first actor that references each unique sprite path:
-        //   - spriteMode: SpriteMode.SPR8x8 when tile height <= 8px, else SpriteMode.SPR8x16
-        //   - frameWidth/frameHeight: actor.sprite.size.width / actor.sprite.size.height
-        //   - pivotX/pivotY: always 0,0 (actor sprites have no DSL pivot declaration)
-        // distinct() prevents duplicates when multiple actors share the same sprite PNG
-        // (e.g. pong's paddle1 + paddle2 both reference "sprites/paddle.png").
-        // For actor sprites, includePath is derived directly from spritePath — the main.c
-        // actorSpriteIncludes convention converts "sprites/paddle.png" → "sprites/paddle.h"
-        // (same subdirectory, same stem), so includePath == path-with-.h-extension.
+        // Actor sprite entries: cutting flags derived from actor.sprite.size. distinct() prevents
+        // duplicates when multiple actors share the same sprite PNG (e.g. pong's paddle1 +
+        // paddle2).
         val actorSpritesByPath =
             gameIR.actors
                 .mapNotNull { actor -> actor.sprite?.let { sprite -> actor to sprite } }
                 .groupBy { (_, sprite) -> sprite.assetRef.path }
-        for ((spritePath, actors) in actorSpritesByPath) {
+        for ((spritePath, actorsForPath) in actorSpritesByPath) {
             val includePath = spritePath.substringBeforeLast('.') + ".h"
-            val firstSprite = actors.first().second
+            val firstSprite = actorsForPath.first().second
             val tileHeight = firstSprite.size.height
             val tileWidth = firstSprite.size.width
             val actorSpriteMode = if (tileHeight <= 8) SpriteMode.SPR8x8 else SpriteMode.SPR8x16
@@ -436,9 +427,7 @@ class GBDKPipeline {
                     .put("frameHeight", tileHeight)
             )
         }
-        json.put("sprites", sprites)
-
-        return json.toString(2)
+        return sprites
     }
 
     companion object {
@@ -487,46 +476,65 @@ class GBDKPipeline {
      */
     private fun extractControls(game: GameIR): Map<String, List<ControlMapping>> {
         val result = linkedMapOf<String, LinkedHashSet<ControlMapping>>()
+        for (scene in game.scenes) {
+            walkOps(scene.id, scene.enterOps, result)
+            walkOps(scene.id, scene.frameOps, result)
+            walkOps(scene.id, scene.exitOps, result)
+        }
+        return result.mapValues { it.value.toList() }
+    }
 
-        fun walkOps(sceneId: String, ops: List<ScriptOp>) {
-            for (op in ops) {
-                when (op) {
-                    is IfOp -> {
-                        val condition = op.condition
-                        if (condition is CallExpr) {
-                            val interactionType = INPUT_FUNCTION_TYPES[condition.function]
-                            if (interactionType != null) {
-                                val arg = condition.args.firstOrNull()
-                                if (arg is VarRef) {
-                                    val buttonName = GBDK_BUTTON_NAMES[arg.name]
-                                    if (buttonName != null) {
-                                        result
-                                            .getOrPut(sceneId) { linkedSetOf() }
-                                            .add(ControlMapping(buttonName, interactionType))
-                                    }
-                                }
-                            }
-                        }
-                        walkOps(sceneId, op.then)
-                        walkOps(sceneId, op.otherwise)
+    /**
+     * Recursively walks [ops] and collects [ControlMapping]s into [result].
+     *
+     * Descends depth-first into [IfOp] branches, [WhileOp], [ForOp], [FadeOp], [PoolDestroyActor]
+     * death-callbacks, and [PoolForEachActive] bodies. For each [IfOp] whose condition is a
+     * [CallExpr] matching an input-function name (`dpad_held`, `dpad_pressed`, `button_held`,
+     * `button_pressed`), extracts the button from the first arg and records a [ControlMapping]
+     * under [sceneId].
+     *
+     * Promoted from a local function inside [extractControls] to reduce cognitive complexity of the
+     * outer function (SonarCloud S3776 E-13 / E-19).
+     */
+    private fun walkOps(
+        sceneId: String,
+        ops: List<ScriptOp>,
+        result: LinkedHashMap<String, LinkedHashSet<ControlMapping>>,
+    ) {
+        for (op in ops) {
+            when (op) {
+                is IfOp -> {
+                    extractControlMappingFromIfOp(op)?.let { mapping ->
+                        result.getOrPut(sceneId) { linkedSetOf() }.add(mapping)
                     }
-                    is WhileOp -> walkOps(sceneId, op.body)
-                    is ForOp -> walkOps(sceneId, op.body)
-                    is FadeOp -> walkOps(sceneId, op.after)
-                    is PoolDestroyActor -> walkOps(sceneId, op.deathCallbackOps)
-                    is PoolForEachActive -> walkOps(sceneId, op.body)
-                    else -> {}
+                    walkOps(sceneId, op.then, result)
+                    walkOps(sceneId, op.otherwise, result)
                 }
+                is WhileOp -> walkOps(sceneId, op.body, result)
+                is ForOp -> walkOps(sceneId, op.body, result)
+                is FadeOp -> walkOps(sceneId, op.after, result)
+                is PoolDestroyActor -> walkOps(sceneId, op.deathCallbackOps, result)
+                is PoolForEachActive -> walkOps(sceneId, op.body, result)
+                else -> {}
             }
         }
+    }
 
-        for (scene in game.scenes) {
-            walkOps(scene.id, scene.enterOps)
-            walkOps(scene.id, scene.frameOps)
-            walkOps(scene.id, scene.exitOps)
-        }
-
-        return result.mapValues { it.value.toList() }
+    /**
+     * Extracts a [ControlMapping] from an [IfOp] whose condition is a recognized input [CallExpr].
+     *
+     * Returns null when the condition is not a [CallExpr], when the function name is not in
+     * [INPUT_FUNCTION_TYPES], when the first argument is not a [VarRef], or when the button name is
+     * not in [GBDK_BUTTON_NAMES].
+     *
+     * Extracted from [walkOps] to flatten nesting (SonarCloud S3776 18-28).
+     */
+    private fun extractControlMappingFromIfOp(op: IfOp): ControlMapping? {
+        val condition = op.condition as? CallExpr ?: return null
+        val interactionType = INPUT_FUNCTION_TYPES[condition.function] ?: return null
+        val arg = condition.args.firstOrNull() as? VarRef ?: return null
+        val buttonName = GBDK_BUTTON_NAMES[arg.name] ?: return null
+        return ControlMapping(buttonName, interactionType)
     }
 
     /**
@@ -1150,26 +1158,8 @@ class GBDKPipeline {
         val systemFunctions = buildSystemFunctions(gameIR, bankAllocation)
 
         // Plan 07.4-30 / D-N-SWITCHROM-RESTORE: HOME-bank wrapper for cross-bank set_bkg_tiles.
-        // Emitted only when the game has a sport_racing GenericSystem AND at least one zone is
-        // allocated to a bank > 1. The helper allows BANKED scene-enter functions (bank1.c) to
-        // safely call set_bkg_tiles for data in another bank without corrupting the instruction
-        // stream. The extra hasSportRacing guard prevents emitting SWITCH_ROM into main.c for
-        // non-racing games that happen to have zones allocated to bank 2 (e.g. dungeon games),
-        // which would break ZoneTilemapBankingTest and unrelated genre pipelines.
         // See buildBkgTilesLoadBankedHelper() for the full rationale.
-        val hasSportRacing =
-            gameIR.systems.filterIsInstance<GenericSystem>().any {
-                (it.config["type"] as? String) == "sport_racing"
-            }
-        // SEED-014 (Phase 11.1 D-01): un-gate from sport_racing-only to also admit games with
-        // scene-to-zone binder DSL.
-        val hasZoneSceneBinder = gameIR.scenes.any { it.zoneRefs.isNotEmpty() }
-        val crossBankHelper: List<CFunction> =
-            if ((hasSportRacing || hasZoneSceneBinder) && bankAllocation.values.any { it > 1 }) {
-                listOf(buildBkgTilesLoadBankedHelper())
-            } else {
-                emptyList()
-            }
+        val crossBankHelper = buildCrossBankHelperList(gameIR, bankAllocation)
 
         // Struct typedef declarations — emitted as CTypedef before collection data.
         // Each StructDef produces: typedef struct { <field declarations> } <name>;
@@ -1189,37 +1179,8 @@ class GBDKPipeline {
                 fixedSlots = gameIR.fixedSlots,
             )
         // GBC palette data arrays — one `const palette_color_t {name}_pal[4]` per palette.
-        // set_bkg_palette() and set_sprite_palette() require these as arguments.
-        // Emitted as a raw section because palette_color_t is a GBDK typedef (uint16_t),
-        // and we do not have a typed CArray element type for it in our C AST.
-        //
-        // Plan 10.1-22 (DEF-10.1-13-C / 4TH LAYER): for GBC-targeted games, additionally emit
-        // `_gbkt_default_bg_pal[4] = {0x7FFF, 0x56B5, 0x294A, 0x0000}` — the DMG-equivalent
-        // BG palette (white, lt-gray, dk-gray, black). The constant matches the documented
-        // intent of `cgb_compatibility()` / `set_default_palette()` but writes EXPLICITLY via
-        // BCPS/BCPD (`set_bkg_palette()` in main() — Plan 22 fix Site 2) rather than relying
-        // on cgb_compatibility's slot-0 path, which (per d-v3-visual-finding-v2.md) only reaches
-        // BGP_REG on Coffee-GB → leaves BG palette RAM at Java zero-init = all-black render.
-        // Emitted unconditionally for any non-DMG target (gbkt always writes BG slot 0 to a
-        // safe default so the first GBC composited frame never reads zero palette RAM).
-        val gbktDefaultBgPalRaw =
-            if (gameIR.config.gbcTarget != GbcTarget.DMG) {
-                "const palette_color_t _gbkt_default_bg_pal[4] = {0x7FFF, 0x56B5, 0x294A, 0x0000};"
-            } else {
-                null
-            }
-
-        val paletteDataRaw =
-            buildList {
-                    gameIR.palettes.forEach { palette ->
-                        add(
-                            "const palette_color_t ${palette.name}_pal[4] = {${palette.toCArrayLiteral()}};"
-                        )
-                    }
-                    if (gbktDefaultBgPalRaw != null) add(gbktDefaultBgPalRaw)
-                }
-                .joinToString("\n")
-                .takeIf { it.isNotEmpty() }
+        // See buildPaletteDataRaw() for the full rationale (Plan 10.1-22 / D-08 / SEED-014).
+        val paletteDataRaw = buildPaletteDataRaw(gameIR)
 
         // Metasprite descriptor arrays — sprite_metasprite_N[] per-frame OAM descriptor arrays
         // and sprite_metasprites[] pointer table. Required by move_metasprite_*() call sites
@@ -1281,41 +1242,25 @@ class GBDKPipeline {
         // metasprites-stress, banks, racer).
         val levelSpawnTablesRaw = buildLevelSpawnTablesIfNeeded(gameIR)
 
-        val allRawSections = buildList {
-            if (collectionDataRaw.isNotEmpty()) add(collectionDataRaw)
-            if (collectionFunctionsRaw.isNotEmpty()) add(collectionFunctionsRaw)
-            if (paletteDataRaw != null) add(paletteDataRaw)
-            if (metaspriteDescriptorRaw != null) add(metaspriteDescriptorRaw)
-            if (isTileSolidHelperRaw != null) add(isTileSolidHelperRaw)
-            if (bkgSetLevelSubmapHelperRaw != null) add(bkgSetLevelSubmapHelperRaw)
-            if (levelSpawnTablesRaw != null) add(levelSpawnTablesRaw)
-            if (setupCurrentLevelFunctionRaw != null) add(setupCurrentLevelFunctionRaw)
-        }
+        val allRawSections =
+            buildHomeFileRawSections(
+                collectionDataRaw.takeIf { it.isNotEmpty() },
+                collectionFunctionsRaw.takeIf { it.isNotEmpty() },
+                paletteDataRaw,
+                metaspriteDescriptorRaw,
+                isTileSolidHelperRaw,
+                bkgSetLevelSubmapHelperRaw,
+                levelSpawnTablesRaw,
+                setupCurrentLevelFunctionRaw,
+            )
 
         // Tile collision system — const arrays + lookup functions (HOME-bank)
         // G2: Scenes with collisionData emit map_<scene>_collision[] and _map_collision_<scene>()
         val collisionVisitor = CollisionVisitor(gameIR)
         val (collisionArrays, collisionFunctionsRaw) = collisionVisitor.buildCollisionCodegen()
 
-        // When exploration systems exist but no scenes have collision data, generate a stub
-        // _map_collision(x, y) that always returns 0 (no collision). The exploration movement
-        // function calls _map_collision() for walkability checks.
-        val hasExplorationSystem =
-            gameIR.systems.any { it is io.github.gbkt.core.ir.ExplorationSystem }
-        val collisionFunctions =
-            if (collisionFunctionsRaw.isEmpty() && hasExplorationSystem) {
-                listOf(
-                    CFunction(
-                        name = "_map_collision",
-                        returnType = CU8,
-                        params = listOf(CParam("x", CU8), CParam("y", CU8)),
-                        body = listOf(CReturn(CLiteral(0))),
-                        sectionComment = "Stub collision — no scenes have collision data",
-                    )
-                )
-            } else {
-                collisionFunctionsRaw
-            }
+        // When exploration systems exist but no scenes have collision data, a stub is generated.
+        val collisionFunctions = buildCollisionFunctionsWithFallback(gameIR, collisionFunctionsRaw)
 
         // Puzzle object state variables and interaction check functions
         val systemVisitor = GBDKSystemVisitor(gameIR, bankAllocation)
@@ -1325,21 +1270,8 @@ class GBDKPipeline {
         // _pool_<id>_oam[])
         val actorPoolStateVars = GBDKSystemVisitor.buildActorPoolStateVars(gameIR)
 
-        // Zone tilemap defines — TILESET_<ID> constants (tile arrays are in banked CFiles)
-        // When bankAllocation is provided (banking mode), tile arrays live in zone_bankN.c files.
-        // When empty (legacy/no-zone mode), we still need backward-compat zone arrays in home.
-        val zoneDefines: List<CDefine>
-        val zoneArrays: List<CVarDecl>
-        if (bankAllocation.isEmpty() && gameIR.zones.isNotEmpty()) {
-            // Legacy path: no banking configured, put tile arrays in HOME bank
-            val (arrays, defines) = buildZoneData(gameIR)
-            zoneArrays = arrays
-            zoneDefines = defines
-        } else {
-            // Banking path: tile arrays are in zone_bankN.c files, only emit defines here
-            zoneArrays = emptyList()
-            zoneDefines = buildZoneDefines(gameIR)
-        }
+        // Zone tilemap defines + arrays — banking vs. legacy path dispatched in helper.
+        val (zoneDefines, zoneArrays) = buildZoneDefsForHome(gameIR, bankAllocation)
 
         // Inventory system: item catalog constants, container globals, PRNG global
         val inventoryItemConstants = buildItemCatalog(gameIR)
@@ -1416,124 +1348,14 @@ class GBDKPipeline {
         // main() function
         val mainFn = buildMainFunction(gameIR)
 
-        // #include directives for sprite asset headers
-        // For each actor with a sprite asset reference, include its generated header.
-        val actorSpriteIncludes =
-            gameIR.actors
-                .mapNotNull { actor -> actor.sprite?.assetRef?.path }
-                .distinct()
-                .map { path ->
-                    // Convert "sprites/paddle.png" → "sprites/paddle.h"
-                    val headerPath = path.substringBeforeLast('.') + ".h"
-                    "\"$headerPath\""
-                }
-        // #include directives for metasprite tile data headers.
-        // Convention (PHASE-13): "sprites/<metaspriteId>.h" — derived from metasprite id until
-        // MetaspriteBuilder.sprite() is implemented. ConvertSpritesTask will run png2asset on the
-        // corresponding "sprites/<id>.png" asset to produce the tile data C array.
-        // The include triggers the asset pipeline wiring for the tile data array "<id>_tiles".
-        val metaspriteSpriteIncludes = gameIR.metasprites.map { ms -> "\"sprites/${ms.id}.h\"" }
-        val spriteIncludes = (actorSpriteIncludes + metaspriteSpriteIncludes).distinct()
+        // All #include directives for main.c (base, sound, palette, metasprite, sprite assets,
+        // zone tileset headers). See buildAllHomeFileIncludes() for full rationale.
+        val allIncludes = buildAllHomeFileIncludes(gameIR, soundVisitor)
 
-        // Add hUGEDriver.h when any scene uses music ScriptOps (A2)
-        val hUGEInclude =
-            if (soundVisitor.hasMusicOps()) listOf(GBDKIncludes.HUGE_DRIVER_H) else emptyList()
-        // Add <gb/cgb.h> when GBC palettes are defined — provides palette_color_t and set_*_palette
-        val cgbHomeInclude =
-            if (gameIR.palettes.isNotEmpty()) listOf(GBDKIncludes.CGB_H) else emptyList()
-        // Add <gbdk/metasprites.h> when metasprites are present — provides move_metasprite_*()
-        // and the metasprite descriptor types. Pitfall 4 mitigation: linker error without this.
-        val metaspriteInclude =
-            if (gameIR.metasprites.isNotEmpty()) listOf(GBDKIncludes.METASPRITES_H) else emptyList()
-
-        // Phase 12.1 Plan 03 (Defect 3): main.c needs the per-zone tileset headers so that
-        // `setup_current_level`'s references to `_zone_<id>_tilemap_WIDTH` / `_HEIGHT`
-        // (preprocessor
-        // macros emitted by ConvertZoneTilesetsTask.synthesizeHeader) resolve at SDCC compile time.
-        // Mirrors `buildSceneFile`'s zoneTilesetIncludes pattern (line ~1556) — one #include per
-        // unique zone with a tilesetPath. Header guards make duplicates safe; distinct() keeps the
-        // include list clean. Plan 12.1-01 documented this as Plan 12.1-03's "header-wiring
-        // territory" (Rule 4 architectural boundary) in its SUMMARY decisions list.
-        val homeZoneTilesetIncludes =
-            gameIR.zones
-                .filter { it.tilesetPath != null }
-                .map { zone ->
-                    val sanitized = zone.id.replace('-', '_').replace(' ', '_')
-                    "\"_zone_${sanitized}_tileset.h\""
-                }
-                .distinct()
-
-        val allIncludes =
-            GBDKIncludes.homeFileBase() +
-                hUGEInclude +
-                cgbHomeInclude +
-                metaspriteInclude +
-                spriteIncludes +
-                homeZoneTilesetIncludes
-
-        // MENU_CURSOR_SPRITE_ID #define — emitted when any menu uses a sprite cursor
-        val menuCursorDefines =
-            if (gameIR.menus.any { it.cursorSprite != null }) {
-                listOf(CDefine("MENU_CURSOR_SPRITE_ID", "${MenuVisitor.MENU_CURSOR_SPRITE_ID}"))
-            } else {
-                emptyList()
-            }
-
-        // MIXER_GROUP_* #define constants — emitted when any audio_mixer GenericSystem exists
-        @Suppress("UNCHECKED_CAST")
-        val audioMixerDefines =
-            gameIR.systems
-                .filterIsInstance<GenericSystem>()
-                .filter { it.config["type"] == "audio_mixer" }
-                .flatMap { system ->
-                    val groups =
-                        (system.config["groups"] as? List<ChannelGroupDef>)
-                            ?: listOf(
-                                ChannelGroupDef("music", setOf(1, 2), 7, 0),
-                                ChannelGroupDef("sfx", setOf(3, 4), 7, 1),
-                                ChannelGroupDef("ui", setOf(3), 7, 2),
-                            )
-                    groups.mapIndexed { idx, group ->
-                        CDefine("MIXER_GROUP_${group.name.uppercase()}", "$idx")
-                    }
-                }
-
-        // Entity collision #define constants — emitted when any actor has non-PASSTHROUGH config
-        val entityCollisionDefines = run {
-            val explorationSystem =
-                gameIR.systems
-                    .filterIsInstance<io.github.gbkt.core.ir.ExplorationSystem>()
-                    .firstOrNull()
-            if (explorationSystem != null) {
-                val collisionActors =
-                    gameIR.actors.filter {
-                        val ec = it.entityCollision
-                        ec != null && ec.mode != EntityCollisionMode.PASSTHROUGH
-                    }
-                if (collisionActors.isNotEmpty()) {
-                    listOf(
-                        CDefine("MAX_ENTITIES", "${collisionActors.size}"),
-                        CDefine("MAP_SIZE", "129"),
-                    )
-                } else emptyList()
-            } else emptyList()
-        }
-
-        // ATB #define constants: ATB_BASE_RATE and ATB_MAX_GAUGE
-        // Emitted once when any CombatEngineSystem with combatType==ATB exists.
-        // ATB_BASE_RATE: base gauge fill per frame (before agility modifier)
-        // ATB_MAX_GAUGE: maximum gauge value (clamp threshold)
-        val atbDefines =
-            gameIR.systems
-                .filterIsInstance<CombatEngineSystem>()
-                .firstOrNull { it.combatType == io.github.gbkt.core.ir.CombatType.ATB }
-                ?.let { atbSystem ->
-                    val cfg = atbSystem.atbConfig
-                    listOf(
-                        CDefine("ATB_BASE_RATE", "${cfg?.baseGaugeFillRate ?: 4}"),
-                        CDefine("ATB_MAX_GAUGE", "${cfg?.maxGauge ?: 255}"),
-                    )
-                } ?: emptyList()
+        val menuCursorDefines = buildMenuCursorDefinesForHome(gameIR)
+        val audioMixerDefines = buildAudioMixerDefinesForHome(gameIR)
+        val entityCollisionDefines = buildEntityCollisionDefinesForHome(gameIR)
+        val atbDefines = buildAtbDefinesForHome(gameIR)
 
         // Combat state #define constants — _COMBAT_STATE_INIT=0, _COMBAT_STATE_PLAYER_TURN=1, etc.
         val combatStateDefines = buildCombatStateDefines(gameIR)
@@ -1583,6 +1405,214 @@ class GBDKPipeline {
                     listOf(navigateFn, mainFn),
         )
     }
+
+    // =========================================================================
+    // buildHomeFile extracted helpers
+    // =========================================================================
+
+    /**
+     * Emits the HOME-bank wrapper for cross-bank set_bkg_tiles when needed.
+     *
+     * Required for sport_racing games and scene-to-zone binder games whose tile arrays are
+     * allocated to bank > 1 (Plan 07.4-30 / SEED-014 / Phase 11.1 D-01).
+     */
+    private fun buildCrossBankHelperList(
+        gameIR: GameIR,
+        bankAllocation: Map<String, Int>,
+    ): List<CFunction> {
+        val hasSportRacing =
+            gameIR.systems.filterIsInstance<GenericSystem>().any {
+                (it.config["type"] as? String) == "sport_racing"
+            }
+        // SEED-014 (Phase 11.1 D-01): un-gate from sport_racing-only to also admit games with
+        // scene-to-zone binder DSL.
+        val hasZoneSceneBinder = gameIR.scenes.any { it.zoneRefs.isNotEmpty() }
+        return if ((hasSportRacing || hasZoneSceneBinder) && bankAllocation.values.any { it > 1 }) {
+            listOf(buildBkgTilesLoadBankedHelper())
+        } else {
+            emptyList()
+        }
+    }
+
+    /**
+     * Builds the GBC palette raw-C section for main.c.
+     *
+     * Emits `const palette_color_t {name}_pal[4]` for each palette, and appends
+     * `_gbkt_default_bg_pal[4]` for any non-DMG target (Plan 10.1-22 / D-08).
+     */
+    private fun buildPaletteDataRaw(gameIR: GameIR): String? {
+        val gbktDefaultBgPalRaw =
+            if (gameIR.config.gbcTarget != GbcTarget.DMG) {
+                "const palette_color_t _gbkt_default_bg_pal[4] = {0x7FFF, 0x56B5, 0x294A, 0x0000};"
+            } else {
+                null
+            }
+        return buildList {
+                gameIR.palettes.forEach { palette ->
+                    add(
+                        "const palette_color_t ${palette.name}_pal[4] = {${palette.toCArrayLiteral()}};"
+                    )
+                }
+                if (gbktDefaultBgPalRaw != null) add(gbktDefaultBgPalRaw)
+            }
+            .joinToString("\n")
+            .takeIf { it.isNotEmpty() }
+    }
+
+    /**
+     * Assembles the ordered list of raw C sections for main.c.
+     *
+     * All sections are optional (null = omitted). Callers pass non-nullable `String` sections
+     * pre-filtered via `.takeIf { it.isNotEmpty() }` before passing here. Order is fixed:
+     * collection data → collection functions → palettes → metasprite descriptors → is_tile_solid
+     * helper → _bkg_set_level_submap helper → level spawn tables → setup_current_level function.
+     */
+    private fun buildHomeFileRawSections(vararg sections: String?): List<String> =
+        sections.filterNotNull()
+
+    /**
+     * Returns collision functions for HOME bank; generates a stub when exploration systems exist
+     * but no scenes have collision data (so the movement system always has a callable target).
+     */
+    private fun buildCollisionFunctionsWithFallback(
+        gameIR: GameIR,
+        collisionFunctionsRaw: List<CFunction>,
+    ): List<CFunction> {
+        val hasExplorationSystem =
+            gameIR.systems.any { it is io.github.gbkt.core.ir.ExplorationSystem }
+        return if (collisionFunctionsRaw.isEmpty() && hasExplorationSystem) {
+            listOf(
+                CFunction(
+                    name = "_map_collision",
+                    returnType = CU8,
+                    params = listOf(CParam("x", CU8), CParam("y", CU8)),
+                    body = listOf(CReturn(CLiteral(0))),
+                    sectionComment = "Stub collision — no scenes have collision data",
+                )
+            )
+        } else {
+            collisionFunctionsRaw
+        }
+    }
+
+    /**
+     * Returns zone defines and zone arrays for the HOME file.
+     *
+     * Banking path (bankAllocation non-empty): tile arrays live in zone_bankN.c — emit defines
+     * only. Legacy path (bankAllocation empty + zones present): emit both arrays and defines in
+     * HOME.
+     */
+    private fun buildZoneDefsForHome(
+        gameIR: GameIR,
+        bankAllocation: Map<String, Int>,
+    ): Pair<List<CDefine>, List<CVarDecl>> =
+        if (bankAllocation.isEmpty() && gameIR.zones.isNotEmpty()) {
+            val (arrays, defines) = buildZoneData(gameIR)
+            Pair(defines, arrays)
+        } else {
+            Pair(buildZoneDefines(gameIR), emptyList())
+        }
+
+    /**
+     * Assembles all #include directives for main.c.
+     *
+     * Order: base GBDK headers → hUGEDriver (music) → CGB palette → metasprite → sprite asset
+     * headers → zone tileset headers.
+     */
+    private fun buildAllHomeFileIncludes(gameIR: GameIR, soundVisitor: SoundVisitor): List<String> {
+        val hUGEInclude =
+            if (soundVisitor.hasMusicOps()) listOf(GBDKIncludes.HUGE_DRIVER_H) else emptyList()
+        val cgbHomeInclude =
+            if (gameIR.palettes.isNotEmpty()) listOf(GBDKIncludes.CGB_H) else emptyList()
+        val metaspriteInclude =
+            if (gameIR.metasprites.isNotEmpty()) listOf(GBDKIncludes.METASPRITES_H) else emptyList()
+        val actorSpriteIncludes =
+            gameIR.actors
+                .mapNotNull { actor -> actor.sprite?.assetRef?.path }
+                .distinct()
+                .map { path -> "\"${path.substringBeforeLast('.')}.h\"" }
+        val metaspriteSpriteIncludes = gameIR.metasprites.map { ms -> "\"sprites/${ms.id}.h\"" }
+        val spriteIncludes = (actorSpriteIncludes + metaspriteSpriteIncludes).distinct()
+        val homeZoneTilesetIncludes =
+            gameIR.zones
+                .filter { it.tilesetPath != null }
+                .map { zone ->
+                    val sanitized = zone.id.replace('-', '_').replace(' ', '_')
+                    "\"_zone_${sanitized}_tileset.h\""
+                }
+                .distinct()
+        return GBDKIncludes.homeFileBase() +
+            hUGEInclude +
+            cgbHomeInclude +
+            metaspriteInclude +
+            spriteIncludes +
+            homeZoneTilesetIncludes
+    }
+
+    /** MENU_CURSOR_SPRITE_ID #define — emitted when any menu uses a sprite cursor. */
+    private fun buildMenuCursorDefinesForHome(gameIR: GameIR): List<CDefine> =
+        if (gameIR.menus.any { it.cursorSprite != null }) {
+            listOf(CDefine("MENU_CURSOR_SPRITE_ID", "${MenuVisitor.MENU_CURSOR_SPRITE_ID}"))
+        } else {
+            emptyList()
+        }
+
+    /** MIXER_GROUP_* #define constants — emitted when any audio_mixer GenericSystem exists. */
+    @Suppress("UNCHECKED_CAST")
+    private fun buildAudioMixerDefinesForHome(gameIR: GameIR): List<CDefine> =
+        gameIR.systems
+            .filterIsInstance<GenericSystem>()
+            .filter { it.config["type"] == "audio_mixer" }
+            .flatMap { system ->
+                val groups =
+                    (system.config["groups"] as? List<ChannelGroupDef>)
+                        ?: listOf(
+                            ChannelGroupDef("music", setOf(1, 2), 7, 0),
+                            ChannelGroupDef("sfx", setOf(3, 4), 7, 1),
+                            ChannelGroupDef("ui", setOf(3), 7, 2),
+                        )
+                groups.mapIndexed { idx, group ->
+                    CDefine("MIXER_GROUP_${group.name.uppercase()}", "$idx")
+                }
+            }
+
+    /**
+     * Entity collision #define constants (MAX_ENTITIES, MAP_SIZE) — emitted when an exploration
+     * system exists and at least one actor has non-PASSTHROUGH entity collision config.
+     */
+    private fun buildEntityCollisionDefinesForHome(gameIR: GameIR): List<CDefine> {
+        val explorationSystem =
+            gameIR.systems
+                .filterIsInstance<io.github.gbkt.core.ir.ExplorationSystem>()
+                .firstOrNull()
+        if (explorationSystem == null) return emptyList()
+        val collisionActors =
+            gameIR.actors.filter {
+                val ec = it.entityCollision
+                ec != null && ec.mode != EntityCollisionMode.PASSTHROUGH
+            }
+        return if (collisionActors.isNotEmpty()) {
+            listOf(CDefine("MAX_ENTITIES", "${collisionActors.size}"), CDefine("MAP_SIZE", "129"))
+        } else {
+            emptyList()
+        }
+    }
+
+    /**
+     * ATB #define constants (ATB_BASE_RATE, ATB_MAX_GAUGE) — emitted once when any
+     * CombatEngineSystem with combatType==ATB exists.
+     */
+    private fun buildAtbDefinesForHome(gameIR: GameIR): List<CDefine> =
+        gameIR.systems
+            .filterIsInstance<CombatEngineSystem>()
+            .firstOrNull { it.combatType == io.github.gbkt.core.ir.CombatType.ATB }
+            ?.let { atbSystem ->
+                val cfg = atbSystem.atbConfig
+                listOf(
+                    CDefine("ATB_BASE_RATE", "${cfg?.baseGaugeFillRate ?: 4}"),
+                    CDefine("ATB_MAX_GAUGE", "${cfg?.maxGauge ?: 255}"),
+                )
+            } ?: emptyList()
 
     // =========================================================================
     // bank1.c — Scene functions (bank 1 or scene-assigned bank)
@@ -2118,37 +2148,7 @@ class GBDKPipeline {
                     val zoneId = zoneMatch.groupValues[1]
                     val bank = bankAllocation[zoneId] ?: 0
                     if (bank > 1) {
-                        // Plan 07.4-30 / D-N-SWITCHROM-RESTORE:
-                        // SWITCH_ROM inside a BANKED function (bank1.c) is unsafe. After
-                        // SWITCH_ROM(N) executes at physical 0x4000+, the CPU switches bank N
-                        // to the 0x4000-0x7FFF window. Subsequent instruction fetches (still at
-                        // 0x4000+ addresses) come from bank N data, not bank 1 code. The
-                        // SWITCH_ROM(1) "restore" in bank 1 code is never actually reached
-                        // because the CPU is already reading bank N garbage.
-                        //
-                        // Fix: route the bank-switch + set_bkg_tiles + restore through a HOME
-                        // bank (bank 0) helper function `_bkg_tiles_load_banked`. HOME bank code
-                        // lives at 0x0000-0x3FFF and is NEVER remapped by the MBC switch — the
-                        // switch only affects reads from 0x4000-0x7FFF. The helper safely:
-                        //   1. Calls SWITCH_ROM(N) while fetching from HOME (no remapping risk)
-                        //   2. Calls set_bkg_tiles (also HOME bank)
-                        //   3. Calls SWITCH_ROM(1) to restore bank 1 for the BANKED caller
-                        //   4. Returns to the BANKED caller with bank 1 properly restored
-                        val argsMatch = bkgTilesArgsPattern.find(op.code)
-                        val callRaw =
-                            if (argsMatch != null) {
-                                val x = argsMatch.groupValues[1].trim()
-                                val y = argsMatch.groupValues[2].trim()
-                                val w = argsMatch.groupValues[3].trim()
-                                val h = argsMatch.groupValues[4].trim()
-                                val tiles = argsMatch.groupValues[5].trim()
-                                "_bkg_tiles_load_banked(${bank}u, $x, $y, $w, $h, $tiles);"
-                            } else {
-                                // Fallback: can't parse args — emit original op unguarded.
-                                // This should not happen for well-formed set_bkg_tiles RawOps.
-                                op.code
-                            }
-                        result += RawOp(callRaw)
+                        result += RawOp(buildBankedBkgTilesCallRaw(op, bank, bkgTilesArgsPattern))
                         continue
                     }
                 }
@@ -2156,6 +2156,31 @@ class GBDKPipeline {
             result += op
         }
         return result
+    }
+
+    /**
+     * Builds the raw C call string for a cross-bank `set_bkg_tiles` redirection to the HOME-bank
+     * helper `_bkg_tiles_load_banked`. Falls back to the original [op] code when the args cannot be
+     * parsed (should not happen for well-formed `set_bkg_tiles` RawOps).
+     *
+     * Plan 07.4-30 / D-N-SWITCHROM-RESTORE: SWITCH_ROM inside a BANKED function (bank1.c) is unsafe
+     * — after SWITCH_ROM(N) the CPU reads bank N code at 0x4000-0x7FFF and the SWITCH_ROM(1)
+     * restore is never reached. Routing through a HOME-bank (0x0000-0x3FFF, never remapped) helper
+     * makes the sequence safe. Extracted from [guardCrossBankBgTilemapAccess] to reduce cognitive
+     * complexity (E-24).
+     */
+    private fun buildBankedBkgTilesCallRaw(
+        op: RawOp,
+        bank: Int,
+        bkgTilesArgsPattern: Regex,
+    ): String {
+        val argsMatch = bkgTilesArgsPattern.find(op.code) ?: return op.code
+        val x = argsMatch.groupValues[1].trim()
+        val y = argsMatch.groupValues[2].trim()
+        val w = argsMatch.groupValues[3].trim()
+        val h = argsMatch.groupValues[4].trim()
+        val tiles = argsMatch.groupValues[5].trim()
+        return "_bkg_tiles_load_banked(${bank}u, $x, $y, $w, $h, $tiles);"
     }
 
     /**
@@ -2181,21 +2206,14 @@ class GBDKPipeline {
      * byte-identical at the codegen layer.
      */
     private fun gameUsesTilemapCollision(gameIR: GameIR): Boolean {
-        // Path C (Phase 12.1 Plan 05 Task 2) — explicit tilemap_collision GenericSystem.
-        //
-        // Registered via `GameBuilder.tilemapCollision { ... }` (gbkt-genre-platformer/
-        // PlatformerExtensions.kt:tilemapCollision). The new system is the canonical home for
-        // player-position-symbol binding (D-claude-4: separation from platformerPhysics) and
-        // the visitor (Plan 12.1-06) reads its config keys to emit the tilemap-physics path.
+        // Path C (Phase 12.1 Plan 05 Task 2 / Phase 21 Plan 02) — explicit tilemap_collision
+        // GenericSystem. Shared detection delegated to the gbkt-backend-api utility so that
+        // PlatformerVisitor.gameUsesTilemapCollision stays in lockstep (SEED-022).
         //
         // Placed BEFORE Path A so early-return saves the reflective `solidThreshold` field read
         // when the new system is present; Path A + Path B are preserved verbatim for back-compat
         // with games that opt into tilemap collision via `platformerPhysics { solidThreshold(N) }`.
-        val systemIsTilemapCollision =
-            gameIR.systems.filterIsInstance<GenericSystem>().any { sys ->
-                (sys.config["type"] as? String) == "tilemap_collision"
-            }
-        if (systemIsTilemapCollision) return true
+        if (gameUsesTilemapCollisionPathC(gameIR)) return true
 
         // Path A — platformer_physics GenericSystem with non-null solidThreshold on physicsConfig
         val systemHasThreshold =
@@ -2911,23 +2929,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         // Extern declarations for banked zone tile arrays
         // When zones are allocated to non-zero banks, their tile arrays need extern declarations
         // in game.h so that zone_load_X() functions in main.c can reference them.
-        val zoneTileExterns =
-            gameIR.zones
-                .filter { zone -> (bankAllocation[zone.id] ?: 0) > 0 }
-                .map { zone ->
-                    val zoneSanitized = zone.id.replace('-', '_').replace(' ', '_')
-                    val tileData = zone.tileData
-                    val arraySize = if (tileData.isEmpty()) 1 else tileData.size
-                    CVarDecl(
-                        name = "_zone_${zoneSanitized}_tiles",
-                        type =
-                            io.github.gbkt.backend.gbdk.codegen.ast.CArray(
-                                io.github.gbkt.backend.gbdk.codegen.ast.CConst(CU8),
-                                arraySize,
-                            ),
-                        isExtern = true,
-                    )
-                }
+        val zoneTileExterns = buildZoneTileExterns(gameIR, bankAllocation)
 
         val allExterns =
             actorExterns +
@@ -2942,57 +2944,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         // Extern declarations for actor pool state variables (_pool_<id>_active[],
         // _pool_<id>_x[], _pool_<id>_y[], _pool_<id>_oam[])
         // Mirrors GBDKSystemVisitor.buildActorPoolStateVars() structure for extern visibility.
-        val actorPoolExterns =
-            gameIR.actorPools.flatMap { pool ->
-                val id = pool.id.replace('-', '_').replace(' ', '_')
-                val maxSize = pool.config.maxSize
-                buildList {
-                    add(
-                        CVarDecl(
-                            name = "_pool_${id}_active",
-                            type = CArray(CU8, maxSize),
-                            isExtern = true,
-                        )
-                    )
-                    add(
-                        CVarDecl(
-                            name = "_pool_${id}_x",
-                            type = CArray(CU8, maxSize),
-                            isExtern = true,
-                        )
-                    )
-                    add(
-                        CVarDecl(
-                            name = "_pool_${id}_y",
-                            type = CArray(CU8, maxSize),
-                            isExtern = true,
-                        )
-                    )
-                    add(
-                        CVarDecl(
-                            name = "_pool_${id}_oam",
-                            type = CArray(CU8, maxSize),
-                            isExtern = true,
-                        )
-                    )
-                    for (prop in pool.instanceProperties) {
-                        val elemType =
-                            when (prop.type) {
-                                VarType.U8,
-                                VarType.U16 -> CU8
-                                VarType.I8,
-                                VarType.I16 -> CI8
-                            }
-                        add(
-                            CVarDecl(
-                                name = "_pool_${id}_${prop.name}",
-                                type = CArray(elemType, maxSize),
-                                isExtern = true,
-                            )
-                        )
-                    }
-                }
-            }
+        val actorPoolExterns = buildActorPoolExterns(gameIR)
 
         // Extern declarations for RPG combat helper variables
         // Referenced by RpgVisitor.generateUseAbilityFunction() and generateTargetingStatement()
@@ -3107,54 +3059,11 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                 }
             }
 
-        // Phase 12 D-12a — is_tile_solid() forward declaration for cross-bank callers.
-        // The helper itself is emitted as a rawSection in main.c (because of the NONBANKED
-        // keyword, which the typed C AST does not model). Auto-prototype extraction (which
-        // pulls from homeFile.functions) therefore does NOT cover it. Emit a manual prototype
-        // here so banked scene code (bank1.c includes game.h) can call is_tile_solid() —
-        // wired by Plan 12-11 (5-point AABB probe) in PlatformerVisitor.
-        // Gated on the same predicate as the helper itself; null when tilemap collision is off.
-        val isTileSolidPrototypeRaw =
-            if (gameUsesTilemapCollision(gameIR)) {
-                "UINT8 is_tile_solid(UINT16 world_x, UINT16 world_y) NONBANKED;"
-            } else {
-                null
-            }
-
-        // Phase 12 D-13 — _bkg_set_level_submap_banked() forward declaration for cross-bank
-        // callers. Same justification as is_tile_solid above: emitted as rawSection in main.c
-        // (NONBANKED keyword), so auto-prototype extraction skips it; emit a manual prototype
-        // here so the platformer column-scroll codegen (Plan 12-11) can call across banks.
-        val bkgSetLevelSubmapPrototypeRaw =
-            if (gameUsesTilemapCollision(gameIR)) {
-                "void _bkg_set_level_submap_banked(UINT8 x, UINT8 y, UINT8 w, UINT8 h) NONBANKED;"
-            } else {
-                null
-            }
-
-        // Phase 12 D-02 / D-08 anchor 5 — setup_current_level() forward declaration (Plan 12-17
-        // Task 2). Same justification as is_tile_solid + _bkg_set_level_submap_banked above:
-        // emitted as rawSection in main.c (NONBANKED keyword), so auto-prototype extraction skips
-        // it; emit a manual prototype here so the main() level-switch guard (also in main.c) AND
-        // future scene-enter call sites (e.g. gameplayScene.enter calling setup_current_level on
-        // first activation) can reference it. Same gate as the function itself: tilemap-collision
-        // + presence of a nextLevel-conventional scene id. We use `gameUsesTilemapCollision` as
-        // the simple gate here — the prototype is harmless if setup_current_level is omitted
-        // (just an unused extern); the matching omission is the gate on the function body itself.
-        val setupCurrentLevelPrototypeRaw =
-            if (
-                gameUsesTilemapCollision(gameIR) &&
-                    gameIR.zones.any { z ->
-                        val l = z.id.lowercase()
-                        !l.contains("title") &&
-                            !l.contains("nextlevel") &&
-                            !l.contains("next_level")
-                    }
-            ) {
-                "void setup_current_level(void) NONBANKED;"
-            } else {
-                null
-            }
+        // NONBANKED helper prototypes (is_tile_solid, _bkg_set_level_submap_banked,
+        // setup_current_level). These helpers are emitted as rawSections in main.c and are
+        // therefore not covered by auto-prototype extraction from homeFile.functions.
+        // Extracted to reduce cognitive complexity of buildHeaderFile (SonarCloud S3776 E-15).
+        val nonBankedPrototypesRaw = buildNonBankedPrototypesRaw(gameIR)
 
         // isHeader=true wraps content in #ifndef GAME_H / #define GAME_H / #endif include guard.
         // Scene defines are inside the guard so #pragma bank is not emitted (bank=0 for header).
@@ -3167,15 +3076,125 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
             variables =
                 allExterns + actorPoolExterns + rpgCombatHelperExterns + homeGlobalAutoExterns,
             rawSections =
-                listOfNotNull(
-                    paletteExternRaw,
-                    callOpForwardDecls,
-                    isTileSolidPrototypeRaw,
-                    bkgSetLevelSubmapPrototypeRaw,
-                    setupCurrentLevelPrototypeRaw,
-                ) + metaspriteAutoExterns,
+                listOfNotNull(paletteExternRaw, callOpForwardDecls) +
+                    nonBankedPrototypesRaw +
+                    metaspriteAutoExterns,
             functions = sceneFunctionPrototypes + homeFunctionPrototypes + collectionPrototypes,
         )
+    }
+
+    // =========================================================================
+    // buildHeaderFile sub-builders (E-15 extract-method decomposition)
+    // =========================================================================
+
+    /**
+     * Extern declarations for banked zone tile arrays.
+     *
+     * When zones are allocated to non-zero banks, their tile arrays need extern declarations in
+     * `game.h` so that `zone_load_X()` functions in `main.c` can reference them.
+     */
+    private fun buildZoneTileExterns(
+        gameIR: GameIR,
+        bankAllocation: Map<String, Int>,
+    ): List<CVarDecl> =
+        gameIR.zones
+            .filter { zone -> (bankAllocation[zone.id] ?: 0) > 0 }
+            .map { zone ->
+                val zoneSanitized = zone.id.replace('-', '_').replace(' ', '_')
+                val tileData = zone.tileData
+                val arraySize = if (tileData.isEmpty()) 1 else tileData.size
+                CVarDecl(
+                    name = "_zone_${zoneSanitized}_tiles",
+                    type =
+                        io.github.gbkt.backend.gbdk.codegen.ast.CArray(
+                            io.github.gbkt.backend.gbdk.codegen.ast.CConst(CU8),
+                            arraySize,
+                        ),
+                    isExtern = true,
+                )
+            }
+
+    /**
+     * Extern declarations for actor pool state variables.
+     *
+     * Emits `_pool_<id>_active[]`, `_pool_<id>_x[]`, `_pool_<id>_y[]`, `_pool_<id>_oam[]`, and one
+     * entry per [ActorPoolIR.instanceProperties]. Mirrors
+     * [GBDKSystemVisitor.buildActorPoolStateVars] structure for extern visibility.
+     */
+    private fun buildActorPoolExterns(gameIR: GameIR): List<CVarDecl> =
+        gameIR.actorPools.flatMap { pool ->
+            val id = pool.id.replace('-', '_').replace(' ', '_')
+            val maxSize = pool.config.maxSize
+            buildList {
+                add(
+                    CVarDecl(
+                        name = "_pool_${id}_active",
+                        type = CArray(CU8, maxSize),
+                        isExtern = true,
+                    )
+                )
+                add(CVarDecl(name = "_pool_${id}_x", type = CArray(CU8, maxSize), isExtern = true))
+                add(CVarDecl(name = "_pool_${id}_y", type = CArray(CU8, maxSize), isExtern = true))
+                add(
+                    CVarDecl(name = "_pool_${id}_oam", type = CArray(CU8, maxSize), isExtern = true)
+                )
+                for (prop in pool.instanceProperties) {
+                    val elemType =
+                        when (prop.type) {
+                            VarType.U8,
+                            VarType.U16 -> CU8
+                            VarType.I8,
+                            VarType.I16 -> CI8
+                        }
+                    add(
+                        CVarDecl(
+                            name = "_pool_${id}_${prop.name}",
+                            type = CArray(elemType, maxSize),
+                            isExtern = true,
+                        )
+                    )
+                }
+            }
+        }
+
+    /**
+     * NONBANKED function prototypes for `game.h`.
+     *
+     * Returns forward declarations for `is_tile_solid`, `_bkg_set_level_submap_banked`, and
+     * `setup_current_level`. These helpers are emitted via `rawSections` in `main.c` using the
+     * `NONBANKED` keyword (not modelled in the typed C AST), so auto-prototype extraction from
+     * `homeFile.functions` does not cover them. Manual prototypes here give banked scene code
+     * (`bank1.c` includes `game.h`) cross-bank visibility.
+     *
+     * Returns only the applicable prototypes (null-filtered). Order is preserved: `is_tile_solid` →
+     * `_bkg_set_level_submap_banked` → `setup_current_level`.
+     */
+    private fun buildNonBankedPrototypesRaw(gameIR: GameIR): List<String> {
+        // Phase 12 D-12a / D-13 / D-02-D-08-anchor-5: gated on tilemap-collision presence.
+        val usesTilemapCollision = gameUsesTilemapCollision(gameIR)
+        val isTileSolid =
+            if (usesTilemapCollision)
+                "UINT8 is_tile_solid(UINT16 world_x, UINT16 world_y) NONBANKED;"
+            else null
+        val bkgSetLevelSubmap =
+            if (usesTilemapCollision)
+                "void _bkg_set_level_submap_banked(UINT8 x, UINT8 y, UINT8 w, UINT8 h) NONBANKED;"
+            else null
+        val setupCurrentLevel =
+            if (
+                usesTilemapCollision &&
+                    gameIR.zones.any { z ->
+                        val l = z.id.lowercase()
+                        !l.contains("title") &&
+                            !l.contains("nextlevel") &&
+                            !l.contains("next_level")
+                    }
+            ) {
+                "void setup_current_level(void) NONBANKED;"
+            } else {
+                null
+            }
+        return listOfNotNull(isTileSolid, bkgSetLevelSubmap, setupCurrentLevel)
     }
 
     // =========================================================================
@@ -3680,10 +3699,12 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
      * This matches what [io.github.gbkt.core.dsl.ScriptBuilder.setFlag] emits
      * (`Assign("_flag_$flagName", ...)`) and what [GBDKSystemVisitor] references.
      */
-    private fun buildFlagVarDecls(gameIR: GameIR): List<CVarDecl> {
-        val decls = mutableListOf<CVarDecl>()
+    private fun buildFlagVarDecls(gameIR: GameIR): List<CVarDecl> =
+        buildGlobalFlagVarDecls(gameIR) + buildZoneObjectInlineFlagVarDecls(gameIR)
 
-        // Flags declared in GlobalFlagsIR pages (via flags { page(...) { flag("name") } })
+    /** Flag vars from [GlobalFlagsIR] pages (via `flags { page(...) { flag("name") } }`). */
+    private fun buildGlobalFlagVarDecls(gameIR: GameIR): List<CVarDecl> {
+        val decls = mutableListOf<CVarDecl>()
         for (flagsIR in gameIR.flags) {
             for (page in flagsIR.pages) {
                 for (flagName in page.flags) {
@@ -3692,10 +3713,17 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                 }
             }
         }
+        return decls
+    }
 
-        // Inline flags on zone objects — usedFlagId and visibleFlagId (NpcObjectIR).
-        // These are ad-hoc flags not registered in any GlobalFlagsIR page but referenced as
-        // `_flag_{id}` by GBDKSystemVisitor.buildNpcHandlerFunction / buildChestHandlerFunction.
+    /**
+     * Inline flag vars on zone objects — `usedFlagId` and `visibleFlagId` ([NpcObjectIR]).
+     *
+     * Ad-hoc flags not registered in any [GlobalFlagsIR] page but referenced as `_flag_{id}` by
+     * [GBDKSystemVisitor.buildNpcHandlerFunction] / `buildChestHandlerFunction`.
+     */
+    private fun buildZoneObjectInlineFlagVarDecls(gameIR: GameIR): List<CVarDecl> {
+        val decls = mutableListOf<CVarDecl>()
         for (zone in gameIR.zones) {
             for (obj in zone.objects) {
                 val usedFlag = obj.usedFlagId
@@ -3712,7 +3740,6 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                 }
             }
         }
-
         return decls
     }
 
@@ -3997,17 +4024,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
      * without user-provided implementations.
      */
     private fun buildCallOpStubFunctions(gameIR: GameIR): List<CFunction> {
-        val allCallOps = mutableListOf<CallOp>()
-        for (zone in gameIR.zones) {
-            for (obj in zone.objects) {
-                allCallOps += collectCallOpsFromScripts(collectZoneObjectScripts(obj))
-            }
-        }
-        for (scene in gameIR.scenes) {
-            allCallOps += collectCallOpsFromScripts(scene.enterOps)
-            allCallOps += collectCallOpsFromScripts(scene.frameOps)
-            allCallOps += collectCallOpsFromScripts(scene.exitOps)
-        }
+        val allCallOps = collectAllCallOpsFromGame(gameIR)
         if (allCallOps.isEmpty()) return emptyList()
 
         // Functions already generated by the pipeline — exclude from stubs
@@ -4034,23 +4051,47 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         if (seen.isEmpty()) return emptyList()
 
         return seen.map { (name, callOp) ->
-            val params =
-                if (callOp.args.isEmpty()) {
-                    emptyList()
-                } else {
-                    callOp.args.mapIndexed { i, arg ->
-                        val type = if (arg is StringLiteral) CPointer(CU8) else CU8
-                        CParam("p$i", type)
-                    }
-                }
-            CFunction(
-                name = name,
-                returnType = CVoid,
-                params = params,
-                body = listOf(CComment("Stub: external function — provide implementation")),
-                sectionComment = if (seen.keys.first() == name) "External function stubs" else null,
-            )
+            buildSingleCallOpStub(name, callOp, seen.keys.first() == name)
         }
+    }
+
+    /**
+     * Collect all [CallOp] instances from every zone-object script and every scene lifecycle script
+     * in [gameIR].
+     */
+    private fun collectAllCallOpsFromGame(gameIR: GameIR): List<CallOp> {
+        val allCallOps = mutableListOf<CallOp>()
+        for (zone in gameIR.zones) {
+            for (obj in zone.objects) {
+                allCallOps += collectCallOpsFromScripts(collectZoneObjectScripts(obj))
+            }
+        }
+        for (scene in gameIR.scenes) {
+            allCallOps += collectCallOpsFromScripts(scene.enterOps)
+            allCallOps += collectCallOpsFromScripts(scene.frameOps)
+            allCallOps += collectCallOpsFromScripts(scene.exitOps)
+        }
+        return allCallOps
+    }
+
+    /** Build a single external-function stub [CFunction] for the given [CallOp]. */
+    private fun buildSingleCallOpStub(name: String, callOp: CallOp, isFirst: Boolean): CFunction {
+        val params =
+            if (callOp.args.isEmpty()) {
+                emptyList()
+            } else {
+                callOp.args.mapIndexed { i, arg ->
+                    val type = if (arg is StringLiteral) CPointer(CU8) else CU8
+                    CParam("p$i", type)
+                }
+            }
+        return CFunction(
+            name = name,
+            returnType = CVoid,
+            params = params,
+            body = listOf(CComment("Stub: external function — provide implementation")),
+            sectionComment = if (isFirst) "External function stubs" else null,
+        )
     }
 
     // =========================================================================
@@ -4198,378 +4239,304 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
         for (system in gameIR.systems) {
             val sanitizedId = system.id.replace('-', '_').replace(' ', '_')
             when (system) {
-                is io.github.gbkt.core.ir.CameraSystem -> {
-                    vars += CVarDecl(name = "_camera_x", type = CU8, initializer = CLiteral(0))
-                    vars += CVarDecl(name = "_camera_y", type = CU8, initializer = CLiteral(0))
-                    vars +=
-                        CVarDecl(
-                            name = "_camera_target",
-                            type = CU8,
-                            initializer = CRawExpr("0xFF"),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_camera_shake_intensity",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_camera_shake_timer",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-                }
-                is io.github.gbkt.core.ir.ExplorationSystem -> {
-                    vars += CVarDecl(name = "_player_x", type = CU8, initializer = CLiteral(0))
-                    vars += CVarDecl(name = "_player_y", type = CU8, initializer = CLiteral(0))
-                    vars += CVarDecl(name = "_current_floor", type = CU8, initializer = CLiteral(0))
-                    // Expanded exploration state globals (Plan 06.3-02)
-                    vars +=
-                        CVarDecl(
-                            name = "_exploration_step_count",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_encounter_safe_steps",
-                            type = CU8,
-                            initializer =
-                                CLiteral(
-                                    gameIR.zones
-                                        .firstOrNull { it.encounterTable != null }
-                                        ?.encounterTable
-                                        ?.safeSteps ?: 10
-                                ),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_encounter_triggered",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-                    vars += CVarDecl(name = "_encounter_id", type = CU8, initializer = CLiteral(0))
-                    vars +=
-                        CVarDecl(name = "_current_zone_safe", type = CU8, initializer = CLiteral(0))
-                    // _current_tileset_id already declared in allVariables — skip to avoid
-                    // duplicate
-                    vars +=
-                        CVarDecl(
-                            name = "_current_zone_id",
-                            type = CU8,
-                            initializer = CRawExpr("0xFF"),
-                        )
-                    // Per-gauge globals
-                    for (gauge in system.gauges) {
-                        vars +=
-                            CVarDecl(
-                                name = "_gauge_${gauge.id}",
-                                type = CU8,
-                                initializer = CLiteral(gauge.initial),
-                            )
-                    }
-                    // Per-key globals
-                    for (key in system.keys) {
-                        vars +=
-                            CVarDecl(
-                                name = "_key_${key.id}",
-                                type = CU8,
-                                initializer = CLiteral(key.initial),
-                            )
-                    }
-                    // Entity collision globals (G3 — Plan 06.3-03)
-                    // Emitted when any actor has non-PASSTHROUGH entity collision config.
-                    val collisionActors =
-                        gameIR.actors.filter {
-                            val ec = it.entityCollision
-                            ec != null && ec.mode != EntityCollisionMode.PASSTHROUGH
-                        }
-                    if (collisionActors.isNotEmpty()) {
-                        val maxEntities = collisionActors.size
-                        val mapSize = 32 * 32 / 8 + 1 // 129 bytes for 32x32 grid
-                        // _entity_grid[MAP_SIZE] — bit-packed entity presence grid
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_grid",
-                                type = CArray(CU8, mapSize),
-                                initializer = null,
-                            )
-                        // _entity_collision_mode[MAX_ENTITIES] — per-entity mode (0xFF=none)
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_collision_mode",
-                                type = CArray(CU8, maxEntities),
-                                initializer =
-                                    CRawExpr(
-                                        "{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"
-                                    ),
-                            )
-                        // _entity_collision_shape[MAX_ENTITIES] — 0=TILE, 1=HITBOX
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_collision_shape",
-                                type = CArray(CU8, maxEntities),
-                                initializer = null,
-                            )
-                        // _entity_tile_x/y[MAX_ENTITIES] — entity tile positions
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_tile_x",
-                                type = CArray(CU8, maxEntities),
-                                initializer =
-                                    CRawExpr(
-                                        "{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"
-                                    ),
-                            )
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_tile_y",
-                                type = CArray(CU8, maxEntities),
-                                initializer =
-                                    CRawExpr(
-                                        "{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"
-                                    ),
-                            )
-                        // _entity_count — number of registered entities
-                        vars +=
-                            CVarDecl(name = "_entity_count", type = CU8, initializer = CLiteral(0))
-                        // Gap 1 callback globals — set before callback execution
-                        vars +=
-                            CVarDecl(
-                                name = "_blocking_entity_id",
-                                type = CU8,
-                                initializer = CRawExpr("0xFF"),
-                            )
-                        vars +=
-                            CVarDecl(
-                                name = "_pushed_entity_id",
-                                type = CU8,
-                                initializer = CRawExpr("0xFF"),
-                            )
-                        vars +=
-                            CVarDecl(
-                                name = "_push_direction",
-                                type = CU8,
-                                initializer = CRawExpr("0xFF"),
-                            )
-                        // Multi-tile entity dimensions (Gap A)
-                        val tilesWideInit =
-                            collisionActors.joinToString(", ") {
-                                (it.entityCollision?.tilesWide ?: 1).toString()
-                            }
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_tiles_wide",
-                                type = CArray(CU8, maxEntities),
-                                initializer = CRawExpr("{$tilesWideInit}"),
-                            )
-                        val tilesHighInit =
-                            collisionActors.joinToString(", ") {
-                                (it.entityCollision?.tilesHigh ?: 1).toString()
-                            }
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_tiles_high",
-                                type = CArray(CU8, maxEntities),
-                                initializer = CRawExpr("{$tilesHighInit}"),
-                            )
-                        // Push direction constraints (Gap B)
-                        val pushDirInit =
-                            collisionActors.joinToString(", ") {
-                                (it.entityCollision?.pushDirection?.ordinal ?: 0).toString()
-                            }
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_push_dir",
-                                type = CArray(CU8, maxEntities),
-                                initializer = CRawExpr("{$pushDirInit}"),
-                            )
-                        val pushAllowedInit =
-                            collisionActors.joinToString(", ") { actor ->
-                                val ec = actor.entityCollision
-                                if (ec != null && ec.pushDirection == PushDirection.SPECIFIC) {
-                                    var mask = 0
-                                    for (edge in ec.allowedPushDirections) {
-                                        mask =
-                                            mask or
-                                                (1 shl
-                                                    when (edge) {
-                                                        TransitionEdge.NORTH -> 0
-                                                        TransitionEdge.SOUTH -> 1
-                                                        TransitionEdge.WEST -> 2
-                                                        TransitionEdge.EAST -> 3
-                                                    })
-                                    }
-                                    mask.toString()
-                                } else {
-                                    "0"
-                                }
-                            }
-                        vars +=
-                            CVarDecl(
-                                name = "_entity_push_allowed",
-                                type = CArray(CU8, maxEntities),
-                                initializer = CRawExpr("{$pushAllowedInit}"),
-                            )
-                    }
-                }
-                is PathfindingSystem -> {
-                    vars += GBDKSystemVisitor.buildPathfindingGlobals(system)
-                }
-                is io.github.gbkt.core.ir.DialogSystem -> {
-                    // Extended config: default speed and border style
-                    vars +=
-                        CVarDecl(
-                            name = "_dialog_default_speed",
-                            type = CU8,
-                            initializer = CLiteral(system.textSpeed),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_dialog_default_border",
-                            type = CU8,
-                            initializer = CLiteral(system.defaultBorder.ordinal),
-                        )
-                }
-                is GenericSystem -> {
-                    val systemType = system.config["type"] as? String
-                    val genreVisitor =
-                        if (systemType != null) {
-                            genreVisitors.find { it.canHandle(systemType) }
-                        } else {
-                            null
-                        }
-                    if (genreVisitor != null && systemType != null) {
-                        vars +=
-                            genreVisitor
-                                .visit(systemType, system.config, gameIR)
-                                .varDecls
-                                .filterIsInstance<CVarDecl>()
-                    } else if (systemType == "simple_battle") {
-                        vars +=
-                            CVarDecl(
-                                name = "_combat_state_$sanitizedId",
-                                type = CU8,
-                                initializer = CLiteral(0),
-                            )
-                    }
-                    if (genreVisitor == null && systemType == "arpg_combat") {
-                        vars += RpgVisitor(gameIR).generateActionRpgVarDecls(system)
-                    }
-                    if (genreVisitor == null && systemType == "roguelike_system") {
-                        vars += RpgVisitor(gameIR).generateRoguelikeVarDecls(system)
-                    }
-                    if (genreVisitor == null && systemType == "rpg_currency") {
-                        vars += RpgVisitor(gameIR).generateCurrencyVarDecls(system)
-                    }
-                    if (genreVisitor == null && systemType == "pickup_system") {
-                        vars += GBDKSystemVisitor(gameIR).buildPickupVarDecls(system, sanitizedId)
-                    }
-                    if (genreVisitor == null && systemType == "audio_mixer") {
-                        @Suppress("UNCHECKED_CAST")
-                        val groups =
-                            (system.config["groups"] as? List<ChannelGroupDef>)
-                                ?: listOf(
-                                    ChannelGroupDef("music", setOf(1, 2), 7, 0),
-                                    ChannelGroupDef("sfx", setOf(3, 4), 7, 1),
-                                    ChannelGroupDef("ui", setOf(3), 7, 2),
-                                )
-                        val masterVol = system.config["master_volume"] as? Int ?: 7
-
-                        // _mixer_group_vol[N] — initial volumes per group
-                        // emitted as individual element inits; C arrays init sequentially
-                        val initVols = groups.joinToString(", ") { it.defaultVolume.toString() }
-                        vars +=
-                            CVarDecl(
-                                name = "_mixer_group_vol",
-                                type = CArray(CU8, groups.size),
-                                initializer = CRawExpr("{$initVols}"),
-                            )
-
-                        // _mixer_master_vol — initial master volume
-                        vars +=
-                            CVarDecl(
-                                name = "_mixer_master_vol",
-                                type = CU8,
-                                initializer = CLiteral(masterVol),
-                            )
-
-                        // _mixer_group_muted[N] — mute state per group (0 = unmuted)
-                        val initMuted = groups.joinToString(", ") { "0" }
-                        vars +=
-                            CVarDecl(
-                                name = "_mixer_group_muted",
-                                type = CArray(CU8, groups.size),
-                                initializer = CRawExpr("{$initMuted}"),
-                            )
-
-                        // _mixer_channel_mask_<name> — NR51 bit pattern per group
-                        // NR51: bits 7-4 = L-channel enables (CH4,CH3,CH2,CH1),
-                        //       bits 3-0 = R-channel enables (CH4,CH3,CH2,CH1)
-                        // CH1=bit0, CH2=bit1, CH3=bit2, CH4=bit3 (both L and R together)
-                        for (group in groups) {
-                            var mask = 0
-                            for (ch in group.channels) {
-                                val bit = ch - 1 // CH1=0, CH2=1, CH3=2, CH4=3
-                                mask = mask or (1 shl bit) // R-enable
-                                mask = mask or (1 shl (bit + 4)) // L-enable
-                            }
-                            vars +=
-                                CVarDecl(
-                                    name = "_mixer_channel_mask_${group.name}",
-                                    type = CU8,
-                                    initializer = CRawExpr("0x${mask.toString(16).uppercase()}"),
-                                    isConst = true,
-                                )
-                        }
-
-                        // _mixer_priority[4] — per-channel priority (4 GB channels), init 0
-                        vars +=
-                            CVarDecl(
-                                name = "_mixer_priority",
-                                type = CArray(CU8, 4),
-                                initializer = CRawExpr("{0, 0, 0, 0}"),
-                            )
-
-                        // _mixer_preduck_vol — saved music volume before auto-ducking (Gap 6)
-                        vars +=
-                            CVarDecl(
-                                name = "_mixer_preduck_vol",
-                                type = CU8,
-                                initializer = CLiteral(7),
-                            )
-                    }
-                }
-                is io.github.gbkt.core.ir.CombatEngineSystem -> {
-                    // _combat_state_<id>: INIT state (0) at startup
-                    vars +=
-                        CVarDecl(
-                            name = "_combat_state_$sanitizedId",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-                    // _pending_state_<id>: 0xFF sentinel = no pending transition
-                    vars +=
-                        CVarDecl(
-                            name = "_pending_state_$sanitizedId",
-                            type = CU8,
-                            initializer = CLiteral(0xFF),
-                        )
-                    // ATB-specific globals: gauge[], active[], acted[], agl[], menu_open,
-                    // and optionally charge[] (CHARGE model) and _turn_order[] (when strategy set)
-                    val combatVisitor =
-                        io.github.gbkt.backend.gbdk.codegen.visitor.CombatVisitor(gameIR)
-                    vars += combatVisitor.generateAtbGlobals(system)
-                    // Wave survival globals: _wave_<id>_current (UINT8), _wave_<id>_timer (UINT16)
-                    vars += combatVisitor.generateWaveGlobals(system)
-                    // Hook enabled flag: _combat_<id>_hooks_enabled (only when hooks registered)
-                    vars += combatVisitor.generateHookGlobals(system)
-                }
+                is io.github.gbkt.core.ir.CameraSystem -> vars += buildCameraSystemGlobalVars()
+                is io.github.gbkt.core.ir.ExplorationSystem ->
+                    vars += buildExplorationSystemGlobalVars(gameIR, system)
+                is PathfindingSystem -> vars += GBDKSystemVisitor.buildPathfindingGlobals(system)
+                is io.github.gbkt.core.ir.DialogSystem ->
+                    vars += buildDialogSystemGlobalVars(system)
+                is GenericSystem ->
+                    vars += buildGenericSystemGlobalVars(gameIR, system, sanitizedId, genreVisitors)
+                is io.github.gbkt.core.ir.CombatEngineSystem ->
+                    vars += buildCombatEngineSystemGlobalVars(system, sanitizedId, gameIR)
                 else -> Unit
             }
         }
         return vars
+    }
+
+    private fun buildCameraSystemGlobalVars(): List<CVarDecl> =
+        listOf(
+            CVarDecl(name = "_camera_x", type = CU8, initializer = CLiteral(0)),
+            CVarDecl(name = "_camera_y", type = CU8, initializer = CLiteral(0)),
+            CVarDecl(name = "_camera_target", type = CU8, initializer = CRawExpr("0xFF")),
+            CVarDecl(name = "_camera_shake_intensity", type = CU8, initializer = CLiteral(0)),
+            CVarDecl(name = "_camera_shake_timer", type = CU8, initializer = CLiteral(0)),
+        )
+
+    private fun buildExplorationSystemGlobalVars(
+        gameIR: GameIR,
+        system: io.github.gbkt.core.ir.ExplorationSystem,
+    ): List<CVarDecl> {
+        val vars = mutableListOf<CVarDecl>()
+        vars += CVarDecl(name = "_player_x", type = CU8, initializer = CLiteral(0))
+        vars += CVarDecl(name = "_player_y", type = CU8, initializer = CLiteral(0))
+        vars += CVarDecl(name = "_current_floor", type = CU8, initializer = CLiteral(0))
+        // Expanded exploration state globals (Plan 06.3-02)
+        vars += CVarDecl(name = "_exploration_step_count", type = CU8, initializer = CLiteral(0))
+        vars +=
+            CVarDecl(
+                name = "_encounter_safe_steps",
+                type = CU8,
+                initializer =
+                    CLiteral(
+                        gameIR.zones
+                            .firstOrNull { it.encounterTable != null }
+                            ?.encounterTable
+                            ?.safeSteps ?: 10
+                    ),
+            )
+        vars += CVarDecl(name = "_encounter_triggered", type = CU8, initializer = CLiteral(0))
+        vars += CVarDecl(name = "_encounter_id", type = CU8, initializer = CLiteral(0))
+        vars += CVarDecl(name = "_current_zone_safe", type = CU8, initializer = CLiteral(0))
+        // _current_tileset_id already declared in allVariables — skip to avoid duplicate
+        vars += CVarDecl(name = "_current_zone_id", type = CU8, initializer = CRawExpr("0xFF"))
+        // Per-gauge globals
+        for (gauge in system.gauges) {
+            vars +=
+                CVarDecl(
+                    name = "_gauge_${gauge.id}",
+                    type = CU8,
+                    initializer = CLiteral(gauge.initial),
+                )
+        }
+        // Per-key globals
+        for (key in system.keys) {
+            vars +=
+                CVarDecl(name = "_key_${key.id}", type = CU8, initializer = CLiteral(key.initial))
+        }
+        // Entity collision globals (G3 — Plan 06.3-03)
+        vars += buildEntityCollisionGlobalVars(gameIR)
+        return vars
+    }
+
+    private fun buildEntityCollisionGlobalVars(gameIR: GameIR): List<CVarDecl> {
+        val collisionActors =
+            gameIR.actors.filter {
+                val ec = it.entityCollision
+                ec != null && ec.mode != EntityCollisionMode.PASSTHROUGH
+            }
+        if (collisionActors.isEmpty()) return emptyList()
+        val maxEntities = collisionActors.size
+        val mapSize = 32 * 32 / 8 + 1 // 129 bytes for 32x32 grid
+        val tilesWideInit =
+            collisionActors.joinToString(", ") { (it.entityCollision?.tilesWide ?: 1).toString() }
+        val tilesHighInit =
+            collisionActors.joinToString(", ") { (it.entityCollision?.tilesHigh ?: 1).toString() }
+        val pushDirInit =
+            collisionActors.joinToString(", ") {
+                (it.entityCollision?.pushDirection?.ordinal ?: 0).toString()
+            }
+        val pushAllowedInit = buildEntityPushAllowedInit(collisionActors)
+        return listOf(
+            // _entity_grid[MAP_SIZE] — bit-packed entity presence grid
+            CVarDecl(name = "_entity_grid", type = CArray(CU8, mapSize), initializer = null),
+            // _entity_collision_mode[MAX_ENTITIES] — per-entity mode (0xFF=none)
+            CVarDecl(
+                name = "_entity_collision_mode",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"),
+            ),
+            // _entity_collision_shape[MAX_ENTITIES] — 0=TILE, 1=HITBOX
+            CVarDecl(
+                name = "_entity_collision_shape",
+                type = CArray(CU8, maxEntities),
+                initializer = null,
+            ),
+            // _entity_tile_x/y[MAX_ENTITIES] — entity tile positions
+            CVarDecl(
+                name = "_entity_tile_x",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"),
+            ),
+            CVarDecl(
+                name = "_entity_tile_y",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{${(0 until maxEntities).joinToString(", ") { "0xFF" }}}"),
+            ),
+            // _entity_count — number of registered entities
+            CVarDecl(name = "_entity_count", type = CU8, initializer = CLiteral(0)),
+            // Gap 1 callback globals — set before callback execution
+            CVarDecl(name = "_blocking_entity_id", type = CU8, initializer = CRawExpr("0xFF")),
+            CVarDecl(name = "_pushed_entity_id", type = CU8, initializer = CRawExpr("0xFF")),
+            CVarDecl(name = "_push_direction", type = CU8, initializer = CRawExpr("0xFF")),
+            // Multi-tile entity dimensions (Gap A)
+            CVarDecl(
+                name = "_entity_tiles_wide",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{$tilesWideInit}"),
+            ),
+            CVarDecl(
+                name = "_entity_tiles_high",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{$tilesHighInit}"),
+            ),
+            // Push direction constraints (Gap B)
+            CVarDecl(
+                name = "_entity_push_dir",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{$pushDirInit}"),
+            ),
+            CVarDecl(
+                name = "_entity_push_allowed",
+                type = CArray(CU8, maxEntities),
+                initializer = CRawExpr("{$pushAllowedInit}"),
+            ),
+        )
+    }
+
+    private fun buildEntityPushAllowedInit(
+        collisionActors: List<io.github.gbkt.core.ir.ActorIR>
+    ): String =
+        collisionActors.joinToString(", ") { actor ->
+            val ec = actor.entityCollision
+            if (ec != null && ec.pushDirection == PushDirection.SPECIFIC) {
+                var mask = 0
+                for (edge in ec.allowedPushDirections) {
+                    mask =
+                        mask or
+                            (1 shl
+                                when (edge) {
+                                    TransitionEdge.NORTH -> 0
+                                    TransitionEdge.SOUTH -> 1
+                                    TransitionEdge.WEST -> 2
+                                    TransitionEdge.EAST -> 3
+                                })
+                }
+                mask.toString()
+            } else {
+                "0"
+            }
+        }
+
+    private fun buildDialogSystemGlobalVars(
+        system: io.github.gbkt.core.ir.DialogSystem
+    ): List<CVarDecl> =
+        listOf(
+            // Extended config: default speed and border style
+            CVarDecl(
+                name = "_dialog_default_speed",
+                type = CU8,
+                initializer = CLiteral(system.textSpeed),
+            ),
+            CVarDecl(
+                name = "_dialog_default_border",
+                type = CU8,
+                initializer = CLiteral(system.defaultBorder.ordinal),
+            ),
+        )
+
+    private fun buildGenericSystemGlobalVars(
+        gameIR: GameIR,
+        system: GenericSystem,
+        sanitizedId: String,
+        genreVisitors: List<GenreSystemVisitor>,
+    ): List<CVarDecl> {
+        val systemType = system.config["type"] as? String
+        val genreVisitor =
+            if (systemType != null) genreVisitors.find { it.canHandle(systemType) } else null
+        if (genreVisitor != null && systemType != null) {
+            return genreVisitor
+                .visit(systemType, system.config, gameIR)
+                .varDecls
+                .filterIsInstance<CVarDecl>()
+        }
+        val vars = mutableListOf<CVarDecl>()
+        if (systemType == "simple_battle") {
+            vars +=
+                CVarDecl(name = "_combat_state_$sanitizedId", type = CU8, initializer = CLiteral(0))
+        }
+        if (systemType == "arpg_combat")
+            vars += RpgVisitor(gameIR).generateActionRpgVarDecls(system)
+        if (systemType == "roguelike_system")
+            vars += RpgVisitor(gameIR).generateRoguelikeVarDecls(system)
+        if (systemType == "rpg_currency")
+            vars += RpgVisitor(gameIR).generateCurrencyVarDecls(system)
+        if (systemType == "pickup_system")
+            vars += GBDKSystemVisitor(gameIR).buildPickupVarDecls(system, sanitizedId)
+        if (systemType == "audio_mixer") vars += buildAudioMixerSystemGlobalVars(system)
+        return vars
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun buildAudioMixerSystemGlobalVars(system: GenericSystem): List<CVarDecl> {
+        val groups =
+            (system.config["groups"] as? List<ChannelGroupDef>)
+                ?: listOf(
+                    ChannelGroupDef("music", setOf(1, 2), 7, 0),
+                    ChannelGroupDef("sfx", setOf(3, 4), 7, 1),
+                    ChannelGroupDef("ui", setOf(3), 7, 2),
+                )
+        val masterVol = system.config["master_volume"] as? Int ?: 7
+        val initVols = groups.joinToString(", ") { it.defaultVolume.toString() }
+        val initMuted = groups.joinToString(", ") { "0" }
+        val channelMaskVars = groups.map { group ->
+            var mask = 0
+            for (ch in group.channels) {
+                val bit = ch - 1 // CH1=0, CH2=1, CH3=2, CH4=3
+                mask = mask or (1 shl bit) // R-enable
+                mask = mask or (1 shl (bit + 4)) // L-enable
+            }
+            CVarDecl(
+                name = "_mixer_channel_mask_${group.name}",
+                type = CU8,
+                initializer = CRawExpr("0x${mask.toString(16).uppercase()}"),
+                isConst = true,
+            )
+        }
+        return listOf(
+            // _mixer_group_vol[N] — initial volumes per group
+            CVarDecl(
+                name = "_mixer_group_vol",
+                type = CArray(CU8, groups.size),
+                initializer = CRawExpr("{$initVols}"),
+            ),
+            // _mixer_master_vol — initial master volume
+            CVarDecl(name = "_mixer_master_vol", type = CU8, initializer = CLiteral(masterVol)),
+            // _mixer_group_muted[N] — mute state per group (0 = unmuted)
+            CVarDecl(
+                name = "_mixer_group_muted",
+                type = CArray(CU8, groups.size),
+                initializer = CRawExpr("{$initMuted}"),
+            ),
+        ) +
+            // _mixer_channel_mask_<name> — NR51 bit pattern per group
+            channelMaskVars +
+            listOf(
+                // _mixer_priority[4] — per-channel priority (4 GB channels), init 0
+                CVarDecl(
+                    name = "_mixer_priority",
+                    type = CArray(CU8, 4),
+                    initializer = CRawExpr("{0, 0, 0, 0}"),
+                ),
+                // _mixer_preduck_vol — saved music volume before auto-ducking (Gap 6)
+                CVarDecl(name = "_mixer_preduck_vol", type = CU8, initializer = CLiteral(7)),
+            )
+    }
+
+    private fun buildCombatEngineSystemGlobalVars(
+        system: io.github.gbkt.core.ir.CombatEngineSystem,
+        sanitizedId: String,
+        gameIR: GameIR,
+    ): List<CVarDecl> {
+        val combatVisitor = io.github.gbkt.backend.gbdk.codegen.visitor.CombatVisitor(gameIR)
+        return listOf(
+            // _combat_state_<id>: INIT state (0) at startup
+            CVarDecl(name = "_combat_state_$sanitizedId", type = CU8, initializer = CLiteral(0)),
+            // _pending_state_<id>: 0xFF sentinel = no pending transition
+            CVarDecl(
+                name = "_pending_state_$sanitizedId",
+                type = CU8,
+                initializer = CLiteral(0xFF),
+            ),
+        ) +
+            // ATB-specific globals: gauge[], active[], acted[], agl[], menu_open,
+            // and optionally charge[] (CHARGE model) and _turn_order[] (when strategy set)
+            combatVisitor.generateAtbGlobals(system) +
+            // Wave survival globals: _wave_<id>_current (UINT8), _wave_<id>_timer (UINT16)
+            combatVisitor.generateWaveGlobals(system) +
+            // Hook enabled flag: _combat_<id>_hooks_enabled (only when hooks registered)
+            combatVisitor.generateHookGlobals(system)
     }
 
     /**
@@ -4692,22 +4659,7 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                     )
                 }
 
-        // Call start scene enter (via trampoline if banked).
-        // Use sceneHasEnterContent so zone-only start scenes (no user enter block but bound zone)
-        // still get their initial enter call from main() — same rationale as
-        // buildTrampolinesForScene.
-        val startSceneId = gameIR.startScene
-        val startEnterCall =
-            if (
-                startSceneId != null &&
-                    gameIR.scenes.any { it.id == startSceneId && sceneHasEnterContent(it) }
-            ) {
-                val startScene = gameIR.scenes.first { it.id == startSceneId }
-                val enterFnName = enterFunctionName(startScene)
-                listOf(CExprStatement(CCall(enterFnName, emptyList())))
-            } else {
-                emptyList()
-            }
+        val startEnterCall = buildMainStartEnterCall(gameIR)
 
         // Pool template actor IDs — excluded from static OAM init (dynamic allocation).
         // Sprite tile data is STILL loaded for template actors (VRAM tiles needed by pool
@@ -4719,59 +4671,11 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                 }
                 .toSet()
 
-        // Unified sprite-VRAM tile data loading: set_sprite_data() for each actor with a sprite,
-        // followed by set_sprite_data() for each metasprite. A SINGLE [VramAllocator] hands out
-        // monotonically-increasing VRAM tile start indices across BOTH iterations, so metasprite
-        // tiles continue from where actor tiles ended (CR-01 fix — SEED-008). Actors iterate
-        // FIRST then metasprites — preserves Pong/Breakout/SimplePhysics emission shape
-        // (Pitfall 8 mitigation — no regressions in actor-only games).
-        //
-        // Template actors ARE included — their tile data must be in VRAM for pool instances.
-        //
-        // Array name convention (PHASE-13): "<metaspriteId>_tiles" (fallback until
-        // MetaspriteBuilder.sprite() is implemented and asset pipeline wiring lands in Plan 18).
         val allSpriteDataLoads = buildAllSpriteDataLoadStatements(gameIR)
-        // OAM init: set_sprite_tile() + initial move_sprite() for static actors only.
-        // Pool template actors are excluded — their OAM positions are managed per-frame by
-        // the forEachActive display sync loop in the pool's scene logic, not by update_sprites().
         val spriteOAMInits =
             buildOAMInitStatements(gameIR, excludeIds = poolTemplateActorIdsForMain)
-
-        // Phase 12 D-02 / D-08 anchor 5 — main()-loop level-switch guard (Plan 12-17 Task 2).
-        // Returns empty when the game does not opt into tilemap collision OR does not declare
-        // a "nextLevel" scene — preserves byte-identical codegen for existing games (Pong,
-        // Breakout, Explorer, RPG-Lite, Dungeon, Shmup, Racer, etc.). Spliced AFTER scene frame
-        // dispatch + AFTER per-frame system updates so the NextLevel card scene activates on
-        // the next main-loop iteration with `_current_level` already synced (avoiding a
-        // setup_current_level → frame dispatch with mismatched _next_level/_current_level).
         val levelSwitchGuardStatements = buildMainLoopLevelSwitchGuardIfNeeded(gameIR)
-
-        val gameLoopBody = buildList {
-            // Update joypad state once per frame before scene frame dispatch
-            add(CExprStatement(CCall("update_joypad", emptyList())))
-            add(CSwitch(CVar("current_scene"), frameCases))
-            // Run puzzle per-frame updates (pressure plates + timed blocks) after scene logic
-            if (gameIR.puzzleObjects.isNotEmpty()) {
-                add(CExprStatement(CCall("puzzle_update_all", emptyList())))
-            }
-            // Run NPC-NPC collision checks after movement updates, before sprite sync
-            if (gameIR.collisionRules.isNotEmpty()) {
-                add(CExprStatement(CCall("check_all_npc_collisions", emptyList())))
-            }
-            // Phase 12 D-02 / D-08 anchor 5 — fire the level-switch guard AFTER per-frame
-            // system updates but BEFORE sprite sync, so the NextLevel scene's first frame runs
-            // with `_current_level == _next_level` already (setup_current_level synced them).
-            addAll(levelSwitchGuardStatements)
-            // Sync position variables to OAM after game logic, before VBlank
-            add(CExprStatement(CCall("update_sprites", emptyList())))
-            // Update sound driver channel durations per frame
-            add(CExprStatement(CCall("sound_driver_update", emptyList())))
-            // hUGETracker audio driver tick — only emitted when music ops are used (A2)
-            if (SoundVisitor(gameIR).hasMusicOps()) {
-                add(CExprStatement(CCall("hUGE_dosound", emptyList())))
-            }
-            add(CExprStatement(CCall("wait_vbl_done", emptyList())))
-        }
+        val gameLoopBody = buildMainGameLoopBody(gameIR, frameCases, levelSwitchGuardStatements)
 
         // Actor pool init calls — one per pool, placed after OAM init but before start scene enter
         val poolInitCalls =
@@ -4780,190 +4684,55 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
                 CExprStatement(CCall("pool_${poolId}_init", emptyList()))
             }
 
-        // Plan 10.1-20 (DEF-10.1-13-C): hoist the start scene's `SetPalette` ops into main()
-        // BEFORE `DISPLAY_ON`, mirroring the GBDK reference's bootstrap order
-        // (metasprites.c lines 161-194). Without this hoist, sprite palette writes were
-        // deferred to scene-enter (called AFTER DISPLAY_ON), and the first PPU frame
-        // composited with OCPD palette RAM still in its post-`cgb_compatibility()` zero
-        // state — producing all-black sprite renders on GBC. Per Plan 10.1-19's
-        // d-v3-visual-finding.md (Option A — minimal), we DUPLICATE rather than relocate:
-        // the SetPalette ops remain in {start}_enter so multi-scene navigate-back semantics
-        // and the SpritePaletteSlotEmissionTest play_enter-body assertion are preserved.
-        // Palette writes are idempotent, so duplication has no runtime cost beyond the
-        // first-boot extra writes.
-        val startScene = startSceneId?.let { id -> gameIR.scenes.firstOrNull { it.id == id } }
+        // Plan 10.1-20 / Plan 10.1-22: hoist start-scene SetPalette + bgFillCheckerboard ops
+        // into main() BEFORE DISPLAY_ON. Palette writes are idempotent (kept in {start}_enter
+        // for multi-scene navigate-back correctness and SpritePaletteSlotEmissionTest contract).
+        val startScene = gameIR.startScene?.let { id -> gameIR.scenes.firstOrNull { it.id == id } }
         val hoistedStartPaletteStatements: List<CStatement> =
             startScene?.enterOps?.filterIsInstance<io.github.gbkt.core.ir.SetPalette>()?.map {
                 it.accept(ScriptOpVisitor)
             } ?: emptyList()
-
-        // Plan 10.1-22 (DEF-10.1-13-C / 4TH LAYER): hoist the start scene's `bgFillCheckerboard`
-        // RawOp(s) — containing `fill_bkg_rect` + `set_bkg_data` — into main() pre-DISPLAY_ON,
-        // mirroring the GBDK reference's metasprites.c:177-180 step sequence. Without this
-        // hoist, BG tile data + tilemap init defers to play_enter (which runs AFTER
-        // DISPLAY_ON). The first PPU frame post-DISPLAY_ON composites BG using whatever
-        // bytes the (already-hoisted) `set_sprite_data` wrote into $8000 — the elephant
-        // sprite tile 0 — instead of the checker pattern. Per d-v3-visual-finding-v2.md
-        // and Plan 20's duplication-not-relocation pattern, the RawOp remains in
-        // {start}_enter so `BgCheckerboardEmissionTest` (play_enter-body assertion) is
-        // preserved; the BG VRAM writes are idempotent so duplication is runtime-neutral.
-        //
-        // RawOp text-match (intentional, scoped): we identify the bgFillCheckerboard
-        // emission by checking for BOTH `fill_bkg_rect` AND `set_bkg_data` substrings in
-        // the same RawOp — these come from the controlled `bgFillCheckerboard()` helper in
-        // `gbkt-lang/MetaspriteBuilder.kt` (a user cannot inject arbitrary RawOp text via
-        // the public DSL today). When a structured `BgFillCheckerboard` ScriptOp lands,
-        // replace this text match with a typed shape check.
         val hoistedBgFillCheckerboardStatements: List<CStatement> =
             startScene
                 ?.enterOps
                 ?.filterIsInstance<RawOp>()
                 ?.filter { it.code.contains("fill_bkg_rect") && it.code.contains("set_bkg_data") }
                 ?.map { it.accept(ScriptOpVisitor) } ?: emptyList()
-
-        // Plan 10.1-22 (DEF-10.1-13-C / 4TH LAYER): explicit `set_bkg_palette(0u, 1u, ...)`
-        // call statement, gated on GBC target. Replaces gbkt's prior reliance on
-        // `cgb_compatibility()` for BG palette RAM init — which (per d-v3-visual-finding-v2.md)
-        // only reaches BGP_REG (DMG path) on Coffee-GB, NOT BCPD (GBC palette RAM path).
-        // Result without this fix: BG palette RAM stays at Java zero-init → every BG pixel
-        // composites to RGB(0,0,0). With this fix: explicit write to slot 0 via BCPS/BCPD
-        // (mirrors what cgb_compatibility intends to do on real hardware).
-        // Emitted unconditionally for any non-DMG target — paired with the
-        // `_gbkt_default_bg_pal` constant declared in paletteDataRaw above.
-        val hoistedDefaultBgPaletteStatements: List<CStatement> =
-            if (gameIR.config.gbcTarget != GbcTarget.DMG) {
-                listOf(CRawCode("set_bkg_palette(0u, 1u, _gbkt_default_bg_pal);"))
-            } else {
-                emptyList()
-            }
+        val hoistedDefaultBgPaletteStatements = buildMainHoistedDefaultBgPaletteStatements(gameIR)
 
         val mainBody = buildList {
-            // Plan 10.1-20 (DEF-10.1-13-C / GAP-1): emit `DISPLAY_OFF;` as the FIRST main()
-            // statement so all palette/VRAM writes that follow run while the LCD is OFF
-            // (the only state in which `set_sprite_palette()` / `set_bkg_data()` writes are
-            // guaranteed to complete unconditionally; with LCD on outside vblank they may
-            // stall or partially complete — reference metasprites.c:161).
+            // Plan 10.1-20 GAP-1: LCD off before all palette/VRAM writes.
             add(CRawCode("DISPLAY_OFF;"))
-            // GBC compatibility init: must be the FIRST call in main() after DISPLAY_OFF —
-            // before any palette loads, sprite ops, sound init, or DISPLAY_ON. Required for
-            // GBC to enable CGB hardware features (cgb_compatibility() switches the hardware
-            // from DMG to GBC mode).
-            // Pitfall 2 mitigation: palette loaded AFTER cgb_compatibility().
+            // GBC compatibility init: FIRST call after DISPLAY_OFF — before any palette/sprite ops.
             if (gameIR.config.gbcTarget != GbcTarget.DMG) {
                 add(CRawCode("cgb_compatibility();"))
             }
-            // Plan 10.1-20 (DEF-10.1-13-C / GAP-2): hoisted sprite-palette writes from the
-            // start scene's enter handler. Must run AFTER cgb_compatibility() (palette RAM
-            // is only addressable in GBC mode) and BEFORE DISPLAY_ON (so OCPD is populated
-            // before the first composited frame).
+            // Plan 10.1-20 GAP-2: hoisted sprite-palette writes (AFTER cgb_compatibility,
+            // BEFORE DISPLAY_ON).
             addAll(hoistedStartPaletteStatements)
-            // Plan 10.1-22 (DEF-10.1-13-C / 4TH LAYER): explicit BG palette slot 0 write
-            // via BCPS/BCPD — gbkt-emitted equivalent of what cgb_compatibility intends to
-            // do on real hardware. Must run AFTER cgb_compatibility() (palette RAM is only
-            // addressable in GBC mode) and BEFORE DISPLAY_ON (so BCPD is populated before
-            // the first composited frame). For DMG targets this is a no-op (empty list).
+            // Plan 10.1-22 4TH LAYER: explicit BG palette slot 0 write via BCPS/BCPD
+            // (AFTER cgb_compatibility, BEFORE DISPLAY_ON; no-op for DMG).
             addAll(hoistedDefaultBgPaletteStatements)
-            // Sound hardware init: enable sound (NR52), master volume max (NR50), all channels on
-            // (NR51)
+            // Sound hardware init: NR52 enable, NR50 volume max, NR51 all channels on.
             add(CExprStatement(CBinaryExpr(CVar("NR52_REG"), "=", CLiteral(0x80))))
             add(CExprStatement(CBinaryExpr(CVar("NR50_REG"), "=", CLiteral(0x77))))
             add(CExprStatement(CBinaryExpr(CVar("NR51_REG"), "=", CLiteral(0xFF))))
-            // Plan 10.1-20 (DEF-10.1-13-C / GAP-3): move sprite-data + OAM init + pool init
-            // BEFORE the LCDC sequence + DISPLAY_ON. With LCD off these VRAM writes complete
-            // unconditionally (reference metasprites.c:177-183 — fill_bkg_rect / set_bkg_data
-            // / load_and_duplicate_sprite_tile_data all run with LCD off, then
-            // SHOW_BKG/SHOW_SPRITES/DISPLAY_ON last).
-            //
-            // Load all sprite-VRAM tile data into VRAM via unified loader: actor sprites first
-            // (preserves Pong/Breakout/SimplePhysics shape), then metasprites (continue from
-            // where actors left off — single VramAllocator instance, CR-01 fix).
-            // Plan 10.2-08 (DEF-10.1-13-C / 5TH LAYER): hoist bgFillCheckerboard BEFORE
-            // sprite-data loads. With LCDC.4=1 (shared $8000-$97FF sprite+BG VRAM region),
-            // set_bkg_data(0, 1, ...) writes checker bytes to VRAM tile 0 — the same region
-            // set_sprite_data(0u, 48u, ...) will write. Writing bgFillCheckerboard FIRST means
-            // the elephant tile data (set_sprite_data) is the LAST write to tile 0 → wins.
-            // Writing AFTER (Plan 22's order) caused checker bytes to overwrite elephant tile 0,
-            // triggering the sprite-renders-gray regression identified by Phase 10.2 bisect chain
-            // (evidence/d-v3-visual-finding-v3.md, Section 2).
-            //
-            // The bgFillCheckerboard writes are idempotent; the original RawOp(s) remain in
-            // {start}_enter per Plan 20's duplication-not-relocation pattern. BgCheckerboard-
-            // EmissionTest's play_enter-body assertion is unaffected by this reorder.
+            // Plan 10.2-08 5TH LAYER: bgFillCheckerboard BEFORE sprite-data loads (wins tile 0).
             addAll(hoistedBgFillCheckerboardStatements)
+            // Plan 10.1-20 GAP-3: VRAM writes before LCDC sequence + DISPLAY_ON.
             addAll(allSpriteDataLoads)
-            // Phase 12.9 D2b: upload per-metasprite OBJ palettes to GBC palette RAM after VRAM
-            // tile data is loaded. The metasprite's png2asset-generated <id>_palettes array (one
-            // sub-palette of 4 colors) is never uploaded without this call — the GBDK default
-            // grayscale OBJ palette remains, rendering the character with wrong colors.
-            // GBC-gated: DMG targets have no OBJ color palette RAM; gate mirrors the
-            // _gbkt_default_bg_pal + set_bkg_palette GBC gate above (gameIR.config.gbcTarget
-            // != GbcTarget.DMG). Slot counter starts at 0 and increments per metasprite.
+            // Phase 12.9 D2b: OBJ palette upload after VRAM tile data (GBC-gated).
             addAll(buildMetaspriteSpritePaletteStatements(gameIR))
-            // Bind OAM slots to tiles and set initial positions
             addAll(spriteOAMInits)
-            // Initialize actor pools: zero active bitmaps, set OAM entries to static base slots
             addAll(poolInitCalls)
-            // Plan 10.1-20: LCDC layer enables must precede DISPLAY_ON. The PPU latches LCDC
-            // on each scanline, so enabling BG/sprites/object-size AFTER DISPLAY_ON means the
-            // first composited frame uses whatever LCDC state was inherited from
-            // cgb_compatibility() — a soft regression that the GBDK reference avoids by
-            // ordering SHOW_BKG; SHOW_SPRITES; SPRITES_8x8; DISPLAY_ON in that exact sequence
-            // (metasprites.c:186-194).
-            //
-            // Enable BG tilemap layer (LCDC.BG_ENABLE). Without this, set_bkg_tiles writes
-            // to VRAM but the BG plane is never composited. Confirmed by Plan 07.4-25
-            // DIAGNOSIS.md (H-1). Re-introduced here after the Plan 26 attempt was rolled
-            // back; see evidence/round-6-wram-corruption/DIAGNOSIS.md for the round-6
-            // WRAM-corruption follow-up.
+            // LCDC layer enables must precede DISPLAY_ON (reference metasprites.c:186-194).
             add(CRawCode("SHOW_BKG;"))
-            // Enable OAM sprite layer — GBDK macro
             add(CRawCode("SHOW_SPRITES;"))
-            // D-V1 fix (SEED-004, Plan 10.1-11 Edit 2): set hardware sprite mode when
-            // metasprites are present. GBDK's default sprite mode after cgb_compatibility()
-            // is 8x16 (the hardware LCDC.SPRITE_SIZE bit). Without an explicit mode macro
-            // the elephant example renders garbled (its tiles are 8×8 but hardware reads
-            // them as 8×16 pairs). The conditional gate `gameIR.metasprites.isNotEmpty()`
-            // keeps non-metasprite games (Pong, Breakout, simple-physics) on the default
-            // 8x16 mode -- structurally impossible to regress, locked by
-            // Seed004ElephantTileRenderingFixTest (negative case).
-            //
-            // Debug E-02 (2026-05-24, debug/platformer-duck-malformed-blob.md):
-            // Pre-fix the pipeline unconditionally emitted `SPRITES_8x8;` for ALL
-            // metasprite games. The platformer-template's player metasprite declares
-            // `spriteMode = SPR8x16` (24×32 duck cut from a PNG with the -spr8x16
-            // png2asset flag) — forcing the hardware into 8×8 mode caused every OAM
-            // entry to render a single 8×8 tile instead of an 8×16 pair, halving the
-            // sprite height. Combined with E-03 (frame coord swap) this produced the
-            // "duck blob" symptom. Post-fix: the macro is selected from the metasprite
-            // `spriteMode` field. If ANY metasprite declares SPR8x16, emit SPRITES_8x16
-            // (hardware sprite size is a single LCDC bit — one global choice). Otherwise
-            // emit SPRITES_8x8 (the elephant SPR8x8 case + the back-compat null-spriteMode
-            // case for the Seed004 diagnostic test).
-            //
-            // Locked by:
-            //   - Seed004ElephantTileRenderingDiagnosticTest (SPR8x8 / null → SPRITES_8x8)
-            //   - SpriteMode8x16HardwareModeTest (SPR8x16 → SPRITES_8x16, no SPRITES_8x8)
-            //   - Seed004ElephantTileRenderingFixTest (no metasprites → neither macro)
-            // Reference:
-            // /Users/michalsvacha/gbdk/examples/cross-platform/metasprites/src/metasprites.c:192
-            // Finding:
-            // .planning/phases/10.1-metasprites-surplus-codegen-defects-inserted/evidence/d-v1-diagnostic/sprite-mode-init-finding.md
-            if (gameIR.metasprites.isNotEmpty()) {
-                val anySpr8x16 = gameIR.metasprites.any { it.spriteMode == SpriteMode.SPR8x16 }
-                if (anySpr8x16) {
-                    add(CRawCode("SPRITES_8x16;"))
-                } else {
-                    add(CRawCode("SPRITES_8x8;"))
-                }
-            }
-            // Plan 10.1-20: DISPLAY_ON is the LAST bootstrap macro before the game loop
-            // (reference metasprites.c:194). All palettes, VRAM tile data, BG tilemap
-            // data, and LCDC layer bits are in their final state before the LCD comes on,
-            // so the first composited frame is correct.
+            // D-V1 fix (SEED-004): sprite-mode macro gated on metasprite presence.
+            // Locked by Seed004ElephantTileRenderingFixTest / SpriteMode8x16HardwareModeTest.
+            addAll(buildMainSpriteModeMacros(gameIR))
+            // Plan 10.1-20: DISPLAY_ON last — all palettes/VRAM/LCDC ready before LCD on.
             add(CRawCode("DISPLAY_ON;"))
-            // Run the start scene's enter handler AFTER DISPLAY_ON. {start}_enter still
-            // contains the SetPalette ops (kept for multi-scene navigate-back correctness
-            // and SpritePaletteSlotEmissionTest contract); they re-run idempotently here.
             addAll(startEnterCall)
             add(CWhile(CVar("1"), gameLoopBody))
         }
@@ -4974,6 +4743,84 @@ const UINT8 _level_spawn_y[] = { ${spawnYValues.joinToString(", ") { "${it}u" }}
             body = mainBody,
             sectionComment = "Entry point",
         )
+    }
+
+    /**
+     * Builds the start-scene enter call for main(). Returns a single [CExprStatement] calling
+     * `{startScene}_enter` when the start scene exists and has enter content; otherwise returns an
+     * empty list. Extracted from [buildMainFunction] to reduce cognitive complexity (E-20).
+     *
+     * Uses [sceneHasEnterContent] so zone-only start scenes (no user enter block but bound zone)
+     * still get their initial enter call — same rationale as [buildTrampolinesForScene].
+     */
+    private fun buildMainStartEnterCall(gameIR: GameIR): List<CStatement> {
+        val startSceneId = gameIR.startScene ?: return emptyList()
+        if (gameIR.scenes.none { it.id == startSceneId && sceneHasEnterContent(it) }) {
+            return emptyList()
+        }
+        val startScene = gameIR.scenes.first { it.id == startSceneId }
+        return listOf(CExprStatement(CCall(enterFunctionName(startScene), emptyList())))
+    }
+
+    /**
+     * Builds the per-frame game loop body for main(). Extracted from [buildMainFunction] to reduce
+     * cognitive complexity (E-20). Emission order is preserved exactly: joypad → scene frame →
+     * puzzle → collision → level-switch guard → sprites → sound → hUGE → vblank.
+     */
+    private fun buildMainGameLoopBody(
+        gameIR: GameIR,
+        frameCases: List<CSwitchCase>,
+        levelSwitchGuardStatements: List<CStatement>,
+    ): List<CStatement> = buildList {
+        // Update joypad state once per frame before scene frame dispatch
+        add(CExprStatement(CCall("update_joypad", emptyList())))
+        add(CSwitch(CVar("current_scene"), frameCases))
+        // Run puzzle per-frame updates (pressure plates + timed blocks) after scene logic
+        if (gameIR.puzzleObjects.isNotEmpty()) {
+            add(CExprStatement(CCall("puzzle_update_all", emptyList())))
+        }
+        // Run NPC-NPC collision checks after movement updates, before sprite sync
+        if (gameIR.collisionRules.isNotEmpty()) {
+            add(CExprStatement(CCall("check_all_npc_collisions", emptyList())))
+        }
+        // Phase 12 D-02/D-08 anchor 5: level-switch guard AFTER per-frame system updates,
+        // BEFORE sprite sync (NextLevel scene's first frame runs with _current_level synced).
+        addAll(levelSwitchGuardStatements)
+        add(CExprStatement(CCall("update_sprites", emptyList())))
+        add(CExprStatement(CCall("sound_driver_update", emptyList())))
+        // hUGETracker audio driver tick — only emitted when music ops are used (A2)
+        if (SoundVisitor(gameIR).hasMusicOps()) {
+            add(CExprStatement(CCall("hUGE_dosound", emptyList())))
+        }
+        add(CExprStatement(CCall("wait_vbl_done", emptyList())))
+    }
+
+    /**
+     * Emits an explicit `set_bkg_palette(0u, 1u, _gbkt_default_bg_pal)` statement for non-DMG
+     * targets (Plan 10.1-22 / 4TH LAYER). DMG targets return an empty list (no-op). Extracted from
+     * [buildMainFunction] to reduce cognitive complexity (E-20).
+     */
+    private fun buildMainHoistedDefaultBgPaletteStatements(gameIR: GameIR): List<CStatement> =
+        if (gameIR.config.gbcTarget != GbcTarget.DMG) {
+            listOf(CRawCode("set_bkg_palette(0u, 1u, _gbkt_default_bg_pal);"))
+        } else {
+            emptyList()
+        }
+
+    /**
+     * Emits SPRITES_8x16 or SPRITES_8x8 hardware mode macro when the game uses metasprites (D-V1
+     * fix, SEED-004, Plan 10.1-11). Returns an empty list when no metasprites exist so
+     * Pong/Breakout/simple-physics stay on the default mode (structurally impossible to regress).
+     * Extracted from [buildMainFunction] to reduce cognitive complexity (E-20).
+     *
+     * Locked by Seed004ElephantTileRenderingDiagnosticTest, SpriteMode8x16HardwareModeTest,
+     * Seed004ElephantTileRenderingFixTest.
+     */
+    private fun buildMainSpriteModeMacros(gameIR: GameIR): List<CStatement> {
+        if (gameIR.metasprites.isEmpty()) return emptyList()
+        val anySpr8x16 = gameIR.metasprites.any { it.spriteMode == SpriteMode.SPR8x16 }
+        return if (anySpr8x16) listOf(CRawCode("SPRITES_8x16;"))
+        else listOf(CRawCode("SPRITES_8x8;"))
     }
 
     /**

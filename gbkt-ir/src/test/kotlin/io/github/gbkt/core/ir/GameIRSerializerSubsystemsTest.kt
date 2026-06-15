@@ -426,10 +426,19 @@ class GameIRSerializerSubsystemsTest {
         assertEquals("player", rules.getJSONObject(0).getString("groupB"))
         assertEquals("BLOCK", rules.getJSONObject(0).getString("response"))
 
-        // Documented contract: these are serialize-only — deserialization returns them empty.
+        // Updated contract (SEED-020 fixed, Phase 21 plan 21-03): zones and collisionRules now
+        // deserialize the supported subset — id/name/spawnX/spawnY/screenMode/tilesetPath for zones
+        // and groupA/groupB/response for collisionRules.
         val back = GameIRSerializer.fromJson(root.toString())
-        assertTrue(back.zones.isEmpty())
-        assertTrue(back.collisionRules.isEmpty())
+        assertEquals(2, back.zones.size)
+        assertEquals("z1", back.zones[0].id)
+        assertEquals("Zone 1", back.zones[0].name)
+        assertTrue(back.zones[0].screenMode)
+        assertEquals("z2", back.zones[1].id)
+        assertEquals(1, back.collisionRules.size)
+        assertEquals("npcs", back.collisionRules[0].groupA)
+        assertEquals("player", back.collisionRules[0].groupB)
+        assertEquals(CollisionResponse.BLOCK, back.collisionRules[0].response)
     }
 
     // -------------------------------------------------------------------------

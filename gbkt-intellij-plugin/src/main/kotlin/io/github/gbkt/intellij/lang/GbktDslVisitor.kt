@@ -272,7 +272,7 @@ class GbktDslVisitor : PsiRecursiveElementVisitor() {
                 "states",
                 "tag",
                 // Control flow
-                "whenever",
+                "runIf",
                 "branch",
                 "repeat",
                 "repeatWhile",

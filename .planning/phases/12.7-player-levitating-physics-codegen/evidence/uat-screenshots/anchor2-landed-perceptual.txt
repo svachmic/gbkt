@@ -1,6 +1,0 @@
-file: /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/12.7-player-levitating-physics-codegen/evidence/uat-screenshots/anchor-2/03-landed.png
-dimensions: 160x144
-distinct_colours: 4
-dominant_ratio: 0.8645
-dominant_count: 19917
-total_pixels: 23040

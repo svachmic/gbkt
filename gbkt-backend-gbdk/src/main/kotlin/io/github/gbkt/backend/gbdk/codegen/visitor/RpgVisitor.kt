@@ -87,10 +87,11 @@ import io.github.gbkt.rpg.domain.UseAbility
  * Handles character stat structs, ability codegen, status effect codegen, and monster AI codegen.
  * All generated code uses typed C AST (zero [io.github.gbkt.backend.gbdk.codegen.ast.CRawCode]).
  *
- * @param gameIR The full [GameIR] for context.
+ * @param gameIR Reserved for future cross-cutting queries; currently unused but kept for API
+ *   stability so callers can pass [GameIR] without a signature change when it is needed.
  */
-@Suppress("UNCHECKED_CAST")
-class RpgVisitor(private val gameIR: GameIR) {
+@Suppress("UNCHECKED_CAST", "UnusedPrivateProperty")
+class RpgVisitor(gameIR: GameIR) {
 
     fun generateCharacterStatStructs(system: GenericSystem): List<CFunction> {
         val id = system.id.replace('-', '_').replace(' ', '_')
@@ -330,152 +331,9 @@ class RpgVisitor(private val gameIR: GameIR) {
         val body =
             buildList<CStatement> {
                 add(CComment("Apply status effect: ${def.name}"))
-                // GAP-6: per-effect immunity check
-                for (immuneId in def.immuneToEffects) {
-                    val sanitizedImmuneId = immuneId.replace('-', '_').replace(' ', '_')
-                    add(
-                        CIf(
-                            condition =
-                                CBinaryExpr(
-                                    CVar("_char_target_immune_to_$sanitizedImmuneId"),
-                                    "!=",
-                                    CLiteral(0),
-                                ),
-                            thenBody = listOf(CReturn()),
-                        )
-                    )
-                }
-                // GAP-5: stat-based resist contest vs flat apply chance
-                when (def.resistType) {
-                    ResistType.STAT_CONTEST -> {
-                        val resistStat = def.resistStat.replace('-', '_').replace(' ', '_')
-                        add(
-                            CVarDecl(
-                                name = "effective_chance",
-                                type = CU8,
-                                initializer =
-                                    CBinaryExpr(
-                                        CLiteral(def.applyChance),
-                                        "-",
-                                        CBinaryExpr(
-                                            CVar("_char_target_$resistStat"),
-                                            "-",
-                                            CVar("_char_caster_matk"),
-                                        ),
-                                    ),
-                            )
-                        )
-                        add(
-                            CIf(
-                                condition =
-                                    CBinaryExpr(
-                                        CBinaryExpr(CCall("rand"), "%", CLiteral(100)),
-                                        ">=",
-                                        CVar("effective_chance"),
-                                    ),
-                                thenBody = listOf(CReturn()),
-                            )
-                        )
-                    }
-                    ResistType.FLAT -> {
-                        if (def.applyChance < 100) {
-                            add(
-                                CIf(
-                                    condition =
-                                        CBinaryExpr(
-                                            CBinaryExpr(CCall("rand"), "%", CLiteral(100)),
-                                            ">=",
-                                            CLiteral(def.applyChance),
-                                        ),
-                                    thenBody = listOf(CReturn()),
-                                )
-                            )
-                        }
-                    }
-                }
-                // Stack handling
-                when (def.stackMode) {
-                    StackMode.NONE -> {
-                        add(
-                            CIf(
-                                condition =
-                                    CBinaryExpr(CVar("_effect_${id}_active"), "!=", CLiteral(0)),
-                                thenBody = listOf(CReturn()),
-                            )
-                        )
-                        add(
-                            CExprStatement(
-                                CBinaryExpr(CVar("_effect_${id}_active"), "=", CLiteral(1))
-                            )
-                        )
-                        add(
-                            CExprStatement(
-                                CBinaryExpr(
-                                    CVar("_effect_${id}_duration"),
-                                    "=",
-                                    CLiteral(def.duration),
-                                )
-                            )
-                        )
-                    }
-                    // REFRESH_DURATION re-arms an existing effect's timer while INDEPENDENT
-                    // applies a fresh instance; both lower to the same state-setting C code.
-                    StackMode.REFRESH_DURATION,
-                    StackMode.INDEPENDENT -> {
-                        add(
-                            CExprStatement(
-                                CBinaryExpr(CVar("_effect_${id}_active"), "=", CLiteral(1))
-                            )
-                        )
-                        add(
-                            CExprStatement(
-                                CBinaryExpr(
-                                    CVar("_effect_${id}_duration"),
-                                    "=",
-                                    CLiteral(def.duration),
-                                )
-                            )
-                        )
-                    }
-                    StackMode.INTENSITY -> {
-                        val stackBody =
-                            buildList<CStatement> {
-                                add(
-                                    CExprStatement(
-                                        CBinaryExpr(CVar("_effect_${id}_stacks"), "+=", CLiteral(1))
-                                    )
-                                )
-                                if (def.onStackAppliedOps.isNotEmpty()) {
-                                    add(CExprStatement(CCall("on_stack_applied_$id")))
-                                }
-                            }
-                        add(
-                            CIf(
-                                condition =
-                                    CBinaryExpr(
-                                        CVar("_effect_${id}_stacks"),
-                                        "<",
-                                        CLiteral(def.maxStacks),
-                                    ),
-                                thenBody = stackBody,
-                            )
-                        )
-                        add(
-                            CExprStatement(
-                                CBinaryExpr(CVar("_effect_${id}_active"), "=", CLiteral(1))
-                            )
-                        )
-                        add(
-                            CExprStatement(
-                                CBinaryExpr(
-                                    CVar("_effect_${id}_duration"),
-                                    "=",
-                                    CLiteral(def.duration),
-                                )
-                            )
-                        )
-                    }
-                }
+                addAll(buildImmunityCheckStatements(def))
+                addAll(buildResistCheckStatements(def))
+                addAll(buildStackHandlingStatements(id, def))
             }
         return CFunction(
             name = "apply_effect_$id",
@@ -483,6 +341,157 @@ class RpgVisitor(private val gameIR: GameIR) {
             body = body,
             sectionComment = "RPG status effect apply: ${def.name}",
         )
+    }
+
+    /** GAP-6: per-effect immunity check statements — one early-return guard per immune-to entry. */
+    private fun buildImmunityCheckStatements(def: StatusEffectDef): List<CStatement> = buildList {
+        for (immuneId in def.immuneToEffects) {
+            val sanitizedImmuneId = immuneId.replace('-', '_').replace(' ', '_')
+            add(
+                CIf(
+                    condition =
+                        CBinaryExpr(
+                            CVar("_char_target_immune_to_$sanitizedImmuneId"),
+                            "!=",
+                            CLiteral(0),
+                        ),
+                    thenBody = listOf(CReturn()),
+                )
+            )
+        }
+    }
+
+    /**
+     * GAP-5: stat-based resist contest vs flat apply-chance statements. Returns an early-return
+     * guard (or none) based on [StatusEffectDef.resistType].
+     */
+    private fun buildResistCheckStatements(def: StatusEffectDef): List<CStatement> = buildList {
+        when (def.resistType) {
+            ResistType.STAT_CONTEST -> {
+                val resistStat = def.resistStat.replace('-', '_').replace(' ', '_')
+                add(
+                    CVarDecl(
+                        name = "effective_chance",
+                        type = CU8,
+                        initializer =
+                            CBinaryExpr(
+                                CLiteral(def.applyChance),
+                                "-",
+                                CBinaryExpr(
+                                    CVar("_char_target_$resistStat"),
+                                    "-",
+                                    CVar("_char_caster_matk"),
+                                ),
+                            ),
+                    )
+                )
+                add(
+                    CIf(
+                        condition =
+                            CBinaryExpr(
+                                CBinaryExpr(CCall("rand"), "%", CLiteral(100)),
+                                ">=",
+                                CVar("effective_chance"),
+                            ),
+                        thenBody = listOf(CReturn()),
+                    )
+                )
+            }
+            ResistType.FLAT -> {
+                if (def.applyChance < 100) {
+                    add(
+                        CIf(
+                            condition =
+                                CBinaryExpr(
+                                    CBinaryExpr(CCall("rand"), "%", CLiteral(100)),
+                                    ">=",
+                                    CLiteral(def.applyChance),
+                                ),
+                            thenBody = listOf(CReturn()),
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Stack handling statements — active/duration/stacks state-writes per
+     * [StatusEffectDef.stackMode].
+     */
+    private fun buildStackHandlingStatements(
+        id: String,
+        def: StatusEffectDef,
+    ): List<CStatement> = buildList {
+        when (def.stackMode) {
+            StackMode.NONE -> {
+                add(
+                    CIf(
+                        condition = CBinaryExpr(CVar("_effect_${id}_active"), "!=", CLiteral(0)),
+                        thenBody = listOf(CReturn()),
+                    )
+                )
+                add(CExprStatement(CBinaryExpr(CVar("_effect_${id}_active"), "=", CLiteral(1))))
+                add(
+                    CExprStatement(
+                        CBinaryExpr(
+                            CVar("_effect_${id}_duration"),
+                            "=",
+                            CLiteral(def.duration),
+                        )
+                    )
+                )
+            }
+            // REFRESH_DURATION re-arms an existing effect's timer while INDEPENDENT
+            // applies a fresh instance; both lower to the same state-setting C code.
+            StackMode.REFRESH_DURATION,
+            StackMode.INDEPENDENT -> {
+                add(CExprStatement(CBinaryExpr(CVar("_effect_${id}_active"), "=", CLiteral(1))))
+                add(
+                    CExprStatement(
+                        CBinaryExpr(
+                            CVar("_effect_${id}_duration"),
+                            "=",
+                            CLiteral(def.duration),
+                        )
+                    )
+                )
+            }
+            StackMode.INTENSITY -> {
+                val stackBody =
+                    buildList<CStatement> {
+                        add(
+                            CExprStatement(
+                                CBinaryExpr(CVar("_effect_${id}_stacks"), "+=", CLiteral(1))
+                            )
+                        )
+                        if (def.onStackAppliedOps.isNotEmpty()) {
+                            add(CExprStatement(CCall("on_stack_applied_$id")))
+                        }
+                    }
+                add(
+                    CIf(
+                        condition =
+                            CBinaryExpr(
+                                CVar("_effect_${id}_stacks"),
+                                "<",
+                                CLiteral(def.maxStacks),
+                            ),
+                        thenBody = stackBody,
+                    )
+                )
+                add(CExprStatement(CBinaryExpr(CVar("_effect_${id}_active"), "=", CLiteral(1))))
+                add(
+                    CExprStatement(
+                        CBinaryExpr(
+                            CVar("_effect_${id}_duration"),
+                            "=",
+                            CLiteral(def.duration),
+                        )
+                    )
+                )
+            }
+        }
     }
 
     private fun generateTickEffectFunction(id: String, def: StatusEffectDef): CFunction {

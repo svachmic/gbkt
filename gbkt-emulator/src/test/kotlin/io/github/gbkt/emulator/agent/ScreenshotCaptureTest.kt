@@ -11,6 +11,7 @@ import java.io.File
 import javax.imageio.ImageIO
 import org.json.JSONObject
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -75,23 +76,19 @@ class ScreenshotCaptureTest {
     @Test
     fun `JSON sidecar contains required fields`() {
         val frameBuffer = IntArray(160 * 144)
-        val beforeCapture = System.currentTimeMillis()
         ScreenshotCapture.capture(
             frameBuffer = frameBuffer,
             label = "metadata",
             frameNumber = 99,
             outputDir = tempDir,
         )
-        val afterCapture = System.currentTimeMillis()
 
         val jsonFile = File(tempDir, "metadata_frame99.json")
         val json = JSONObject(jsonFile.readText())
 
         assertEquals(99, json.getInt("frameNumber"))
         assertEquals("metadata", json.getString("label"))
-        val capturedAt = json.getLong("capturedAt")
-        assertTrue(capturedAt >= beforeCapture, "capturedAt should be >= time before capture")
-        assertTrue(capturedAt <= afterCapture, "capturedAt should be <= time after capture")
+        assertFalse(json.has("capturedAt"), "capturedAt field must be absent from sidecar (D-08)")
         assertNotNull(json.getJSONObject("variables"), "variables field should exist")
     }
 

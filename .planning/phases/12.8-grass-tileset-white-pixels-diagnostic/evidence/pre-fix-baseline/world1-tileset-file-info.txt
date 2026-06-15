@@ -1,1 +1,0 @@
-gbkt-examples/platformer-template/res/graphics/world1-tileset.png: PNG image data, 64 x 32, 8-bit colormap, non-interlaced

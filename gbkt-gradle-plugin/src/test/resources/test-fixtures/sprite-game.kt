@@ -28,7 +28,7 @@ val spriteGame =
             scene("main") {
                 every.frame {
                     player.x += 1
-                    whenever(player.x isAbove 160) { player.x set 0 }
+                    runIf(player.x isAbove 160) { player.x set 0 }
                 }
             }
 

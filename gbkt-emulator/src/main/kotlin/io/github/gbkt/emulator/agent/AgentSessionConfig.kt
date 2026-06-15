@@ -52,6 +52,15 @@ data class AgentSessionConfig(
     }
 
     companion object {
+        /** Byte offset in the ROM header where the CGB compatibility flag lives. */
+        private const val CGB_FLAG_OFFSET = 0x143L
+
+        /** CGB-enhanced ROM — runs in color on GBC, in monochrome on DMG. */
+        private const val CGB_ENHANCED = 0x80
+
+        /** GBC-only ROM — requires Game Boy Color. */
+        private const val CGB_ONLY = 0xC0
+
         /**
          * Discovers companion files (sym, metadata, source maps) based on the standard Gradle
          * plugin output layout.
@@ -59,6 +68,11 @@ data class AgentSessionConfig(
          * Convention: ROM at `build/gbkt/output/game.gb` -> sym at `build/gbkt/output/game.noi`,
          * metadata at `build/gbkt/generated/game_metadata.json`, source maps at
          * `build/gbkt/generated/`.
+         *
+         * The [AgentSessionConfig.gbcMode] field is automatically derived from the ROM header byte
+         * at offset `0x143` (CGB compatibility flag). Values `0x80` (CGB-enhanced) and `0xC0`
+         * (GBC-only) set `gbcMode = true`; all other values (including EOF for short ROMs) yield
+         * `gbcMode = false`.
          */
         fun discoverFiles(romFile: File, screenshotDir: File? = null): AgentSessionConfig {
             val outputDir = romFile.parentFile
@@ -73,12 +87,32 @@ data class AgentSessionConfig(
                 generatedDir?.let { File(it, "game_metadata.json") }?.takeIf { it.exists() }
             val sourceMapsDir = generatedDir?.takeIf { it.exists() }
 
+            // Read the CGB flag deterministically. `InputStream.skip` may skip fewer bytes than
+            // requested (its contract permits short skips), which would mis-read the offset and
+            // could
+            // misclassify a DMG ROM as GBC — and this auto-detect is the only D-07 guard against
+            // blessing an inverted-palette golden. `readNBytes` reads fully unless EOF is hit, so a
+            // short ROM still yields the DMG default.
+            val gbcMode =
+                romFile.inputStream().use { stream ->
+                    val headerLen = CGB_FLAG_OFFSET.toInt() + 1
+                    val buf = ByteArray(headerLen)
+                    val read = stream.readNBytes(buf, 0, headerLen)
+                    if (read < headerLen) {
+                        false // short ROM → DMG default
+                    } else {
+                        val cgbByte = buf[CGB_FLAG_OFFSET.toInt()].toInt() and 0xFF
+                        cgbByte == CGB_ENHANCED || cgbByte == CGB_ONLY
+                    }
+                }
+
             return AgentSessionConfig(
                 romFile = romFile,
                 symFile = symFile,
                 metadataFile = metadataFile,
                 sourceMapsDir = sourceMapsDir,
                 screenshotDir = screenshotDir ?: File(outputDir ?: File("."), "screenshots"),
+                gbcMode = gbcMode,
             )
         }
     }

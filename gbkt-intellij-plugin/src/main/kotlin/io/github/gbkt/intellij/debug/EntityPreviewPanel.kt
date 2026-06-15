@@ -47,7 +47,7 @@ import javax.swing.table.AbstractTableModel
  * - Collision box overlay
  * - Selection and inspection
  */
-class EntityPreviewPanel(private val project: Project) : JPanel(BorderLayout()) {
+class EntityPreviewPanel(@Suppress("UnusedParameter") project: Project) : JPanel(BorderLayout()) {
 
     private val visualPanel = EntityVisualizationPanel()
     private val tableModel = EntityTableModel()

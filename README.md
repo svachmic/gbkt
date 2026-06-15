@@ -21,12 +21,12 @@ val myGame = game("MyGame") {
         }
 
         frame {
-            whenever(dpad.right.held) { player.x += 2 }
-            whenever(dpad.left.held) { player.x -= 2 }
-            whenever(dpad.down.held) { player.y += 2 }
-            whenever(dpad.up.held) { player.y -= 2 }
+            runIf(dpad.right.held) { player.x += 2 }
+            runIf(dpad.left.held) { player.x -= 2 }
+            runIf(dpad.down.held) { player.y += 2 }
+            runIf(dpad.up.held) { player.y -= 2 }
 
-            whenever(buttons.a.pressed) { score += 10 }
+            runIf(buttons.a.pressed) { score += 10 }
         }
     }
 }
@@ -83,7 +83,7 @@ val myFirstGame = game("HelloGB") {
             counter += 1
 
             // Wrap at 255
-            whenever(counter isAbove 254) {
+            runIf(counter isAbove 254) {
                 counter set 0
             }
         }
@@ -138,10 +138,10 @@ val myFirstGame = game("HelloGB") {
         }
 
         frame {
-            whenever(dpad.right.held) { player.x += 1 }
-            whenever(dpad.left.held) { player.x -= 1 }
-            whenever(dpad.up.held) { player.y -= 1 }
-            whenever(dpad.down.held) { player.y += 1 }
+            runIf(dpad.right.held) { player.x += 1 }
+            runIf(dpad.left.held) { player.x -= 1 }
+            runIf(dpad.up.held) { player.y -= 1 }
+            runIf(dpad.down.held) { player.y += 1 }
         }
     }
 }
@@ -179,8 +179,8 @@ The `gbkt-examples/` directory contains complete games demonstrating the framewo
 | C (GBDK)                                       | gbkt                                    |
 |------------------------------------------------|-----------------------------------------|
 | `UINT8 playerX = 80;`                          | `var playerX by u8Var(80)`              |
-| `if (joypad() & J_RIGHT) { playerX++; }`       | `whenever(dpad.right.held) { playerX += 1 }` |
-| `if ((joypad() & J_A) && !(prev & J_A)) {...}` | `whenever(buttons.a.pressed) { ... }`   |
+| `if (joypad() & J_RIGHT) { playerX++; }`       | `runIf(dpad.right.held) { playerX += 1 }` |
+| `if ((joypad() & J_A) && !(prev & J_A)) {...}` | `runIf(buttons.a.pressed) { ... }`   |
 | Manual sprite/OAM management                   | `actor { sprite(...) }`                 |
 | Manual scene state machines                    | `scene("name") { ... }`                 |
 

@@ -86,93 +86,118 @@ class EmulatorSession(private val config: EmulatorConfig) {
      */
     fun launch() {
         check(emulator == null) { "EmulatorSession already launched. Call shutdown() first." }
-
         val emu = CoffeeGbEmulator(config)
         this.emulator = emu
-
         if (config.headless) {
             // Headless mode: no Swing components, just start the emulator.
             // CoffeeGbEmulator handles source map enrichment and log file writing internally.
             emu.start()
         } else {
             // GUI mode: create all windows on the EDT, then start the emulator.
-            SwingUtilities.invokeAndWait {
-                // ── Main emulator window ──────────────────────────────────────
-                val win = EmulatorWindow(emu, config)
-                this.window = win
-
-                // Wire frame-ready: emulator thread → display panel + FPS counter
-                emu.onFrameReady = { frameData -> win.onFrameReady(frameData) }
-
-                // Wire shutdown request: closing the main window disposes all child windows
-                win.onShutdownRequest = { shutdown() }
-
-                // ── LogCat window (hidden until toolbar Log button is toggled) ──
-                val logWin = LogCatWindow()
-                this.logWindow = logWin
-
-                // Wire debug entry callback: emulator → LogCat panel (direct call).
-                // appendEntry() is safe to call from any thread — it handles its own
-                // EDT dispatch internally, so no outer invokeLater is needed here.
-                emu.onDebugEntry = { entry -> logWin.logPanel.appendEntry(entry) }
-
-                // ── Memory Inspector window (hidden until Memory button toggled) ──
-                val memWin =
-                    MemoryInspectorWindow(
-                        memoryProvider = {
-                            if (emu.isRunning()) {
-                                try {
-                                    emu.getMemory()
-                                } catch (_: IllegalStateException) {
-                                    null
-                                }
-                            } else {
-                                null
-                            }
-                        },
-                        symbolFile = findSymFile(),
-                    )
-                this.memoryWindow = memWin
-
-                // ── Wire toolbar toggles (override EmulatorWindow's stub callbacks) ──
-                win.toolbar.onLogViewerToggle = { show ->
-                    logWin.isVisible = show
-                    if (show) logWin.toFront()
-                }
-                win.toolbar.onMemoryInspectorToggle = { show ->
-                    memWin.isVisible = show
-                    if (show) {
-                        memWin.inspectorPanel.refresh()
-                        memWin.toFront()
-                    }
-                }
-
-                // ── Wire pause/step to refresh memory inspector ──────────────
-                win.toolbar.onPauseToggle = { isPaused ->
-                    if (isPaused && memoryWindow?.isVisible == true) {
-                        memoryWindow?.inspectorPanel?.refresh()
-                    }
-                }
-                win.toolbar.onStepFrame = {
-                    if (memoryWindow?.isVisible == true) {
-                        memoryWindow?.inspectorPanel?.refresh()
-                    }
-                }
-
-                // Show main window and start the FPS timer
-                win.isVisible = true
-                win.startFpsTimer()
-            }
-
-            // Start the emulator after UI is fully set up on the EDT
+            SwingUtilities.invokeAndWait { createAndWireWindowsOnEdt(emu) }
             emu.start()
-
             // Wire game input after start() — EventBus is created inside start()
-            val win = this.window
-            val bus = emu.getEventBus()
-            if (win != null && bus != null) {
-                SwingUtilities.invokeLater { win.addKeyListener(InputHandler(bus)) }
+            wireInputAfterStart(emu)
+        }
+    }
+
+    /**
+     * Creates all developer UI windows on the EDT and wires emulator callbacks. Called from inside
+     * [SwingUtilities.invokeAndWait] so all Swing state is initialized on the Event Dispatch
+     * Thread.
+     */
+    private fun createAndWireWindowsOnEdt(emu: CoffeeGbEmulator) {
+        // ── Main emulator window ──────────────────────────────────────
+        val win = EmulatorWindow(emu, config)
+        this.window = win
+
+        // Wire frame-ready: emulator thread → display panel + FPS counter
+        emu.onFrameReady = { frameData -> win.onFrameReady(frameData) }
+
+        // Wire shutdown request: closing the main window disposes all child windows
+        win.onShutdownRequest = { shutdown() }
+
+        // ── LogCat window (hidden until toolbar Log button is toggled) ──
+        val logWin = LogCatWindow()
+        this.logWindow = logWin
+
+        // Wire debug entry callback: emulator → LogCat panel (direct call).
+        // appendEntry() is safe to call from any thread — it handles its own
+        // EDT dispatch internally, so no outer invokeLater is needed here.
+        emu.onDebugEntry = { entry -> logWin.logPanel.appendEntry(entry) }
+
+        // ── Memory Inspector window (hidden until Memory button toggled) ──
+        val memWin =
+            MemoryInspectorWindow(
+                memoryProvider = { safeMemoryRead(emu) },
+                symbolFile = findSymFile(),
+            )
+        this.memoryWindow = memWin
+
+        // ── Wire toolbar toggles and pause/step callbacks ──
+        wireToolbarCallbacks(win, logWin, memWin)
+
+        // Show main window and start the FPS timer
+        win.isVisible = true
+        win.startFpsTimer()
+    }
+
+    /**
+     * Returns the current [MemoryAccess] if the emulator is running, otherwise null. Used as the
+     * [MemoryInspectorWindow] memory provider to avoid accessing memory when the emulator is
+     * stopped.
+     */
+    private fun safeMemoryRead(emu: GbEmulator): MemoryAccess? =
+        if (emu.isRunning()) {
+            try {
+                emu.getMemory()
+            } catch (_: IllegalStateException) {
+                null
             }
+        } else {
+            null
+        }
+
+    /** Wires all [EmulatorToolbar] toggle callbacks for the log viewer and memory inspector. */
+    private fun wireToolbarCallbacks(
+        win: EmulatorWindow,
+        logWin: LogCatWindow,
+        memWin: MemoryInspectorWindow,
+    ) {
+        win.toolbar.onLogViewerToggle = { show ->
+            logWin.isVisible = show
+            if (show) logWin.toFront()
+        }
+        win.toolbar.onMemoryInspectorToggle = { show ->
+            memWin.isVisible = show
+            if (show) {
+                memWin.inspectorPanel.refresh()
+                memWin.toFront()
+            }
+        }
+        // ── Wire pause/step to refresh memory inspector ──────────────
+        win.toolbar.onPauseToggle = { isPaused ->
+            if (isPaused && memoryWindow?.isVisible == true) {
+                memoryWindow?.inspectorPanel?.refresh()
+            }
+        }
+        win.toolbar.onStepFrame = {
+            if (memoryWindow?.isVisible == true) {
+                memoryWindow?.inspectorPanel?.refresh()
+            }
+        }
+    }
+
+    /**
+     * Wires keyboard input to the [EmulatorWindow] after [CoffeeGbEmulator.start] has been called.
+     * The EventBus is created inside [CoffeeGbEmulator.start], so input wiring must happen after
+     * it.
+     */
+    private fun wireInputAfterStart(emu: CoffeeGbEmulator) {
+        val win = this.window
+        val bus = emu.getEventBus()
+        if (win != null && bus != null) {
+            SwingUtilities.invokeLater { win.addKeyListener(InputHandler(bus)) }
         }
     }
 

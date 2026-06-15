@@ -6,6 +6,7 @@
  */
 package io.github.gbkt.core.dsl
 
+import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.ArrayDef
 import io.github.gbkt.core.ir.AssetRef
 import io.github.gbkt.core.ir.CartridgeConfig
@@ -29,6 +30,7 @@ import io.github.gbkt.core.ir.MetaspriteIR
 import io.github.gbkt.core.ir.MusicDef
 import io.github.gbkt.core.ir.PaletteType
 import io.github.gbkt.core.ir.RefKind
+import io.github.gbkt.core.ir.SceneIR
 import io.github.gbkt.core.ir.SetPalette
 import io.github.gbkt.core.ir.SoundEffectDef
 import io.github.gbkt.core.ir.StructDef
@@ -63,7 +65,7 @@ class GameBuilder(val name: String) {
     internal val refRegistry = RefRegistry()
 
     private val actorBuilders: MutableList<ActorBuilder> = mutableListOf()
-    private val sceneBuilders: MutableList<io.github.gbkt.core.ir.SceneIR> = mutableListOf()
+    private val sceneBuilders: MutableList<SceneIR> = mutableListOf()
     private val systems: MutableList<SystemIR> = mutableListOf()
     private val variables: MutableList<VariableDef> = mutableListOf()
     private val arrays: MutableList<ArrayDef> = mutableListOf()
@@ -291,7 +293,7 @@ class GameBuilder(val name: String) {
      * ```kotlin
      * val titleRef = sceneRef("title")       // forward-declare
      * val gameScene = scene("game") {
-     *     frame { whenever(buttons.start.pressed) { navigate(titleRef) } }
+     *     frame { runIf(buttons.start.pressed) { navigate(titleRef) } }
      * }
      * val titleScene = scene("title") { ... } // defined later
      * ```
@@ -697,75 +699,9 @@ class GameBuilder(val name: String) {
             actor.sprite?.assetRef?.let { assets.add(it) }
         }
 
-        // Inject per-actor palette SetPalette ops into each scene's enter handler.
-        // Actors with a non-null palette override get a SPRITE palette load at scene enter time.
-        //
-        // SEED-007 / D-extra fix (Phase 10.1 Plan 01): the auto-slot fallback must be a running
-        // counter, not the constant 0 — otherwise every auto-slotted actor palette collapses
-        // into slot 0 and only the LAST actor's palette is actually loaded at runtime.
-        //
-        // Mirrors the already-merged SceneBuilder.palette() fix (commit 2e8fb256, Phase 10
-        // Plan 16). The SceneBuilder fix uses `paletteOps.size` because its list is built
-        // incrementally; here `mapNotNull` skips actors without palettes, so we use a
-        // standalone `actorPaletteAutoSlot++` counter rather than `mapIndexedNotNull { idx, … }`
-        // (the seed's first proposal — `idx` there is the actor index, not the auto-slot count,
-        // so an explicit-slot actor in the middle would still bump the next auto slot wrongly).
-        var actorPaletteAutoSlot = 0
-        val actorPaletteOps = actors.mapNotNull { actor ->
-            actor.palette?.let { pal ->
-                val slot = if (pal.slot >= 0) pal.slot else actorPaletteAutoSlot++
-                SetPalette(pal.name, slot, PaletteType.SPRITE)
-            }
-        }
-        val scenes =
-            if (actorPaletteOps.isNotEmpty()) {
-                sceneBuilders.map { scene ->
-                    scene.copy(enterOps = actorPaletteOps + scene.enterOps)
-                }
-            } else {
-                sceneBuilders.toList()
-            }
-
-        // Auto-create implicit _default_npc group and OVERLAP rule.
-        // Any actor with collidesWithNpcs=true but NO explicit groupIds gets added to this group.
-        // Actors with explicit groupIds are NOT added to _default_npc (no double-checking).
-        val implicitNpcActors = actors.filter { actor ->
-            val cfg = actor.npcCollisionConfig
-            cfg != null && cfg.collidesWithNpcs && cfg.groupIds.isEmpty()
-        }
-        val effectiveGroups = _collisionGroups.toMutableList()
-        val effectiveRules = _collisionRules.toMutableList()
-        if (implicitNpcActors.isNotEmpty()) {
-            if (effectiveGroups.none { it.id == CollisionGroupIR.DEFAULT_NPC_GROUP }) {
-                effectiveGroups.add(CollisionGroupIR(CollisionGroupIR.DEFAULT_NPC_GROUP))
-            }
-            if (
-                effectiveRules.none { rule ->
-                    rule.groupA == CollisionGroupIR.DEFAULT_NPC_GROUP &&
-                        rule.groupB == CollisionGroupIR.DEFAULT_NPC_GROUP
-                }
-            ) {
-                effectiveRules.add(
-                    CollisionRuleIR(
-                        groupA = CollisionGroupIR.DEFAULT_NPC_GROUP,
-                        groupB = CollisionGroupIR.DEFAULT_NPC_GROUP,
-                        response = CollisionResponse.OVERLAP,
-                    )
-                )
-            }
-        }
-        // Re-map actors: assign implicit _default_npc groupId to eligible actors
-        val finalActors = actors.map { actor ->
-            val cfg = actor.npcCollisionConfig
-            if (cfg != null && cfg.collidesWithNpcs && cfg.groupIds.isEmpty()) {
-                actor.copy(
-                    npcCollisionConfig =
-                        cfg.copy(groupIds = listOf(CollisionGroupIR.DEFAULT_NPC_GROUP))
-                )
-            } else {
-                actor
-            }
-        }
+        val scenes = buildScenesWithActorPalettes(actors, sceneBuilders)
+        val (effectiveGroups, effectiveRules) = buildEffectiveNpcCollisions(actors)
+        val finalActors = assignImplicitNpcGroups(actors)
 
         return GameIR(
             name = name,
@@ -802,6 +738,88 @@ class GameBuilder(val name: String) {
             collisionRules = effectiveRules.toList(),
         )
     }
+
+    // -------------------------------------------------------------------------
+    // Build helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Builds scenes with per-actor SPRITE palette [SetPalette] ops injected into enter handlers.
+     *
+     * SEED-007 / D-extra: auto-slot counter increments only for actors without an explicit slot, so
+     * an explicit-slot actor in the middle does not displace subsequent auto-slot assignments.
+     */
+    private fun buildScenesWithActorPalettes(
+        actors: List<ActorIR>,
+        scenes: List<SceneIR>,
+    ): List<SceneIR> {
+        var actorPaletteAutoSlot = 0
+        val actorPaletteOps = actors.mapNotNull { actor ->
+            actor.palette?.let { pal ->
+                val slot = if (pal.slot >= 0) pal.slot else actorPaletteAutoSlot++
+                SetPalette(pal.name, slot, PaletteType.SPRITE)
+            }
+        }
+        return if (actorPaletteOps.isNotEmpty()) {
+            scenes.map { scene -> scene.copy(enterOps = actorPaletteOps + scene.enterOps) }
+        } else {
+            scenes.toList()
+        }
+    }
+
+    /**
+     * Auto-creates the implicit `_default_npc` collision group and OVERLAP rule for actors that
+     * have `collidesWithNpcs = true` but no explicit `groupIds`.
+     *
+     * Returns the (possibly augmented) mutable group and rule lists.
+     */
+    private fun buildEffectiveNpcCollisions(
+        actors: List<ActorIR>
+    ): Pair<List<CollisionGroupIR>, List<CollisionRuleIR>> {
+        val groups = _collisionGroups.toMutableList()
+        val rules = _collisionRules.toMutableList()
+        val implicitNpcActors = actors.filter { actor ->
+            val cfg = actor.npcCollisionConfig
+            cfg != null && cfg.collidesWithNpcs && cfg.groupIds.isEmpty()
+        }
+        if (implicitNpcActors.isNotEmpty()) {
+            if (groups.none { it.id == CollisionGroupIR.DEFAULT_NPC_GROUP }) {
+                groups.add(CollisionGroupIR(CollisionGroupIR.DEFAULT_NPC_GROUP))
+            }
+            if (
+                rules.none { rule ->
+                    rule.groupA == CollisionGroupIR.DEFAULT_NPC_GROUP &&
+                        rule.groupB == CollisionGroupIR.DEFAULT_NPC_GROUP
+                }
+            ) {
+                rules.add(
+                    CollisionRuleIR(
+                        groupA = CollisionGroupIR.DEFAULT_NPC_GROUP,
+                        groupB = CollisionGroupIR.DEFAULT_NPC_GROUP,
+                        response = CollisionResponse.OVERLAP,
+                    )
+                )
+            }
+        }
+        return Pair(groups, rules)
+    }
+
+    /**
+     * Assigns the implicit `_default_npc` groupId to actors that have `collidesWithNpcs = true` but
+     * no explicit collision groups.
+     */
+    private fun assignImplicitNpcGroups(actors: List<ActorIR>): List<ActorIR> =
+        actors.map { actor ->
+            val cfg = actor.npcCollisionConfig
+            if (cfg != null && cfg.collidesWithNpcs && cfg.groupIds.isEmpty()) {
+                actor.copy(
+                    npcCollisionConfig =
+                        cfg.copy(groupIds = listOf(CollisionGroupIR.DEFAULT_NPC_GROUP))
+                )
+            } else {
+                actor
+            }
+        }
 }
 
 // =============================================================================

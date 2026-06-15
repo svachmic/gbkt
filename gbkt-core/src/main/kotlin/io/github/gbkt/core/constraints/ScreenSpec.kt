@@ -11,7 +11,8 @@ package io.github.gbkt.core.constraints
  *
  * @property width Screen width in pixels.
  * @property height Screen height in pixels.
- * @property bitsPerPixel Color depth (2 for GB, 4 for GBC with palettes, etc.).
+ * @property bitsPerPixel Color depth per tile pixel (2 for both GB and GBC — GBC color comes from
+ *   per-tile palette attributes, not deeper tile data).
  * @property tileSize Tile dimensions in pixels (typically 8x8).
  * @property backgroundLayers Number of background layers supported.
  * @property supportsPalettes Whether the platform supports color palettes.

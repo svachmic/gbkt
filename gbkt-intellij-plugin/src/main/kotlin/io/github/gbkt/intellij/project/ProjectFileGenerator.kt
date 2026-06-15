@@ -96,7 +96,7 @@ class ProjectFileGenerator(
         |}
         |
         |dependencies {
-        |    implementation("io.github.gbkt:gbkt-core:0.1.0")
+        |    implementation("io.github.gbkt:gbkt-core:0.1.1")
         |    testImplementation(kotlin("test"))
         |}
         |

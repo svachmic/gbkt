@@ -24,6 +24,7 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CVar
 import io.github.gbkt.backend.gbdk.codegen.ast.CVarDecl
 import io.github.gbkt.backend.gbdk.codegen.ast.CVoid
 import io.github.gbkt.core.ir.DialogChoice
+import io.github.gbkt.core.ir.EnvelopeConfig
 import io.github.gbkt.core.ir.EnvelopeDirection
 import io.github.gbkt.core.ir.FadeOp
 import io.github.gbkt.core.ir.ForOp
@@ -37,6 +38,7 @@ import io.github.gbkt.core.ir.PlaySound
 import io.github.gbkt.core.ir.ScriptOp
 import io.github.gbkt.core.ir.SoundChannel
 import io.github.gbkt.core.ir.SoundEffectDef
+import io.github.gbkt.core.ir.SoundRegisters
 import io.github.gbkt.core.ir.SweepDirection
 import io.github.gbkt.core.ir.WhileOp
 
@@ -351,159 +353,170 @@ class SoundVisitor(private val gameIR: GameIR) {
     /**
      * Generate Game Boy NRxx register writes for a [SoundEffectDef].
      *
-     * Register bit layout follows Pan Docs:
-     * - CH1 (PULSE1): NR10 sweep, NR11 duty+length, NR12 envelope, NR13 freq-low, NR14
-     *   trigger+freq-high
-     * - CH2 (PULSE2): NR21 duty+length, NR22 envelope, NR23 freq-low, NR24 trigger+freq-high
-     * - CH3 (WAVE): NR30 on/off, NR31 length, NR32 output-level, NR33 freq-low, NR34
-     *   trigger+freq-high
-     * - CH4 (NOISE): NR41 length, NR42 envelope, NR43 noise-params, NR44 trigger
+     * Dispatches to a per-channel helper (buildPulse1Writes / buildPulse2Writes / buildWaveWrites /
+     * buildNoiseWrites) defined as file-private top-level functions below. Register bit layouts
+     * follow Pan Docs; see each helper's KDoc for details.
      *
      * All register values are emitted as hex literals with the `u` unsigned suffix (e.g. `0xF0u`).
      */
     @Suppress("MagicNumber")
-    private fun buildNRxxRegisterWrites(def: SoundEffectDef): List<CStatement> {
-        val regs = def.registers
-        val body = mutableListOf<CStatement>()
-
-        // Helper: typed NR register write emitting hex literal (e.g. 0xC3u) via CRawExpr.
-        // Hardware register values are traditionally written in hex for readability.
-        // CLiteral emits decimal, so we use CRawExpr for the hex-formatted unsigned value.
-        fun nrWrite(register: String, value: Int): CExprStatement {
-            val hexLit = "0x${value.toString(16).uppercase().padStart(2, '0')}u"
-            return CExprStatement(CBinaryExpr(CVar(register), "=", CRawExpr(hexLit)))
-        }
-
+    private fun buildNRxxRegisterWrites(def: SoundEffectDef): List<CStatement> =
         when (def.channel) {
-            SoundChannel.PULSE1 -> {
-                // NR10: sweep — bit 6:4=time, bit 3=direction, bit 2:0=shift
-                val sweepVal =
-                    regs.sweep?.let { s ->
-                        (s.time shl 4) or
-                            (if (s.direction == SweepDirection.DECREASE) 0x08 else 0x00) or
-                            (s.shift and 0x07)
-                    } ?: 0x00
-                body += nrWrite("NR10_REG", sweepVal)
-
-                // NR11: duty + length — bit 7:6=duty, bit 5:0=length
-                val dutyBits = regs.duty.bits
-                val nr11 = (dutyBits shl 6) or (regs.length and 0x3F)
-                body += nrWrite("NR11_REG", nr11)
-
-                // NR12: envelope — bit 7:4=volume, bit 3=direction, bit 2:0=pace
-                val env = regs.envelope
-                val nr12 =
-                    if (env != null) {
-                        (env.volume shl 4) or
-                            (if (env.direction == EnvelopeDirection.INCREASE) 0x08 else 0x00) or
-                            (env.pace and 0x07)
-                    } else 0x00
-                body += nrWrite("NR12_REG", nr12)
-
-                // NR13: frequency low byte
-                body += nrWrite("NR13_REG", regs.frequency and 0xFF)
-
-                // NR14: trigger + length-enable + frequency high 3 bits
-                val nr14 =
-                    (if (regs.trigger) 0x80 else 0x00) or
-                        (if (regs.lengthEnable) 0x40 else 0x00) or
-                        ((regs.frequency shr 8) and 0x07)
-                body += nrWrite("NR14_REG", nr14)
-            }
-
-            SoundChannel.PULSE2 -> {
-                // NR21: duty + length — bit 7:6=duty, bit 5:0=length
-                val dutyBits = regs.duty.bits
-                val nr21 = (dutyBits shl 6) or (regs.length and 0x3F)
-                body += nrWrite("NR21_REG", nr21)
-
-                // NR22: envelope — bit 7:4=volume, bit 3=direction, bit 2:0=pace
-                val env = regs.envelope
-                val nr22 =
-                    if (env != null) {
-                        (env.volume shl 4) or
-                            (if (env.direction == EnvelopeDirection.INCREASE) 0x08 else 0x00) or
-                            (env.pace and 0x07)
-                    } else 0x00
-                body += nrWrite("NR22_REG", nr22)
-
-                // NR23: frequency low byte
-                body += nrWrite("NR23_REG", regs.frequency and 0xFF)
-
-                // NR24: trigger + length-enable + frequency high 3 bits
-                val nr24 =
-                    (if (regs.trigger) 0x80 else 0x00) or
-                        (if (regs.lengthEnable) 0x40 else 0x00) or
-                        ((regs.frequency shr 8) and 0x07)
-                body += nrWrite("NR24_REG", nr24)
-            }
-
-            SoundChannel.WAVE -> {
-                // Load wave RAM if custom waveform data is provided (A3)
-                val waveform = regs.waveform
-                if (waveform != null && waveform.size >= 16) {
-                    body += nrWrite("NR30_REG", 0x00) // disable CH3 before loading wave RAM
-                    for (i in 0 until 16) {
-                        val byteVal = waveform[i].toInt() and 0xFF
-                        body +=
-                            CExprStatement(
-                                CBinaryExpr(
-                                    CArrayAccess(CVar("AUD3WAVERAM"), CLiteral(i)),
-                                    "=",
-                                    CLiteral(byteVal),
-                                )
-                            )
-                    }
-                }
-                // NR30: CH3 on/off (bit 7=DAC power)
-                body += nrWrite("NR30_REG", 0x80) // DAC on
-
-                // NR31: length
-                body += nrWrite("NR31_REG", regs.length and 0xFF)
-
-                // NR32: output level (bit 6:5 = 0=mute, 1=100%, 2=50%, 3=25%)
-                val outputLevelBits = (regs.waveOutputLevel and 0x03) shl 5
-                body += nrWrite("NR32_REG", outputLevelBits)
-
-                // NR33: frequency low byte
-                body += nrWrite("NR33_REG", regs.frequency and 0xFF)
-
-                // NR34: trigger + length-enable + frequency high 3 bits
-                val nr34 =
-                    (if (regs.trigger) 0x80 else 0x00) or
-                        (if (regs.lengthEnable) 0x40 else 0x00) or
-                        ((regs.frequency shr 8) and 0x07)
-                body += nrWrite("NR34_REG", nr34)
-            }
-
-            SoundChannel.NOISE -> {
-                // NR41: length (bit 5:0=length)
-                body += nrWrite("NR41_REG", regs.length and 0x3F)
-
-                // NR42: envelope — bit 7:4=volume, bit 3=direction, bit 2:0=pace
-                val env = regs.envelope
-                val nr42 =
-                    if (env != null) {
-                        (env.volume shl 4) or
-                            (if (env.direction == EnvelopeDirection.INCREASE) 0x08 else 0x00) or
-                            (env.pace and 0x07)
-                    } else 0x00
-                body += nrWrite("NR42_REG", nr42)
-
-                // NR43: noise params — bit 7:4=clock-shift, bit 3=width-mode, bit 2:0=divisor
-                val nr43 =
-                    ((regs.noiseClockShift and 0x0F) shl 4) or
-                        (if (regs.noiseWidthMode) 0x08 else 0x00) or
-                        (regs.noiseDivisor and 0x07)
-                body += nrWrite("NR43_REG", nr43)
-
-                // NR44: trigger + length-enable
-                val nr44 =
-                    (if (regs.trigger) 0x80 else 0x00) or (if (regs.lengthEnable) 0x40 else 0x00)
-                body += nrWrite("NR44_REG", nr44)
-            }
+            SoundChannel.PULSE1 -> buildPulse1Writes(def.registers)
+            SoundChannel.PULSE2 -> buildPulse2Writes(def.registers)
+            SoundChannel.WAVE -> buildWaveWrites(def.registers)
+            SoundChannel.NOISE -> buildNoiseWrites(def.registers)
         }
+}
 
-        return body
+// =============================================================================
+// File-private NRxx helpers — extracted from SoundVisitor.buildNRxxRegisterWrites (E-06)
+// One helper per GB audio channel; nrWrite + envelopeValue are shared utilities.
+// =============================================================================
+
+/**
+ * Emit `register = 0xVVu` as a C hex-literal assignment (unsigned suffix, per hardware convention).
+ */
+@Suppress("MagicNumber")
+private fun nrWrite(register: String, value: Int): CExprStatement {
+    val hexLit = "0x${value.toString(16).uppercase().padStart(2, '0')}u"
+    return CExprStatement(CBinaryExpr(CVar(register), "=", CRawExpr(hexLit)))
+}
+
+/**
+ * Compute NR12/NR22/NR42 envelope byte: vol(7:4) | dir(3) | pace(2:0).
+ *
+ * Returns 0x00 when [env] is null (DAC-off / no envelope configured).
+ */
+@Suppress("MagicNumber")
+private fun envelopeValue(env: EnvelopeConfig?): Int =
+    if (env != null) {
+        (env.volume shl 4) or
+            (if (env.direction == EnvelopeDirection.INCREASE) 0x08 else 0x00) or
+            (env.pace and 0x07)
+    } else {
+        0x00
     }
+
+/**
+ * Build NRxx writes for CH1 (PULSE1: sweep + square wave + envelope).
+ *
+ * Register layout: NR10 sweep, NR11 duty+length, NR12 envelope, NR13 freq-low, NR14
+ * trigger+length-enable+freq-high.
+ */
+@Suppress("MagicNumber")
+private fun buildPulse1Writes(regs: SoundRegisters): List<CStatement> {
+    val body = mutableListOf<CStatement>()
+    // NR10: sweep — bit 6:4=time, bit 3=direction, bit 2:0=shift
+    val sweepVal =
+        regs.sweep?.let { s ->
+            (s.time shl 4) or
+                (if (s.direction == SweepDirection.DECREASE) 0x08 else 0x00) or
+                (s.shift and 0x07)
+        } ?: 0x00
+    body += nrWrite("NR10_REG", sweepVal)
+    // NR11: duty + length — bit 7:6=duty, bit 5:0=length
+    body += nrWrite("NR11_REG", (regs.duty.bits shl 6) or (regs.length and 0x3F))
+    // NR12: envelope — bit 7:4=volume, bit 3=direction, bit 2:0=pace
+    body += nrWrite("NR12_REG", envelopeValue(regs.envelope))
+    // NR13: frequency low byte
+    body += nrWrite("NR13_REG", regs.frequency and 0xFF)
+    // NR14: trigger + length-enable + frequency high 3 bits
+    val nr14 =
+        (if (regs.trigger) 0x80 else 0x00) or
+            (if (regs.lengthEnable) 0x40 else 0x00) or
+            ((regs.frequency shr 8) and 0x07)
+    body += nrWrite("NR14_REG", nr14)
+    return body
+}
+
+/**
+ * Build NRxx writes for CH2 (PULSE2: square wave + envelope, no sweep).
+ *
+ * Register layout: NR21 duty+length, NR22 envelope, NR23 freq-low, NR24
+ * trigger+length-enable+freq-high.
+ */
+@Suppress("MagicNumber")
+private fun buildPulse2Writes(regs: SoundRegisters): List<CStatement> {
+    val body = mutableListOf<CStatement>()
+    // NR21: duty + length — bit 7:6=duty, bit 5:0=length
+    body += nrWrite("NR21_REG", (regs.duty.bits shl 6) or (regs.length and 0x3F))
+    // NR22: envelope — bit 7:4=volume, bit 3=direction, bit 2:0=pace
+    body += nrWrite("NR22_REG", envelopeValue(regs.envelope))
+    // NR23: frequency low byte
+    body += nrWrite("NR23_REG", regs.frequency and 0xFF)
+    // NR24: trigger + length-enable + frequency high 3 bits
+    val nr24 =
+        (if (regs.trigger) 0x80 else 0x00) or
+            (if (regs.lengthEnable) 0x40 else 0x00) or
+            ((regs.frequency shr 8) and 0x07)
+    body += nrWrite("NR24_REG", nr24)
+    return body
+}
+
+/**
+ * Build NRxx writes for CH3 (WAVE: programmable wave with optional wave RAM load).
+ *
+ * Register layout: optional NR30=0x00 + wave RAM load, NR30=DAC-on, NR31 length, NR32 output-level,
+ * NR33 freq-low, NR34 trigger+length-enable+freq-high.
+ */
+@Suppress("MagicNumber")
+private fun buildWaveWrites(regs: SoundRegisters): List<CStatement> {
+    val body = mutableListOf<CStatement>()
+    // Load wave RAM if custom waveform data is provided (A3)
+    val waveform = regs.waveform
+    if (waveform != null && waveform.size >= 16) {
+        body += nrWrite("NR30_REG", 0x00) // disable CH3 before loading wave RAM
+        for (i in 0 until 16) {
+            val byteVal = waveform[i].toInt() and 0xFF
+            body +=
+                CExprStatement(
+                    CBinaryExpr(
+                        CArrayAccess(CVar("AUD3WAVERAM"), CLiteral(i)),
+                        "=",
+                        CLiteral(byteVal),
+                    )
+                )
+        }
+    }
+    // NR30: CH3 on/off (bit 7=DAC power)
+    body += nrWrite("NR30_REG", 0x80) // DAC on
+    // NR31: length
+    body += nrWrite("NR31_REG", regs.length and 0xFF)
+    // NR32: output level (bit 6:5 = 0=mute, 1=100%, 2=50%, 3=25%)
+    body += nrWrite("NR32_REG", (regs.waveOutputLevel and 0x03) shl 5)
+    // NR33: frequency low byte
+    body += nrWrite("NR33_REG", regs.frequency and 0xFF)
+    // NR34: trigger + length-enable + frequency high 3 bits
+    val nr34 =
+        (if (regs.trigger) 0x80 else 0x00) or
+            (if (regs.lengthEnable) 0x40 else 0x00) or
+            ((regs.frequency shr 8) and 0x07)
+    body += nrWrite("NR34_REG", nr34)
+    return body
+}
+
+/**
+ * Build NRxx writes for CH4 (NOISE: pseudo-random noise generator).
+ *
+ * Register layout: NR41 length, NR42 envelope, NR43 noise-params (clock-shift + width-mode +
+ * divisor), NR44 trigger+length-enable.
+ */
+@Suppress("MagicNumber")
+private fun buildNoiseWrites(regs: SoundRegisters): List<CStatement> {
+    val body = mutableListOf<CStatement>()
+    // NR41: length (bit 5:0=length)
+    body += nrWrite("NR41_REG", regs.length and 0x3F)
+    // NR42: envelope — bit 7:4=volume, bit 3=direction, bit 2:0=pace
+    body += nrWrite("NR42_REG", envelopeValue(regs.envelope))
+    // NR43: noise params — bit 7:4=clock-shift, bit 3=width-mode, bit 2:0=divisor
+    val nr43 =
+        ((regs.noiseClockShift and 0x0F) shl 4) or
+            (if (regs.noiseWidthMode) 0x08 else 0x00) or
+            (regs.noiseDivisor and 0x07)
+    body += nrWrite("NR43_REG", nr43)
+    // NR44: trigger + length-enable
+    val nr44 = (if (regs.trigger) 0x80 else 0x00) or (if (regs.lengthEnable) 0x40 else 0x00)
+    body += nrWrite("NR44_REG", nr44)
+    return body
 }

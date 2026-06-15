@@ -55,12 +55,7 @@ class BindCurrentLevelEmissionTest {
          * active worktree (#3099 worktree path safety).
          */
         val EVIDENCE_DIR =
-            File(System.getProperty("user.dir"))
-                .resolve(
-                    "../.planning/phases/13.5-framework-primitives-graphics-level-codegen-inserted/" +
-                        "evidence/tier1-shape"
-                )
-                .normalize()
+            File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence").normalize()
     }
 
     private val pipeline = GBDKPipeline()
@@ -132,7 +127,7 @@ class BindCurrentLevelEmissionTest {
                 val titleScene =
                     scene("title") {
                         enter { cEmit("fill_bkg_rect(0u, 0u, 20u, 18u, 0u);") }
-                        frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                        frame { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                     }
 
                 // Gameplay scene — SUBJECT: enter { bindCurrentLevel() }
@@ -140,7 +135,7 @@ class BindCurrentLevelEmissionTest {
                 scene("gameplay") {
                     zone(gameplayZone1)
                     enter { bindCurrentLevel() }
-                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("title")) } }
+                    frame { runIf(buttons.start.pressed) { navigate(SceneRef("title")) } }
                 }
 
                 // Hidden scene binding the 2nd gameplay zone so it surfaces in gameIR.zones
@@ -148,7 +143,7 @@ class BindCurrentLevelEmissionTest {
                 // be reachable for the case count to hit ≥2).
                 scene("gameplay2") {
                     zone(gameplayZone2)
-                    frame { whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
+                    frame { runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) } }
                 }
 
                 start = titleScene

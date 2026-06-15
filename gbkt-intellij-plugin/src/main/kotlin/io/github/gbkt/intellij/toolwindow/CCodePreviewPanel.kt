@@ -414,26 +414,32 @@ class CCodePreviewPanel(private val project: Project) : JPanel(BorderLayout()), 
             FileDocumentManagerListener.TOPIC,
             object : FileDocumentManagerListener {
                 override fun beforeDocumentSaving(document: com.intellij.openapi.editor.Document) {
-                    if (!autoRefreshCheckbox.isSelected) return
-                    if (isDisposed) return
-
-                    // Check if the saved file is a gbkt file
-                    val file = FileDocumentManager.getInstance().getFile(document)
-                    if (file != null && file.name.endsWith(".gbkt.kts")) {
-                        // Verify the file belongs to this project to avoid triggering
-                        // generation for files in other open projects
-                        val projectPath = project.basePath
-                        if (projectPath != null && file.path.startsWith(projectPath)) {
-                            ApplicationManager.getApplication().invokeLater {
-                                if (!isDisposed) {
-                                    refreshCode()
-                                }
-                            }
-                        }
-                    }
+                    onDslFileSaved(document)
                 }
             },
         )
+    }
+
+    /**
+     * Called when any document is about to be saved. Guards on auto-refresh enabled and disposed
+     * state, then triggers an async, project-scoped refresh if the file is a .gbkt.kts DSL file
+     * belonging to this project (path check avoids cross-project interference).
+     */
+    private fun onDslFileSaved(document: com.intellij.openapi.editor.Document) {
+        if (!autoRefreshCheckbox.isSelected) return
+        if (isDisposed) return
+
+        val file = FileDocumentManager.getInstance().getFile(document) ?: return
+        if (!file.name.endsWith(".gbkt.kts")) return
+
+        val projectPath = project.basePath ?: return
+        if (!file.path.startsWith(projectPath)) return
+
+        ApplicationManager.getApplication().invokeLater {
+            if (!isDisposed) {
+                refreshCode()
+            }
+        }
     }
 
     /**

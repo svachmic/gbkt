@@ -21,7 +21,7 @@ package io.github.gbkt.core
  * start = titleScene  // Type-safe!
  *
  * scene("gameplay") {
- *     whenever(condition) {
+ *     runIf(condition) {
  *         goto(titleScene)  // Type-safe!
  *     }
  * }
@@ -63,7 +63,7 @@ data class AnimationRef(val name: String) {
  *     }
  * }
  *
- * whenever(playerState.isIn(idle)) { ... }  // Type-safe!
+ * runIf(playerState.isIn(idle)) { ... }  // Type-safe!
  * ```
  */
 data class StateRef(val machineName: String, val stateName: String) {
@@ -82,7 +82,7 @@ data class StateRef(val machineName: String, val stateName: String) {
  *     tag(enemyTag)  // Type-safe!
  * }
  *
- * whenever(player collidesWithAny enemyTag) { ... }  // Type-safe!
+ * runIf(player collidesWithAny enemyTag) { ... }  // Type-safe!
  * ```
  */
 data class TagRef(val name: String) {

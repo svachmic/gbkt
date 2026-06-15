@@ -57,7 +57,7 @@ import org.junit.jupiter.api.Assumptions
 // in main.c.
 //
 // Evidence: extracted array body is written to
-// .planning/phases/12.5-.../evidence/tier1-geometry/ before assertions fire,
+// build/gbkt/test-evidence/ before assertions fire,
 // so the C output shape is reviewable from disk even when a test is RED.
 // =============================================================================
 
@@ -65,19 +65,16 @@ class PlayerMetaspriteGeometryTest {
 
     companion object {
         /**
-         * Evidence is written under the **active checkout root** (worktree-safe).
+         * Emission scratch is written under the module's gitignored build/ directory (R1 + R3).
          *
          * `user.dir` resolves to the Gradle project's working directory, which inside a Claude Code
          * worktree is the worktree root — not the main repository. Hard-coding the main-repo
          * absolute path would silently route evidence files outside the active checkout and miss
-         * the commit (#3099 worktree path safety).
+         * the commit (#3099 worktree path safety). The path `build/gbkt/test-evidence` is
+         * gitignored via the root `.gitignore` `build/` pattern — no committed artifact.
          */
         val EVIDENCE_DIR =
-            File(System.getProperty("user.dir"))
-                .resolve(
-                    "../../.planning/phases/12.5-png2asset-metasprite-layout-fix-and-phase-12-3-closure/evidence/tier1-geometry"
-                )
-                .normalize()
+            File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence").normalize()
     }
 
     // -------------------------------------------------------------------------

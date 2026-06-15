@@ -26,12 +26,12 @@
 ### Tile-Based Brick Collision
 ```kotlin
 // Brick grid occupies pixels x[40,120) y[24,48) — 8px tiles
-whenever((ball.y isAtLeast 24) logicalAnd (ball.y isBelow 48)) {
-    whenever((ball.x isAtLeast 40) logicalAnd (ball.x isBelow 120)) {
+runIf((ball.y isAtLeast 24) logicalAnd (ball.y isBelow 48)) {
+    runIf((ball.x isAtLeast 40) logicalAnd (ball.x isBelow 120)) {
         bc set ((ball.x - 40) shr 3)         // column 0..9
         brow set ((ball.y - 24) shr 3)       // row 0..2
         bidx set (brow * 10 + bc)            // flat index 0..29
-        whenever(bricks[bidx] isEqualTo 1) {
+        runIf(bricks[bidx] isEqualTo 1) {
             bricks[bidx] = 0
             gotoxy(bc + 5, brow + 3)         // erase tile from BG layer
             print(" ")
@@ -67,7 +67,7 @@ gameHud.show()
 ### logicalAnd for Multi-Condition Checks
 ```kotlin
 // Compound condition — both must be true
-whenever((ball.y isAtLeast 24) logicalAnd (ball.y isBelow 48)) { ... }
+runIf((ball.y isAtLeast 24) logicalAnd (ball.y isBelow 48)) { ... }
 ```
 
 ## How to Modify

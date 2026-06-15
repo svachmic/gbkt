@@ -282,8 +282,6 @@ class SimpleBattleAndTilesetTest {
 
         // Both scenes should use the SAME TILESET_ID (not two different ones)
         // The first scene with the tilesetRef defines the ID
-        val tileset1Count = bank1C.split("TILESET_ID_FLOOR1").size - 1
-        val tileset2Count = bank1C.split("TILESET_ID_FLOOR2").size - 1
         // One of them should be the canonical tileset ID (from the first registered scene)
         assertTrue(
             bank1C.contains("_current_tileset_id"),

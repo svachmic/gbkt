@@ -13,6 +13,7 @@ package io.github.gbkt.genre.platformer.codegen
 
 import io.github.gbkt.backend.api.GenreSystemVisitor
 import io.github.gbkt.backend.api.GenreVisitorResult
+import io.github.gbkt.backend.api.gameUsesTilemapCollisionPathC
 import io.github.gbkt.backend.api.sanitizeCId
 import io.github.gbkt.backend.gbdk.codegen.ast.CBinaryExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CBlankLine
@@ -37,6 +38,7 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CVar
 import io.github.gbkt.backend.gbdk.codegen.ast.CVarDecl
 import io.github.gbkt.backend.gbdk.codegen.ast.CVoid
 import io.github.gbkt.backend.gbdk.codegen.ast.CWhile
+import io.github.gbkt.backend.gbdk.profiles.GameBoyConstants
 import io.github.gbkt.core.ir.GameIR
 import io.github.gbkt.core.ir.GenericSystem
 import io.github.gbkt.core.ir.IfOp
@@ -54,6 +56,7 @@ import io.github.gbkt.genre.platformer.domain.PlatformType
 import io.github.gbkt.genre.platformer.domain.PlatformerCameraConfig
 import io.github.gbkt.genre.platformer.domain.PlatformerPhysicsConfig
 import io.github.gbkt.genre.platformer.domain.ScrollDirection
+import io.github.gbkt.genre.platformer.dsl.TilemapCollisionBuilder
 
 // =============================================================================
 // PLATFORMER VISITOR
@@ -591,64 +594,27 @@ class PlatformerVisitor : GenreSystemVisitor {
         val vySym = "_" + ((tcSystem?.config?.get("vyVar") as? String) ?: "player_vy")
         val groundedSym = "_" + ((tcSystem?.config?.get("groundedVar") as? String) ?: "grounded")
 
-        // Round-5 H1 (Plan 12.7-19) — metasprite render-vs-hitbox-foot correction.
-        // The hitbox foot (the snap target) and the rendered metasprite-bottom can DIFFER
-        // when the metasprite's draw extent (frameHeight − pivotY) is taller than the
-        // hitbox's vertical extent (hitbox.height). For the platformer-template under
-        // SPRITES_8x16 + pivot(12, 6) + frameSize(24, 32) + hitbox(8, 24), the rendered
-        // metasprite-bottom lands `32 − 6 − 24 = 2` px BELOW the hitbox foot. Without this
-        // correction the rendered sprite overlays the top 2 px of the ground tile (user
-        // anchor-2 UAT report 2026-05-26 — Plan 12.7-15 BLOCKED).
-        //
-        // Resolution: locate the player metasprite by matching its `posYVarName` against
-        // the tilemap-collision system's `posYVar` binding (which the user-DSL sets via
-        // `tilemapCollision { position(playerX, playerY) }` and the metasprite block sets
-        // via `posY(playerY)` — both flow the SAME property-delegate name, so the strings
-        // are equal). When the match succeeds AND the metasprite carries full geometry
-        // (frameHeight + pivotY both non-null), compute pivot_adjust algebraically from
-        // those values. When ANY field is absent (test fixtures without an actor or
-        // metasprite, or a still-being-migrated DSL draft missing pivot/frameSize) fall
-        // back to the platformer-template's reference geometry constants (32, 6) — the
-        // SAME convention the playerHitbox fallback above uses (defaults to the
-        // platformer-template's (0, 0, 8, 24)). This keeps minimal-IR test fixtures
-        // (PlatformerPhysicsSnapToTileTopEmissionTest) producing the
-        // platformer-template-shaped emission verbatim and preserves byte-identical
-        // emission for the 4 existing genre-platformer EmissionTests under their
-        // current minimal GameIR shape.
-        //
-        // No magic strings (feedback_no_magic_strings.md): the metasprite lookup matches
-        // on the DSL property name flowing through both bindings — the visitor never
-        // assumes a hardcoded "player" id. The fallback constants ARE locked to the
-        // platformer-template's reference geometry verbatim and are kept as named
-        // companion constants below for self-citation.
-        //
-        // Deferred (SEED-021): lift `pivot_adjust` resolution into the `tilemapCollision { }`
-        // builder so the user-DSL becomes the single source of truth (the metasprite
-        // lookup dance disappears). Tracked as `SEED-021-platformer-pivot-adjust-auto-derive.md`.
-        val tcPosYVar = (tcSystem?.config?.get("posYVar") as? String)
-        val playerMetasprite =
-            gameIR.metasprites.firstOrNull { ms ->
-                tcPosYVar != null && ms.posYVarName == tcPosYVar
+        // SEED-021: resolved from DSL config key set by TilemapCollisionBuilder.pivotAdjust(v).
+        // This lifts resolution out of the metasprite-lookup dance into the DSL as the single
+        // source of truth per Project Rule #1. Falls back to companion constants when the key
+        // is absent — preserves byte-identical emission for test fixtures with no pivotAdjust
+        // declared (back-compat for the 4 existing genre-platformer EmissionTests whose minimal
+        // GameIR has no pivotAdjust config key). The fallback is algebraically identical to the
+        // old metasprite-lookup dance result for the reference geometry (32-6-24=2).
+        val pivotAdjust: Int =
+            if (tcSystem != null) {
+                (tcSystem.config[TilemapCollisionBuilder.CONFIG_KEY_PIVOT_ADJUST] as? Int)
+                    ?: run {
+                        System.err.println(
+                            "WARNING: tilemapCollision { } declared but no pivotAdjust set; " +
+                                "using fallback geometry ($REFERENCE_FRAME_HEIGHT, $REFERENCE_PIVOT_Y)"
+                        )
+                        (REFERENCE_FRAME_HEIGHT - REFERENCE_PIVOT_Y - height).coerceAtLeast(0)
+                    }
+            } else {
+                // Path A or Path B: no tilemapCollision system; silently use reference geometry.
+                (REFERENCE_FRAME_HEIGHT - REFERENCE_PIVOT_Y - height).coerceAtLeast(0)
             }
-                ?: gameIR.metasprites.firstOrNull { ms ->
-                    // Fallback to the first metasprite with full geometry. Mirrors the
-                    // playerHitbox fallback above ("first non-null hitbox = player by
-                    // convention").
-                    ms.frameHeight != null && ms.pivotY != null
-                }
-        val pivotAdjust: Int = run {
-            val frameH = playerMetasprite?.frameHeight ?: REFERENCE_FRAME_HEIGHT
-            val pivotY = playerMetasprite?.pivotY ?: REFERENCE_PIVOT_Y
-            // Algebraic identity: frameHeight − pivotY − hitbox.height
-            // — see evidence/round-5-diagnostic.md Section 2 for the derivation.
-            // Clamped at >= 0 so a metasprite whose render extent fits INSIDE the
-            // hitbox (no overshoot — render-bottom equals OR sits above hitbox foot)
-            // contributes a zero correction, not a negative one. This matches the
-            // semantic: pivot_adjust is "how many extra pixels does the rendered
-            // sprite extend below the hitbox foot"; if the answer is ≤ 0, no
-            // correction is required and the snap stays at the hitbox foot.
-            (frameH - pivotY - height).coerceAtLeast(0)
-        }
 
         // Phase 12.3 Plan 02 — platformer_input GenericSystem (Plan 12.3-01 substrate)
         // carries the walkSpeed/friction/airFriction tuning numbers. Defaults match the
@@ -1285,15 +1251,11 @@ class PlatformerVisitor : GenreSystemVisitor {
      *   hitbox.height` pixels BELOW the hitbox-foot snap target. For the platformer-template's
      *   geometry (frameSize(24, 32), pivot(12, 6), hitbox 8×24): `pivot_adjust = 32 − 6 − 24 = 2`.
      *   Without this correction the rendered sprite overlays the top 2 px of the ground tile (user
-     *   UAT 2026-05-26 anchor-2 report). Resolved by the caller from `gameIR.metasprites` matched
-     *   against `posYSym` — see [buildTilemapPhysicsUpdateFunction] for the IR-driven derivation
-     *   and the documented fallback. Plan 12.7-19 — Round-5 H1 fix; see
-     *   evidence/round-5-diagnostic.md Section 2.
-     *
-     *   Deferred (SEED-021): lift the resolution into the GenericSystem config layer once
-     *   `tilemapCollision { ... }` learns to read the bound metasprite directly. Tracked as
-     *   `SEED-021-platformer-pivot-adjust-auto-derive.md`. Today's resolution is at the visitor's
-     *   call site (one level above), which is sufficient for Round-5 closure.
+     *   UAT 2026-05-26 anchor-2 report). Resolved via [buildTilemapPhysicsUpdateFunction] which
+     *   reads the `pivotAdjust` key from the `tilemap_collision` GenericSystem config (D-05 /
+     *   SEED-021) and falls back to companion constants when the key is absent. Plan 12.7-19 —
+     *   Round-5 H1 fix; see evidence/round-5-diagnostic.md Section 2. Plan 21-01 — SEED-021
+     *   closure: resolution lifted into TilemapCollisionBuilder (Project Rule #1).
      */
     private fun buildVerticalFootProbe(
         halfWMinus2: Int,
@@ -1586,9 +1548,6 @@ class PlatformerVisitor : GenreSystemVisitor {
                 // UINT8 for _map_pos_x / _old_map_pos_x is sufficient because they index into the
                 // tilemap column (max 255 columns = 2040 px, well above any practical level).
                 //
-                // Deferred (SEED-022): consolidate gameUsesTilemapCollision() with the identical
-                // predicate in GBDKPipeline into a shared utility (e.g. TilemapCollisionGate)
-                // once the cross-genre / cross-backend pattern stabilises.
                 if (gameUsesTilemapCollision(gameIR)) {
                     add(CVarDecl(name = "_camera_x", type = CU16, initializer = CLiteral(0)))
                     add(CVarDecl(name = "_old_camera_x", type = CU16, initializer = CLiteral(0)))
@@ -1647,20 +1606,30 @@ class PlatformerVisitor : GenreSystemVisitor {
     /**
      * Phase 12 D-13 — predicate that gates the tilemap-camera mode WRAM globals.
      *
-     * Returns `true` when the game opts into tilemap-collision physics — detected via either:
+     * Returns `true` when the game opts into tilemap-collision physics — detected via:
+     * - **Path C (shared — Phase 21 Plan 02):** delegates to
+     *   [io.github.gbkt.backend.api.gameUsesTilemapCollisionPathC] — a
+     *   [io.github.gbkt.core.ir.GenericSystem] with `config["type"] == "tilemap_collision"` is
+     *   present. This is the previously-missing path (only in [GBDKPipeline], not here) fixed by
+     *   SEED-022. The shared util lives in `gbkt-backend-api` so both callers stay in lockstep.
      * - **Path A:** a `platformer_physics` `GenericSystem` whose `physicsConfig` is a
      *   `PlatformerPhysicsConfig` with a non-null `solidThreshold`.
      * - **Path B:** any `ZoneIR` in `gameIR.zones` whose `platformerPhysicsOverride` map contains a
      *   `"solidThreshold"` key.
      *
-     * Mirrors `GBDKPipeline.gameUsesTilemapCollision(gameIR)` exactly (Plan 12-08). Duplicated here
-     * because `gbkt-genre-platformer` has direct compile-time access to
-     * `PlatformerPhysicsConfig.solidThreshold` (no reflection needed), but the backend predicate
-     * uses reflection because `gbkt-backend-gbdk` does NOT depend on the platformer genre module.
-     * The two predicates MUST stay in lockstep — see SEED-022 and the consolidation note in
-     * `visitCamera`.
+     * Path C is kept in `gbkt-backend-api` because `gbkt-backend-gbdk` also needs it and does NOT
+     * depend on `gbkt-genre-platformer`. Path A is kept local here because this module has direct
+     * compile-time access to `PlatformerPhysicsConfig.solidThreshold` (no reflection required).
+     *
+     * Lockstep with `GBDKPipeline.gameUsesTilemapCollision` is structurally enforced by the shared
+     * Path C util + `TilemapCollisionPredicateLockstepTest` (Phase 21 Plan 02).
      */
     private fun gameUsesTilemapCollision(gameIR: GameIR): Boolean {
+        // Path C (Phase 21 Plan 02) — shared detection via gbkt-backend-api util (SEED-022 fix).
+        // Previously missing from this visitor; now added as the first check (same ordering as
+        // GBDKPipeline) so early-return fires before the typed Path A cast.
+        if (gameUsesTilemapCollisionPathC(gameIR)) return true
+
         // Path A — platformer_physics GenericSystem with non-null solidThreshold on physicsConfig
         val systemHasThreshold =
             gameIR.systems.filterIsInstance<GenericSystem>().any { sys ->
@@ -1983,9 +1952,13 @@ class PlatformerVisitor : GenreSystemVisitor {
                     CVar("_cam_x"),
                     "=",
                     CBinaryExpr(
-                        CBinaryExpr(CVar("_cam_target_x"), "/", CLiteral(160)),
+                        CBinaryExpr(
+                            CVar("_cam_target_x"),
+                            "/",
+                            CLiteral(GameBoyConstants.SCREEN_WIDTH),
+                        ),
                         "*",
-                        CLiteral(160),
+                        CLiteral(GameBoyConstants.SCREEN_WIDTH),
                     ),
                 )
             )
@@ -1997,9 +1970,13 @@ class PlatformerVisitor : GenreSystemVisitor {
                     CVar("_cam_y"),
                     "=",
                     CBinaryExpr(
-                        CBinaryExpr(CVar("_cam_target_y"), "/", CLiteral(144)),
+                        CBinaryExpr(
+                            CVar("_cam_target_y"),
+                            "/",
+                            CLiteral(GameBoyConstants.SCREEN_HEIGHT),
+                        ),
                         "*",
-                        CLiteral(144),
+                        CLiteral(GameBoyConstants.SCREEN_HEIGHT),
                     ),
                 )
             )

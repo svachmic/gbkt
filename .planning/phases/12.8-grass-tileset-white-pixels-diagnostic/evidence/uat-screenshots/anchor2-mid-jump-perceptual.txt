@@ -1,6 +1,0 @@
-file: /Users/michalsvacha/GitHub/personal/gbkt/.planning/phases/12.8-grass-tileset-white-pixels-diagnostic/evidence/uat-screenshots/anchor-2/02-mid-jump.png
-dimensions: 160x144
-distinct_colours: 4
-dominant_ratio: 0.8617
-dominant_count: 19853
-total_pixels: 23040

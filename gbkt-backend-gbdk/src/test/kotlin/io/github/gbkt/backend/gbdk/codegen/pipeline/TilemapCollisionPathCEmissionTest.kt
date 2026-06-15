@@ -67,7 +67,7 @@ class TilemapCollisionPathCEmissionTest {
                     val gameplayScene =
                         scene("gameplay") {
                             frame {
-                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                                runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
                             }
                         }
                     start = gameplayScene
@@ -102,7 +102,7 @@ class TilemapCollisionPathCEmissionTest {
                     val gameplayScene =
                         scene("gameplay") {
                             frame {
-                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                                runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
                             }
                         }
                     start = gameplayScene
@@ -138,7 +138,7 @@ class TilemapCollisionPathCEmissionTest {
                     val gameplayScene =
                         scene("gameplay") {
                             frame {
-                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                                runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
                             }
                         }
                     start = gameplayScene
@@ -166,7 +166,7 @@ class TilemapCollisionPathCEmissionTest {
                     val gameplayScene =
                         scene("gameplay") {
                             frame {
-                                whenever(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
+                                runIf(buttons.start.pressed) { navigate(SceneRef("gameplay")) }
                             }
                         }
                     start = gameplayScene

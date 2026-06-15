@@ -33,9 +33,23 @@ import org.json.JSONObject
  * Unknown [ScriptOp] and [Expr] subtypes: serialized with type discriminator and class name;
  * deserialized as [RawOp] / [Literal] placeholders with a warning to `System.err`.
  *
- * **Serialize-only types** (deserialization returns `emptyList()`): [SystemIR], [ZoneIR],
- * [GlobalFlagsIR], [ItemCategoryDef], [ItemDef], [ContainerIR], [DropTableIR], [PuzzleObjectIR],
- * [CollisionGroupIR], [CollisionRuleIR].
+ * **Supported-subset round-trip contract (Phase 21, plan 21-03):**
+ *
+ * The following 10 domain collections deserialize the listed fields only; all other fields default
+ * safely. Full round-trip fidelity is NOT guaranteed for complex nested structures.
+ *
+ * |Collection        |Recovered fields                                             |Unsupported (serialize-only)                                                                           |
+ * |------------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+ * |[GlobalFlagsIR]   |`id`                                                         |`pages`                                                                                                |
+ * |[ItemCategoryDef] |`id`                                                         |`defaultMaxStack` (defaults to 1)                                                                      |
+ * |[ItemDef]         |`id`                                                         |`name` (defaults to ""), `categoryId` (defaults to ""), `maxStack`, `effects`, `buyPrice`, `dropWeight`|
+ * |[ContainerIR]     |`id`                                                         |`slots` (defaults to 0), `categoryFilter`                                                              |
+ * |[DropTableIR]     |`id`                                                         |`entries`                                                                                              |
+ * |[PuzzleObjectIR]  |`id` (reconstructed as [SwitchObjectIR] placeholder)         |`x`, `y`, handlers, concrete type                                                                      |
+ * |[CollisionGroupIR]|`id`                                                         |—                                                                                                      |
+ * |[CollisionRuleIR] |`groupA`, `groupB`, `response`                               |`interval`, `onCollide`                                                                                |
+ * |[ZoneIR]          |`id`, `name`, `spawnX`, `spawnY`, `screenMode`, `tilesetPath`|all other fields                                                                                       |
+ * |[SystemIR]        |`id`, `config["type"]` (as [GenericSystem])                  |full typed systems (CombatEngineSystem, etc.)                                                          |
  *
  * Full round-trip fidelity is guaranteed for all other types: scenes, actors, variables, arrays,
  * collections, dialogs, menus, HUDs, music, actor pools, assets, palettes, sound effects, structs,
@@ -174,43 +188,128 @@ object GameIRSerializer {
             musicDefs = deserializeList(json.optJSONArray("musicDefs")) { deserializeMusicDef(it) },
             actorPools =
                 deserializeList(json.optJSONArray("actorPools")) { deserializeActorPoolIR(it) },
-            // Domain-specific: simplified deserialization — not full round-trip.
-            // Deferred (SEED-020): the ten collections below deserialize as emptyList().
-            systems = emptyList(), // SEED-020: SystemIR deserialization
-            zones = emptyList(), // SEED-020: ZoneIR full deserialization
-            flags = emptyList(), // SEED-020: GlobalFlagsIR full deserialization
-            itemCategories = emptyList(), // SEED-020: ItemCategoryDef full deserialization
-            items = emptyList(), // SEED-020: ItemDef full deserialization
-            containers = emptyList(), // SEED-020: ContainerIR full deserialization
-            dropTables = emptyList(), // SEED-020: DropTableIR full deserialization
-            puzzleObjects = emptyList(), // SEED-020: PuzzleObjectIR full deserialization
-            collisionGroups = emptyList(), // SEED-020: CollisionGroupIR full deserialization
-            collisionRules = emptyList(), // SEED-020: CollisionRuleIR full deserialization
+            // Domain-specific: supported-subset deserialization (SEED-020 closed, Phase 21 plan
+            // 21-03).
+            // Each collection recovers the fields documented in the class KDoc above.
+            // Absent/null JSON keys return emptyList() via deserializeList — no crash on malformed
+            // input.
+            systems =
+                deserializeList(json.optJSONArray("systems")) { obj ->
+                    // Only GenericSystem subset: id + config["type"] recovered.
+                    // Full typed systems (CombatEngineSystem etc.) serialize as class name but
+                    // cannot
+                    // reconstruct from the {id, type, configType} stub — they round-trip as
+                    // GenericSystem.
+                    val configType = obj.optString("configType", "")
+                    GenericSystem(
+                        id = obj.optString("id", ""),
+                        config =
+                            if (configType.isNotEmpty()) mapOf("type" to configType)
+                            else emptyMap(),
+                    )
+                },
+            zones =
+                deserializeList(json.optJSONArray("zones")) { obj ->
+                    // Recovered: id, name, tilesetPath, screenMode, spawnX, spawnY.
+                    // All other ZoneIR fields (tilemap, tile data, transitions, overrides, objects)
+                    // default safely.
+                    val rawSpawnX =
+                        if (obj.has("spawnX")) obj.optInt("spawnX", 0).toUByte() else null
+                    val rawSpawnY =
+                        if (obj.has("spawnY")) obj.optInt("spawnY", 0).toUByte() else null
+                    ZoneIR(
+                        id = obj.optString("id", ""),
+                        name = obj.optString("name", ""),
+                        tilesetPath = obj.optString("tilesetPath", null)?.takeIf { it != "null" },
+                        screenMode = obj.optBoolean("screenMode", false),
+                        spawnX = rawSpawnX,
+                        spawnY = rawSpawnY,
+                    )
+                },
+            flags =
+                deserializeList(json.optJSONArray("flags")) { obj ->
+                    GlobalFlagsIR(id = obj.optString("id", ""))
+                },
+            itemCategories =
+                deserializeList(json.optJSONArray("itemCategories")) { obj ->
+                    ItemCategoryDef(id = obj.optString("id", ""))
+                },
+            items =
+                deserializeList(json.optJSONArray("items")) { obj ->
+                    // Recovered: id, name (empty string default), categoryId (empty string
+                    // default).
+                    ItemDef(
+                        id = obj.optString("id", ""),
+                        name = obj.optString("name", ""),
+                        categoryId = obj.optString("categoryId", ""),
+                    )
+                },
+            containers =
+                deserializeList(json.optJSONArray("containers")) { obj ->
+                    // slots defaults to 0 (not serialized in the simple stub shape).
+                    ContainerIR(id = obj.optString("id", ""), slots = obj.optInt("slots", 0))
+                },
+            dropTables =
+                deserializeList(json.optJSONArray("dropTables")) { obj ->
+                    DropTableIR(id = obj.optString("id", ""))
+                },
+            puzzleObjects =
+                deserializeList(json.optJSONArray("puzzleObjects")) { obj ->
+                    // PuzzleObjectIR is sealed; the simple serialize stub emits only {type, id}.
+                    // Reconstruct as SwitchObjectIR placeholder (x=0, y=0) — concrete type is lost.
+                    SwitchObjectIR(id = obj.optString("id", ""), x = 0, y = 0)
+                },
+            collisionGroups =
+                deserializeList(json.optJSONArray("collisionGroups")) { obj ->
+                    CollisionGroupIR(id = obj.optString("id", ""))
+                },
+            collisionRules =
+                deserializeList(json.optJSONArray("collisionRules")) { obj ->
+                    // Recovered: groupA, groupB, response. interval and onCollide default safely.
+                    val responseName = obj.optString("response", CollisionResponse.OVERLAP.name)
+                    val response =
+                        runCatching { CollisionResponse.valueOf(responseName) }
+                            .getOrDefault(CollisionResponse.OVERLAP)
+                    CollisionRuleIR(
+                        groupA = obj.optString("groupA", ""),
+                        groupB = obj.optString("groupB", ""),
+                        response = response,
+                    )
+                },
         )
     }
 
     // =========================================================================
-    // ZoneIR serialization (serialize-only; deserialization returns emptyList())
+    // ZoneIR serialization (supported subset: id/name/spawnX/spawnY/screenMode/tilesetPath)
     // =========================================================================
 
     /**
      * Serialize a [ZoneIR] to a JSON object.
      *
-     * Only the minimal fields required for external-tool consumption are emitted. The
-     * [ZoneIR.screenMode] flag is serialized here so tools can distinguish synthetic `screen()`
-     * zones from user-authored `zone { }` zones. Deserialization of ZoneIR is not supported
-     * (emptyList() in [deserializeGameIR]); the `optBoolean("screenMode", false)` read style is
-     * documented here for future full-deserialization support — default false preserves
-     * backward-compat for serialized IR produced before this field existed (Assumption A3).
+     * Emits the minimal fields required for external-tool consumption plus spawn coordinates for
+     * round-trip support (Phase 21, plan 21-03). The [ZoneIR.screenMode] flag distinguishes
+     * synthetic `screen()` zones from user-authored `zone { }` zones.
+     *
+     * Deserialized fields: `id`, `name`, `tilesetPath`, `screenMode`, `spawnX`, `spawnY`. All other
+     * fields (tilemap, tile data, collision, transitions, platformer overrides, objects) are
+     * serialize-only and default to safe empty values on deserialize.
+     *
+     * `optBoolean("screenMode", false)` preserves backward-compat for IR produced before this field
+     * was added (Assumption A3). `optInt("spawnX/spawnY", 0)` treats absent coordinates as 0.
      */
     private fun serializeZoneIR(zone: ZoneIR): JSONObject {
         val json = JSONObject()
         json.put("type", "ZoneIR")
         json.put("id", zone.id)
+        json.put("name", zone.name)
         json.put("tilesetPath", zone.tilesetPath ?: JSONObject.NULL)
         // screenMode: default false → optBoolean("screenMode", false) round-trips correctly
         // for IR produced before this field was added (A3 backward-compat).
         json.put("screenMode", zone.screenMode)
+        // spawnX/spawnY added for round-trip support (SEED-020 Phase 21, plan 21-03).
+        // Absent when null (caller uses optInt with default 0); UByte serialized as Int.
+        zone.spawnX?.let { json.put("spawnX", it.toInt()) }
+        zone.spawnY?.let { json.put("spawnY", it.toInt()) }
         return json
     }
 
@@ -1245,8 +1344,15 @@ object GameIRSerializer {
     // =========================================================================
 
     private fun serializeSystemIR(s: SystemIR): JSONObject {
-        // Deferred (SEED-020): full SystemIR round-trip not needed for external tool use cases
-        return JSONObject().put("id", s.id).put("type", s::class.simpleName ?: "SystemIR")
+        // Supported subset: id + type (class name) + "config_type" key from GenericSystem.
+        // Full SystemIR (CombatEngineSystem etc.) cannot round-trip from the {id,type} stub shape —
+        // only GenericSystem recovers its config["type"] key (SEED-020 Phase 21, plan 21-03).
+        val json = JSONObject().put("id", s.id).put("type", s::class.simpleName ?: "SystemIR")
+        if (s is GenericSystem) {
+            val configType = s.config["type"]
+            if (configType != null) json.put("configType", configType.toString())
+        }
+        return json
     }
 
     // =========================================================================

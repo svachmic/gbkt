@@ -42,7 +42,8 @@ val midX = (ball.x + paddle.x) / 2   // Expr arithmetic
 
 Use `i16FixedVar` when you need 12.4 fixed-point sub-pixel physics. Declare in pixels;
 the framework stores `initialPixels shl 4` internally. Extract pixel coords for rendering
-with `.toPixel()`. Group related declarations with the no-op `subpixel { }` scope.
+with `.toPixel()`. Group related declarations with `subpixel { }` (emits no IR — variables
+declared inside are recorded at the enclosing game scope, not a sub-scope).
 
 ```kotlin
 // --- BEFORE (hand-rolled) ---
@@ -55,7 +56,8 @@ var posX by i16FixedVar(64)        // declare in pixels; stores 1024 internally 
 var posY by i16FixedVar(72)        // screenCenter Y = 72 px
 ball.moveTo(posX.toPixel(), posY.toPixel())  // extracts pixel coord (>> 4u)
 
-// Optional: group declarations with subpixel { } for readability (no-op scope; same IR)
+// Optional: group declarations with subpixel { } for readability
+// (emits no IR — variables inside are at enclosing game scope, not a sub-scope)
 subpixel {
     var posX by i16FixedVar(80)
     var posY by i16FixedVar(72)
@@ -72,15 +74,15 @@ var spdY by i16Var(0)
 
 ### Ease Toward Zero (easeToZero)
 
-Replaces the hand-rolled two-`whenever` deceleration ladder. Emits two `IfOp` nodes —
+Replaces the hand-rolled two-`runIf` deceleration ladder. Emits two `IfOp` nodes —
 byte-identical to the ladder pattern (Pitfall 3: two separate checks, not one if-else).
 
 ```kotlin
 // --- BEFORE (hand-rolled) ---
-whenever(spdY isBelow 0) { spdY++ }
-whenever(spdY isAbove 0) { spdY-- }
-whenever(spdX isBelow 0) { spdX++ }
-whenever(spdX isAbove 0) { spdX-- }
+runIf(spdY isBelow 0) { spdY++ }
+runIf(spdY isAbove 0) { spdY-- }
+runIf(spdX isBelow 0) { spdX++ }
+runIf(spdX isAbove 0) { spdX-- }
 
 // --- AFTER (idiomatic) ---
 spdY.easeToZero()        // default: by = 1
@@ -101,11 +103,11 @@ are byte-identical to the hand-rolled patterns (D-15).
 var idx by u8Var(0)
 var rot by u8Var(0)
 // ... later in frame { }:
-whenever(buttons.b.pressed) {
+runIf(buttons.b.pressed) {
     idx++
-    whenever(idx isAtLeast NUM_FRAMES) { idx set 0 }   // compare-reset
+    runIf(idx isAtLeast NUM_FRAMES) { idx set 0 }   // compare-reset
 }
-whenever(buttons.a.pressed) {
+runIf(buttons.a.pressed) {
     rot++
     rot set (rot and 0xF)                               // bitmask wrap
 }
@@ -114,8 +116,8 @@ whenever(buttons.a.pressed) {
 var idx by u8Var(0, wrapAt = NUM_FRAMES)  // non-power-of-two: compare-reset emitted after idx++
 var rot by u8Var(0, wrapAt = 16)          // power-of-two: bitmask AND 15 emitted after rot++
 // ... later in frame { }:
-whenever(buttons.b.pressed) { idx++ }  // guard auto-emitted; no explicit wrap line
-whenever(buttons.a.pressed) { rot++ }  // guard auto-emitted; no explicit wrap line
+runIf(buttons.b.pressed) { idx++ }  // guard auto-emitted; no explicit wrap line
+runIf(buttons.a.pressed) { rot++ }  // guard auto-emitted; no explicit wrap line
 ```
 
 ## Arrays
@@ -129,7 +131,7 @@ val tiles by u8Array(16, "tile") // explicit C name override
 
 // Bracket read — returns Expr for use in conditions and expressions
 val b = bricks[bidx]             // bidx is AssignableVar
-whenever(bricks[i] isEqualTo 1) { ... }
+runIf(bricks[i] isEqualTo 1) { ... }
 
 // Bracket write — emits ArrayAssign op into active ScriptBuilder
 bricks[bidx] = 0                 // set to literal
@@ -145,25 +147,25 @@ val n = bricks.size              // Int, use in forOp bounds
 
 ## Readable Comparisons
 
-Comparison functions return `Expr` for use in `whenever()`, `ifOp()`, and `whileOp()` conditions.
+Comparison functions return `Expr` for use in `runIf()`, `ifOp()`, and `whileOp()` conditions.
 
 ```kotlin
 // Infix comparison functions (all return Expr)
-whenever(score isEqualTo 0) { /* ... */ }
-whenever(player.y isAbove 16) { /* ... */ }
-whenever(ball.x isBelow 4) { /* ... */ }
-whenever(score isAtLeast 100) { /* ... */ }
-whenever(lives isAtMost 3) { /* ... */ }
-whenever(hp isNotEqualTo 0) { /* ... */ }
+runIf(score isEqualTo 0) { /* ... */ }
+runIf(player.y isAbove 16) { /* ... */ }
+runIf(ball.x isBelow 4) { /* ... */ }
+runIf(score isAtLeast 100) { /* ... */ }
+runIf(lives isAtMost 3) { /* ... */ }
+runIf(hp isNotEqualTo 0) { /* ... */ }
 
 // Cross-type comparisons (AssignableVar vs Int, Expr vs ActorPropertyRef, etc.)
-whenever(ball.y isAtLeast paddle.y) { ... }          // two ActorPropertyRefs
-whenever((paddle.y + 8) isAbove ball.y) { ... }      // Expr vs ActorPropertyRef
-whenever(score isAbove 0) { ... }                    // AssignableVar vs Int
+runIf(ball.y isAtLeast paddle.y) { ... }          // two ActorPropertyRefs
+runIf((paddle.y + 8) isAbove ball.y) { ... }      // Expr vs ActorPropertyRef
+runIf(score isAbove 0) { ... }                    // AssignableVar vs Int
 
 // Logical operators (infix — && and || cannot be overloaded in Kotlin)
-whenever((hp isAbove 0) logicalAnd (torchLevel isAbove 0)) { ... }
-whenever((x isAbove 0) logicalOr (y isAbove 0)) { ... }
+runIf((hp isAbove 0) logicalAnd (torchLevel isAbove 0)) { ... }
+runIf((x isAbove 0) logicalOr (y isAbove 0)) { ... }
 ```
 
 ## Text Rendering DSL
@@ -226,17 +228,17 @@ ball.y set 72               // direct assignment
 ball.visible set false      // boolean set (false → 0)
 
 // Typed comparisons on actor properties
-whenever(ball.x isAbove 160) { ballDx set -1 }
-whenever(ball.y isBelow 16) { ballDy set 1 }
-whenever(ball.y isAtLeast paddle.y) { ... }      // ActorPropertyRef vs ActorPropertyRef
+runIf(ball.x isAbove 160) { ballDx set -1 }
+runIf(ball.y isBelow 16) { ballDy set 1 }
+runIf(ball.y isAtLeast paddle.y) { ... }      // ActorPropertyRef vs ActorPropertyRef
 
 // Teleport (emits SetPosition op)
 ball.moveTo(80, 72)
 
 // Collision detection — emits inline AABB overlap test in C
 // Requires both actors to have hitbox() defined in their sprite {} block
-whenever(ball.collides(paddle)) { ballDy set -1 }
-whenever(ball.collides(wall)) { ballDx set -1 }
+runIf(ball.collides(paddle)) { ballDy set -1 }
+runIf(ball.collides(wall)) { ballDx set -1 }
 
 // Movement helpers
 moveBy(player, 2, 0)       // relative move using ActorRef
@@ -268,10 +270,10 @@ val player by actor {
 // Access position directly on the actor (inside enter/frame blocks)
 player.x += 2                   // Move right
 player.y set 100                // Set Y position
-whenever(player.x isAbove 160) { player.x set 0 }  // Wrap around
+runIf(player.x isAbove 160) { player.x set 0 }  // Wrap around
 
 // Collision detection — requires hitbox() on both actors
-whenever(player.collides(obstacle)) {
+runIf(player.collides(obstacle)) {
     navigate(gameoverScene)
 }
 ```
@@ -295,7 +297,7 @@ val player by actor {
 }
 
 // Programmatic transitions from script blocks
-whenever(buttons.a.pressed) { setAnimationState(player, "attack") }
+runIf(buttons.a.pressed) { setAnimationState(player, "attack") }
 
 // Play a named animation on an actor (by id)
 animate("player", "walk")
@@ -367,57 +369,45 @@ a DSL build-time error. Choose one path per metasprite.
 | `sprite(asset(...)) + frames(N)` | PNG sprite sheet — png2asset cuts frames automatically |
 | `frame { tile(x, y, id) }` | Hand-crafted layouts; shared/legacy tile sets (D-04 escape hatch) |
 
-## State Machine DSL
+## Animation State Machine
 
-> **Stale-API caveat:** the `states("...")` builder shown below does not exist in the current
-> codebase. The implemented state machine is the per-actor `animationStates { }` DSL (see
-> "Sprite Animations" above) plus `setAnimationState(actor, "state")` for manual transitions.
+Per-actor animation states are declared with `animationStates { }` inside the `actor { }` block.
+Condition-based auto-transitions and manual `setAnimationState()` calls are the two ways to
+drive the state machine at runtime. See "Sprite Animations" above for the full example.
 
 ```kotlin
-// Define entity states (new in v2.0!)
-// Assumes idleAnim, runAnim, jumpAnim are declared (see Sprite Animations)
-val playerState = states("player") {
-    "idle" {
-        enter { player.play(idleAnim) }
-        on(buttons.a.pressed) { goto("jump") }
-        on(dpad.any) { goto("run") }
-    }
+val player by actor {
+    position(80, 72)
+    sprite(asset("sprites/player.png")) { size(8, 16) }
 
-    "run" {
-        enter { player.play(runAnim) }
-        tick { playerX += dpad.x * 2 }
-        on(dpad.none) { goto("idle") }
-        on(buttons.a.pressed) { goto("jump") }
-    }
-
-    "jump" {
-        enter { player.play(jumpAnim) }
-        tick {
-            playerY -= playerVelY
-            playerVelY -= 1
-        }
-        on(playerY isAtLeast groundY) { goto("idle") }
+    // Declare states with frame ranges and optional auto-transitions
+    animationStates {
+        state("idle") { frames(0..0); speed(8) }
+        state("walk") { frames(1..4); speed(6) }
+        state("jump") { frames(5..5); speed(1) }
+        transition("idle" to "walk") { dpad.any }   // auto: held d-pad → walk
+        transition("walk" to "idle") { dpad.none }  // auto: released → idle
     }
 }
 
-// Use state machine in scene
-gameplayScene = scene("gameplay") {
-    enter { playerState.start("idle") }
-    frame { playerState.update() }
-}
+// Manual transition from any script block (enter/frame/exit)
+runIf(buttons.a.pressed) { setAnimationState(player, "jump") }
 ```
+
+State transitions happen automatically when a `transition` condition becomes true.
+`setAnimationState(actor, "stateName")` forces a transition unconditionally from script.
 
 ## Control Flow
 
 ```kotlin
-// whenever() — conditional block, runs if condition is true each frame
-whenever(buttons.a.pressed) {
+// runIf() — conditional block, runs if condition is true each frame
+runIf(buttons.a.pressed) {
     playerVelY set 8
 }
 
 // Nested conditions — both must be true
-whenever(isJumping isEqualTo 1) {
-    whenever(playerVelY isAbove 0) {
+runIf(isJumping isEqualTo 1) {
+    runIf(playerVelY isAbove 0) {
         playerY -= 2
     }
 }
@@ -434,23 +424,21 @@ whileOp(i isBelow 30) {
 }
 ```
 
-## Single-Frame Conditionals (runIf / unless / orElse)
+## Conditional Logic (runIf / unless / orElse)
 
-Use `runIf` / `unless` for single-frame conditional logic (one-shot checks), not reactive
-event triggers. `whenever()` should be used at the top level for input/state reactive triggers.
-Nested `whenever` calls are the anti-pattern — use `runIf` instead (D-08 / Req #2).
+Use `runIf` / `unless` for all conditional logic — both frame-level reactive triggers
+(top-level in a `frame {}` block) and one-shot checks nested inside other blocks.
 
 ```kotlin
-// --- BEFORE (nested whenever — anti-pattern for single-frame logic) ---
-whenever(dpad.right.held) {
-    spdX += ACCEL
-    whenever(spdX isAbove MAX_SPEED) { spdX set MAX_SPEED }   // semantically `if`, not reactive
+// runIf — conditional block, runs if condition is true
+runIf(buttons.a.pressed) {
+    playerVelY set 8
 }
 
-// --- AFTER (idiomatic: runIf for single-frame clamp) ---
-whenever(dpad.right.held) {
+// Nested runIf — idiomatic; inner block runs only when both conditions are true
+runIf(dpad.right.held) {
     spdX += ACCEL
-    runIf(spdX isAbove MAX_SPEED) { spdX set MAX_SPEED }      // clear intent: one-shot check
+    runIf(spdX isAbove MAX_SPEED) { spdX set MAX_SPEED }   // clamp speed
 }
 
 // unless — negated condition (runs if condition is FALSE)
@@ -459,10 +447,6 @@ unless(hp isAbove 0) { navigate(gameoverScene) }
 // orElse — chained else branch after runIf
 runIf(hp isAbove 0) { hp -= damage }
     .orElse { navigate(gameoverScene) }
-
-// D-08 rule: top-level reactive triggers stay as whenever()
-whenever(buttons.a.pressed) { ... }    // KEEP whenever — reactive input trigger
-whenever(dpad.left.held) { ... }       // KEEP whenever — reactive input trigger
 ```
 
 ## Input API
@@ -471,31 +455,31 @@ The type-safe input API uses typed objects instead of magic strings.
 
 ```kotlin
 // D-pad — .held (continuous), .pressed (rising edge), .released (falling edge)
-whenever(dpad.up.held) { player.y -= 2 }
-whenever(dpad.down.held) { player.y += 2 }
-whenever(dpad.left.held) { player.x -= 2 }
-whenever(dpad.right.held) { player.x += 2 }
+runIf(dpad.up.held) { player.y -= 2 }
+runIf(dpad.down.held) { player.y += 2 }
+runIf(dpad.left.held) { player.x -= 2 }
+runIf(dpad.right.held) { player.x += 2 }
 
 // D-pad edge-triggered (rising edge, one frame only)
-whenever(dpad.up.pressed) { jump() }
-whenever(dpad.left.released) { stopSlide() }
+runIf(dpad.up.pressed) { jump() }
+runIf(dpad.left.released) { stopSlide() }
 
 // D-pad special
-whenever(dpad.any) { stepCount += 1 }   // any direction held
-whenever(dpad.none) { idle() }          // no direction held
+runIf(dpad.any) { stepCount += 1 }   // any direction held
+runIf(dpad.none) { idle() }          // no direction held
 
 // Buttons — .held, .pressed, .released
-whenever(buttons.a.pressed) { shoot() }
-whenever(buttons.b.pressed) { navigate(titleScene) }   // SceneRef — type-safe
-whenever(buttons.start.pressed) { navigate(pauseScene) }
-whenever(buttons.select.held) { showMap() }
+runIf(buttons.a.pressed) { shoot() }
+runIf(buttons.b.pressed) { navigate(titleScene) }   // SceneRef — type-safe
+runIf(buttons.start.pressed) { navigate(pauseScene) }
+runIf(buttons.select.held) { showMap() }
 
 // Axis helpers (returns Expr: -1, 0, or 1)
 player.x += dpad.x * 2                 // horizontal axis
 player.y += dpad.y * 2                 // vertical axis
 
 // Logical combinations
-whenever(dpad.up.held logicalAnd buttons.b.held) { fastMove() }
+runIf(dpad.up.held logicalAnd buttons.b.held) { fastMove() }
 
 // DEPRECATED (do not use in new game code):
 // dpadHeld("up")          →  dpad.up.held
@@ -572,7 +556,7 @@ val titleScene = scene("title") {
         //   hide_sprites_range, move_bkg(0,0), fill_bkg_rect, then _bkg_tiles_load_banked
     }
     frame {
-        whenever(buttons.start.pressed) { navigate(gameplayScene) }
+        runIf(buttons.start.pressed) { navigate(gameplayScene) }
     }
 }
 
@@ -580,7 +564,7 @@ val titleScene = scene("title") {
 val nextLevelScene = scene("nextlevel") {
     screen(asset("graphics/next-level.png"))   // auto-centers; no size() needed
     frame {
-        whenever(buttons.start.pressed) { navigate(gameplayScene) }
+        runIf(buttons.start.pressed) { navigate(gameplayScene) }
     }
 }
 ```
@@ -669,7 +653,7 @@ val playScene = scene("play") {
     enter { showSprites(); bindCurrentLevel() }
     frame {
         // game logic …
-        whenever(buttons.start.pressed) { navigate(titleScene) }
+        runIf(buttons.start.pressed) { navigate(titleScene) }
     }
     // No exit { } needed — play_exit BANKED is auto-synthesized in bank1.c
 }
@@ -726,20 +710,20 @@ val gameoverScene = scene("gameover") {
     }
     frame {
         // titleScene defined below — use SceneRef("title") as a forward reference
-        whenever(buttons.start.pressed) { navigate(SceneRef("title")) }
+        runIf(buttons.start.pressed) { navigate(SceneRef("title")) }
     }
 }
 
 val gameScene = scene("game") {
     enter { showSprites() }
     frame {
-        whenever(lives isEqualTo 0) { navigate(gameoverScene) }  // SceneRef — type-safe
+        runIf(lives isEqualTo 0) { navigate(gameoverScene) }  // SceneRef — type-safe
     }
 }
 
 val titleScene = scene("title") {
     enter { print("PRESS START", position = PositionDef(5, 12)) }
-    frame { whenever(buttons.start.pressed) { navigate(gameScene) } }
+    frame { runIf(buttons.start.pressed) { navigate(gameScene) } }
 }
 
 // Set the start scene — assign the SceneRef directly (no .id accessor)
@@ -756,7 +740,7 @@ in navigation — it is an explicit forward-reference, not an unvalidated magic 
 are validated at build time against the registered scene set.
 
 **`navigate(sceneRef)` vs `SceneRef("id")`:** Use a captured `val` (`navigate(titleScene)`)
-whenever the target is defined above the current scene. Use `SceneRef("id")` only for forward
+when the target is defined above the current scene. Use `SceneRef("id")` only for forward
 references where the target is defined later.
 
 **`start = sceneRef`:** Assign the `SceneRef` val directly — no `.id` accessor. Assigning an
@@ -917,19 +901,16 @@ cEmit("custom_function();")
 
 ## Dialog System DSL
 
-gbkt provides a smooth, Compose-like dialog system for RPGs, adventures, and action games. Supports typewriter text effects, customizable borders, variable interpolation, and choice menus.
-
-> **Stale-API caveat:** some snippets below predate the current `DialogBuilder` — config is
-> function-style (`textSpeed(3)`, `speaker("Elder")`, `box(x, y, width, height)`), not
-> property-style, and `dialog.tick()`/`isActive`/`isComplete` are not in the current
-> `DialogHandle`. Cross-check `gbkt-lang/.../dsl/UIBuilders.kt` before relying on details.
+gbkt provides a typewriter-effect dialog system for RPGs, adventures, and action games.
+Config is function-style (not property-style). Source: `UIBuilders.kt` (`DialogBuilder`,
+`DialogHandle`).
 
 ```kotlin
 // === Quick Inline Dialog (action games) ===
-// Perfect for item pickups, notifications, one-liners
+// say() uses the default dialog box at the bottom of the screen
 gameplayScene = scene("gameplay") {
     frame {
-        whenever(gotItem isEqualTo 1) {
+        runIf(gotItem isEqualTo 1) {
             say("You found a key!")
             gotItem set 0
         }
@@ -937,88 +918,56 @@ gameplayScene = scene("gameplay") {
 }
 
 // === Named Dialog (RPGs, adventures) ===
-// Define once, reuse everywhere
-val elder = dialog("elder") {
-    speaker = "Elder"           // Prefix: "Elder: Hello!"
-    textSpeed = 3               // Characters per frame (higher = faster)
-    box {
-        position(0, 10)         // Tile coordinates (x, y)
-        size = 20 x 6           // Width x Height in tiles
-        border = BorderStyle.SIMPLE  // NONE, SIMPLE, ROUNDED, DOUBLE
-        padding = 1
-    }
-}
-
-lateinit var villageScene: SceneRef
+// Define once at game scope; reuse from any scene via the returned DialogHandle
 lateinit var questScene: SceneRef
+val elder = dialog("elder") {
+    speaker("Elder")              // Prefix displayed above the box: "Elder: ..."
+    textSpeed(3)                  // Characters per frame (higher = faster)
+    box(x = 0, y = 10, width = 20, height = 6)  // tile coordinates + dimensions
+    border(BorderStyle.SIMPLE)    // NONE, SIMPLE, ROUNDED, DOUBLE
+    fontMode(FontMode.FIXED_WIDTH)
+    portrait(asset("sprites/elder.png"))  // optional portrait asset
+}
 
 villageScene = scene("village") {
     enter {
         elder.say("Welcome, young hero!")
         elder.say("The kingdom needs you.")
     }
-
-    frame {
-        // Update typewriter effect (REQUIRED when dialog is active!)
-        elder.tick()
-
-        // Check dialog state
-        whenever(elder.isComplete) {
-            // Dialog finished displaying
-        }
-    }
 }
 
 // === Variable Interpolation ===
-val shopkeeper = dialog("shop") { textSpeed = 2 }
+val shopkeeper = dialog("shop") { textSpeed(2) }
 
+// say() accepts vararg Any — mix String literals and AssignableVar/Expr
 shopkeeper.say("That'll be ", price, " gold.")
 shopkeeper.say("You have ", coins, " coins!")
 
-// === Choice Menus (with type-safe SceneRefs) ===
+// === Choice Menus ===
 elder.choice {
     option("Accept quest") { navigate(questScene) }
     option("Decline") { navigate(villageScene) }
     option("Tell me more") { elder.say("Long ago...") }
 }
-
-// === Dialog Visibility ===
-elder.show()    // Show dialog box (without text)
-elder.hide()    // Hide dialog box
-
-// === Border Styles ===
-// BorderStyle.NONE   - No border, text only
-// BorderStyle.SIMPLE - ASCII border: +--+
-// BorderStyle.ROUNDED - Rounded corners (custom tiles)
-// BorderStyle.DOUBLE  - Double-line border (custom tiles)
 ```
 
 **Important Notes:**
-- Always call `dialog.tick()` in `frame { }` when a dialog is active
-- Use `dialog.isActive` and `dialog.isComplete` conditions to check state
-- Press A button to advance text after typewriter completes
-- Named dialogs require `dialog("name") { ... }` builder syntax
-- Inline `say()` uses default dialog at bottom of screen
+- `dialog("id") { }` config is function-style: `speaker("Name")`, `textSpeed(3)`, not property assignment
+- `box(x, y, width, height)` is a single function call — no nested box builder, no `padding`
+- `DialogHandle` methods: `say(text)`, `say(vararg segments)`, `choice { option(...) { } }`
+- Inline `say()` (no handle) uses the default dialog at the bottom of the screen
 
 ## Menu System DSL
 
-gbkt provides a Compose-like menu system for title screens, pause menus, settings, and inventories. Menus handle navigation, selection, and input automatically.
-
-> **Stale-API caveat:** some snippets below predate the current `MenuBuilder` — config is
-> function-style (`cursor(">")`, `parent(mainMenu)`, `position(x, y, width, height)`,
-> `slider(label, variable, min, max, step)`), there is no `style { }` block, no `gridMenu()`,
-> and no `menu.tick()`. Cross-check `gbkt-lang/.../dsl/UIBuilders.kt` before relying on details.
+gbkt provides a menu system for title screens, pause menus, settings, and inventories. Config
+is function-style (no `style { }` block). Source: `UIBuilders.kt` (`MenuBuilder`, `MenuHandle`).
 
 ```kotlin
 // === Simple Vertical Menu (Title Screens, Pause Menus) ===
-// Assumes gameplayScene, continueScene are declared as SceneRef
+// menu("id") { } returns a MenuHandle for show/hide from script blocks
 val mainMenu = menu("main") {
-    style {
-        position(5, 8)        // Tile coordinates (x, y)
-        cursor = ">"          // Cursor character
-        border = BorderStyle.ROUNDED
-        spacing = 2           // Lines between items
-    }
+    position(5, 8, 10, 10)    // x, y, width, height in tile coordinates
+    cursor(">")               // cursor character (function-style)
 
     item("NEW GAME") { navigate(gameplayScene) }
     item("CONTINUE") { navigate(continueScene) }
@@ -1027,94 +976,61 @@ val mainMenu = menu("main") {
 
 titleScene = scene("title") {
     enter {
-        clear()
-        printCentered("MY GAME") at 3
-        mainMenu.show()
+        mainMenu.show()   // MenuHandle.show() — opens and focuses the menu
     }
-
-    frame {
-        mainMenu.tick()  // REQUIRED - handles input and rendering
+    exit {
+        mainMenu.hide()   // MenuHandle.hide() — closes the menu
     }
 }
 
 // === Settings Menu with Controls ===
 val optionsMenu = menu("options") {
-    parent = mainMenu  // B button returns to parent
+    parent(mainMenu)         // B button auto-returns to parent (function-style)
+    position(3, 4, 14, 12)
 
-    style {
-        position(3, 4)
-        labelWidth = 10   // Width of label column
-        valueWidth = 6    // Width of value column
-    }
+    // Toggle: A button or left/right flips the variable (0 ↔ 1)
+    toggle("MUSIC", musicEnabled)
 
-    // Toggle: A button or left/right to flip
-    toggle("MUSIC", musicEnabled) {
-        onChange { applyMusicSetting() }
-    }
+    // Slider: left/right adjusts variable in [min, max] with step
+    slider("VOLUME", volume, min = 0, max = 7, step = 1)
 
-    // Slider: Left/right to adjust
-    slider("VOLUME", volume, 0..7) {
-        step = 1
-        onChange { applyVolume() }
-    }
-
-    // Option cycle: Left/right to cycle through choices
-    option("DIFFICULTY", difficulty) {
-        choices("EASY", "NORMAL", "HARD")
-    }
+    // Option cycle: left/right cycles through a list of string choices
+    option("DIFFICULTY", difficulty, listOf("EASY", "NORMAL", "HARD"))
 
     item("BACK") { close() }
 }
 
-// === Submenu Navigation ===
-// open(childMenu) - Push child menu onto stack
-// close() - Pop current menu, return to parent
-// B button auto-returns when parent is set
-
 // === Grid Menu (Inventories) ===
-val inventory = gridMenu("inventory") {
-    grid(4, 3)  // 4 columns, 3 rows
-
-    style {
-        position(2, 2)
-        cellSize = 2 x 2      // Cell size in tiles
-        padding = 1           // Padding between cells
-        border = BorderStyle.SIMPLE
-    }
-
-    itemsFrom(inventorySlots) { slot, index ->
-        onSelect { useItem(index) }
-        whenEmpty { /* nothing */ }
-    }
+val inventoryMenu = menu("inventory") {
+    layout(MenuLayout.GRID)
+    columns(4)                // 4-column grid
+    position(2, 2, 16, 12)
+    itemsFrom(inventorySlots) // ArrayVar data source — items auto-populate
 }
-
-// === Menu State Conditions ===
-whenever(mainMenu.isVisible) { /* menu is shown */ }
-whenever(mainMenu.isActive) { /* menu has focus */ }
-val idx = mainMenu.selectedIndex  // Current cursor position
-
-// === Cursor Styles ===
-// cursor = ">"           // Custom character
-// cursorStyle = CursorStyle.ARROW   // Predefined: ARROW, DASH, DOT
-// cursorSprite = myCursor           // Sprite-based cursor
-// cursorOffset = -8 to 0            // Pixel offset for sprite
-
-// === Wrap Modes ===
-// wrapMode = WrapMode.WRAP   // Wrap from last to first (default)
-// wrapMode = WrapMode.CLAMP  // Stop at edges
 ```
 
 **Important Notes:**
-- Always call `menu.tick()` in `frame { }` when a menu is active
-- Use `menu.show()` to display and focus a menu
-- D-Pad navigates, A selects, B cancels/goes back
-- For settings: use `toggle`, `slider`, `option` controls
-- For inventories: use `gridMenu` with `itemsFrom` binding
-- Submenus: set `parent = parentMenu` for automatic back navigation
+- `menu("id") { }` config is function-style: `cursor(">")`, `position(x, y, w, h)`, `parent(menuHandle)` — no property assignment, no `style { }` block
+- `toggle(label, variable)` — no block; `slider(label, variable, min, max, step)` — separate Int params, not a range
+- `option(label, variable, listOf(...))` — choices as `List<String>`, not a block
+- `itemsFrom(arrayVar)` — accepts `ArrayVar`; takes no block
+- `MenuHandle.show()` / `MenuHandle.hide()` are the script-op entry points; D-Pad navigates, A selects, B cancels
 
 ## Game Configuration
 
 Configure cartridge hardware, ROM banking, and SRAM inside the `config { }` block.
+
+`ConfigBuilder` uses a **function-setter convention** — all fields are set via function calls, not
+property assignments. Source: `gbkt-lang/.../dsl/SystemBuilders.kt` (`ConfigBuilder`).
+
+```kotlin
+config {
+    cartridge(Cartridge.MBC5_RAM_BATTERY)   // fun cartridge(type: Cartridge)
+    romBanks(8)                             // fun romBanks(count: Int) — usually omit (auto-derived)
+    ramBanks(2)                             // fun ramBanks(count: Int)
+    target(GbcTarget.GBC_COMPATIBLE)        // fun target(mode: GbcTarget)
+}
+```
 
 ### Cartridge Type
 
@@ -1124,7 +1040,7 @@ no string magic values needed.
 ```kotlin
 val myGame = game("MyGame") {
     config {
-        cartridge(Cartridge.MBC5_RAM_BATTERY)  // typed — replaces cartridge = "MBC5_RAM_BATTERY"
+        cartridge(Cartridge.MBC5_RAM_BATTERY)
         target(GbcTarget.GBC_COMPATIBLE)        // GBC palette support
     }
 }
@@ -1166,7 +1082,7 @@ Set romBanks >= 6 or remove romBanks to auto-derive.
 ```kotlin
 config {
     cartridge(Cartridge.MBC1)
-    romBanks = 8   // advanced override — must be >= derived count
+    romBanks(8)   // advanced override — must be >= derived count
 }
 ```
 
@@ -1179,7 +1095,7 @@ present; the DSL value is the single source of truth.
 ```kotlin
 config {
     cartridge(Cartridge.MBC5_RAM_BATTERY)
-    ramBanks = 2   // 2 × 8 KB SRAM banks
+    ramBanks(2)   // 2 × 8 KB SRAM banks
 }
 ```
 
@@ -1189,7 +1105,7 @@ config {
 val myGame = game("MyGame") {
     config {
         cartridge(Cartridge.MBC5_RAM_BATTERY)
-        ramBanks = 2
+        ramBanks(2)
         target(GbcTarget.GBC_COMPATIBLE)
         // romBanks omitted — auto-derived by BankingAnalysisPass
     }
@@ -1200,7 +1116,7 @@ val myGame = game("MyGame") {
     scene("gameplay") {
         frame {
             // Trigger the save system by typed ref (not a magic string)
-            whenever(buttons.select.pressed) { triggerSystem(saves) }
+            runIf(buttons.select.pressed) { triggerSystem(saves) }
         }
     }
 }
@@ -1222,170 +1138,89 @@ side effect of `provideDelegate`; this will be resolved globally in a future pha
 @Suppress("UNUSED_VARIABLE") val saves by saveData { slots(2) }
 
 // Trigger from a scene frame via typed ref (not triggerSystem("saves"))
-whenever(buttons.select.pressed) { triggerSystem(saves) }
+runIf(buttons.select.pressed) { triggerSystem(saves) }
 ```
 
 > **Cartridge requirement:** `saveData` requires a persistent SRAM cartridge such as
 > `Cartridge.MBC1_RAM_BATTERY` or `Cartridge.MBC5_RAM_BATTERY`. Declare the cartridge in
 > `config { }` — the framework no longer auto-upgrades the cartridge type silently.
 
-### Save Data Fields
+### Save Data Configuration
 
-> **Stale-API caveat:** the field-level save API below (`u16Field()`, `flagsField()`,
-> `save.load()`, etc.) does not exist in the current codebase. The implemented
-> `SaveDataBuilder` exposes only `slots(n)`, `checksum(enabled)`, and `version(v)`; saves are
-> triggered via `triggerSystem(saves)` as shown above.
+`SaveDataBuilder` exposes three configuration functions. Source: `SystemBuilders.kt`.
 
 ```kotlin
-// Define save data structure
-val save = saveData("mygame") {
-    var score by u16Field()           // 2 bytes (0-65535)
-    var level by u8Field(default = 1) // 1 byte with default value
-    var lives by u8Field(default = 3)
-    var highScore by u16Field()
-    var playerX by u8Field()
-    var playerY by u8Field()
-    var flags by flagsField()         // 8 boolean flags (1 byte)
-    var inventory by arrayField(8)    // Fixed-size array (8 bytes)
-
-    config {
-        slots = 3                     // 3 save slots
-        checksum = Checksum.CRC8      // Data integrity (NONE, XOR, CRC8, SUM16)
-        magic = "GBKT"                // 4-char validation marker
-        version = 1                   // Save format version
-    }
+@Suppress("UNUSED_VARIABLE") val saves by saveData {
+    slots(3)              // number of independent SRAM save slots (default: 1)
+    checksum(true)        // enable 8-bit rolling checksum on load (default: false)
+    version(1)            // save format version number (default: 1)
 }
-
-// Usage in scenes (assumes SceneRefs are declared)
-titleScene = scene("title") {
-    enter {
-        // Check if save exists before loading
-        whenever(save.exists(slot = 0)) {
-            printAt(4, 8, "CONTINUE")
-        }
-    }
-
-    frame {
-        whenever(buttons.a.pressed) {
-            save.load(slot = 0)
-            navigate(gameplayScene)
-        }
-    }
-}
-
-gameplayScene = scene("gameplay") {
-    frame {
-        // Access save fields like normal variables
-        save.score += 10
-
-        // Compare with save data
-        whenever(score isAbove save.highScore) {
-            save.highScore set score
-        }
-
-        // Save on checkpoint
-        whenever(buttons.start.pressed) {
-            save.save()  // Saves to current slot
-        }
-    }
-}
-
-// Flags field for boolean states
-save.flags.setBit(0)        // Set flag 0
-save.flags.clearBit(1)      // Clear flag 1
-save.flags.toggleBit(2)     // Toggle flag 2
-whenever(save.flags.isSet(0)) { /* flag 0 is set */ }
-
-// Array field access
-save.inventory[0] set 5     // Set item at index 0
-whenever(save.inventory[0] isEqualTo 5) { /* ... */ }
-
-// Slot management
-save.erase(slot = 1)        // Erase a slot
-save.eraseAll()             // Erase all slots
-save.copy(from = 0, to = 1) // Copy slot 0 to slot 1
 ```
 
-**Note:** In Phase 13.1 and later, the cartridge type is NOT auto-upgraded. Declare
+Save/load is triggered at runtime via `triggerSystem(saves)` from any script block.
+Game state variables (declared with `u8Var`, `i8Var`, etc.) are included automatically;
+mark a variable `transient = true` to exclude it.
+
+```kotlin
+// Include in save (default — no annotation needed)
+var score by u8Var(0)
+
+// Exclude from save (e.g. frame counters, debug state)
+var frameCounter by u8Var(0, transient = true)
+
+// Trigger save/load from a scene
+scene("gameplay") {
+    frame {
+        runIf(buttons.select.pressed) { triggerSystem(saves) }
+    }
+}
+```
+
+**Note:** The cartridge type is NOT auto-upgraded. Declare
 `cartridge(Cartridge.MBC5_RAM_BATTERY)` explicitly in `config { }` when using `saveData`.
 
 ## Entity Pools
 
-Entity pools manage collections of similar entities (bullets, particles, enemies) with lifecycle management.
+Entity pools manage fixed-capacity arrays of data elements (slot indices, struct values, primitive counters). The pool DSL is a data-pool — it tracks allocation state and provides slot access, not entity lifecycle hooks.
 
-> **Stale-API caveat:** the entity-pool DSL below does not match the current codebase. The
-> implemented `pool(...)` builders (in `gbkt-lang/.../dsl/CollectionBuilders.kt`) are data
-> pools — `pool(elementType, capacity)` / `pool(structDef, capacity)` — without sprite or
-> lifecycle blocks. Cross-check before relying on this section.
+### Pool Declaration
 
-### Pool Definition
+Declare a pool with the `by pool(...)` delegate inside a `game { }` block. Three overloads are available:
 
 ```kotlin
-val bullets = pool("bullet", size = 8) {
-    position(0, 0)                    // Each entity has x, y position
-    velocity(0, 0)                    // Optional: velX, velY (signed)
+// Primitive pool — each slot holds a single UINT8 value
+val freeSlots by pool(VarType.U8, 16)
 
-    sprite(asset("sprites/bullet.png")) {
-        size(4, 4)
-        hitbox(0, 0, 4, 4)
-    }
+// CollElementType pool — explicit type wrapper
+val entities by pool(CollElementType.Primitive(VarType.U8), 8)
 
-    // Per-entity custom state
-    state {
-        val timer by u8Var()          // Creates bullet_0_timer, bullet_1_timer, etc.
-        val damage by u8Var(10)       // With default value
-    }
-
-    // Lifecycle hooks
-    onSpawn {
-        play("fly")
-        timer set 120                 // 2 seconds at 60fps
-    }
-
-    onFrame {
-        y -= 4                        // Move up
-        timer -= 1
-    }
-
-    // Auto-despawn conditions (entity despawns when ANY is true)
-    despawnWhen {
-        y isBelow 8                   // Off-screen top
-        timer isEqualTo 0             // Timer expired
-        isAnimationComplete           // One-shot animation finished
-    }
-
-    onDespawn {
-        hide()
-    }
-}
+// Struct pool — each slot holds a user-defined struct
+val projectiles by pool(projectileDef, 16)  // projectileDef: StructDef
 ```
 
-### Spawning Entities
+### Acquiring and Releasing Slots
 
 ```kotlin
 gameplayScene = scene("gameplay") {
+    enter {
+        // Acquire the next free slot; returns 0xFF if pool is full
+        val slot = projectiles.acquire()
+        runIf(slot.exists) {
+            slot["x"] set player.x
+            slot["y"] set player.y
+        }
+    }
+
     frame {
-        bullets.update()              // REQUIRED: Updates all active entities
-
-        whenever(buttons.a.pressed) {
-            // Simple spawn with init block
-            bullets.spawn {
-                x set player.x
-                y set player.y
-            }
-
-            // Spawn at position (shorthand)
-            bullets.spawnAt(player.x, player.y) {
-                this["damage"] set 20 // Access custom state
-            }
-
-            // Try spawn with fallback
-            bullets.trySpawn {
-                x set player.x
-            } orElse {
-                // Pool full - handle gracefully
+        runIf(buttons.b.pressed) {
+            val slot = freeSlots.acquire()
+            runIf(slot.exists) {
+                // slot.index is the raw slot index Expr
             }
         }
+
+        // Release slot back to the free list
+        freeSlots.free(someIndexExpr)
     }
 }
 ```
@@ -1393,150 +1228,34 @@ gameplayScene = scene("gameplay") {
 ### Pool Queries
 
 ```kotlin
-// Check active count
-whenever(bullets.activeCount isEqualTo 0) {
-    // No bullets active
+// Check whether at least one free slot is available
+runIf(projectiles.hasSpace) {
+    // spawn something
 }
 
-// Check if pool has space
-whenever(bullets.hasSpace) {
-    bullets.spawn { /* ... */ }
-}
-
-// Check if pool is full
-whenever(bullets.isFull) {
-    // Show "MAX" indicator
+// Read active count (number of allocated slots, 0–capacity)
+runIf(projectiles.activeCount isEqualTo 0) {
+    // all slots free
 }
 ```
 
-### Iterating Active Entities
+### Iterating Over Slots
 
 ```kotlin
-bullets.forEachActive {
-    // 'this' is the current entity scope
-    whenever(collidesWith(enemy)) {
-        enemy.takeDamage(this["damage"])
-        despawn()
-    }
-}
-```
-
-### Bulk Operations
-
-```kotlin
-bullets.despawnAll()                  // Clear all bullets
-
-bullets.despawnWhere { x isAbove 160 } // Conditional bulk despawn
-```
-
-### Lifecycle Scope Properties
-
-Inside `onSpawn`, `onFrame`, `onDespawn`, and `spawn` blocks:
-
-```kotlin
-// Position
-x                    // AssignableExpr for X position
-y                    // AssignableExpr for Y position
-
-// Velocity (if velocity() was called)
-velX                 // AssignableExpr for X velocity
-velY                 // AssignableExpr for Y velocity
-
-// Sprite operations
-play("animation")    // Play animation
-show()               // Show sprite
-hide()               // Hide sprite
-
-// Custom state (from state {} block)
-this["timer"]        // Access custom field
-this["damage"]       // Access custom field
-
-// Index
-index                // Current entity's pool index (0..size-1)
-
-// Lifecycle control
-despawn()            // Return this entity to pool
-
-// Animation state
-isAnimationComplete  // Condition: current animation finished
-isPlaying("name")    // Condition: specific animation playing
-```
-
-### Generated C Code
-
-For a pool with size 4, the generated code includes:
-- Per-entity static variables (unrolled for performance)
-- Pointer arrays for indexed access
-- `spawn()`, `despawn()`, `update()` functions
-- Active count tracking
-
-## Tweening/Easing
-
-Smooth value interpolation for animations, UI effects, and transitions.
-
-> **Stale-API caveat:** the `tween()` function and `Easing` enum below do not exist in the
-> current codebase. Cross-check `gbkt-lang/.../dsl/ScriptBuilder.kt` before relying on this
-> section.
-
-### Basic Tweening
-
-```kotlin
-// Tween a sprite position from 0 to 100 over 60 frames
-tween(player.x, from = 0, to = 100, duration = 60.frames, easing = Easing.EASE_OUT)
-
-// Tween a variable
-tween(fadeAlpha, from = 0, to = 255, duration = 30.frames, easing = Easing.LINEAR)
-
-// Tween with expression values
-tween(enemy.x, from = Expr(startX), to = Expr(targetX), duration = 120.frames)
-```
-
-### Easing Functions
-
-```kotlin
-// Basic easing
-Easing.LINEAR          // Constant speed
-Easing.EASE_IN         // Start slow, end fast
-Easing.EASE_OUT        // Start fast, end slow (default)
-Easing.EASE_IN_OUT     // Slow at both ends
-Easing.EASE_OUT_IN     // Fast at both ends
-
-// Quadratic (t²)
-Easing.EASE_IN_QUAD
-Easing.EASE_OUT_QUAD
-Easing.EASE_IN_OUT_QUAD
-
-// Cubic (t³)
-Easing.EASE_IN_CUBIC
-Easing.EASE_OUT_CUBIC
-Easing.EASE_IN_OUT_CUBIC
-
-// Special effects
-Easing.EASE_OUT_BOUNCE  // Bouncy landing
-Easing.EASE_OUT_ELASTIC // Springy overshoot
-```
-
-### How It Works
-
-- Pre-computed 256-entry lookup tables for each easing function
-- Only tables for used easing types are generated (saves ROM space)
-- Supports both increasing and decreasing tweens (signed math)
-- Maximum 16 concurrent tweens (configurable via `MAX_TWEENS`)
-
-### Usage in Scenes
-
-```kotlin
-introScene = scene("intro") {
-    enter {
-        // Slide title in from left
-        tween(titleX, from = -80, to = 80, duration = 45.frames, easing = Easing.EASE_OUT_BOUNCE)
+frame {
+    // forEach iterates over all capacity slots (0..capacity-1)
+    projectiles.forEach { element ->
+        // element is the struct Expr for slot i
+        // guard with active flag if needed via your own tracking variable
     }
 
-    frame {
-        // Tweens update automatically
-    }
+    // Direct index access
+    val first = projectiles[0]   // Expr for slot 0
+    val nth   = projectiles[n]   // Expr for slot n (n: Expr)
 }
 ```
+
+**Note:** `pool(...)` is a data-pool — it provides slot allocation tracking and struct field access. Sprite rendering, per-entity frame callbacks, and lifecycle hooks (`onSpawn`/`onDespawn`) are not part of this API.
 
 ## Tilemap Collision
 
@@ -1580,406 +1299,257 @@ UINT8 level_get_collision(UINT8 tile_x, UINT8 tile_y);
 
 ## Camera System
 
-The camera system provides scrolling, smooth follow, screen shake, and transitions.
+The camera system provides automatic follow scrolling, screen shake, and position control. Configuration is declared in a `camera { }` block; runtime camera control is done with `cameraOp(CameraAction.*)` inside script blocks.
 
-> **Stale-API caveat:** the current `CameraBuilder` (in `gbkt-lang/.../dsl/SystemBuilders.kt`)
-> implements `follow(actor)` and `bounds(mapWidth, mapHeight)` only; low-level camera ops go
-> through `cameraOp(CameraAction.FOLLOW/UNFOLLOW/SHAKE/MOVE_TO)`. The smoothing/deadzone,
-> shake-builder, followX/followY, and snapTo APIs below are not implemented. Cross-check
-> before relying on details.
+### Configuration (camera { } block)
 
-### Basic Setup
+Declare the camera once at game level using `CameraBuilder`:
 
 ```kotlin
-// Define camera with configuration
-val camera = camera {
-    smoothing = 0.15f           // Lerp factor (0 = instant, 1 = slow)
-    offset(0, -16)              // Look-ahead offset from target
-    deadzone(24 x 16)           // No movement within this area
-    bounds(0..256, 0..256)      // World bounds clamp
+val cam = camera {
+    follow(player)              // Actor to center on (can also pass a String actor ID)
+    bounds(256, 256)            // Clamp scroll to a 256×256-pixel world
+    smoothing = 0.15f           // Lerp factor (0.0 = instant snap, higher = lag)
 }
+```
 
-// Use in scene
+`follow(actor)` and `follow(actorId: String)` are config-time declarations — they record the default follow target for the camera system. `bounds(mapWidth, mapHeight)` restricts scrolling to the given pixel dimensions. `smoothing` is a `Float` field (declared, applied in the camera system).
+
+### Runtime Camera Control (cameraOp)
+
+Use `cameraOp(CameraAction.*)` inside any `enter { }`, `frame { }`, or `exit { }` block to control the camera at runtime:
+
+```kotlin
 gameplayScene = scene("gameplay") {
     enter {
-        camera.follow(player)   // Start following
-        camera.fadeIn(20.frames)
+        // Start following (with optional actor arg)
+        cameraOp(CameraAction.FOLLOW, mapOf("actorId" to player.id))
+
+        // Fade in at scene start — fade() is a ScriptBuilder op, not a camera method
+        fade(fadeIn = true, frames = 20)
     }
 
     frame {
-        camera.update()         // Required: processes follow/shake/transitions
+        // Shake on hit
+        runIf(hitDetected) {
+            cameraOp(CameraAction.SHAKE, mapOf("intensity" to 4, "duration" to 10))
+        }
+    }
+
+    exit {
+        // Stop following before leaving
+        cameraOp(CameraAction.UNFOLLOW)
     }
 }
 ```
 
-### Smooth Follow
+**Available `CameraAction` values:**
 
-```kotlin
-// Simple follow - camera tracks sprite/entity position
-camera.follow(player)
-
-// Follow with custom configuration
-camera.follow(player) {
-    smoothing = 0.2f            // Override smoothing
-    offset(0, -16)              // Camera 16px above target
-}
-
-// Follow single axis
-camera.followX(player)          // Only follow horizontally
-camera.followY(player)          // Only follow vertically
-
-// Stop following
-camera.stopFollow()
-```
-
-### Screen Shake
-
-```kotlin
-// Basic shake - intensity in pixels, duration in frames
-camera.shake(4, 10.frames)
-
-// With decay configuration
-camera.shake {
-    intensity = 6
-    duration = 20.frames
-    decay = Decay.EXPONENTIAL   // or LINEAR, NONE
-}
-
-// Quick impact shake (short, punchy)
-camera.impact(4)
-
-// Stop shake
-camera.stopShake()
-```
-
-### Transitions
-
-Screen fades are a script-level op (`ScriptBuilder.fade`), not a camera method. Wipe, iris,
-and flash transitions are not implemented in the current DSL.
-
-```kotlin
-// Fade out over 30 frames, then navigate (continuation runs after fade completes)
-fade(fadeIn = false, frames = 30) {
-    navigate(gameoverScene)
-}
-
-// Fade in over 20 frames
-fade(fadeIn = true, frames = 20)
-```
-
-### Direct Positioning
-
-```kotlin
-// Set camera position directly
-camera.setPosition(100, 50)
-
-// Snap instantly to target (no smoothing)
-camera.snapTo(player)
-camera.snapTo(100, 50)
-
-// Read camera position
-whenever(camera.x isAbove 100) { /* ... */ }
-```
+| Action | Effect |
+|--------|--------|
+| `CameraAction.FOLLOW` | Start centering on the configured actor |
+| `CameraAction.UNFOLLOW` | Stop following (camera holds its last position) |
+| `CameraAction.SHAKE` | Apply screen shake (pass `intensity` and `duration` in `args`) |
+| `CameraAction.MOVE_TO` | Move camera to a specific position (pass `x`, `y` in `args`) |
 
 ### Automatic Sprite Offsetting
 
-When a camera is defined, all sprite positions are automatically offset by the camera position. This means you can use world coordinates for sprites and they'll be correctly positioned on screen.
+When a camera is defined, all sprite positions are automatically offset by the camera scroll position. Use world coordinates for actors — the framework subtracts the camera position before rendering:
 
 ```kotlin
-// Player at world position (200, 100)
+// Player at world position (200, 100), camera scrolled to (100, 50)
+// Player appears at screen position (100, 50) automatically
 player.x set 200
 player.y set 100
-
-// Camera at world position (100, 50)
-camera.setPosition(100, 50)
-
-// Player appears at screen position (100, 50) = (200-100, 100-50)
-// This happens automatically - no manual offsetting needed!
 ```
+
+## Camera Transitions
+
+Screen fades are a `ScriptBuilder` method (`fade()`), not a camera method. There is no camera handle object in the DSL — `fade()` is called directly in the enclosing script block.
+
+### Fade
+
+`fade(fadeIn, frames)` fades the screen to/from black. Pass an optional continuation block to run after the fade completes (e.g., to navigate to a new scene):
+
+```kotlin
+gameplayScene = scene("gameplay") {
+    enter {
+        // Fade in when the scene starts
+        fade(fadeIn = true, frames = 20)
+    }
+
+    frame {
+        runIf(buttons.start.pressed) {
+            // Fade out, then navigate (continuation runs after fade completes)
+            fade(fadeIn = false, frames = 30) {
+                navigate(menuScene)
+            }
+        }
+    }
+}
+```
+
+**Parameters:**
+- `fadeIn: Boolean` — `true` = fade from black to normal; `false` = fade from normal to black
+- `frames: Int` — duration of the fade in frames (60 fps)
+- `after: ScriptBuilder.() -> Unit` — optional block executed after the fade (e.g., `navigate(...)`)
 
 ## Physics
 
-gbkt provides a complete physics system for platformers and action games with gravity, friction, collision response, and gravity zones.
+gbkt provides per-actor physics for platformers: gravity, velocity, bounce, and fall-speed clamping. Physics is configured in the actor's `physics { }` block and applied each frame with `physicsUpdate(actor)`.
 
-> **Stale-API caveat:** the implemented per-actor `physics { }` block (in
-> `gbkt-lang/.../dsl/ActorBuilder.kt`) is function-style — `gravity(n)`, `friction(n)`,
-> `velocity(dx, dy)`, `bounce(coefficient)`, `maxFallSpeed(n)`, `platformerMode()` — driven by
-> `physicsUpdate(...)` in the frame loop. The property-style snippets, global
-> `physics { }` world, `tag()`, and `gravityZone()` below are not implemented.
+### Per-Actor Physics Configuration
 
-### Entity Physics Component
-
-Add physics to individual entities for gravity, friction, and velocity clamping:
+Add a `physics { }` block inside any `actor { }` definition. All methods are function-style:
 
 ```kotlin
 val player by actor {
     position(80, 72)
-    velocity(0, 0)  // REQUIRED for physics
 
     physics {
-        gravity = 0.5f    // Applied to velocityY each frame (0.5 = normal platformer)
-        friction = 0.9f   // Multiplied to velocityX each frame (0.9 = normal)
-        maxVelocity = 4 to 8  // Clamp velocityX to ±4, velocityY to ±8
-        mass = 1.0f       // For collision response (heavier = harder to push)
+        velocity(0, 0)          // Initial VX, VY in pixels/frame (signed)
+        gravity(1)              // Pixels/frame² added to VY each frame (positive = down)
+        bounce(0.5f)            // Bounce coefficient on collision (0.0 = no bounce, 1.0 = full)
+        maxFallSpeed(8)         // Maximum downward velocity in pixels/frame
+        platformerMode()        // Enable platformer gravity (Y axis only); default = off
     }
 }
+```
 
-// Apply physics in frame loop
+**Gravity values (pixels/frame²):**
+- `0` = No gravity (space, top-down)
+- `1` = Normal platformer gravity
+- `2` = Heavy gravity
+- `-1` = Reverse gravity (floats upward)
+
+### Applying Physics Each Frame
+
+Call `physicsUpdate(actor)` in the scene's `frame { }` block. This applies gravity to VY, clamps to `maxFallSpeed`, and moves the actor by its current velocity:
+
+```kotlin
 gameplayScene = scene("gameplay") {
     frame {
-        player.applyPhysics()  // Applies gravity, friction, clamping
+        physicsUpdate(player)
+
+        // Floor collision (game-specific — not part of physicsUpdate)
+        runIf(player.y isAbove 136) {
+            player.y set 136
+            player.vy set 0
+        }
     }
 }
 ```
 
-**Gravity values:**
-- `0.0f` = No gravity (space, swimming)
-- `0.25f` = Light gravity (floating/moon)
-- `0.5f` = Normal platformer gravity
-- `1.0f` = Heavy gravity
+### Platformer Mode
 
-**Friction values:**
-- `1.0f` = No friction (ice, space)
-- `0.9f` = Normal friction
-- `0.8f` = High friction (sticky surfaces)
-- `0.0f` = Instant stop
-
-### Physics World (Global Physics)
-
-For games with global physics rules and automatic collision response:
+Enables gravity on the Y axis only. Combine with `movement { }` for horizontal input handling:
 
 ```kotlin
-val physicsWorld = physics {
-    gravity = 0.5f
-    friction = 0.9f
-    bounce = 0.3f  // Collision bounce coefficient (0.0-1.0)
-}
+val hero by actor {
+    position(80, 72)
 
-// Enable collision response between tagged entities
-val playerTag = tag("player")
-val enemyTag = tag("enemy")
+    movement {
+        speed(2)
+    }
+
+    physics {
+        velocity(0, 0)
+        gravity(1)
+        maxFallSpeed(8)
+        platformerMode()
+    }
+}
 
 gameplayScene = scene("gameplay") {
-    enter {
-        physicsWorld.collide(playerTag, enemyTag)  // Auto-bounce on collision
-    }
-
     frame {
-        physicsWorld.update()  // Update all physics
+        physicsUpdate(hero)
     }
 }
 ```
 
-### Gravity Zones
+### Bounce
 
-Define rectangular areas with custom gravity:
-
-```kotlin
-val physicsWorld = physics {
-    gravity = 0.5f
-
-    // Water area with reduced gravity
-    gravityZone(x = 0, y = 100, width = 160, height = 44) {
-        gravity = 0.1f  // Slow fall in water
-    }
-
-    // Zero-gravity space section
-    gravityZone(x = 100, y = 0, width = 60, height = 100) {
-        gravity = 0f
-    }
-
-    // Reverse gravity zone
-    gravityZone(x = 0, y = 50, width = 50, height = 50) {
-        gravity = -0.3f  // Float upward
-    }
-}
-```
-
-### Per-Entity Friction Override
-
-Make entities act as friction surfaces (ice, mud, etc.):
+Use `bounce(coefficient)` to make an entity bounce off surfaces. The coefficient is a Float (0.0–1.0); it is stored internally as a UINT8 (coefficient × 256):
 
 ```kotlin
-val icePlatform by actor {
-    position(0, 100)
+val ball by actor {
+    position(80, 72)
+
     physics {
-        friction = 0.99f  // Very slippery
-        useLocalFriction = true  // Use this instead of global friction
+        velocity(1, -2)
+        gravity(0)
+        bounce(0.8f)    // 80% energy retained on each bounce
     }
 }
 
-val mudPatch by actor {
-    position(50, 100)
-    physics {
-        friction = 0.7f  // Very sticky
-        useLocalFriction = true
+gameplayScene = scene("gameplay") {
+    frame {
+        physicsUpdate(ball)
+
+        // Bounce off floor
+        runIf(ball.y isAbove 136) {
+            ball.y set 136
+            ball.vy set (ball.vy * -1)  // negate VY manually; bounce() affects collision response
+        }
     }
 }
 ```
 
 ## Pathfinding
 
-gbkt provides A* pathfinding optimized for tile-based games with navigation grids, weighted tiles, and dynamic obstacles.
+gbkt provides A* pathfinding for tile-based games. Configure the system at game level with `PathfindingBuilder`, then call `pathfindStep()` / `waypointStep()` each frame to move NPCs.
 
-> **Stale-API caveat:** the implemented pathfinding DSL is `PathfindingBuilder`
-> (`gridSize`, `mapSize`, `maxOpenNodes`, `maxPathLength`) plus `pathfindStep(...)` /
-> `waypointStep(...)` script ops. The `navGrid()` / `findPathTo` APIs below are not
-> implemented — cross-check `gbkt-lang/.../dsl/SystemBuilders.kt` and `ScriptBuilder.kt`.
+### Configuration
 
-### Navigation Grid Setup
-
-Define which tiles are walkable for pathfinding:
+Register the pathfinding system in the top-level `game { }` block:
 
 ```kotlin
-// Manual definition
-val navGrid = navGrid("arena") {
-    size = 16 x 16
-    default = true        // All tiles walkable by default
-    blocked(0..15, 0)     // Top wall
-    blocked(0..15, 15)    // Bottom wall
-    blocked(0, 0..15)     // Left wall
-    blocked(15, 0..15)    // Right wall
-    blocked(8, 8)         // Obstacle in center
-}
-
-// From tilemap (auto-extract from Tiled map)
-val navGrid = navGrid(from = dungeonMap) {
-    blockedTiles(0, 1, 2)  // Wall tile indices are blocked
-}
-
-// With collision layer from Tiled
-val navGrid = navGrid(from = dungeonMap) {
-    collisionLayer = "Collision"  // Use Tiled layer name
+val game = game("MyGame") {
+    // pathfinding { } configures the A* system (SystemBuilders.kt:315)
+    pathfinding {
+        gridSize(8)          // Tile size in pixels — used to convert pixel coords to tile coords
+        mapSize(32, 32)      // Map dimensions in tiles (widthTiles, heightTiles)
+        maxOpenNodes(32)     // Open-list capacity (each node costs 4 bytes of WRAM)
+        maxPathLength(32)    // Maximum path steps (each step costs 2 bytes of WRAM)
+    }
 }
 ```
 
-### Weighted Tiles
+All four parameters are optional; defaults are `gridSize=8`, `mapSize(32,32)`, `maxOpenNodes=32`, `maxPathLength=32`.
 
-Give tiles different movement costs for more realistic pathfinding:
+### Per-Frame NPC Movement
+
+Two script ops advance a moving character one step per frame call (ScriptBuilder.kt:611, 633):
 
 ```kotlin
-val navGrid = navGrid("dungeon") {
-    size = 16 x 16
-    default = true
+val enemy by actor { /* ... */ }
+val player by actor { /* ... */ }
 
-    // Swamp area is slow
-    weight(4..8, 4..8, cost = 3)  // 3x slower than normal
-
-    // Road is fast
-    weight(0..15, 8, cost = 1)  // Normal speed
-
-    // Impassable walls (cost = 0 means blocked)
-    blocked(0..15, 0)
+val guard by actor {
+    // Define waypoint patrol route on the actor
+    waypoints {
+        add(32, 16)
+        add(80, 16)
+        add(80, 64)
+    }
 }
-```
 
-### Pathfinding Queries
-
-Find paths between entities or tiles:
-
-```kotlin
 gameplayScene = scene("gameplay") {
     frame {
-        // Fluent infix syntax
-        val path = player findPathTo treasure using navGrid
-
-        // Or with options
-        val path2 = player.findPathTo(treasure).using(navGrid) {
-            diagonal = true   // Allow 8-way movement
-            maxDepth = 64     // Search limit
-            heuristic = Heuristic.MANHATTAN  // or CHEBYSHEV, EUCLIDEAN
+        // pathfindStep: move `enemy` one A* step toward `player`
+        // Call every frame (or every N frames to reduce CPU load)
+        runIf((frameCount and 7) isEqualTo 0) {
+            pathfindStep(enemy, player)
         }
 
-        // From/to tile coordinates
-        val path3 = findPath(fromTileX = 0, fromTileY = 0, toTileX = 15, toTileY = 15)
-            .using(navGrid)
+        // waypointStep: advance `guard` one step along its waypoint patrol route
+        waypointStep(guard)
     }
 }
 ```
 
-### Following Paths
-
-Move entities along computed paths:
-
-```kotlin
-gameplayScene = scene("gameplay") {
-    frame {
-        val path = enemy findPathTo player using navGrid
-
-        whenever(path.found and path.hasNext) {
-            // Move toward next waypoint
-            enemy.x += path.directionX(enemy.x)  // Returns -1, 0, or 1
-            enemy.y += path.directionY(enemy.y)
-
-            // Advance when waypoint reached
-            whenever(path.atWaypoint(enemy, threshold = 4)) {
-                path.advance()
-            }
-        }
-    }
-}
-
-// Or use automatic path following
-frame {
-    val path = enemy findPathTo player using navGrid
-
-    enemy.followPath(path) {
-        speed = 2
-        onArrive { /* reached destination */ }
-        onBlocked { /* path blocked */ }
-    }
-}
-```
-
-### Path State Queries
-
-Check path state with conditions:
-
-```kotlin
-whenever(path.found) { /* valid path exists */ }
-whenever(path.notFound) { /* no valid path */ }
-whenever(path.hasNext) { /* more waypoints remain */ }
-
-// Path properties (as Expr)
-val len = path.length       // Total waypoints
-val idx = path.currentIndex // Current waypoint index
-val nextX = path.nextX      // Next waypoint X (tiles)
-val nextY = path.nextY      // Next waypoint Y (tiles)
-```
-
-### Dynamic Obstacles
-
-Modify navigation at runtime:
-
-```kotlin
-frame {
-    // Block tile where enemy stands (pixels → tiles automatic)
-    navGrid.addObstacle(enemy)
-
-    // Later, clear it
-    navGrid.removeObstacle(enemy)
-
-    // Or by tile coordinates
-    navGrid.setBlocked(8, 8)
-    navGrid.setWalkable(8, 8)
-
-    // Change movement cost
-    navGrid.setWeight(x = 5, y = 5, cost = 3)
-
-    // Check if tile is walkable
-    whenever(navGrid.isWalkable(tileX, tileY)) {
-        // Tile is passable
-    }
-}
-```
-
-### Heuristics
-
-Choose the distance calculation method:
-
-- `Heuristic.MANHATTAN` - |dx| + |dy| - Best for 4-way movement (default)
-- `Heuristic.CHEBYSHEV` - max(|dx|, |dy|) - Best for 8-way movement
-- `Heuristic.EUCLIDEAN` - sqrt(dx² + dy²) - Most accurate but slower
+- `pathfindStep(npc, target)` — runs one A* iteration, moving `npc` toward `target`. Call periodically (not every frame) to budget CPU time.
+- `waypointStep(npc)` — advances `npc` along its `waypoints { }` patrol list; wraps automatically at the end.
 
 ## Signed Integer Types
 
@@ -2006,237 +1576,17 @@ gameplayScene = scene("gameplay") {
 
 ## Testing Framework
 
-gbkt includes a built-in testing framework that lets you test game logic without compiling to ROM or running an emulator. Tests run directly on the JVM with simulated game state.
+gbkt game logic is tested through three tiers. The authoritative guide for all testing tiers, APIs, recipes, and MCP agent usage is **[context/TESTING.md](TESTING.md)**.
 
-> **Stale-API caveat:** the `testGame()`/`testScene()` DSL below does not exist in the current
-> codebase. JVM-tier simulation is done via `SimulationContext` / `ScriptOpInterpreter` in
-> `gbkt-core/.../test/`; emulator-tier testing uses `GbktTestExtension` in `gbkt-test` (see
-> context/TESTING.md).
+### Test Tiers
 
-### Basic Test Structure
+| Tier | Module | What it tests |
+|------|--------|---------------|
+| **JVM simulation** | `gbkt-core` (`SimulationContext` / `ScriptOpInterpreter`) | Game logic and IR correctness without an emulator — fast, no ROM required |
+| **Emulator** | `gbkt-test` (`GbktTestExtension`) | Real ROM running in an embedded Game Boy emulator; auto-skip when ROM is absent |
+| **MCP agent** | `gbkt-mcp-server` | AI-driven UAT via 19 MCP tools (`emulator_start`, `emulator_step`, `emulator_assert`, etc.) |
 
-```kotlin
-import io.github.gbkt.core.test.*
-import kotlin.test.*
-
-class MyGameTest {
-    @Test
-    fun `player moves right`() = testGame("movement") {
-        var playerX by u8Var(80)
-
-        val gameplay = scene("gameplay") {
-            frame {
-                playerX += dpad.x * 2
-            }
-        }
-        start = gameplay
-
-        test {
-            // Initially at 80
-            expect("playerX").toEqual(80)
-
-            // Hold right for 5 frames
-            press(Button.RIGHT) { advanceFrames(5) }
-
-            // Should have moved 10 pixels (2 * 5)
-            expect("playerX").toEqual(90)
-        }
-    }
-}
-```
-
-### Testing Single Scenes
-
-For simpler tests, use `testScene` to test a scene in isolation:
-
-```kotlin
-@Test
-fun `counter increments each frame`() = testScene("test") {
-    var counter by u8Var(0)
-
-    frame { counter += 1 }
-
-    test {
-        expect("counter").toEqual(0)
-        advanceFrame()
-        expect("counter").toEqual(1)
-        advanceFrames(9)
-        expect("counter").toEqual(10)
-    }
-}
-```
-
-### Frame Control
-
-```kotlin
-test {
-    // Advance one frame
-    advanceFrame()
-
-    // Advance multiple frames
-    advanceFrames(60)
-
-    // Advance by approximate seconds (60 FPS)
-    advanceSeconds(2.5f)
-
-    // Advance until condition is met (with safety limit)
-    val result = advanceUntil(maxFrames = 600) { getVariable("timer") >= 50 }
-    result.assertMet("Timer should reach 50")
-
-    // Or use orFail for cleaner syntax
-    advanceUntil { getVariable("health") == 0 } orFail "Player should die"
-
-    // Advance while condition is true
-    advanceWhile { getVariable("jumping") == 1 }
-
-    // Step one frame with inline assertions
-    stepFrame {
-        expect("score").toBeGreaterThan(0)
-    }
-
-    // Access frame count
-    println("Current frame: $frameCount")
-}
-```
-
-### Input Simulation
-
-```kotlin
-test {
-    // Tap a button (press for one frame, release)
-    tap(Button.A)
-    tap(Button.START)
-
-    // Tap multiple buttons simultaneously
-    tap(Button.A, Button.B)
-
-    // Hold while executing block
-    press(Button.RIGHT) {
-        advanceFrames(30)
-        expect("playerX").toBeGreaterThan(80)
-    }
-
-    // Manual hold and release
-    hold(Button.A)
-    advanceFrames(10)
-    release(Button.A)
-
-    // Release all buttons
-    releaseAll()
-}
-```
-
-Available buttons: `Button.A`, `Button.B`, `Button.START`, `Button.SELECT`, `Button.UP`, `Button.DOWN`, `Button.LEFT`, `Button.RIGHT`
-
-### Fluent Assertions
-
-Integer expectations:
-
-```kotlin
-test {
-    expect("score").toEqual(100)
-    expect("health").toBeGreaterThan(0)
-    expect("lives").toBeAtLeast(1)
-    expect("timer").toBeLessThan(60)
-    expect("ammo").toBeAtMost(99)
-    expect("x").toBeBetween(0..160)
-    expect("count").toBeZero()
-    expect("money").toBePositive()
-    expect("velocity").toBeNegative()
-    expect("value").toSatisfy("is even") { it % 2 == 0 }
-}
-```
-
-Sprite expectations:
-
-```kotlin
-test {
-    expectSprite("player").toBeAt(80, 72)
-    expectSprite("player").toHaveX(80)
-    expectSprite("player").toHaveY(72)
-    expectSprite("player").toBeVisible()
-    expectSprite("enemy").toBeHidden()
-    expectSprite("hero").toBePlayingAnimation("run")
-    expectSprite("idle_enemy").toNotBeAnimating()
-    expectSprite("player").toCollideWith(simulation.getSprite("enemy")!!)
-    expectSprite("player").toNotCollideWith(simulation.getSprite("wall")!!)
-}
-```
-
-Pool expectations:
-
-```kotlin
-test {
-    expectPool("bullets").toHaveActiveCount(5)
-    expectPool("particles").toBeEmpty()
-    expectPool("enemies").toNotBeEmpty()
-    expectPool("bullets").toHaveSpace()
-    expectPool("bullets").toHaveSpaceFor(3)
-    expectPool("bullets").toBeFull()
-
-    // Check all/any entities match condition
-    expectPool("bullets").allMatch("moving up") { idx ->
-        getVariable("bullet_${idx}_vel_y") < 0
-    }
-    expectPool("enemies").anyMatch("on screen") { idx ->
-        getVariable("enemy_${idx}_x") in 0..160
-    }
-}
-```
-
-Game/scene expectations:
-
-```kotlin
-test {
-    game.toBeInScene("gameplay")
-    game.toHaveFrameCount(100)
-    game.toHaveRunForAtLeast(60)
-    expectScene("gameplay")
-}
-```
-
-### State Access
-
-```kotlin
-test {
-    // Get variable value
-    val health = getVariable("health")
-
-    // Set variable directly (for test setup)
-    setVariable("score", 1000)
-
-    // Access current scene
-    println("In scene: $currentScene")
-
-    // Direct scene entry (for test setup)
-    enterScene("gameplay")
-
-    // Listen for scene changes
-    onSceneChange { from, to ->
-        println("Scene changed: $from -> $to")
-    }
-}
-```
-
-### IR Verification (Advanced)
-
-For testing that your DSL generates correct IR:
-
-```kotlin
-import io.github.gbkt.core.test.*
-import io.github.gbkt.core.ir.*
-
-@Test
-fun `assignment generates correct IR`() {
-    val ir = recordIR {
-        playerX += 1
-    }
-
-    assertTrue(ir.containsType<IRAssign>())
-    val assigns = ir.filterType<IRAssign>()
-    assertEquals("playerX", assigns.first().target)
-}
-```
+See [context/TESTING.md](TESTING.md) for setup instructions, `GbktTestExtension` API, `GameConstants` helpers, `PLAYBOOK.md` format, and a full worked MCP play session.
 
 ## RPG Stats System
 
@@ -2294,8 +1644,8 @@ hero.stats.hp -= 10                    // Take damage
 hero.stats.hp set hero.stats.maxHp     // Full heal
 
 // Check conditions
-whenever(hero.stats.hp isBelow 20) { showLowHealthWarning() }
-whenever(hero.stats.sp isAtLeast fireball.cost) { enableFireball() }
+runIf(hero.stats.hp isBelow 20) { showLowHealthWarning() }
+runIf(hero.stats.sp isAtLeast fireball.cost) { enableFireball() }
 ```
 
 ### Custom Stats
@@ -2362,14 +1712,13 @@ val game = game("MyGame") {
 
 ## Battle System
 
-Turn-based combat driven by a generated combat state machine with victory/defeat callbacks.
-
-> **Note:** Use `simpleBattle()` for v1. The `combatEngine()` DSL is experimental and will be revised in a future release.
+Turn-based combat driven by a generated combat state machine with victory/defeat callbacks. Register the battle with `simpleBattle()` (in `gbkt-genre-rpg`), then call `battleUpdate()` every frame to advance the state machine.
 
 ### Battle Definition
 
 ```kotlin
 // simpleBattle(id) registers a turn-based combat system and returns a BattleRef
+// (RpgExtensions.kt:168 — fun GameBuilder.simpleBattle)
 val combat = simpleBattle("combat") {
     party(hero)                       // CharacterRef(s) in the party
     encounter { +goblin }             // MonsterRefs in the encounter
@@ -2377,11 +1726,12 @@ val combat = simpleBattle("combat") {
     onDefeat { navigate(gameoverScene) }
 }
 
-// The battle scene must drive the state machine every frame
+// The battle scene must call battleUpdate every frame to drive the state machine
+// (RpgExtensions.kt:348 — fun ScriptBuilder.battleUpdate)
 scene("battle") {
     frame {
         battleUpdate(combat)
-        whenever(combatIsInState(CombatStates.VICTORY, combat)) {
+        runIf(combatIsInState(CombatStates.VICTORY, combat)) {
             // handle victory UI, etc.
         }
     }
@@ -2405,199 +1755,104 @@ CombatStates.FLEEING          // Party fleeing
 CombatStates.WAITING          // Idle/waiting
 ```
 
-> **Stale-API caveat:** the Battle Menu, Combat Formulas, and Custom Battle States
-> subsections below describe APIs (`battleMenu`, `combatFormulas`, `battleState`,
-> `battleTransition`) that do not exist in the current codebase. Cross-check
-> `gbkt-genre-rpg/.../dsl/RpgExtensions.kt` for the implemented RPG DSL entry points.
-
-### Battle Menu
-
-```kotlin
-val battleMenu by battleMenu("menu") {
-    position(0, 12)           // Menu position (tile coords)
-
-    // Main commands
-    commands {
-        command("Attack") { action(ActionType.ATTACK) }
-        command("Magic") { submenu(magicMenu) }
-        command("Item") { submenu(itemMenu) }
-        command("Flee") { action(ActionType.FLEE) }
-    }
-
-    // Status display configuration
-    statusDisplay {
-        showHp(true)
-        showSp(true)
-        showStatusIcons(true)
-        position(0, 0)
-    }
-}
-```
-
-### Combat Formulas
-
-```kotlin
-val combat = combatFormulas {
-    // Hit formula strategies
-    d20HitRoll(baseAC = 10)           // D&D-style: roll + ATK vs DEF + AC
-    percentageHitChance(baseChance = 80, minChance = 20, maxChance = 95, perDiff = 3)
-    agilityBasedHit(baseChance = 70)  // Hit based on AGL difference
-    alwaysHits()                       // No miss chance
-
-    // Critical hit strategies
-    criticalChance(5)                  // Flat 5% chance
-    criticalOnHighRoll(threshold = 20, dieSize = 20)  // Natural 20
-    noCriticalHits()                   // Disable crits
-    criticalMultiplier(200)            // 2x damage on crit
-
-    // Damage variance strategies
-    damageVariance(25)                 // ±12.5% variance
-    damageMultiplierRange(min = 75, max = 125)  // Lookup table
-    noVariance()                       // Exact damage
-
-    // Fumble system
-    enableFumble(threshold = 1)        // Fumble on natural 1
-}
-```
-
-### Custom Battle States
-
-```kotlin
-val game = game("MyGame") {
-    // Define custom battle states beyond the 19 built-in states
-    val cutsceneState by battleState("Cutscene")
-    val animationState by battleState("Animation")
-
-    val combat by battle("combat") {
-        onState(cutsceneState) {
-            // Custom cutscene logic
-        }
-    }
-
-    scene("battle") {
-        frame {
-            battleTransition(cutsceneState)  // Transition to custom state
-        }
-    }
-}
-```
-
 ## Item & Inventory System
 
-Complete item management with consumables, equipment, and stacking.
+Define items with `items { }` (`ItemCatalogBuilder`) and containers with `container { }` (`ContainerBuilder`). Both are in `gbkt-lang/.../dsl/InventoryBuilders.kt` and `GameBuilder.kt`. Equipment slots and stat bonuses live in the `gbkt-genre-rpg` plugin (`EquipSlot` in `gbkt-genre-rpg`).
 
-> **Stale-API caveat:** the implemented core entry points are `items { item("potion") { ... } }`
-> (ItemCatalogBuilder, category is a string) and `container("inventory") { slots(16) }` — see
-> `gbkt-lang/.../dsl/InventoryBuilders.kt`. The `by item` delegate and `ItemCategory` enum below
-> are not in the current core DSL; equipment slots/stat bonuses live in the RPG genre plugin
-> (`equipmentSystem`, `EquipSlot` in `gbkt-genre-rpg`).
+### Item Catalog
 
-### Item Definition
-
-```kotlin
-// Consumable item
-val potion by item {
-    name("Potion")
-    description("Restores 50 HP")
-    category(ItemCategory.CONSUMABLE)
-    maxStack(10)
-    buyPrice(50)
-    sellPrice(25)
-
-    onUse {
-        target.heal(50)
-        cEmit("play_sfx(SFX_HEAL);")  // Play sound effect
-    }
-}
-
-// Equipment item with stat bonuses
-val ironSword by item {
-    name("Iron Sword")
-    description("A sturdy blade")
-    category(ItemCategory.WEAPON)
-    slot(EquipSlot.WEAPON)
-    maxStack(1)  // Equipment doesn't stack
-    buyPrice(200)
-
-    // Stat bonuses when equipped
-    stats {
-        atk(+10)
-        acc(+5)
-    }
-}
-
-// Key item (non-consumable, non-equipment)
-val dungeonKey by item {
-    name("Dungeon Key")
-    description("Opens dungeon doors")
-    category(ItemCategory.KEY_ITEM)
-    maxStack(1)
-}
-```
-
-### Item Categories & Equipment Slots
-
-```kotlin
-// Item categories
-ItemCategory.CONSUMABLE   // Usable items (potions, scrolls)
-ItemCategory.WEAPON       // Equippable weapons
-ItemCategory.ARMOR        // Equippable armor
-ItemCategory.ACCESSORY    // Equippable accessories
-ItemCategory.KEY_ITEM     // Quest items
-ItemCategory.MATERIAL     // Crafting materials
-
-// Built-in equipment slots
-EquipSlot.WEAPON
-EquipSlot.OFFHAND
-EquipSlot.HEAD
-EquipSlot.BODY
-EquipSlot.ACCESSORY
-```
-
-### Custom Equipment Slots
+Define categories and items in the top-level `game { }` block:
 
 ```kotlin
 val game = game("MyGame") {
-    // Define custom equipment slots
-    val ringSlot by equipSlot("Ring")
-    val bootsSlot by equipSlot("Boots")
-    val glovesSlot by equipSlot("Gloves")
+    items {
+        // Category: ID inferred from property name, or explicit string
+        val consumable by category { defaultMaxStack(10) }
+        val weapon by category { defaultMaxStack(1) }
 
-    // Use custom slot in item definition
-    val powerRing by item {
-        name("Power Ring")
-        category(ItemCategory.EQUIPMENT)
-        equipmentSlot(ringSlot)  // Use custom slot
-        stats { atk(+5) }
+        // Item using delegate syntax (ID = "potion")
+        val potion by item {
+            name("Potion")
+            category(consumable)   // Pass the category ID string
+            maxStack(10)
+            buyPrice(50)
+
+            onUse {
+                heal(50)           // Restores 50 HP
+            }
+        }
+
+        // Item using explicit ID
+        item("keyItem") {
+            name("Dungeon Key")
+            category("key")
+            maxStack(1)
+        }
     }
 }
 ```
 
-### Inventory Management
+**`ItemBuilder` methods (InventoryBuilders.kt:146):**
+
+| Method | Description |
+|--------|-------------|
+| `name(String)` | Display name |
+| `category(String)` | Category ID — use the string returned by `category {}` |
+| `maxStack(Int)` | Override category default; 1 = no stacking |
+| `buyPrice(Int)` | Shop purchase price; 0 = not sold |
+| `dropWeight(Int)` | Relative random drop weight; 0 = never dropped |
+| `onUse { }` | Use effect block (see below) |
+
+**`onUse { }` effects (`ItemEffectBuilder`, InventoryBuilders.kt:98):**
 
 ```kotlin
-// Create inventory
-val inventory by inventory { maxSlots(16) }
-
-// Add items
-inventory.add(potion, 3)         // Add 3 potions
-inventory.add(ironSword)         // Add 1 item
-
-// Remove items
-inventory.remove(potion, 1)      // Remove 1 potion
-inventory.remove(potion)         // Remove all potions of this type
-
-// Query inventory
-whenever(inventory.contains(potion)) { /* has at least one */ }
-whenever(inventory.count(potion) isAtLeast 5) { /* has 5+ */ }
-whenever(inventory.isFull) { showInventoryFullMessage() }
-whenever(inventory.hasSpace) { /* can add more items */ }
-
-// Equipment
-inventory.equip(hero, ironSword)
-inventory.unequip(hero, EquipSlot.WEAPON)
-whenever(hero.isEquipped(ironSword)) { /* sword equipped */ }
+onUse {
+    heal(50)                              // Restore 50 HP
+    buff("atk", amount = 5, duration = 3) // +5 ATK for 3 turns
+    script { /* arbitrary ScriptBuilder ops */ }  // Escape hatch
+}
 ```
+
+### Item Categories
+
+Categories group items and set a shared default max stack. The category ID is a plain string:
+
+```kotlin
+items {
+    val consumable by category { defaultMaxStack(10) }
+    val equipment by category { defaultMaxStack(1) }
+
+    // Or with explicit ID string:
+    category("key") { defaultMaxStack(1) }
+}
+```
+
+### Containers
+
+Containers hold stacks of items up to a fixed slot count:
+
+```kotlin
+val game = game("MyGame") {
+    // Delegate syntax — ID inferred from property name
+    val bag by container { slots(16) }
+
+    // Optional category filter
+    val weaponSlots by container {
+        slots(4)
+        categoryFilter("weapon")   // Only accepts items in the "weapon" category
+    }
+
+    // Explicit ID form
+    container("chest") { slots(8) }
+}
+```
+
+**`ContainerBuilder` methods (InventoryBuilders.kt:298):**
+
+| Method | Description |
+|--------|-------------|
+| `slots(Int)` | Maximum number of item stacks |
+| `categoryFilter(String)` | Restrict to one category ID; omit to accept all items |
 
 ## Ability System
 
@@ -3157,7 +2412,7 @@ gameFlags["story"]["acceptedQuest"] = true
 gameFlags.clear("story", "metElder")
 
 // Check flags
-whenever(gameFlags.isSet("story", "metElder")) {
+runIf(gameFlags.isSet("story", "metElder")) {
     showElderDialogue()
 }
 
@@ -3165,60 +2420,3 @@ whenever(gameFlags.isSet("story", "metElder")) {
 gameFlags.toggle("world", "doorUnlocked")
 ```
 
-### Complete Example
-
-```kotlin
-class PlatformerTest {
-    @Test
-    fun `player jumps when A pressed on ground`() = testGame("platformer") {
-        var playerY by u8Var(100)  // Ground level
-        var velocityY by i8Var(0)
-        var jumping by u8Var(0)
-
-        val gameplay = scene("gameplay") {
-            frame {
-                // Jump when A pressed and on ground
-                whenever(buttons.a.pressed and (jumping isEqualTo 0)) {
-                    velocityY set -8
-                    jumping set 1
-                }
-
-                // Apply gravity
-                whenever(jumping isEqualTo 1) {
-                    playerY += velocityY
-                    velocityY += 1
-
-                    // Land
-                    whenever(playerY isAtLeast 100) {
-                        playerY set 100
-                        jumping set 0
-                    }
-                }
-            }
-        }
-        start = gameplay
-
-        test {
-            // Initially on ground
-            expect("playerY").toEqual(100)
-            expect("jumping").toEqual(0)
-
-            // Press A to jump
-            tap(Button.A)
-            expect("jumping").toEqual(1)
-            expect("velocityY").toEqual(-8)
-
-            // Should rise
-            advanceFrames(5)
-            expect("playerY").toBeLessThan(100)
-
-            // Wait to land
-            advanceUntil { getVariable("jumping") == 0 } orFail "Player should land"
-
-            // Back on ground
-            expect("playerY").toEqual(100)
-            expect("jumping").toEqual(0)
-        }
-    }
-}
-```

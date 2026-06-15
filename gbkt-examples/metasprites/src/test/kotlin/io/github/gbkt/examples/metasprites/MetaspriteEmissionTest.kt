@@ -41,7 +41,7 @@ import kotlin.test.assertTrue
 // ensures the tests remain GREEN across minor reformatting or expression
 // lowering changes that preserve semantic correctness.
 //
-// Note on bank1.c vs main.c: for single-scene games with `romBanks = 2`, the
+// Note on bank1.c vs main.c: for single-scene games with `romBanks(2)`, the
 // BankingAnalysisPass fast-path places the scene in HOME bank (bank 0). The
 // pipeline then folds scene functions into main.c and omits bank1.c entirely.
 // `playFrameBody()` handles both configurations transparently.
@@ -51,19 +51,16 @@ class MetaspriteEmissionTest {
 
     companion object {
         /**
-         * Evidence is written under the **active checkout root** (worktree-safe).
+         * Emission scratch is written under the module's gitignored build/ directory (R1 + R3).
          *
          * `user.dir` resolves to the Gradle project's working directory, which inside a Claude Code
          * worktree is the worktree root — not the main repository. Hard-coding the main-repo
          * absolute path would silently route evidence files outside the active checkout and miss
-         * the commit (#3099 worktree path safety).
+         * the commit (#3099 worktree path safety). The path `build/gbkt/test-evidence` is
+         * gitignored via the root `.gitignore` `build/` pattern — no committed artifact.
          */
         val EVIDENCE_DIR =
-            File(System.getProperty("user.dir"))
-                .resolve(
-                    "../../.planning/phases/10-port-metasprites-gbdk-example-to-gbkt/evidence/tier1-shape"
-                )
-                .normalize()
+            File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence").normalize()
     }
 
     // -------------------------------------------------------------------------

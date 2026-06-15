@@ -398,10 +398,7 @@ class ExplorationCodegenTest {
         val mainC = output.files["main.c"] ?: error("main.c not generated")
 
         // All 4 direction ordinals should appear in the edge switch
-        val northOrdinal = TransitionEdge.NORTH.ordinal.toString()
-        val southOrdinal = TransitionEdge.SOUTH.ordinal.toString()
         val eastOrdinal = TransitionEdge.EAST.ordinal.toString()
-        val westOrdinal = TransitionEdge.WEST.ordinal.toString()
 
         // zone_transition function must contain the edge switch with all directions
         assertTrue(mainC.contains("zone_transition_dungeon"), "zone_transition_dungeon missing")

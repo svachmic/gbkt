@@ -56,13 +56,7 @@ class ScreenPrimitiveEmissionTest {
          * worktree) root then descend into the phase-local evidence dir.
          */
         val EVIDENCE_DIR =
-            File(System.getProperty("user.dir"))
-                .resolve(
-                    "../.planning/phases/" +
-                        "13.5-framework-primitives-graphics-level-codegen-inserted/" +
-                        "evidence/tier1-shape"
-                )
-                .normalize()
+            File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence").normalize()
     }
 
     private val pipeline = GBDKPipeline()

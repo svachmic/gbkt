@@ -99,8 +99,8 @@ private fun extractFunctionBodyForDv3(source: String, signature: String): String
 private fun buildDv3GbcGame() =
     game("Dv3PaletteOrderTest") {
             config {
-                cartridge = Cartridge.ROM_ONLY
-                romBanks = 2
+                cartridge(Cartridge.ROM_ONLY)
+                romBanks(2)
                 target(GbcTarget.GBC_COMPATIBLE)
             }
 

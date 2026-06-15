@@ -44,7 +44,7 @@ import kotlin.test.assertTrue
 //
 // CLAUDE.md §"Scope-level grep gates" forbids a file-level
 // `mainC.contains("button_held(J_RIGHT)")` here because `button_held(J_RIGHT)`
-// also lands inside the gameplay scene's `whenever(dpad.right.held) { ... }`
+// also lands inside the gameplay scene's `runIf(dpad.right.held) { ... }`
 // frame-body emission in any fixture that registers dpad input ops. The
 // brace-walk extracts the `platformer_physics_update` body so the substring
 // checks fire ONLY against tokens inside the physics function (this test's
@@ -70,21 +70,15 @@ class PlatformerInputEmissionTest {
 
     companion object {
         /**
-         * Evidence is written under the **active checkout root** (worktree-safe).
+         * Evidence is written to the module's gitignored build/ scratch directory (R1 + R3).
          *
-         * `user.dir` resolves to the Gradle project's working directory; for the
-         * `:gbkt-genre-platformer:test` task this is `<repo>/gbkt-genre-platformer`. We ascend one
-         * level (`..`) to reach the worktree root, then descend into the Phase 12.3 evidence
-         * directory (Pattern 5 / RESEARCH §"EVIDENCE_DIR convention — worktree-safe"). Hard-coding
-         * an absolute path would silently route evidence files outside the active worktree and miss
-         * the commit (#3099 worktree path safety).
+         * `user.dir` at `:gbkt-genre-platformer:test` runtime resolves to the
+         * `gbkt-genre-platformer` module root, so `build/gbkt/test-evidence` is the module's own
+         * gitignored build directory — no `../` ascent needed (22-PATTERNS Pitfall 5). In-test C
+         * assertions remain the gate; the txt dumps are for post-failure review only.
          */
         val EVIDENCE_DIR =
-            File(System.getProperty("user.dir"))
-                .resolve(
-                    "../.planning/phases/12.3-platformer-visitor-auto-emission-wiring-wire-input-playervx-/evidence/tier1-shape"
-                )
-                .normalize()
+            File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence").normalize()
     }
 
     private val pipeline = GBDKPipeline()
@@ -258,7 +252,7 @@ class PlatformerInputEmissionTest {
 
         // button_held(J_RIGHT) — section 0's outer `CIf(condition = CCall("button_held",
         // listOf(CVar("J_RIGHT"))), ...)`. A regression that drops the right-input gate would
-        // fail here. Scope-confined via the brace-walk — even if `whenever(dpad.right.held)`
+        // fail here. Scope-confined via the brace-walk — even if `runIf(dpad.right.held)`
         // lowered to `button_held(J_RIGHT)` in another scene's frame body, this assertion would
         // be unaffected.
         assertTrue(

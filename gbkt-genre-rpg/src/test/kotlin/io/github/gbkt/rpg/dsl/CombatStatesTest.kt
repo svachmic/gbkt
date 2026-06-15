@@ -111,15 +111,4 @@ class CombatStatesTest {
         val arg = assertIs<VarRef>(callExpr.args[0])
         assertEquals("COMBAT_STATE_PLAYER_TURN", arg.name)
     }
-
-    // =========================================================================
-    // combatIsInState typed overload vs string overload — produce identical IR
-    // =========================================================================
-
-    @Test
-    fun `typed and string overloads of combatIsInState produce identical CallExpr`() {
-        val typedExpr = combatIsInState(CombatStates.VICTORY, BattleRef("combat"))
-        @Suppress("DEPRECATION") val stringExpr = combatIsInState("COMBAT_STATE_VICTORY", "combat")
-        assertEquals(typedExpr, stringExpr)
-    }
 }

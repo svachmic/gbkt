@@ -102,44 +102,57 @@ class GbktPropertyChainCompletionProvider : CompletionProvider<CompletionParamet
 
     private fun extractChain(dotExpr: KtDotQualifiedExpression): List<ChainElement> {
         val chain = mutableListOf<ChainElement>()
+        traverseChainExpression(dotExpr, chain)
+        return chain
+    }
 
-        fun traverse(expr: org.jetbrains.kotlin.psi.KtExpression) {
-            when (expr) {
-                is KtDotQualifiedExpression -> {
-                    traverse(expr.receiverExpression)
-                    val selector = expr.selectorExpression
-                    when (selector) {
-                        is KtNameReferenceExpression -> {
-                            // Property access: hero.stats
-                            val name = selector.getReferencedName()
-                            // Don't add the placeholder (IntelliJIdeaRulezzz)
-                            if (!name.contains("IntelliJ")) {
-                                chain.add(ChainElement(name, isMethodCall = false))
-                            }
-                        }
-                        is KtCallExpression -> {
-                            // Method call: hero.heal()
-                            val methodName = selector.calleeExpression?.text
-                            if (methodName != null && !methodName.contains("IntelliJ")) {
-                                chain.add(ChainElement(methodName, isMethodCall = true))
-                            }
-                        }
-                    }
+    private fun traverseChainExpression(
+        expr: org.jetbrains.kotlin.psi.KtExpression,
+        chain: MutableList<ChainElement>,
+    ) {
+        when (expr) {
+            is KtDotQualifiedExpression -> traverseDotQualified(expr, chain)
+            is KtNameReferenceExpression ->
+                chain.add(ChainElement(expr.getReferencedName(), isMethodCall = false))
+            is KtCallExpression -> addCallExprElement(expr, chain)
+        }
+    }
+
+    private fun traverseDotQualified(
+        expr: KtDotQualifiedExpression,
+        chain: MutableList<ChainElement>,
+    ) {
+        traverseChainExpression(expr.receiverExpression, chain)
+        addSelectorElement(expr.selectorExpression, chain)
+    }
+
+    private fun addSelectorElement(
+        selector: org.jetbrains.kotlin.psi.KtExpression?,
+        chain: MutableList<ChainElement>,
+    ) {
+        when (selector) {
+            is KtNameReferenceExpression -> {
+                // Property access: hero.stats — skip IntelliJ placeholder
+                val name = selector.getReferencedName()
+                if (!name.contains("IntelliJ")) {
+                    chain.add(ChainElement(name, isMethodCall = false))
                 }
-                is KtNameReferenceExpression -> {
-                    chain.add(ChainElement(expr.getReferencedName(), isMethodCall = false))
-                }
-                is KtCallExpression -> {
-                    val methodName = expr.calleeExpression?.text
-                    if (methodName != null) {
-                        chain.add(ChainElement(methodName, isMethodCall = true))
-                    }
+            }
+            is KtCallExpression -> {
+                // Method call: hero.heal() — skip IntelliJ placeholder
+                val methodName = selector.calleeExpression?.text
+                if (methodName != null && !methodName.contains("IntelliJ")) {
+                    chain.add(ChainElement(methodName, isMethodCall = true))
                 }
             }
         }
+    }
 
-        traverse(dotExpr)
-        return chain
+    private fun addCallExprElement(expr: KtCallExpression, chain: MutableList<ChainElement>) {
+        val methodName = expr.calleeExpression?.text
+        if (methodName != null) {
+            chain.add(ChainElement(methodName, isMethodCall = true))
+        }
     }
 
     private fun determineBaseType(name: String, analysis: GbktDslVisitor): BaseType {

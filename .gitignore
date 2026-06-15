@@ -59,4 +59,6 @@ scratch/
 .planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/reference/*.sym
 .planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/reference/build/
 .planning/phases/12-port-platformer-template-gbdk-example-to-gbkt/evidence/reference/obj/
-# uat-screenshots .pngs may also be considered local artifacts; KEEP them tracked (small, evidence-binding per D-10).
+
+# Phase 22: per-phase evidence dirs are scratch — goldens live in src/test/resources/goldens/
+.planning/phases/**/evidence/

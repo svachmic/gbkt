@@ -658,9 +658,9 @@ data class MoveMetasprite(
  * Apply per-frame physics to an actor: acceleration, gravity accumulation, fall speed clamping, and
  * velocity application.
  *
- * Floor/bounce detection is game-specific (via whenever() collision conditions) — PhysicsStep
- * handles only the physics integration step. The actor must have a [PhysicsConfig] on its [ActorIR]
- * for the backend to have generated the velocity variables and constants.
+ * Floor/bounce detection is game-specific (via runIf() collision conditions) — PhysicsStep handles
+ * only the physics integration step. The actor must have a [PhysicsConfig] on its [ActorIR] for the
+ * backend to have generated the velocity variables and constants.
  *
  * Generated C applies, in order:
  * 1. Acceleration: `_actorId_vx += ACCEL_X_ACTORID; _actorId_vy += ACCEL_Y_ACTORID`

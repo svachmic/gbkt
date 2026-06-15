@@ -83,7 +83,7 @@ data class HashTableRef(
     /**
      * Returns 1 if [key] is present in the hash table, 0 otherwise.
      *
-     * Suitable for use in `whenever()` conditions.
+     * Suitable for use in `runIf()` conditions.
      */
     fun contains(key: Expr): Expr = CallExpr("ht_${name}_contains", listOf(key))
 
@@ -194,7 +194,7 @@ data class PoolRef(val name: String, val elementType: CollElementType, val capac
  * Usage:
  * ```kotlin
  * val slot = bullets.acquire()
- * whenever(slot.exists) {
+ * runIf(slot.exists) {
  *     slot["x"] set player.x
  * }
  * ```

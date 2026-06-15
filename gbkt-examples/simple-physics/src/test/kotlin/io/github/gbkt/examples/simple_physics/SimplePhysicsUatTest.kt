@@ -28,26 +28,14 @@ import org.junit.jupiter.api.Assumptions
  * Skipped automatically if the ROM is missing — run `./gradlew
  * :gbkt-examples:simple-physics:buildRom` first.
  *
- * Outputs:
- * - `.planning/phases/09.4-resolve-simple-physics-smiley-vs-ball-naming-inconsistency/evidence/uat-screenshots/behavior{1,2,3}-{...}.png`
- * - `.planning/phases/09.4-resolve-simple-physics-smiley-vs-ball-naming-inconsistency/evidence/uat-verdict.md`
- *
- * **EVIDENCE_DIR redirect (post-09.4 Plan 02):** The screenshot dir points at Phase 09.4 so that
- * the post-rename UAT re-baseline (per D-A2-01) lands in the Phase 09.4 evidence dir — the Phase
- * 09.3 evidence dir is frozen as historical record.
+ * Captures land under gitignored scratch (`build/gbkt/screenshots/`). These PNGs are smoke-only
+ * (length > 0 gate) and carry no golden baseline.
  */
 class SimplePhysicsUatTest {
 
     companion object {
-        // Phase-evidence layout (executor runs Gradle from repo root).
-        // Redirected to Phase 09.4 in Plan 02 so the post-rename UAT re-baseline
-        // (per D-A2-01) lands in the Phase 09.4 evidence dir; the Phase 09.3 evidence
-        // dir is frozen as historical record.
-        private val EVIDENCE_DIR =
-            File(
-                "../../.planning/phases/" +
-                    "09.4-resolve-simple-physics-smiley-vs-ball-naming-inconsistency/evidence/uat-screenshots"
-            )
+        // Gitignored scratch directory for smoke captures.
+        private val SCRATCH_DIR = File(System.getProperty("user.dir"), "build/gbkt/screenshots")
         private val ROM_FILE = File("build/gbkt/output/simple-physics.gb")
         private val METADATA_FILE = File("build/gbkt/generated/game_metadata.json")
     }
@@ -57,8 +45,8 @@ class SimplePhysicsUatTest {
             ROM_FILE.exists(),
             "simple-physics.gb not found — run buildRom first",
         )
-        EVIDENCE_DIR.mkdirs()
-        val baseConfig = AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = EVIDENCE_DIR)
+        SCRATCH_DIR.mkdirs()
+        val baseConfig = AgentSessionConfig.discoverFiles(ROM_FILE, screenshotDir = SCRATCH_DIR)
         val metadata =
             if (METADATA_FILE.exists()) GameMetadata.fromJsonFile(METADATA_FILE) else null
         val agent = StepAgent(baseConfig, metadata)
@@ -95,28 +83,6 @@ class SimplePhysicsUatTest {
         return if (raw >= 0x8000) raw - 0x10000 else raw
     }
 
-    /**
-     * Captures a screenshot via [StepAgent.captureScreenshot] (which writes
-     * `{label}_frame{frameNumber}.png`) and renames the file to the plan's exact target path. JSON
-     * sidecar is also renamed/removed to keep the evidence dir tidy.
-     */
-    private fun captureAndRename(agent: StepAgent, label: String, targetName: String): File {
-        val captured = agent.captureScreenshot(label)
-        val target = File(EVIDENCE_DIR, targetName)
-        if (target.exists()) target.delete()
-        check(captured.renameTo(target)) {
-            "Failed to rename ${captured.absolutePath} -> ${target.absolutePath}"
-        }
-        // Sidecar JSON: rename in lock-step (best-effort; not required by plan).
-        val sidecar = File(captured.parentFile, captured.nameWithoutExtension + ".json")
-        if (sidecar.exists()) {
-            val targetJson = File(EVIDENCE_DIR, target.nameWithoutExtension + ".json")
-            if (targetJson.exists()) targetJson.delete()
-            sidecar.renameTo(targetJson)
-        }
-        return target
-    }
-
     // ── Behavior 1 — D-pad held → accel + (eventually) clamp at +64 (D-01.1) ─────
     //
     // Frame-loop trace (see SimplePhysics.kt for source — the decel ladder ALWAYS runs
@@ -151,7 +117,7 @@ class SimplePhysicsUatTest {
             agent.stepN(30, buttons = setOf(Button.RIGHT))
             val spdXAt30 = readI16(agent, "spdX")
             val posXAt30 = readI16(agent, "posX")
-            val png = captureAndRename(agent, "behavior1_clamp_right", "behavior1-clamp-right.png")
+            val png = agent.captureScreenshot("behavior1_clamp_right")
 
             // Net +1 sub-pixel/frame → spdX = 30 after 30 frames. Plan-06 anticipated 64
             // because it counted +2/frame (forgetting the decel ladder runs every frame).
@@ -206,7 +172,7 @@ class SimplePhysicsUatTest {
             agent.step(setOf(Button.A)) // single-frame edge-triggered press
 
             val spdY = readI16(agent, "spdY")
-            val png = captureAndRename(agent, "behavior2_jump", "behavior2-jump-impulse.png")
+            val png = agent.captureScreenshot("behavior2_jump")
 
             assertEquals(
                 -JUMP_ACCELERATION_IN_SUBPIXELS + 1,
@@ -237,7 +203,7 @@ class SimplePhysicsUatTest {
             agent.stepN(60) // release
 
             val rest = readI16(agent, "spdX")
-            val png = captureAndRename(agent, "behavior3_decel", "behavior3-decel-rest.png")
+            val png = agent.captureScreenshot("behavior3_decel")
 
             assertEquals(0, rest, "spdX should decel to 0 after 60 frames of no input")
             assertTrue(png.length() > 0, "PNG was empty: ${png.absolutePath}")

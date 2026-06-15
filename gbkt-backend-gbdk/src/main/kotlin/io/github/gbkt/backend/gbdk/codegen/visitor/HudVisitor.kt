@@ -478,7 +478,6 @@ class HudVisitor(private val gameIR: GameIR) {
      * All tile writes use `set_win_tiles` (renderOnWindow=true, default) or `set_bkg_tiles`
      * (renderOnWindow=false). The selection is static per HudDef (Kotlin-time choice).
      */
-    @Suppress("LongMethod")
     private fun buildHudUpdateFunction(hud: HudDef): CFunction {
         val hudId = hud.id.replace('-', '_').replace(' ', '_')
         val tileFunc = if (hud.renderOnWindow) "set_win_tiles" else "set_bkg_tiles"
@@ -494,288 +493,54 @@ class HudVisitor(private val gameIR: GameIR) {
                         thenBody = listOf(CReturn(null)),
                     )
                 )
-
                 // Per-element rendering with change detection
                 var elemOffset = 0
                 for (elem in hud.elements) {
                     val elemId = hudElementId(elem)
                     val prevVar = "_hud_${hudId}_${elemId}_prev"
                     val elemX = baseX + elemOffset
-
                     when (elem) {
-                        is HudBar -> {
-                            val varName = "_${elem.variable.replace('-', '_').replace(' ', '_')}"
-                            // Capture nullable field into local val for cross-module smart cast
-                            val barMaxVariable: String? = elem.maxVariable
-                            val maxVarOrLit: CExpr =
-                                if (barMaxVariable != null)
-                                    CVar("_${barMaxVariable.replace('-', '_').replace(' ', '_')}")
-                                else CLiteral(elem.maxValue)
-                            val thenBody =
-                                buildList<CStatement> {
-                                    // Update prev
-                                    add(
-                                        CExprStatement(
-                                            CBinaryExpr(CVar(prevVar), "=", CVar(varName))
-                                        )
-                                    )
-                                    // Calculate filled tiles: filled = (value * width) / maxValue
-                                    add(CVarDecl("_hfi", CU8, initializer = null))
-                                    add(CVarDecl("_hfilled", CU8, initializer = null))
-                                    add(
-                                        CExprStatement(
-                                            CBinaryExpr(
-                                                CVar("_hfilled"),
-                                                "=",
-                                                CBinaryExpr(
-                                                    CBinaryExpr(
-                                                        CVar(varName),
-                                                        "*",
-                                                        CLiteral(elem.width),
-                                                    ),
-                                                    "/",
-                                                    maxVarOrLit,
-                                                ),
-                                            )
-                                        )
-                                    )
-                                    // For loop rendering fill tiles
-                                    add(CExprStatement(CBinaryExpr(CVar("_hfi"), "=", CLiteral(0))))
-                                    add(
-                                        CFor(
-                                            init = null,
-                                            condition =
-                                                CBinaryExpr(
-                                                    CVar("_hfi"),
-                                                    "<",
-                                                    CLiteral(elem.width),
-                                                ),
-                                            increment = CUnaryExpr("++", CVar("_hfi")),
-                                            body =
-                                                listOf(
-                                                    CIf(
-                                                        condition =
-                                                            CBinaryExpr(
-                                                                CVar("_hfi"),
-                                                                "<",
-                                                                CVar("_hfilled"),
-                                                            ),
-                                                        thenBody =
-                                                            listOf(
-                                                                CExprStatement(
-                                                                    CCall(
-                                                                        tileFunc,
-                                                                        listOf(
-                                                                            CBinaryExpr(
-                                                                                CLiteral(elemX),
-                                                                                "+",
-                                                                                CVar("_hfi"),
-                                                                            ),
-                                                                            CLiteral(baseY),
-                                                                            CLiteral(1),
-                                                                            CLiteral(1),
-                                                                            CRawExpr(
-                                                                                "(unsigned char*)&_hud_fill_tile_${hudId}_${elemId}"
-                                                                            ),
-                                                                        ),
-                                                                    )
-                                                                )
-                                                            ),
-                                                        elseBody =
-                                                            listOf(
-                                                                CExprStatement(
-                                                                    CCall(
-                                                                        tileFunc,
-                                                                        listOf(
-                                                                            CBinaryExpr(
-                                                                                CLiteral(elemX),
-                                                                                "+",
-                                                                                CVar("_hfi"),
-                                                                            ),
-                                                                            CLiteral(baseY),
-                                                                            CLiteral(1),
-                                                                            CLiteral(1),
-                                                                            CRawExpr(
-                                                                                "(unsigned char*)&_hud_empty_tile_${hudId}_${elemId}"
-                                                                            ),
-                                                                        ),
-                                                                    )
-                                                                )
-                                                            ),
-                                                    )
-                                                ),
-                                        )
-                                    )
-                                }
+                        is HudBar ->
                             add(
-                                CIf(
-                                    condition = CBinaryExpr(CVar(varName), "!=", CVar(prevVar)),
-                                    thenBody = thenBody,
+                                buildHudBarUpdateStatement(
+                                    elem,
+                                    hudId,
+                                    elemId,
+                                    prevVar,
+                                    elemX,
+                                    baseY,
+                                    tileFunc,
                                 )
                             )
-                            elemOffset += elem.width
-                        }
-
-                        is HudNumber -> {
-                            val varName = "_${elem.variable.replace('-', '_').replace(' ', '_')}"
-                            val thenBody =
-                                buildList<CStatement> {
-                                    add(
-                                        CExprStatement(
-                                            CBinaryExpr(CVar(prevVar), "=", CVar(varName))
-                                        )
-                                    )
-                                    // Print label if non-empty
-                                    if (elem.label.isNotEmpty()) {
-                                        add(
-                                            CExprStatement(
-                                                CCall(
-                                                    printFunc,
-                                                    listOf(
-                                                        CLiteral(elemX),
-                                                        CLiteral(baseY),
-                                                        CStringLiteral(elem.label),
-                                                        CLiteral(elem.label.length),
-                                                    ),
-                                                )
-                                            )
-                                        )
-                                    }
-                                    // Print value digits
-                                    val valueX = elemX + elem.label.length
-                                    add(
-                                        CExprStatement(
-                                            CCall(
-                                                "_hud_print_u8",
-                                                listOf(
-                                                    CLiteral(valueX),
-                                                    CLiteral(baseY),
-                                                    CVar(varName),
-                                                ),
-                                            )
-                                        )
-                                    )
-                                }
+                        is HudNumber ->
                             add(
-                                CIf(
-                                    condition = CBinaryExpr(CVar(varName), "!=", CVar(prevVar)),
-                                    thenBody = thenBody,
+                                buildHudNumberUpdateStatement(
+                                    elem,
+                                    prevVar,
+                                    elemX,
+                                    baseY,
+                                    printFunc,
                                 )
                             )
-                            elemOffset += elem.label.length + 3 // label + max 3 digits
-                        }
-
-                        is HudIcons -> {
-                            val varName = "_${elem.variable.replace('-', '_').replace(' ', '_')}"
-                            val thenBody =
-                                buildList<CStatement> {
-                                    add(
-                                        CExprStatement(
-                                            CBinaryExpr(CVar(prevVar), "=", CVar(varName))
-                                        )
-                                    )
-                                    add(CVarDecl("_hii", CU8, initializer = null))
-                                    add(CExprStatement(CBinaryExpr(CVar("_hii"), "=", CLiteral(0))))
-                                    val iconElseBody: List<CStatement> =
-                                        if (elem.displayMode == IconDisplayMode.FULL_AND_EMPTY) {
-                                            listOf(
-                                                CExprStatement(
-                                                    CCall(
-                                                        tileFunc,
-                                                        listOf(
-                                                            CBinaryExpr(
-                                                                CLiteral(elemX),
-                                                                "+",
-                                                                CVar("_hii"),
-                                                            ),
-                                                            CLiteral(baseY),
-                                                            CLiteral(1),
-                                                            CLiteral(1),
-                                                            CRawExpr(
-                                                                "(unsigned char*)&_hud_empty_icon_${hudId}_${elemId}"
-                                                            ),
-                                                        ),
-                                                    )
-                                                )
-                                            )
-                                        } else {
-                                            // FILLED_ONLY: write space tile (0) for empty slots
-                                            listOf(
-                                                CExprStatement(
-                                                    CCall(
-                                                        tileFunc,
-                                                        listOf(
-                                                            CBinaryExpr(
-                                                                CLiteral(elemX),
-                                                                "+",
-                                                                CVar("_hii"),
-                                                            ),
-                                                            CLiteral(baseY),
-                                                            CLiteral(1),
-                                                            CLiteral(1),
-                                                            CRawExpr(
-                                                                "(unsigned char*)&_hud_space_tile"
-                                                            ),
-                                                        ),
-                                                    )
-                                                )
-                                            )
-                                        }
-                                    add(
-                                        CFor(
-                                            init = null,
-                                            condition =
-                                                CBinaryExpr(
-                                                    CVar("_hii"),
-                                                    "<",
-                                                    CLiteral(elem.maxValue),
-                                                ),
-                                            increment = CUnaryExpr("++", CVar("_hii")),
-                                            body =
-                                                listOf(
-                                                    CIf(
-                                                        condition =
-                                                            CBinaryExpr(
-                                                                CVar("_hii"),
-                                                                "<",
-                                                                CVar(varName),
-                                                            ),
-                                                        thenBody =
-                                                            listOf(
-                                                                CExprStatement(
-                                                                    CCall(
-                                                                        tileFunc,
-                                                                        listOf(
-                                                                            CBinaryExpr(
-                                                                                CLiteral(elemX),
-                                                                                "+",
-                                                                                CVar("_hii"),
-                                                                            ),
-                                                                            CLiteral(baseY),
-                                                                            CLiteral(1),
-                                                                            CLiteral(1),
-                                                                            CRawExpr(
-                                                                                "(unsigned char*)&_hud_full_icon_${hudId}_${elemId}"
-                                                                            ),
-                                                                        ),
-                                                                    )
-                                                                )
-                                                            ),
-                                                        elseBody = iconElseBody,
-                                                    )
-                                                ),
-                                        )
-                                    )
-                                }
+                        is HudIcons ->
                             add(
-                                CIf(
-                                    condition = CBinaryExpr(CVar(varName), "!=", CVar(prevVar)),
-                                    thenBody = thenBody,
+                                buildHudIconsUpdateStatement(
+                                    elem,
+                                    hudId,
+                                    elemId,
+                                    prevVar,
+                                    elemX,
+                                    baseY,
+                                    tileFunc,
                                 )
                             )
-                            elemOffset += elem.maxValue
-                        }
                     }
+                    elemOffset +=
+                        when (elem) {
+                            is HudBar -> elem.width
+                            is HudNumber -> elem.label.length + 3
+                            is HudIcons -> elem.maxValue
+                        }
                 }
             }
 
@@ -785,6 +550,240 @@ class HudVisitor(private val gameIR: GameIR) {
             body = body,
             bank = 0,
             sectionComment = "HUD: ${hud.id}",
+        )
+    }
+
+    private fun buildHudBarUpdateStatement(
+        elem: HudBar,
+        hudId: String,
+        elemId: String,
+        prevVar: String,
+        elemX: Int,
+        baseY: Int,
+        tileFunc: String,
+    ): CStatement {
+        val varName = "_${elem.variable.replace('-', '_').replace(' ', '_')}"
+        // Capture nullable field into local val for cross-module smart cast
+        val barMaxVariable: String? = elem.maxVariable
+        val maxVarOrLit: CExpr =
+            if (barMaxVariable != null)
+                CVar("_${barMaxVariable.replace('-', '_').replace(' ', '_')}")
+            else CLiteral(elem.maxValue)
+        val thenBody =
+            buildList<CStatement> {
+                // Update prev
+                add(CExprStatement(CBinaryExpr(CVar(prevVar), "=", CVar(varName))))
+                // Calculate filled tiles: filled = (value * width) / maxValue
+                add(CVarDecl("_hfi", CU8, initializer = null))
+                add(CVarDecl("_hfilled", CU8, initializer = null))
+                add(
+                    CExprStatement(
+                        CBinaryExpr(
+                            CVar("_hfilled"),
+                            "=",
+                            CBinaryExpr(
+                                CBinaryExpr(CVar(varName), "*", CLiteral(elem.width)),
+                                "/",
+                                maxVarOrLit,
+                            ),
+                        )
+                    )
+                )
+                // For loop rendering fill tiles
+                add(CExprStatement(CBinaryExpr(CVar("_hfi"), "=", CLiteral(0))))
+                add(
+                    CFor(
+                        init = null,
+                        condition = CBinaryExpr(CVar("_hfi"), "<", CLiteral(elem.width)),
+                        increment = CUnaryExpr("++", CVar("_hfi")),
+                        body =
+                            listOf(
+                                CIf(
+                                    condition = CBinaryExpr(CVar("_hfi"), "<", CVar("_hfilled")),
+                                    thenBody =
+                                        listOf(
+                                            CExprStatement(
+                                                CCall(
+                                                    tileFunc,
+                                                    listOf(
+                                                        CBinaryExpr(
+                                                            CLiteral(elemX),
+                                                            "+",
+                                                            CVar("_hfi"),
+                                                        ),
+                                                        CLiteral(baseY),
+                                                        CLiteral(1),
+                                                        CLiteral(1),
+                                                        CRawExpr(
+                                                            "(unsigned char*)&_hud_fill_tile_${hudId}_${elemId}"
+                                                        ),
+                                                    ),
+                                                )
+                                            )
+                                        ),
+                                    elseBody =
+                                        listOf(
+                                            CExprStatement(
+                                                CCall(
+                                                    tileFunc,
+                                                    listOf(
+                                                        CBinaryExpr(
+                                                            CLiteral(elemX),
+                                                            "+",
+                                                            CVar("_hfi"),
+                                                        ),
+                                                        CLiteral(baseY),
+                                                        CLiteral(1),
+                                                        CLiteral(1),
+                                                        CRawExpr(
+                                                            "(unsigned char*)&_hud_empty_tile_${hudId}_${elemId}"
+                                                        ),
+                                                    ),
+                                                )
+                                            )
+                                        ),
+                                )
+                            ),
+                    )
+                )
+            }
+        return CIf(
+            condition = CBinaryExpr(CVar(varName), "!=", CVar(prevVar)),
+            thenBody = thenBody,
+        )
+    }
+
+    private fun buildHudNumberUpdateStatement(
+        elem: HudNumber,
+        prevVar: String,
+        elemX: Int,
+        baseY: Int,
+        printFunc: String,
+    ): CStatement {
+        val varName = "_${elem.variable.replace('-', '_').replace(' ', '_')}"
+        val thenBody =
+            buildList<CStatement> {
+                add(CExprStatement(CBinaryExpr(CVar(prevVar), "=", CVar(varName))))
+                // Print label if non-empty
+                if (elem.label.isNotEmpty()) {
+                    add(
+                        CExprStatement(
+                            CCall(
+                                printFunc,
+                                listOf(
+                                    CLiteral(elemX),
+                                    CLiteral(baseY),
+                                    CStringLiteral(elem.label),
+                                    CLiteral(elem.label.length),
+                                ),
+                            )
+                        )
+                    )
+                }
+                // Print value digits
+                val valueX = elemX + elem.label.length
+                add(
+                    CExprStatement(
+                        CCall(
+                            "_hud_print_u8",
+                            listOf(CLiteral(valueX), CLiteral(baseY), CVar(varName)),
+                        )
+                    )
+                )
+            }
+        return CIf(
+            condition = CBinaryExpr(CVar(varName), "!=", CVar(prevVar)),
+            thenBody = thenBody,
+        )
+    }
+
+    private fun buildHudIconsUpdateStatement(
+        elem: HudIcons,
+        hudId: String,
+        elemId: String,
+        prevVar: String,
+        elemX: Int,
+        baseY: Int,
+        tileFunc: String,
+    ): CStatement {
+        val varName = "_${elem.variable.replace('-', '_').replace(' ', '_')}"
+        val iconElseBody: List<CStatement> =
+            if (elem.displayMode == IconDisplayMode.FULL_AND_EMPTY) {
+                listOf(
+                    CExprStatement(
+                        CCall(
+                            tileFunc,
+                            listOf(
+                                CBinaryExpr(CLiteral(elemX), "+", CVar("_hii")),
+                                CLiteral(baseY),
+                                CLiteral(1),
+                                CLiteral(1),
+                                CRawExpr("(unsigned char*)&_hud_empty_icon_${hudId}_${elemId}"),
+                            ),
+                        )
+                    )
+                )
+            } else {
+                // FILLED_ONLY: write space tile (0) for empty slots
+                listOf(
+                    CExprStatement(
+                        CCall(
+                            tileFunc,
+                            listOf(
+                                CBinaryExpr(CLiteral(elemX), "+", CVar("_hii")),
+                                CLiteral(baseY),
+                                CLiteral(1),
+                                CLiteral(1),
+                                CRawExpr("(unsigned char*)&_hud_space_tile"),
+                            ),
+                        )
+                    )
+                )
+            }
+        val thenBody =
+            buildList<CStatement> {
+                add(CExprStatement(CBinaryExpr(CVar(prevVar), "=", CVar(varName))))
+                add(CVarDecl("_hii", CU8, initializer = null))
+                add(CExprStatement(CBinaryExpr(CVar("_hii"), "=", CLiteral(0))))
+                add(
+                    CFor(
+                        init = null,
+                        condition = CBinaryExpr(CVar("_hii"), "<", CLiteral(elem.maxValue)),
+                        increment = CUnaryExpr("++", CVar("_hii")),
+                        body =
+                            listOf(
+                                CIf(
+                                    condition = CBinaryExpr(CVar("_hii"), "<", CVar(varName)),
+                                    thenBody =
+                                        listOf(
+                                            CExprStatement(
+                                                CCall(
+                                                    tileFunc,
+                                                    listOf(
+                                                        CBinaryExpr(
+                                                            CLiteral(elemX),
+                                                            "+",
+                                                            CVar("_hii"),
+                                                        ),
+                                                        CLiteral(baseY),
+                                                        CLiteral(1),
+                                                        CLiteral(1),
+                                                        CRawExpr(
+                                                            "(unsigned char*)&_hud_full_icon_${hudId}_${elemId}"
+                                                        ),
+                                                    ),
+                                                )
+                                            )
+                                        ),
+                                    elseBody = iconElseBody,
+                                )
+                            ),
+                    )
+                )
+            }
+        return CIf(
+            condition = CBinaryExpr(CVar(varName), "!=", CVar(prevVar)),
+            thenBody = thenBody,
         )
     }
 

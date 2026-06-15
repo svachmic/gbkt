@@ -174,7 +174,7 @@ class SceneBuilder(val id: String, private val refs: RefRegistry) {
      * ```kotlin
      * scene("title") {
      *     screen(asset("graphics/title-screen.png"))
-     *     frame { whenever(buttons.start.pressed) { navigate("gameplay") } }
+     *     frame { runIf(buttons.start.pressed) { navigate("gameplay") } }
      * }
      * ```
      *

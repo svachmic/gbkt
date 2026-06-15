@@ -29,7 +29,7 @@ import javax.swing.JTextArea
  * - Compilation errors with clickable links
  * - ROM generation status
  */
-class GbktToolWindowPanel(private val project: Project) {
+class GbktToolWindowPanel(@Suppress("UnusedParameter") project: Project) {
 
     val mainPanel: JPanel = JPanel(BorderLayout())
     private val outputArea: JTextArea = JTextArea()

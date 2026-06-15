@@ -136,30 +136,73 @@ class ConstantFoldingPass : AnalysisPass {
     }
 
     /**
-     * Evaluates a binary operation at compile time.
+     * Evaluates a binary operation at compile time. Delegates to per-group helpers to keep
+     * individual method complexity below the S3776 threshold.
      *
      * @return The integer result, or null if the operation cannot be safely evaluated (e.g. div/0).
      */
     private fun evalBinaryOp(op: BinaryOp, l: Int, r: Int): Int? =
+        when (op) {
+            BinaryOp.ADD,
+            BinaryOp.SUB,
+            BinaryOp.MUL,
+            BinaryOp.DIV,
+            BinaryOp.MOD -> evalArithmeticOp(op, l, r)
+            BinaryOp.AND,
+            BinaryOp.OR,
+            BinaryOp.XOR,
+            BinaryOp.SHL,
+            BinaryOp.SHR -> evalBitwiseOp(op, l, r)
+            BinaryOp.EQ,
+            BinaryOp.NEQ,
+            BinaryOp.LT,
+            BinaryOp.LTE,
+            BinaryOp.GT,
+            BinaryOp.GTE -> evalComparisonOp(op, l, r)
+            BinaryOp.LOGICAL_AND,
+            BinaryOp.LOGICAL_OR -> evalLogicalOp(op, l, r)
+        }
+
+    /** Evaluates arithmetic operations (ADD, SUB, MUL, DIV, MOD). Returns null for div-by-zero. */
+    private fun evalArithmeticOp(op: BinaryOp, l: Int, r: Int): Int? =
         when (op) {
             BinaryOp.ADD -> l + r
             BinaryOp.SUB -> l - r
             BinaryOp.MUL -> l * r
             BinaryOp.DIV -> if (r == 0) null else l / r
             BinaryOp.MOD -> if (r == 0) null else l % r
+            else -> null
+        }
+
+    /** Evaluates bitwise operations (AND, OR, XOR, SHL, SHR). */
+    private fun evalBitwiseOp(op: BinaryOp, l: Int, r: Int): Int? =
+        when (op) {
             BinaryOp.AND -> l and r
             BinaryOp.OR -> l or r
             BinaryOp.XOR -> l xor r
             BinaryOp.SHL -> l shl r
             BinaryOp.SHR -> l shr r
+            else -> null
+        }
+
+    /** Evaluates comparison operations (EQ, NEQ, LT, LTE, GT, GTE). Returns 1 or 0. */
+    private fun evalComparisonOp(op: BinaryOp, l: Int, r: Int): Int? =
+        when (op) {
             BinaryOp.EQ -> if (l == r) 1 else 0
             BinaryOp.NEQ -> if (l != r) 1 else 0
             BinaryOp.LT -> if (l < r) 1 else 0
             BinaryOp.LTE -> if (l <= r) 1 else 0
             BinaryOp.GT -> if (l > r) 1 else 0
             BinaryOp.GTE -> if (l >= r) 1 else 0
+            else -> null
+        }
+
+    /** Evaluates logical operations (LOGICAL_AND, LOGICAL_OR). Returns 1 or 0. */
+    private fun evalLogicalOp(op: BinaryOp, l: Int, r: Int): Int? =
+        when (op) {
             BinaryOp.LOGICAL_AND -> if (l != 0 && r != 0) 1 else 0
             BinaryOp.LOGICAL_OR -> if (l != 0 || r != 0) 1 else 0
+            else -> null
         }
 
     /**

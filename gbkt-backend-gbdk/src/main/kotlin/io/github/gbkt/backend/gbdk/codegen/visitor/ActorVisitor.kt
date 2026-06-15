@@ -34,6 +34,7 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CUnaryExpr
 import io.github.gbkt.backend.gbdk.codegen.ast.CVar
 import io.github.gbkt.backend.gbdk.codegen.ast.CVarDecl
 import io.github.gbkt.backend.gbdk.codegen.ast.CVoid
+import io.github.gbkt.backend.gbdk.profiles.GameBoyConstants
 import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.DiagonalMode
 import io.github.gbkt.core.ir.FixedPointMode
@@ -442,298 +443,13 @@ object ActorVisitor {
         val yVar = CVar("_${actorId}_y")
         val speed = config.speed
 
-        val statements = mutableListOf<CStatement>()
-
-        when (config.style) {
-            MovementStyle.GRID -> {
-                // Grid mode: move by speed, bounded by tile size at edges
-                // UP: y > 0 (don't go above top)
-                statements +=
-                    CIf(
-                        condition =
-                            CBinaryExpr(
-                                CCall("dpad_held", listOf(CVar("J_UP"))),
-                                "&&",
-                                CBinaryExpr(yVar, ">", CLiteral(0)),
-                            ),
-                        thenBody = listOf(CExprStatement(CBinaryExpr(yVar, "-=", CLiteral(speed)))),
-                    )
-                // DOWN: y < 144 (screen height 144 pixels)
-                statements +=
-                    CIf(
-                        condition =
-                            CBinaryExpr(
-                                CCall("dpad_held", listOf(CVar("J_DOWN"))),
-                                "&&",
-                                CBinaryExpr(yVar, "<", CLiteral(144 - speed)),
-                            ),
-                        thenBody = listOf(CExprStatement(CBinaryExpr(yVar, "+=", CLiteral(speed)))),
-                    )
-                // LEFT: x > 0 (don't go past left edge)
-                statements +=
-                    CIf(
-                        condition =
-                            CBinaryExpr(
-                                CCall("dpad_held", listOf(CVar("J_LEFT"))),
-                                "&&",
-                                CBinaryExpr(xVar, ">", CLiteral(0)),
-                            ),
-                        thenBody = listOf(CExprStatement(CBinaryExpr(xVar, "-=", CLiteral(speed)))),
-                    )
-                // RIGHT: x < 160 (screen width 160 pixels)
-                statements +=
-                    CIf(
-                        condition =
-                            CBinaryExpr(
-                                CCall("dpad_held", listOf(CVar("J_RIGHT"))),
-                                "&&",
-                                CBinaryExpr(xVar, "<", CLiteral(160 - speed)),
-                            ),
-                        thenBody = listOf(CExprStatement(CBinaryExpr(xVar, "+=", CLiteral(speed)))),
-                    )
+        val statements: List<CStatement> =
+            when (config.style) {
+                MovementStyle.GRID -> buildGridMovementStatements(xVar, yVar, speed)
+                MovementStyle.SMOOTH ->
+                    buildSmoothMovementStatements(actorId, config.smoothConfig, xVar, yVar, speed)
+                MovementStyle.PHYSICS -> buildPhysicsMovementStatements(actorId, actor)
             }
-            MovementStyle.SMOOTH -> {
-                val smooth = config.smoothConfig
-                if (smooth != null) {
-                    // Acceleration/friction SMOOTH mode
-                    statements += generateSmoothAccelerationStatements(actorId, smooth, xVar, yVar)
-                } else {
-                    // Legacy SMOOTH mode: pixel-level movement, no bounds checking
-                    statements +=
-                        CIf(
-                            condition = CCall("dpad_held", listOf(CVar("J_UP"))),
-                            thenBody =
-                                listOf(CExprStatement(CBinaryExpr(yVar, "-=", CLiteral(speed)))),
-                        )
-                    statements +=
-                        CIf(
-                            condition = CCall("dpad_held", listOf(CVar("J_DOWN"))),
-                            thenBody =
-                                listOf(CExprStatement(CBinaryExpr(yVar, "+=", CLiteral(speed)))),
-                        )
-                    statements +=
-                        CIf(
-                            condition = CCall("dpad_held", listOf(CVar("J_LEFT"))),
-                            thenBody =
-                                listOf(CExprStatement(CBinaryExpr(xVar, "-=", CLiteral(speed)))),
-                        )
-                    statements +=
-                        CIf(
-                            condition = CCall("dpad_held", listOf(CVar("J_RIGHT"))),
-                            thenBody =
-                                listOf(CExprStatement(CBinaryExpr(xVar, "+=", CLiteral(speed)))),
-                        )
-                }
-            }
-            MovementStyle.PHYSICS -> {
-                // Physics mode: d-pad input → acceleration → velocity → position
-                // Uses PhysicsConfig for parameters (defaults if not set on actor)
-                val physics = actor.physicsConfig ?: PhysicsConfig()
-                val actorIdUpper = actorId.uppercase()
-                val vxVar = CVar("_${actorId}_vx")
-                val vyVar = CVar("_${actorId}_vy")
-                val accelXDef = CVar("ACCEL_X_$actorIdUpper")
-                val accelYDef = CVar("ACCEL_Y_$actorIdUpper")
-                val gravityDef = CVar("GRAVITY_$actorIdUpper")
-                val maxFallDef = CVar("MAX_FALL_$actorIdUpper")
-
-                // 1. D-pad input applies acceleration to velocity
-                // LEFT: vx -= accel
-                statements +=
-                    CIf(
-                        condition = CCall("dpad_held", listOf(CVar("J_LEFT"))),
-                        thenBody = listOf(CExprStatement(CBinaryExpr(vxVar, "-=", accelXDef))),
-                    )
-                // RIGHT: vx += accel
-                statements +=
-                    CIf(
-                        condition = CCall("dpad_held", listOf(CVar("J_RIGHT"))),
-                        thenBody = listOf(CExprStatement(CBinaryExpr(vxVar, "+=", accelXDef))),
-                    )
-                // Platformer mode: UP/DOWN d-pad only if not in platformer mode (top-down)
-                // In platformer mode, vertical movement is via jump button, not d-pad Y
-                if (!physics.platformerMode) {
-                    // UP: vy -= accel (top-down only)
-                    statements +=
-                        CIf(
-                            condition = CCall("dpad_held", listOf(CVar("J_UP"))),
-                            thenBody = listOf(CExprStatement(CBinaryExpr(vyVar, "-=", accelYDef))),
-                        )
-                    // DOWN: vy += accel (top-down only)
-                    statements +=
-                        CIf(
-                            condition = CCall("dpad_held", listOf(CVar("J_DOWN"))),
-                            thenBody = listOf(CExprStatement(CBinaryExpr(vyVar, "+=", accelYDef))),
-                        )
-                }
-
-                // 2. Variable-height jump: track jump button held state and cut velocity on release
-                if (physics.variableJump) {
-                    val jumpHeldVar = CVar("_${actorId}_jump_held")
-                    val jumpCutDef = CVar("JUMP_CUT_$actorIdUpper")
-                    // If jump button held: set flag
-                    // If button released while moving up: cut velocity
-                    statements +=
-                        CIf(
-                            condition = CRawExpr("joypad() & J_A"),
-                            thenBody =
-                                listOf(CExprStatement(CBinaryExpr(jumpHeldVar, "=", CLiteral(1)))),
-                            elseBody =
-                                listOf(
-                                    CIf(
-                                        condition =
-                                            CBinaryExpr(
-                                                CBinaryExpr(jumpHeldVar, "!=", CLiteral(0)),
-                                                "&&",
-                                                CBinaryExpr(vyVar, "<", CIntLiteral(0)),
-                                            ),
-                                        thenBody =
-                                            listOf(
-                                                CExprStatement(CBinaryExpr(vyVar, "/=", jumpCutDef))
-                                            ),
-                                    ),
-                                    CExprStatement(CBinaryExpr(jumpHeldVar, "=", CLiteral(0))),
-                                ),
-                        )
-                }
-
-                // 3. Coyote time: manage coyote counter (decrements after leaving ground)
-                // Note: actual coyote counter management happens in game logic (when on_ground
-                // tracked)
-                // We emit the counter decrement; game logic sets it to COYOTE_N when on ground
-                if (physics.coyoteFrames > 0) {
-                    val coyoteVar = CVar("_${actorId}_coyote")
-                    statements +=
-                        CIf(
-                            condition = CBinaryExpr(coyoteVar, ">", CLiteral(0)),
-                            thenBody = listOf(CExprStatement(CUnaryExpr("--", coyoteVar))),
-                        )
-                }
-
-                // 4. Apply gravity to VY (platformer mode: gravity on Y; top-down: no gravity)
-                if (physics.platformerMode && physics.gravity != 0) {
-                    statements += CExprStatement(CBinaryExpr(vyVar, "+=", gravityDef))
-                } else if (!physics.platformerMode && physics.gravity != 0) {
-                    // Top-down: still support gravity if explicitly set (unusual but valid)
-                    statements += CExprStatement(CBinaryExpr(vyVar, "+=", gravityDef))
-                }
-
-                // 5. Clamp fall speed (only when gravity is active)
-                if (physics.gravity != 0) {
-                    statements +=
-                        CIf(
-                            condition = CBinaryExpr(vyVar, ">", maxFallDef),
-                            thenBody = listOf(CExprStatement(CBinaryExpr(vyVar, "=", maxFallDef))),
-                        )
-                }
-
-                // 6. Wall-jump: if touching wall and jump pressed, kick off in opposite direction
-                if (physics.wallJump) {
-                    val wallContactVar = CVar("_${actorId}_wall_contact")
-                    val wjVxDef = CVar("WALLJUMP_VX_$actorIdUpper")
-                    val wjVyDef = CVar("WALLJUMP_VY_$actorIdUpper")
-                    statements +=
-                        CIf(
-                            condition =
-                                CBinaryExpr(
-                                    CBinaryExpr(wallContactVar, "!=", CLiteral(0)),
-                                    "&&",
-                                    CRawExpr("new_buttons & J_A"),
-                                ),
-                            thenBody =
-                                listOf(
-                                    CExprStatement(
-                                        CBinaryExpr(vyVar, "=", CUnaryExpr("-", wjVyDef))
-                                    ),
-                                    CIf(
-                                        condition = CBinaryExpr(wallContactVar, "==", CLiteral(1)),
-                                        thenBody =
-                                            listOf(
-                                                CExprStatement(CBinaryExpr(vxVar, "=", wjVxDef))
-                                            ),
-                                        elseBody =
-                                            listOf(
-                                                CExprStatement(
-                                                    CBinaryExpr(
-                                                        vxVar,
-                                                        "=",
-                                                        CUnaryExpr("-", wjVxDef),
-                                                    )
-                                                )
-                                            ),
-                                    ),
-                                    CExprStatement(CBinaryExpr(wallContactVar, "=", CLiteral(0))),
-                                ),
-                        )
-                }
-
-                // 7. Apply velocity to position
-                // Fixed-point mode: accumulate fractional velocity into fractional position,
-                // then extract integer pixel position via bit shift.
-                // INTEGER mode (default): cast I8 velocity directly to UINT8 for position.
-                when (physics.fixedPointMode) {
-                    FixedPointMode.FP44 -> {
-                        // 4.4 fixed-point: accumulate sub-pixel velocity, extract with >> 4
-                        val xFracVar = CVar("_${actorId}_x_frac")
-                        val yFracVar = CVar("_${actorId}_y_frac")
-                        val vxFracVar = CVar("_${actorId}_vx_frac")
-                        val vyFracVar = CVar("_${actorId}_vy_frac")
-                        statements += CExprStatement(CBinaryExpr(vxFracVar, "+=", vxVar))
-                        statements += CExprStatement(CBinaryExpr(vyFracVar, "+=", vyVar))
-                        statements += CExprStatement(CBinaryExpr(xFracVar, "+=", vxFracVar))
-                        statements += CExprStatement(CBinaryExpr(yFracVar, "+=", vyFracVar))
-                        statements +=
-                            CExprStatement(
-                                CBinaryExpr(
-                                    xVar,
-                                    "=",
-                                    CCast(CU8, CRawExpr("_${actorId}_x_frac >> 4")),
-                                )
-                            )
-                        statements +=
-                            CExprStatement(
-                                CBinaryExpr(
-                                    yVar,
-                                    "=",
-                                    CCast(CU8, CRawExpr("_${actorId}_y_frac >> 4")),
-                                )
-                            )
-                    }
-                    FixedPointMode.FP88 -> {
-                        // 8.8 fixed-point: accumulate sub-pixel velocity, extract with >> 8
-                        val xFracVar = CVar("_${actorId}_x_frac")
-                        val yFracVar = CVar("_${actorId}_y_frac")
-                        val vxFracVar = CVar("_${actorId}_vx_frac")
-                        val vyFracVar = CVar("_${actorId}_vy_frac")
-                        statements += CExprStatement(CBinaryExpr(vxFracVar, "+=", vxVar))
-                        statements += CExprStatement(CBinaryExpr(vyFracVar, "+=", vyVar))
-                        statements += CExprStatement(CBinaryExpr(xFracVar, "+=", vxFracVar))
-                        statements += CExprStatement(CBinaryExpr(yFracVar, "+=", vyFracVar))
-                        statements +=
-                            CExprStatement(
-                                CBinaryExpr(
-                                    xVar,
-                                    "=",
-                                    CCast(CU8, CRawExpr("_${actorId}_x_frac >> 8")),
-                                )
-                            )
-                        statements +=
-                            CExprStatement(
-                                CBinaryExpr(
-                                    yVar,
-                                    "=",
-                                    CCast(CU8, CRawExpr("_${actorId}_y_frac >> 8")),
-                                )
-                            )
-                    }
-                    FixedPointMode.INTEGER -> {
-                        // INTEGER mode (default): direct integer velocity to position
-                        statements += CExprStatement(CBinaryExpr(xVar, "+=", CCast(CU8, vxVar)))
-                        statements += CExprStatement(CBinaryExpr(yVar, "+=", CCast(CU8, vyVar)))
-                    }
-                }
-            }
-        }
 
         return listOf(
             CFunction(
@@ -744,6 +460,319 @@ object ActorVisitor {
                     "Per-actor movement: $actorId (${config.style}, speed=${config.speed})",
             )
         )
+    }
+
+    private fun buildGridMovementStatements(
+        xVar: CVar,
+        yVar: CVar,
+        speed: Int,
+    ): List<CStatement> = buildList {
+        // Grid mode: move by speed, bounded by tile size at edges
+        // UP: y > 0 (don't go above top)
+        add(
+            CIf(
+                condition =
+                    CBinaryExpr(
+                        CCall("dpad_held", listOf(CVar("J_UP"))),
+                        "&&",
+                        CBinaryExpr(yVar, ">", CLiteral(0)),
+                    ),
+                thenBody = listOf(CExprStatement(CBinaryExpr(yVar, "-=", CLiteral(speed)))),
+            )
+        )
+        // DOWN: y < SCREEN_HEIGHT (screen height pixels)
+        add(
+            CIf(
+                condition =
+                    CBinaryExpr(
+                        CCall("dpad_held", listOf(CVar("J_DOWN"))),
+                        "&&",
+                        CBinaryExpr(
+                            yVar,
+                            "<",
+                            CLiteral(GameBoyConstants.SCREEN_HEIGHT - speed),
+                        ),
+                    ),
+                thenBody = listOf(CExprStatement(CBinaryExpr(yVar, "+=", CLiteral(speed)))),
+            )
+        )
+        // LEFT: x > 0 (don't go past left edge)
+        add(
+            CIf(
+                condition =
+                    CBinaryExpr(
+                        CCall("dpad_held", listOf(CVar("J_LEFT"))),
+                        "&&",
+                        CBinaryExpr(xVar, ">", CLiteral(0)),
+                    ),
+                thenBody = listOf(CExprStatement(CBinaryExpr(xVar, "-=", CLiteral(speed)))),
+            )
+        )
+        // RIGHT: x < SCREEN_WIDTH (screen width pixels)
+        add(
+            CIf(
+                condition =
+                    CBinaryExpr(
+                        CCall("dpad_held", listOf(CVar("J_RIGHT"))),
+                        "&&",
+                        CBinaryExpr(
+                            xVar,
+                            "<",
+                            CLiteral(GameBoyConstants.SCREEN_WIDTH - speed),
+                        ),
+                    ),
+                thenBody = listOf(CExprStatement(CBinaryExpr(xVar, "+=", CLiteral(speed)))),
+            )
+        )
+    }
+
+    private fun buildSmoothMovementStatements(
+        actorId: String,
+        smoothConfig: SmoothMovementConfig?,
+        xVar: CVar,
+        yVar: CVar,
+        speed: Int,
+    ): List<CStatement> =
+        if (smoothConfig != null) {
+            // Acceleration/friction SMOOTH mode
+            generateSmoothAccelerationStatements(actorId, smoothConfig, xVar, yVar)
+        } else {
+            // Legacy SMOOTH mode: pixel-level movement, no bounds checking
+            buildList {
+                add(
+                    CIf(
+                        condition = CCall("dpad_held", listOf(CVar("J_UP"))),
+                        thenBody = listOf(CExprStatement(CBinaryExpr(yVar, "-=", CLiteral(speed)))),
+                    )
+                )
+                add(
+                    CIf(
+                        condition = CCall("dpad_held", listOf(CVar("J_DOWN"))),
+                        thenBody = listOf(CExprStatement(CBinaryExpr(yVar, "+=", CLiteral(speed)))),
+                    )
+                )
+                add(
+                    CIf(
+                        condition = CCall("dpad_held", listOf(CVar("J_LEFT"))),
+                        thenBody = listOf(CExprStatement(CBinaryExpr(xVar, "-=", CLiteral(speed)))),
+                    )
+                )
+                add(
+                    CIf(
+                        condition = CCall("dpad_held", listOf(CVar("J_RIGHT"))),
+                        thenBody = listOf(CExprStatement(CBinaryExpr(xVar, "+=", CLiteral(speed)))),
+                    )
+                )
+            }
+        }
+
+    private fun buildPhysicsMovementStatements(
+        actorId: String,
+        actor: ActorIR,
+    ): List<CStatement> {
+        // Physics mode: d-pad input → acceleration → velocity → position
+        // Uses PhysicsConfig for parameters (defaults if not set on actor)
+        val physics = actor.physicsConfig ?: PhysicsConfig()
+        val actorIdUpper = actorId.uppercase()
+        val xVar = CVar("_${actorId}_x")
+        val yVar = CVar("_${actorId}_y")
+        val vxVar = CVar("_${actorId}_vx")
+        val vyVar = CVar("_${actorId}_vy")
+        val accelXDef = CVar("ACCEL_X_$actorIdUpper")
+        val accelYDef = CVar("ACCEL_Y_$actorIdUpper")
+        val gravityDef = CVar("GRAVITY_$actorIdUpper")
+        val maxFallDef = CVar("MAX_FALL_$actorIdUpper")
+
+        val statements = mutableListOf<CStatement>()
+
+        // 1. D-pad input applies acceleration to velocity
+        // LEFT: vx -= accel
+        statements +=
+            CIf(
+                condition = CCall("dpad_held", listOf(CVar("J_LEFT"))),
+                thenBody = listOf(CExprStatement(CBinaryExpr(vxVar, "-=", accelXDef))),
+            )
+        // RIGHT: vx += accel
+        statements +=
+            CIf(
+                condition = CCall("dpad_held", listOf(CVar("J_RIGHT"))),
+                thenBody = listOf(CExprStatement(CBinaryExpr(vxVar, "+=", accelXDef))),
+            )
+        // Platformer mode: UP/DOWN d-pad only if not in platformer mode (top-down)
+        // In platformer mode, vertical movement is via jump button, not d-pad Y
+        if (!physics.platformerMode) {
+            // UP: vy -= accel (top-down only)
+            statements +=
+                CIf(
+                    condition = CCall("dpad_held", listOf(CVar("J_UP"))),
+                    thenBody = listOf(CExprStatement(CBinaryExpr(vyVar, "-=", accelYDef))),
+                )
+            // DOWN: vy += accel (top-down only)
+            statements +=
+                CIf(
+                    condition = CCall("dpad_held", listOf(CVar("J_DOWN"))),
+                    thenBody = listOf(CExprStatement(CBinaryExpr(vyVar, "+=", accelYDef))),
+                )
+        }
+
+        // 2. Variable-height jump: track jump button held state and cut velocity on release
+        if (physics.variableJump) {
+            val jumpHeldVar = CVar("_${actorId}_jump_held")
+            val jumpCutDef = CVar("JUMP_CUT_$actorIdUpper")
+            // If jump button held: set flag
+            // If button released while moving up: cut velocity
+            statements +=
+                CIf(
+                    condition = CRawExpr("joypad() & J_A"),
+                    thenBody = listOf(CExprStatement(CBinaryExpr(jumpHeldVar, "=", CLiteral(1)))),
+                    elseBody =
+                        listOf(
+                            CIf(
+                                condition =
+                                    CBinaryExpr(
+                                        CBinaryExpr(jumpHeldVar, "!=", CLiteral(0)),
+                                        "&&",
+                                        CBinaryExpr(vyVar, "<", CIntLiteral(0)),
+                                    ),
+                                thenBody =
+                                    listOf(CExprStatement(CBinaryExpr(vyVar, "/=", jumpCutDef))),
+                            ),
+                            CExprStatement(CBinaryExpr(jumpHeldVar, "=", CLiteral(0))),
+                        ),
+                )
+        }
+
+        // 3. Coyote time: manage coyote counter (decrements after leaving ground)
+        // Note: actual coyote counter management happens in game logic (when on_ground tracked)
+        // We emit the counter decrement; game logic sets it to COYOTE_N when on ground
+        if (physics.coyoteFrames > 0) {
+            val coyoteVar = CVar("_${actorId}_coyote")
+            statements +=
+                CIf(
+                    condition = CBinaryExpr(coyoteVar, ">", CLiteral(0)),
+                    thenBody = listOf(CExprStatement(CUnaryExpr("--", coyoteVar))),
+                )
+        }
+
+        // 4. Apply gravity to VY (platformer mode: gravity on Y; top-down: no gravity)
+        if (physics.platformerMode && physics.gravity != 0) {
+            statements += CExprStatement(CBinaryExpr(vyVar, "+=", gravityDef))
+        } else if (!physics.platformerMode && physics.gravity != 0) {
+            // Top-down: still support gravity if explicitly set (unusual but valid)
+            statements += CExprStatement(CBinaryExpr(vyVar, "+=", gravityDef))
+        }
+
+        // 5. Clamp fall speed (only when gravity is active)
+        if (physics.gravity != 0) {
+            statements +=
+                CIf(
+                    condition = CBinaryExpr(vyVar, ">", maxFallDef),
+                    thenBody = listOf(CExprStatement(CBinaryExpr(vyVar, "=", maxFallDef))),
+                )
+        }
+
+        // 6. Wall-jump: if touching wall and jump pressed, kick off in opposite direction
+        if (physics.wallJump) {
+            val wallContactVar = CVar("_${actorId}_wall_contact")
+            val wjVxDef = CVar("WALLJUMP_VX_$actorIdUpper")
+            val wjVyDef = CVar("WALLJUMP_VY_$actorIdUpper")
+            statements +=
+                CIf(
+                    condition =
+                        CBinaryExpr(
+                            CBinaryExpr(wallContactVar, "!=", CLiteral(0)),
+                            "&&",
+                            CRawExpr("new_buttons & J_A"),
+                        ),
+                    thenBody =
+                        listOf(
+                            CExprStatement(CBinaryExpr(vyVar, "=", CUnaryExpr("-", wjVyDef))),
+                            CIf(
+                                condition = CBinaryExpr(wallContactVar, "==", CLiteral(1)),
+                                thenBody = listOf(CExprStatement(CBinaryExpr(vxVar, "=", wjVxDef))),
+                                elseBody =
+                                    listOf(
+                                        CExprStatement(
+                                            CBinaryExpr(
+                                                vxVar,
+                                                "=",
+                                                CUnaryExpr("-", wjVxDef),
+                                            )
+                                        )
+                                    ),
+                            ),
+                            CExprStatement(CBinaryExpr(wallContactVar, "=", CLiteral(0))),
+                        ),
+                )
+        }
+
+        // 7. Apply velocity to position
+        // Fixed-point mode: accumulate fractional velocity into fractional position,
+        // then extract integer pixel position via bit shift.
+        // INTEGER mode (default): cast I8 velocity directly to UINT8 for position.
+        when (physics.fixedPointMode) {
+            FixedPointMode.FP44 -> {
+                // 4.4 fixed-point: accumulate sub-pixel velocity, extract with >> 4
+                val xFracVar = CVar("_${actorId}_x_frac")
+                val yFracVar = CVar("_${actorId}_y_frac")
+                val vxFracVar = CVar("_${actorId}_vx_frac")
+                val vyFracVar = CVar("_${actorId}_vy_frac")
+                statements += CExprStatement(CBinaryExpr(vxFracVar, "+=", vxVar))
+                statements += CExprStatement(CBinaryExpr(vyFracVar, "+=", vyVar))
+                statements += CExprStatement(CBinaryExpr(xFracVar, "+=", vxFracVar))
+                statements += CExprStatement(CBinaryExpr(yFracVar, "+=", vyFracVar))
+                statements +=
+                    CExprStatement(
+                        CBinaryExpr(
+                            xVar,
+                            "=",
+                            CCast(CU8, CRawExpr("_${actorId}_x_frac >> 4")),
+                        )
+                    )
+                statements +=
+                    CExprStatement(
+                        CBinaryExpr(
+                            yVar,
+                            "=",
+                            CCast(CU8, CRawExpr("_${actorId}_y_frac >> 4")),
+                        )
+                    )
+            }
+            FixedPointMode.FP88 -> {
+                // 8.8 fixed-point: accumulate sub-pixel velocity, extract with >> 8
+                val xFracVar = CVar("_${actorId}_x_frac")
+                val yFracVar = CVar("_${actorId}_y_frac")
+                val vxFracVar = CVar("_${actorId}_vx_frac")
+                val vyFracVar = CVar("_${actorId}_vy_frac")
+                statements += CExprStatement(CBinaryExpr(vxFracVar, "+=", vxVar))
+                statements += CExprStatement(CBinaryExpr(vyFracVar, "+=", vyVar))
+                statements += CExprStatement(CBinaryExpr(xFracVar, "+=", vxFracVar))
+                statements += CExprStatement(CBinaryExpr(yFracVar, "+=", vyFracVar))
+                statements +=
+                    CExprStatement(
+                        CBinaryExpr(
+                            xVar,
+                            "=",
+                            CCast(CU8, CRawExpr("_${actorId}_x_frac >> 8")),
+                        )
+                    )
+                statements +=
+                    CExprStatement(
+                        CBinaryExpr(
+                            yVar,
+                            "=",
+                            CCast(CU8, CRawExpr("_${actorId}_y_frac >> 8")),
+                        )
+                    )
+            }
+            FixedPointMode.INTEGER -> {
+                // INTEGER mode (default): direct integer velocity to position
+                statements += CExprStatement(CBinaryExpr(xVar, "+=", CCast(CU8, vxVar)))
+                statements += CExprStatement(CBinaryExpr(yVar, "+=", CCast(CU8, vyVar)))
+            }
+        }
+
+        return statements
     }
 
     /**

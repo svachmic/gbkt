@@ -53,19 +53,16 @@ class SimplePhysicsEmissionTest {
 
     companion object {
         /**
-         * Evidence is written under the **active checkout root** (worktree-safe).
+         * Emission scratch is written under the module's gitignored build/ directory (R1 + R3).
          *
          * `user.dir` resolves to the Gradle project's working directory, which inside a Claude Code
          * worktree is the worktree root — not the main repository. Hard-coding the main-repo
          * absolute path would silently route evidence files outside the active checkout and miss
-         * the commit (#3099 worktree path safety).
+         * the commit (#3099 worktree path safety). The path `build/gbkt/test-evidence` is
+         * gitignored via the root `.gitignore` `build/` pattern — no committed artifact.
          */
         val EVIDENCE_DIR =
-            File(System.getProperty("user.dir"))
-                .resolve(
-                    "../../.planning/phases/09-port-simple-physics-gbdk-example-to-gbkt/evidence/tier1-shape"
-                )
-                .normalize()
+            File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence").normalize()
     }
 
     // -------------------------------------------------------------------------
@@ -143,7 +140,7 @@ class SimplePhysicsEmissionTest {
             "Plan 04 contract: emitted body MUST NOT contain `_spdX > 64u`. " +
                 "Unsigned RHS makes signed `_spdX > 64u` produce SDCC warning 94 " +
                 "(comparison always-false). Bug A site — DSL-authored " +
-                "`whenever(spdX isAbove 64)` lowers Literal(64) to CLiteral(64) " +
+                "`runIf(spdX isAbove 64)` lowers Literal(64) to CLiteral(64) " +
                 "(emits `64u`); Plan 04 must route signed-comparison RHS to CIntLiteral. " +
                 "play_frame body:\n${frameBody.take(4000)}",
         )

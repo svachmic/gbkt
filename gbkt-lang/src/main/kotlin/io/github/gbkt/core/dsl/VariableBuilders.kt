@@ -48,6 +48,20 @@ object GameBuilderContext {
     private val holder = ThreadLocal<GameBuilder?>()
     private val transientHolder = ThreadLocal<MutableSet<String>>()
 
+    /**
+     * Thread-local list of teardown hooks registered by genre modules (e.g., RpgRegistry.clear()).
+     *
+     * Hooks are invoked in [with]'s `finally` block after the game builder lambda returns, before
+     * the previous context is restored. This allows genre packages (which depend on
+     * [GameBuilderContext] indirectly through gbkt-core) to clean up thread-local state without
+     * creating a circular module dependency: `gbkt-lang` does not know about `gbkt-genre-rpg`, but
+     * genre packages can call [addTeardownHook] to register their cleanup actions.
+     *
+     * Hooks are scoped to the outermost `game { }` call — nested `with()` calls (if any) share the
+     * same hook list and only invoke it on the final `finally` restoration.
+     */
+    private val teardownHooksHolder = ThreadLocal<MutableList<() -> Unit>>()
+
     val current: GameBuilder?
         get() = holder.get()
 
@@ -60,16 +74,40 @@ object GameBuilderContext {
         transientHolder.get()?.add(name)
     }
 
+    /**
+     * Registers a teardown hook to be called after the current `game { }` lambda completes.
+     *
+     * Genre modules call this during their own initialization (e.g., from the first extension
+     * function call on [GameBuilder]) to register cleanup for their thread-local state. The hook is
+     * guaranteed to run in the `finally` block of [with], even if the builder lambda throws.
+     *
+     * If called outside a `game { }` context (no active [with]), the hook is silently ignored.
+     */
+    fun addTeardownHook(hook: () -> Unit) {
+        teardownHooksHolder.get()?.add(hook)
+    }
+
     fun <T> with(builder: GameBuilder, block: () -> T): T {
         val previous = holder.get()
         val previousTransient = transientHolder.get()
+        val previousHooks = teardownHooksHolder.get()
         holder.set(builder)
         transientHolder.set(mutableSetOf())
+        teardownHooksHolder.set(mutableListOf())
         return try {
             block()
         } finally {
+            // Invoke all registered teardown hooks before restoring the previous context.
+            teardownHooksHolder.get()?.forEach { hook ->
+                try {
+                    hook()
+                } catch (_: Exception) {
+                    // Hooks must not propagate exceptions — teardown is best-effort.
+                }
+            }
             holder.set(previous)
             transientHolder.set(previousTransient)
+            teardownHooksHolder.set(previousHooks)
         }
     }
 }
@@ -108,7 +146,7 @@ data class AssignableVar(
  * Sets [this] variable to [value] inside the active [ScriptBuilder].
  *
  * Requires that this call occurs inside a `ScriptBuilderContext.with()` block (e.g. inside `scene {
- * frame { ... } }` or inside `whenever { ... }`). Throws if no builder is active.
+ * frame { ... } }` or inside `runIf { ... }`). Throws if no builder is active.
  */
 infix fun AssignableVar.set(value: Expr) {
     ScriptBuilderContext.current?.assign(name, value, AssignOp.SET)
@@ -152,7 +190,7 @@ private fun emitWrapGuard(sb: ScriptBuilder, varName: String, n: Int) {
         sb.assign(varName, BinaryExpr(VarRef(varName), BinaryOp.AND, Literal(n - 1)), AssignOp.SET)
     } else {
         // Compare-reset: if (varName >= n) { varName = 0 }
-        sb.whenever(BinaryExpr(VarRef(varName), BinaryOp.GTE, Literal(n))) {
+        sb.runIf(BinaryExpr(VarRef(varName), BinaryOp.GTE, Literal(n))) {
             assign(varName, Literal(0), AssignOp.SET)
         }
     }
@@ -279,7 +317,7 @@ operator fun AssignableVar.rem(other: AssignableVar): Expr = toExpr() % other.to
 
 operator fun AssignableVar.unaryMinus(): Expr = -toExpr()
 
-// --- Comparison operators (return Expr for whenever/ifOp conditions) ---
+// --- Comparison operators (return Expr for runIf/ifOp conditions) ---
 
 infix fun AssignableVar.isAbove(other: Int): Expr = toExpr() isAbove other
 
@@ -563,7 +601,7 @@ fun GameBuilder.subpixel(fractionalBits: Int = 4, block: GameBuilder.() -> Unit)
  *     scene("gameplay") {
  *         frame {
  *             forOp("i", 0, bricks.size) {
- *                 whenever(bricks[varRef("i")] isEqualTo 1) {
+ *                 runIf(bricks[varRef("i")] isEqualTo 1) {
  *                     bricks[varRef("i")] = 0
  *                 }
  *             }
@@ -656,7 +694,7 @@ data class ArrayVar(val name: String, val elementType: VarType, val arraySize: I
      * Generated C: `for (INT8 _arr_<name>_i = 0; _arr_<name>_i <= N-1; _arr_<name>_i++) {
      * _name[_arr_<name>_i] = value; }`
      *
-     * Must be called inside a script builder block (enter/frame/exit/whenever/forOp/etc.).
+     * Must be called inside a script builder block (enter/frame/exit/runIf/forOp/etc.).
      */
     fun fill(value: Int) {
         val ctx =

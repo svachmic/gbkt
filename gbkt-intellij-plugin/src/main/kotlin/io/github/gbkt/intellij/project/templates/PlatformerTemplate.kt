@@ -96,17 +96,17 @@ object PlatformerTemplate : GameTemplate {
         |
         |            every.frame {
         |                // Horizontal movement
-        |                whenever(dpad.right) { player.vx += 1 }
-        |                whenever(dpad.left) { player.vx -= 1 }
+        |                runIf(dpad.right) { player.vx += 1 }
+        |                runIf(dpad.left) { player.vx -= 1 }
         |
         |                // Jump when on ground
-        |                whenever(buttons.a.pressed and (onGround isAbove 0)) {
+        |                runIf(buttons.a.pressed and (onGround isAbove 0)) {
         |                    player.vy set -5
         |                    onGround set 0
         |                }
         |
         |                // Check ground collision
-        |                whenever(player collidesWithTilemap level) { onGround set 1 }
+        |                runIf(player collidesWithTilemap level) { onGround set 1 }
         |
         |                // Update camera
         |                camera.update()

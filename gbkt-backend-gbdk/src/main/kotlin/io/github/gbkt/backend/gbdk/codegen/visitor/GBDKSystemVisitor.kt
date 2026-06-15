@@ -39,12 +39,14 @@ import io.github.gbkt.backend.gbdk.codegen.ast.CVar
 import io.github.gbkt.backend.gbdk.codegen.ast.CVarDecl
 import io.github.gbkt.backend.gbdk.codegen.ast.CVoid
 import io.github.gbkt.backend.gbdk.codegen.ast.CWhile
+import io.github.gbkt.backend.gbdk.profiles.GameBoyConstants
 import io.github.gbkt.core.dsl.ChannelGroupDef
 import io.github.gbkt.core.ir.ActorIR
 import io.github.gbkt.core.ir.ActorPoolIR
 import io.github.gbkt.core.ir.CameraSystem
 import io.github.gbkt.core.ir.ChestObjectIR
 import io.github.gbkt.core.ir.CollisionResponse
+import io.github.gbkt.core.ir.CollisionRuleIR
 import io.github.gbkt.core.ir.CollisionShape
 import io.github.gbkt.core.ir.CombatEngineSystem
 import io.github.gbkt.core.ir.DialogSystem
@@ -169,8 +171,8 @@ class GBDKSystemVisitor(
                         // literal flows into a CTernary that ultimately casts to UINT8, producing
                         // SCX/SCY = 248/etc. (wraparound) and scrolling the BG off-screen.
                         // See 07.4-UAT.md secondary issue 1 (racer 19x19 zone → maxX = -8 → 248).
-                        val maxX = kotlin.math.max(0, boundsWidth - 160)
-                        val maxY = kotlin.math.max(0, boundsHeight - 144)
+                        val maxX = kotlin.math.max(0, boundsWidth - GameBoyConstants.SCREEN_WIDTH)
+                        val maxY = kotlin.math.max(0, boundsHeight - GameBoyConstants.SCREEN_HEIGHT)
 
                         // _camera_x = (UINT8)(rawX < 0 ? 0 : (rawX > maxX ? maxX : rawX))
                         val clampX =
@@ -866,23 +868,24 @@ class GBDKSystemVisitor(
      * set before onPushed callback. Gap 2: HITBOX collision shape dispatches AABB pixel check per
      * entity instead of grid-bit lookup.
      */
-    @Suppress("LongMethod")
     private fun buildEntityCollisionFunctions(
         sanitizedId: String,
         actors: List<ActorIR>,
-    ): List<CFunction> {
-        val tileSize = 8 // default tile size
+    ): List<CFunction> =
+        listOf(
+            buildEntityRegisterFunction(sanitizedId),
+            buildEntityRemoveFunction(),
+            buildEntityCheckFunction(actors),
+            buildEntityHandleBlockFunction(actors),
+            buildEntitySetCollisionModeFunction(),
+            buildEntityBumpFeedbackFunction(),
+        )
 
-        // -----------------------------------------------------------------------
-        // 1. _entity_register(entity_id, tile_x, tile_y, mode)
-        // Sets grid bit(s) for entity occupancy, stores position/mode/shape.
-        // Multi-tile: iterates tilesWide * tilesHigh.
-        // -----------------------------------------------------------------------
+    private fun buildEntityRegisterFunction(sanitizedId: String): CFunction {
         val entityIdParam = CVar("entity_id")
         val tileXParam = CVar("tile_x")
         val tileYParam = CVar("tile_y")
         val modeParam = CVar("mode")
-
         val registerBody =
             buildList<CStatement> {
                 // Store position
@@ -1003,25 +1006,23 @@ class GBDKSystemVisitor(
                 )
                 add(CExprStatement(CUnaryExpr("++", CVar("_entity_count"))))
             }
-        val entityRegister =
-            CFunction(
-                name = "_entity_register",
-                returnType = CVoid,
-                params =
-                    listOf(
-                        CParam("entity_id", CU8),
-                        CParam("tile_x", CU8),
-                        CParam("tile_y", CU8),
-                        CParam("mode", CU8),
-                    ),
-                body = registerBody,
-                sectionComment = "Entity collision functions: $sanitizedId",
-            )
+        return CFunction(
+            name = "_entity_register",
+            returnType = CVoid,
+            params =
+                listOf(
+                    CParam("entity_id", CU8),
+                    CParam("tile_x", CU8),
+                    CParam("tile_y", CU8),
+                    CParam("mode", CU8),
+                ),
+            body = registerBody,
+            sectionComment = "Entity collision functions: $sanitizedId",
+        )
+    }
 
-        // -----------------------------------------------------------------------
-        // 2. _entity_remove(entity_id)
-        // Clears grid bit, resets mode to 0xFF (PASSTHROUGH sentinel).
-        // -----------------------------------------------------------------------
+    private fun buildEntityRemoveFunction(): CFunction {
+        val entityIdParam = CVar("entity_id")
         val removeBody =
             buildList<CStatement> {
                 add(CVarDecl("tx", CU8, CArrayAccess(CVar("_entity_tile_x"), entityIdParam)))
@@ -1139,19 +1140,16 @@ class GBDKSystemVisitor(
                     add(CExprStatement(CUnaryExpr("--", CVar("_entity_count"))))
                 }
             }
-        val entityRemove =
-            CFunction(
-                name = "_entity_remove",
-                returnType = CVoid,
-                params = listOf(CParam("entity_id", CU8)),
-                body = removeBody,
-            )
+        return CFunction(
+            name = "_entity_remove",
+            returnType = CVoid,
+            params = listOf(CParam("entity_id", CU8)),
+            body = removeBody,
+        )
+    }
 
-        // -----------------------------------------------------------------------
-        // 3. _entity_check(nx, ny) — returns entity_id or 0xFF if no collision
-        // TILE path: checks bit in _entity_grid.
-        // HITBOX path (Gap 2): AABB pixel overlap per actor with shape=HITBOX.
-        // -----------------------------------------------------------------------
+    private fun buildEntityCheckFunction(actors: List<ActorIR>): CFunction {
+        val tileSize = 8 // default tile size
         val nxVar = CVar("nx")
         val nyVar = CVar("ny")
         val hasHitbox = actors.any {
@@ -1390,22 +1388,17 @@ class GBDKSystemVisitor(
                 }
                 add(CReturn(CRawExpr("0xFF")))
             }
-        val entityCheck =
-            CFunction(
-                name = "_entity_check",
-                returnType = CU8,
-                params = listOf(CParam("nx", CU8), CParam("ny", CU8)),
-                body = checkBody,
-            )
+        return CFunction(
+            name = "_entity_check",
+            returnType = CU8,
+            params = listOf(CParam("nx", CU8), CParam("ny", CU8)),
+            body = checkBody,
+        )
+    }
 
-        // -----------------------------------------------------------------------
-        // 4. _entity_handle_block(entity_id, nx, ny, direction)
-        // Switch on _entity_collision_mode[entity_id]:
-        //   BLOCK(0): bump feedback, return
-        //   BLOCK_AND_TRIGGER(2): set _blocking_entity_id, emit onBlocked ops, return
-        //   OVERLAP_TRIGGER(3): emit onOverlap ops, return
-        //   PUSH(4): set _pushed_entity_id/_push_direction, move entity if destination free
-        // -----------------------------------------------------------------------
+    @Suppress("LongMethod")
+    private fun buildEntityHandleBlockFunction(actors: List<ActorIR>): CFunction {
+        val entityIdParam = CVar("entity_id")
         val directionParam = CVar("direction")
         val modeSwitchCases =
             buildList<CSwitchCase> {
@@ -1782,23 +1775,23 @@ class GBDKSystemVisitor(
                     cases = modeSwitchCases,
                 )
             )
-        val entityHandleBlock =
-            CFunction(
-                name = "_entity_handle_block",
-                returnType = CVoid,
-                params =
-                    listOf(
-                        CParam("entity_id", CU8),
-                        CParam("nx", CU8),
-                        CParam("ny", CU8),
-                        CParam("direction", CU8),
-                    ),
-                body = handleBlockBody,
-            )
+        return CFunction(
+            name = "_entity_handle_block",
+            returnType = CVoid,
+            params =
+                listOf(
+                    CParam("entity_id", CU8),
+                    CParam("nx", CU8),
+                    CParam("ny", CU8),
+                    CParam("direction", CU8),
+                ),
+            body = handleBlockBody,
+        )
+    }
 
-        // -----------------------------------------------------------------------
-        // 5. _entity_set_collision_mode(entity_id, mode) — runtime mode change
-        // -----------------------------------------------------------------------
+    private fun buildEntitySetCollisionModeFunction(): CFunction {
+        val entityIdParam = CVar("entity_id")
+        val modeParam = CVar("mode")
         val setModeBody =
             listOf(
                 CExprStatement(
@@ -1809,33 +1802,20 @@ class GBDKSystemVisitor(
                     )
                 )
             )
-        val entitySetCollisionMode =
-            CFunction(
-                name = "_entity_set_collision_mode",
-                returnType = CVoid,
-                params = listOf(CParam("entity_id", CU8), CParam("mode", CU8)),
-                body = setModeBody,
-            )
-
-        // -----------------------------------------------------------------------
-        // 6. _entity_bump_feedback() — bump stub (sound/visual)
-        // -----------------------------------------------------------------------
-        val entityBumpFeedback =
-            CFunction(
-                name = "_entity_bump_feedback",
-                returnType = CVoid,
-                body = listOf(CComment("bump feedback: play sound/visual indicator")),
-            )
-
-        return listOf(
-            entityRegister,
-            entityRemove,
-            entityCheck,
-            entityHandleBlock,
-            entitySetCollisionMode,
-            entityBumpFeedback,
+        return CFunction(
+            name = "_entity_set_collision_mode",
+            returnType = CVoid,
+            params = listOf(CParam("entity_id", CU8), CParam("mode", CU8)),
+            body = setModeBody,
         )
     }
+
+    private fun buildEntityBumpFeedbackFunction(): CFunction =
+        CFunction(
+            name = "_entity_bump_feedback",
+            returnType = CVoid,
+            body = listOf(CComment("bump feedback: play sound/visual indicator")),
+        )
 
     /**
      * Build `exploration_encounter_check_{id}()` with weighted random encounter dispatch.
@@ -1864,88 +1844,86 @@ class GBDKSystemVisitor(
                     )
                 )
                 val allEntries: List<EncounterEntryIR> = zones.flatMap { zone ->
-                    val table = zone.encounterTable
-                    table?.entries ?: emptyList()
+                    zone.encounterTable?.entries ?: emptyList()
                 }
-                if (allEntries.isNotEmpty()) {
-                    val totalWeight = allEntries.sumOf { it.weight }
-                    add(CVarDecl("roll", CU8, null))
-                    add(
-                        CExprStatement(
-                            CBinaryExpr(
-                                CVar("roll"),
-                                "=",
-                                CBinaryExpr(CCall("rand", emptyList()), "%", CLiteral(totalWeight)),
-                            )
-                        )
-                    )
-                    add(CVarDecl("acc", CU8, CLiteral(0)))
-                    for ((idx, entry) in allEntries.withIndex()) {
-                        val weightCheck =
-                            CBinaryExpr(
-                                CVar("roll"),
-                                "<",
-                                CBinaryExpr(CVar("acc"), "+", CLiteral(entry.weight)),
-                            )
-                        val fireBody: List<CStatement> =
-                            listOf(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_encounter_triggered"), "=", CLiteral(1))
-                                ),
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_encounter_id"), "=", CLiteral(idx))
-                                ),
-                                CReturn(null),
-                            )
-                        // Build guard condition: conditionFlag AND/OR level range checks
-                        // All guards are optional and stack with && when multiple are present
-                        var guardCondition: CExpr? = null
-                        val conditionFlag: String? = entry.conditionFlag
-                        if (conditionFlag != null) {
-                            guardCondition = CVar("_flag_${conditionFlag}")
-                        }
-                        val minLvl: Int? = entry.minLevel
-                        if (minLvl != null) {
-                            val minCheck =
-                                CBinaryExpr(CVar("_player_level"), ">=", CLiteral(minLvl))
-                            guardCondition =
-                                if (guardCondition != null) {
-                                    CBinaryExpr(guardCondition, "&&", minCheck)
-                                } else {
-                                    minCheck
-                                }
-                        }
-                        val maxLvl: Int? = entry.maxLevel
-                        if (maxLvl != null) {
-                            val maxCheck = CBinaryExpr(CVar("_player_level"), "<", CLiteral(maxLvl))
-                            guardCondition =
-                                if (guardCondition != null) {
-                                    CBinaryExpr(guardCondition, "&&", maxCheck)
-                                } else {
-                                    maxCheck
-                                }
-                        }
-                        if (guardCondition != null) {
-                            val guard = guardCondition
-                            add(
-                                CIf(
-                                    condition = guard,
-                                    thenBody =
-                                        listOf(CIf(condition = weightCheck, thenBody = fireBody)),
-                                )
-                            )
-                        } else {
-                            add(CIf(condition = weightCheck, thenBody = fireBody))
-                        }
-                        add(CExprStatement(CBinaryExpr(CVar("acc"), "+=", CLiteral(entry.weight))))
-                    }
-                }
+                addAll(buildEncounterRollStatements(allEntries))
             }
         return CFunction(
             name = "exploration_encounter_check_$sanitizedId",
             returnType = CVoid,
             body = body,
         )
+    }
+
+    /**
+     * Builds the roll/acc variable declarations and per-entry weight-check dispatch for encounter
+     * resolution. Returns an empty list when there are no encounter table entries.
+     */
+    private fun buildEncounterRollStatements(allEntries: List<EncounterEntryIR>): List<CStatement> {
+        if (allEntries.isEmpty()) return emptyList()
+        val totalWeight = allEntries.sumOf { it.weight }
+        val result = mutableListOf<CStatement>()
+        result.add(CVarDecl("roll", CU8, null))
+        result.add(
+            CExprStatement(
+                CBinaryExpr(
+                    CVar("roll"),
+                    "=",
+                    CBinaryExpr(CCall("rand", emptyList()), "%", CLiteral(totalWeight)),
+                )
+            )
+        )
+        result.add(CVarDecl("acc", CU8, CLiteral(0)))
+        for ((idx, entry) in allEntries.withIndex()) {
+            val weightCheck =
+                CBinaryExpr(
+                    CVar("roll"),
+                    "<",
+                    CBinaryExpr(CVar("acc"), "+", CLiteral(entry.weight)),
+                )
+            val fireBody: List<CStatement> =
+                listOf(
+                    CExprStatement(CBinaryExpr(CVar("_encounter_triggered"), "=", CLiteral(1))),
+                    CExprStatement(CBinaryExpr(CVar("_encounter_id"), "=", CLiteral(idx))),
+                    CReturn(null),
+                )
+            val guard = buildEncounterEntryGuard(entry)
+            if (guard != null) {
+                result.add(
+                    CIf(
+                        condition = guard,
+                        thenBody = listOf(CIf(condition = weightCheck, thenBody = fireBody)),
+                    )
+                )
+            } else {
+                result.add(CIf(condition = weightCheck, thenBody = fireBody))
+            }
+            result.add(CExprStatement(CBinaryExpr(CVar("acc"), "+=", CLiteral(entry.weight))))
+        }
+        return result
+    }
+
+    /**
+     * Builds the combined guard condition for a single encounter entry: optional conditionFlag AND
+     * optional min/max level range checks stacked with &&. Returns null when there is no guard.
+     */
+    private fun buildEncounterEntryGuard(entry: EncounterEntryIR): CExpr? {
+        var guard: CExpr? = null
+        val conditionFlag: String? = entry.conditionFlag
+        if (conditionFlag != null) {
+            guard = CVar("_flag_${conditionFlag}")
+        }
+        val minLvl: Int? = entry.minLevel
+        if (minLvl != null) {
+            val minCheck = CBinaryExpr(CVar("_player_level"), ">=", CLiteral(minLvl))
+            guard = if (guard != null) CBinaryExpr(guard, "&&", minCheck) else minCheck
+        }
+        val maxLvl: Int? = entry.maxLevel
+        if (maxLvl != null) {
+            val maxCheck = CBinaryExpr(CVar("_player_level"), "<", CLiteral(maxLvl))
+            guard = if (guard != null) CBinaryExpr(guard, "&&", maxCheck) else maxCheck
+        }
+        return guard
     }
 
     /**
@@ -2100,26 +2078,7 @@ class GBDKSystemVisitor(
     ): CFunction {
         val body =
             buildList<CStatement> {
-                val zonesWithOnExit = zones.filter { it.onExit.isNotEmpty() }
-                if (zonesWithOnExit.isNotEmpty()) {
-                    val onExitCases: List<CSwitchCase> = zones.mapIndexedNotNull { idx, zone ->
-                        val onExitOps: List<ScriptOp> = zone.onExit
-                        if (onExitOps.isNotEmpty()) {
-                            CSwitchCase(
-                                value = CLiteral(idx),
-                                body =
-                                    onExitOps.map { op -> ScriptOpVisitor.visit(op) } +
-                                        listOf(CBreak),
-                            )
-                        } else null
-                    }
-                    add(
-                        CSwitch(
-                            expr = CVar("_current_zone_id"),
-                            cases = onExitCases + CSwitchCase(value = null, body = listOf(CBreak)),
-                        )
-                    )
-                }
+                buildZoneOnExitSwitch(zones)?.let { add(it) }
                 add(
                     CIf(
                         condition = CBinaryExpr(CVar("entry_x"), "!=", CLiteral(0xFF)),
@@ -2128,56 +2087,7 @@ class GBDKSystemVisitor(
                                 CExprStatement(CBinaryExpr(playerX, "=", CVar("entry_x"))),
                                 CExprStatement(CBinaryExpr(playerY, "=", CVar("entry_y"))),
                             ),
-                        elseBody =
-                            listOf(
-                                CSwitch(
-                                    expr = CVar("edge"),
-                                    cases =
-                                        listOf(
-                                            CSwitchCase(
-                                                value = CLiteral(TransitionEdge.EAST.ordinal),
-                                                body =
-                                                    listOf(
-                                                        CExprStatement(
-                                                            CBinaryExpr(playerX, "=", CLiteral(0))
-                                                        ),
-                                                        CBreak,
-                                                    ),
-                                            ),
-                                            CSwitchCase(
-                                                value = CLiteral(TransitionEdge.WEST.ordinal),
-                                                body =
-                                                    listOf(
-                                                        CExprStatement(
-                                                            CBinaryExpr(playerX, "=", CLiteral(31))
-                                                        ),
-                                                        CBreak,
-                                                    ),
-                                            ),
-                                            CSwitchCase(
-                                                value = CLiteral(TransitionEdge.NORTH.ordinal),
-                                                body =
-                                                    listOf(
-                                                        CExprStatement(
-                                                            CBinaryExpr(playerY, "=", CLiteral(31))
-                                                        ),
-                                                        CBreak,
-                                                    ),
-                                            ),
-                                            CSwitchCase(
-                                                value = CLiteral(TransitionEdge.SOUTH.ordinal),
-                                                body =
-                                                    listOf(
-                                                        CExprStatement(
-                                                            CBinaryExpr(playerY, "=", CLiteral(0))
-                                                        ),
-                                                        CBreak,
-                                                    ),
-                                            ),
-                                            CSwitchCase(value = null, body = listOf(CBreak)),
-                                        ),
-                                )
-                            ),
+                        elseBody = listOf(buildEdgeAutoPositionSwitch(playerX, playerY)),
                     )
                 )
                 add(CExprStatement(CCall("zone_load_$sanitizedId", listOf(CVar("target_zone_id")))))
@@ -2195,6 +2105,71 @@ class GBDKSystemVisitor(
             body = body,
         )
     }
+
+    /**
+     * Builds the onExit switch dispatch for zone_transition; returns null when no zone has onExit.
+     */
+    private fun buildZoneOnExitSwitch(zones: List<ZoneIR>): CSwitch? {
+        val zonesWithOnExit = zones.filter { it.onExit.isNotEmpty() }
+        if (zonesWithOnExit.isEmpty()) return null
+        val onExitCases: List<CSwitchCase> = zones.mapIndexedNotNull { idx, zone ->
+            val onExitOps: List<ScriptOp> = zone.onExit
+            if (onExitOps.isNotEmpty()) {
+                CSwitchCase(
+                    value = CLiteral(idx),
+                    body = onExitOps.map { op -> ScriptOpVisitor.visit(op) } + listOf(CBreak),
+                )
+            } else null
+        }
+        return CSwitch(
+            expr = CVar("_current_zone_id"),
+            cases = onExitCases + CSwitchCase(value = null, body = listOf(CBreak)),
+        )
+    }
+
+    /**
+     * Builds the edge-auto-position switch used in zone_transition when entry coords are absent.
+     */
+    private fun buildEdgeAutoPositionSwitch(playerX: CVar, playerY: CVar): CSwitch =
+        CSwitch(
+            expr = CVar("edge"),
+            cases =
+                listOf(
+                    CSwitchCase(
+                        value = CLiteral(TransitionEdge.EAST.ordinal),
+                        body =
+                            listOf(
+                                CExprStatement(CBinaryExpr(playerX, "=", CLiteral(0))),
+                                CBreak,
+                            ),
+                    ),
+                    CSwitchCase(
+                        value = CLiteral(TransitionEdge.WEST.ordinal),
+                        body =
+                            listOf(
+                                CExprStatement(CBinaryExpr(playerX, "=", CLiteral(31))),
+                                CBreak,
+                            ),
+                    ),
+                    CSwitchCase(
+                        value = CLiteral(TransitionEdge.NORTH.ordinal),
+                        body =
+                            listOf(
+                                CExprStatement(CBinaryExpr(playerY, "=", CLiteral(31))),
+                                CBreak,
+                            ),
+                    ),
+                    CSwitchCase(
+                        value = CLiteral(TransitionEdge.SOUTH.ordinal),
+                        body =
+                            listOf(
+                                CExprStatement(CBinaryExpr(playerY, "=", CLiteral(0))),
+                                CBreak,
+                            ),
+                    ),
+                    CSwitchCase(value = null, body = listOf(CBreak)),
+                ),
+        )
 
     /**
      * Build `zone_check_edges_{id}()` with flag-gated edge transition dispatch.
@@ -4394,54 +4369,46 @@ class GBDKSystemVisitor(
          * - `UINT8 _pool_<id>_y[max]` — per-instance y positions
          * - `UINT8 _pool_<id>_oam[max]` — per-instance OAM slot mapping (initialized to 0xFF)
          */
-        fun buildActorPoolStateVars(gameIR: GameIR): List<CVarDecl> {
-            val vars = mutableListOf<CVarDecl>()
-            for (pool in gameIR.actorPools) {
+        fun buildActorPoolStateVars(gameIR: GameIR): List<CVarDecl> =
+            gameIR.actorPools.flatMap { pool ->
                 val id = pool.id.replace('-', '_').replace(' ', '_')
                 val maxSize = pool.config.maxSize
-                vars +=
-                    CVarDecl(
-                        name = "_pool_${id}_active",
-                        type = CArray(CU8, maxSize),
-                        initializer = null,
-                    )
-                vars +=
-                    CVarDecl(
-                        name = "_pool_${id}_x",
-                        type = CArray(CU8, maxSize),
-                        initializer = null,
-                    )
-                vars +=
-                    CVarDecl(
-                        name = "_pool_${id}_y",
-                        type = CArray(CU8, maxSize),
-                        initializer = null,
-                    )
-                vars +=
-                    CVarDecl(
-                        name = "_pool_${id}_oam",
-                        type = CArray(CU8, maxSize),
-                        initializer = null,
-                    )
-                // Per-instance property parallel arrays — one array per property per pool slot
-                for (prop in pool.instanceProperties) {
-                    val elemType =
-                        when (prop.type) {
-                            VarType.U8,
-                            VarType.U16 -> CU8
-                            VarType.I8,
-                            VarType.I16 -> CI8
-                        }
-                    vars +=
-                        CVarDecl(
-                            name = "_pool_${id}_${prop.name}",
-                            type = CArray(elemType, maxSize),
-                            initializer = null,
-                        )
-                }
+                buildPoolCoreStateVars(id, maxSize) +
+                    buildPoolInstancePropertyVars(id, maxSize, pool)
             }
-            return vars
-        }
+
+        private fun buildPoolCoreStateVars(id: String, maxSize: Int): List<CVarDecl> =
+            listOf(
+                CVarDecl(
+                    name = "_pool_${id}_active",
+                    type = CArray(CU8, maxSize),
+                    initializer = null,
+                ),
+                CVarDecl(name = "_pool_${id}_x", type = CArray(CU8, maxSize), initializer = null),
+                CVarDecl(name = "_pool_${id}_y", type = CArray(CU8, maxSize), initializer = null),
+                CVarDecl(name = "_pool_${id}_oam", type = CArray(CU8, maxSize), initializer = null),
+            )
+
+        // Per-instance property parallel arrays — one array per property per pool slot
+        private fun buildPoolInstancePropertyVars(
+            id: String,
+            maxSize: Int,
+            pool: ActorPoolIR,
+        ): List<CVarDecl> =
+            pool.instanceProperties.map { prop ->
+                val elemType =
+                    when (prop.type) {
+                        VarType.U8,
+                        VarType.U16 -> CU8
+                        VarType.I8,
+                        VarType.I16 -> CI8
+                    }
+                CVarDecl(
+                    name = "_pool_${id}_${prop.name}",
+                    type = CArray(elemType, maxSize),
+                    initializer = null,
+                )
+            }
 
         /**
          * Generate all lifecycle functions for every actor pool in a [GameIR].
@@ -4863,540 +4830,24 @@ class GBDKSystemVisitor(
 
         val vars = mutableListOf<CVarDecl>()
         val functions = mutableListOf<CFunction>()
-        val perFrameCalls = mutableListOf<CStatement>() // calls for puzzle_update_all()
-
-        // Build ID→PuzzleObjectIR map for requires() lookup
+        val perFrameCalls = mutableListOf<CStatement>()
         val puzzleById = gameIR.puzzleObjects.associateBy { it.id }
 
         for (obj in gameIR.puzzleObjects) {
             val id = obj.id.replace('-', '_').replace(' ', '_')
-            when (obj) {
-                is SwitchObjectIR -> {
-                    // State variable: UINT8 _switch_{id}_active = 0
-                    vars +=
-                        CVarDecl(
-                            name = "_switch_${id}_active",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-
-                    // puzzle_activate_{id}(): toggle switch active state, run onActivate
-                    val activateBody =
-                        buildList<CStatement> {
-                            // requires() guard: if any required object is not active, return early
-                            addAll(buildRequiresGuard(obj.requires, puzzleById))
-                            // _switch_{id}_active = 1;
-                            add(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_switch_${id}_active"), "=", CLiteral(1))
-                                )
-                            )
-                            // Run onActivate ScriptOps
-                            for (op in obj.onActivate) add(ScriptOpVisitor.visit(op))
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_activate_$id",
-                            returnType = CVoid,
-                            body = activateBody,
-                            sectionComment = "Puzzle switch: $id",
-                        )
-
-                    // puzzle_deactivate_{id}(): toggle switch inactive state, run onDeactivate
-                    val deactivateBody =
-                        buildList<CStatement> {
-                            // _switch_{id}_active = 0;
-                            add(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_switch_${id}_active"), "=", CLiteral(0))
-                                )
-                            )
-                            // Run onDeactivate ScriptOps
-                            for (op in obj.onDeactivate) add(ScriptOpVisitor.visit(op))
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_deactivate_$id",
-                            returnType = CVoid,
-                            body = deactivateBody,
-                        )
-
-                    // Hidden state variable and reveal/hide functions
-                    vars +=
-                        CVarDecl(
-                            name = "_switch_${id}_hidden",
-                            type = CU8,
-                            initializer = CLiteral(if (obj.hidden) 1 else 0),
-                        )
-                    functions += buildPuzzleRevealFunction(id, "_switch_${id}_hidden")
-                    functions += buildPuzzleHideFunction(id, "_switch_${id}_hidden")
+            val output =
+                when (obj) {
+                    is SwitchObjectIR -> buildSwitchObjectOutput(obj, id, puzzleById)
+                    is DoorObjectIR -> buildDoorObjectOutput(obj, id, puzzleById)
+                    is PressurePlateObjectIR -> buildPressurePlateObjectOutput(obj, id, puzzleById)
+                    is TimedBlockObjectIR -> buildTimedBlockObjectOutput(obj, id, puzzleById)
+                    is TriggerObjectIR -> buildTriggerObjectOutput(obj, id, puzzleById)
                 }
-
-                is DoorObjectIR -> {
-                    // State variable: UINT8 _door_{id}_open = 0
-                    vars +=
-                        CVarDecl(name = "_door_${id}_open", type = CU8, initializer = CLiteral(0))
-
-                    // puzzle_activate_{id}(): open door — set state, swap tile to openTile, run
-                    // onOpen
-                    val openBody =
-                        buildList<CStatement> {
-                            // requires() guard: all required objects must be active before door
-                            // opens
-                            addAll(buildRequiresGuard(obj.requires, puzzleById))
-                            add(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_door_${id}_open"), "=", CLiteral(1))
-                                )
-                            )
-                            // Swap the door's background tile to its open graphic.
-                            add(
-                                CExprStatement(
-                                    CCall(
-                                        "set_bkg_tile_xy",
-                                        listOf(
-                                            CLiteral(obj.x),
-                                            CLiteral(obj.y),
-                                            CLiteral(obj.openTile),
-                                        ),
-                                    )
-                                )
-                            )
-                            for (op in obj.onOpen) add(ScriptOpVisitor.visit(op))
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_activate_$id",
-                            returnType = CVoid,
-                            body = openBody,
-                            sectionComment = "Puzzle door: $id",
-                        )
-
-                    // puzzle_deactivate_{id}(): close door — set state, swap tile to closedTile,
-                    // run onClose
-                    val closeBody =
-                        buildList<CStatement> {
-                            add(
-                                CExprStatement(
-                                    CBinaryExpr(CVar("_door_${id}_open"), "=", CLiteral(0))
-                                )
-                            )
-                            // Swap the door's background tile back to its closed graphic.
-                            add(
-                                CExprStatement(
-                                    CCall(
-                                        "set_bkg_tile_xy",
-                                        listOf(
-                                            CLiteral(obj.x),
-                                            CLiteral(obj.y),
-                                            CLiteral(obj.closedTile),
-                                        ),
-                                    )
-                                )
-                            )
-                            for (op in obj.onClose) add(ScriptOpVisitor.visit(op))
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_deactivate_$id",
-                            returnType = CVoid,
-                            body = closeBody,
-                        )
-
-                    // Hidden state variable and reveal/hide functions
-                    vars +=
-                        CVarDecl(
-                            name = "_door_${id}_hidden",
-                            type = CU8,
-                            initializer = CLiteral(if (obj.hidden) 1 else 0),
-                        )
-                    functions += buildPuzzleRevealFunction(id, "_door_${id}_hidden")
-                    functions += buildPuzzleHideFunction(id, "_door_${id}_hidden")
-                }
-
-                is PressurePlateObjectIR -> {
-                    // State variable: UINT8 _plate_{id}_pressed = 0
-                    vars +=
-                        CVarDecl(
-                            name = "_plate_${id}_pressed",
-                            type = CU8,
-                            initializer = CLiteral(0),
-                        )
-
-                    // puzzle_check_plate_{id}(): test if any respondTo actor/pool entity is at
-                    // plate position
-                    val checkBody =
-                        buildList<CStatement> {
-                            // requires() guard: check required objects before processing step
-                            // events
-                            val requiresGuard = buildRequiresGuard(obj.requires, puzzleById)
-                            if (requiresGuard.isNotEmpty()) addAll(requiresGuard)
-
-                            // UINT8 _on = 0; (local var)
-                            add(CVarDecl("_on", CU8, initializer = CLiteral(0)))
-                            // Check each respondTo actor or pool entity
-                            for (actorId in obj.respondToActorIds) {
-                                if (actorId.startsWith("pool:")) {
-                                    // Pool entity: pool:<poolName> — check pool entity positions
-                                    val poolName =
-                                        actorId
-                                            .removePrefix("pool:")
-                                            .replace('-', '_')
-                                            .replace(' ', '_')
-                                    // Emit a raw pool position check:
-                                    // pool_<name>_check_at(plate.x, plate.y) returns nonzero if any
-                                    // entity is there
-                                    add(
-                                        CIf(
-                                            condition =
-                                                CCall(
-                                                    "pool_${poolName}_any_at",
-                                                    listOf(CLiteral(obj.x), CLiteral(obj.y)),
-                                                ),
-                                            thenBody =
-                                                listOf(
-                                                    CExprStatement(
-                                                        CBinaryExpr(CVar("_on"), "=", CLiteral(1))
-                                                    )
-                                                ),
-                                        )
-                                    )
-                                } else {
-                                    val sanitizedActorId =
-                                        actorId.replace('-', '_').replace(' ', '_')
-                                    // if (_<actor>_x == plate.x && _<actor>_y == plate.y) _on = 1;
-                                    add(
-                                        CIf(
-                                            condition =
-                                                CBinaryExpr(
-                                                    CBinaryExpr(
-                                                        CVar("_${sanitizedActorId}_x"),
-                                                        "==",
-                                                        CLiteral(obj.x),
-                                                    ),
-                                                    "&&",
-                                                    CBinaryExpr(
-                                                        CVar("_${sanitizedActorId}_y"),
-                                                        "==",
-                                                        CLiteral(obj.y),
-                                                    ),
-                                                ),
-                                            thenBody =
-                                                listOf(
-                                                    CExprStatement(
-                                                        CBinaryExpr(CVar("_on"), "=", CLiteral(1))
-                                                    )
-                                                ),
-                                        )
-                                    )
-                                }
-                            }
-                            // if (_on && !_plate_{id}_pressed) { onStepOn; _plate_{id}_pressed = 1;
-                            // }
-                            if (obj.onStepOn.isNotEmpty()) {
-                                val stepOnBody =
-                                    buildList<CStatement> {
-                                        for (op in obj.onStepOn) add(ScriptOpVisitor.visit(op))
-                                        add(
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    CVar("_plate_${id}_pressed"),
-                                                    "=",
-                                                    CLiteral(1),
-                                                )
-                                            )
-                                        )
-                                    }
-                                add(
-                                    CIf(
-                                        condition =
-                                            CBinaryExpr(
-                                                CVar("_on"),
-                                                "&&",
-                                                CRawExpr("!_plate_${id}_pressed"),
-                                            ),
-                                        thenBody = stepOnBody,
-                                    )
-                                )
-                            } else {
-                                // No onStepOn ops — just update state
-                                add(
-                                    CIf(
-                                        condition =
-                                            CBinaryExpr(
-                                                CVar("_on"),
-                                                "&&",
-                                                CRawExpr("!_plate_${id}_pressed"),
-                                            ),
-                                        thenBody =
-                                            listOf(
-                                                CExprStatement(
-                                                    CBinaryExpr(
-                                                        CVar("_plate_${id}_pressed"),
-                                                        "=",
-                                                        CLiteral(1),
-                                                    )
-                                                )
-                                            ),
-                                    )
-                                )
-                            }
-                            // if (!_on && _plate_{id}_pressed) { onStepOff; _plate_{id}_pressed =
-                            // 0; }
-                            if (obj.onStepOff.isNotEmpty()) {
-                                val stepOffBody =
-                                    buildList<CStatement> {
-                                        for (op in obj.onStepOff) add(ScriptOpVisitor.visit(op))
-                                        add(
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    CVar("_plate_${id}_pressed"),
-                                                    "=",
-                                                    CLiteral(0),
-                                                )
-                                            )
-                                        )
-                                    }
-                                add(
-                                    CIf(
-                                        condition =
-                                            CBinaryExpr(
-                                                CRawExpr("!_on"),
-                                                "&&",
-                                                CVar("_plate_${id}_pressed"),
-                                            ),
-                                        thenBody = stepOffBody,
-                                    )
-                                )
-                            } else {
-                                add(
-                                    CIf(
-                                        condition =
-                                            CBinaryExpr(
-                                                CRawExpr("!_on"),
-                                                "&&",
-                                                CVar("_plate_${id}_pressed"),
-                                            ),
-                                        thenBody =
-                                            listOf(
-                                                CExprStatement(
-                                                    CBinaryExpr(
-                                                        CVar("_plate_${id}_pressed"),
-                                                        "=",
-                                                        CLiteral(0),
-                                                    )
-                                                )
-                                            ),
-                                    )
-                                )
-                            }
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_check_plate_$id",
-                            returnType = CVoid,
-                            body = checkBody,
-                            sectionComment = "Puzzle pressure plate: $id",
-                        )
-
-                    // Hidden state variable and reveal/hide functions
-                    vars +=
-                        CVarDecl(
-                            name = "_plate_${id}_hidden",
-                            type = CU8,
-                            initializer = CLiteral(if (obj.hidden) 1 else 0),
-                        )
-                    functions += buildPuzzleRevealFunction(id, "_plate_${id}_hidden")
-                    functions += buildPuzzleHideFunction(id, "_plate_${id}_hidden")
-
-                    // Add to per-frame update list
-                    perFrameCalls += CExprStatement(CCall("puzzle_check_plate_$id", emptyList()))
-                }
-
-                is TimedBlockObjectIR -> {
-                    // State variables: UINT16 _timedblock_{id}_timer = 0, UINT8
-                    // _timedblock_{id}_solid = 1
-                    vars +=
-                        CVarDecl(
-                            name = "_timedblock_${id}_timer",
-                            type = CU16,
-                            initializer = CLiteral(0),
-                        )
-                    vars +=
-                        CVarDecl(
-                            name = "_timedblock_${id}_solid",
-                            type = CU8,
-                            initializer = CLiteral(1),
-                        )
-
-                    // puzzle_update_timedblock_{id}(): increment timer, swap tile when interval
-                    // reached
-                    val updateBody =
-                        buildList<CStatement> {
-                            // requires() guard: only update when required objects are active
-                            addAll(buildRequiresGuard(obj.requires, puzzleById))
-                            // _timedblock_{id}_timer++;
-                            add(CExprStatement(CUnaryExpr("++", CVar("_timedblock_${id}_timer"))))
-                            // if (_timedblock_{id}_timer >= interval) { swap tile; reset timer; }
-                            val swapBody =
-                                buildList<CStatement> {
-                                    // _timedblock_{id}_timer = 0;
-                                    add(
-                                        CExprStatement(
-                                            CBinaryExpr(
-                                                CVar("_timedblock_${id}_timer"),
-                                                "=",
-                                                CLiteral(0),
-                                            )
-                                        )
-                                    )
-                                    // if (_timedblock_{id}_solid) { set_bkg_tile_xy(x, y,
-                                    // emptyTile); solid=0; }
-                                    // else { set_bkg_tile_xy(x, y, solidTile); solid=1; }
-                                    add(
-                                        CIf(
-                                            condition = CVar("_timedblock_${id}_solid"),
-                                            thenBody =
-                                                listOf(
-                                                    CExprStatement(
-                                                        CCall(
-                                                            "set_bkg_tile_xy",
-                                                            listOf(
-                                                                CLiteral(obj.x),
-                                                                CLiteral(obj.y),
-                                                                CLiteral(obj.emptyTile),
-                                                            ),
-                                                        )
-                                                    ),
-                                                    CExprStatement(
-                                                        CBinaryExpr(
-                                                            CVar("_timedblock_${id}_solid"),
-                                                            "=",
-                                                            CLiteral(0),
-                                                        )
-                                                    ),
-                                                ),
-                                            elseBody =
-                                                listOf(
-                                                    CExprStatement(
-                                                        CCall(
-                                                            "set_bkg_tile_xy",
-                                                            listOf(
-                                                                CLiteral(obj.x),
-                                                                CLiteral(obj.y),
-                                                                CLiteral(obj.solidTile),
-                                                            ),
-                                                        )
-                                                    ),
-                                                    CExprStatement(
-                                                        CBinaryExpr(
-                                                            CVar("_timedblock_${id}_solid"),
-                                                            "=",
-                                                            CLiteral(1),
-                                                        )
-                                                    ),
-                                                ),
-                                        )
-                                    )
-                                }
-                            add(
-                                CIf(
-                                    condition =
-                                        CBinaryExpr(
-                                            CVar("_timedblock_${id}_timer"),
-                                            ">=",
-                                            CLiteral(obj.interval),
-                                        ),
-                                    thenBody = swapBody,
-                                )
-                            )
-                        }
-                    functions +=
-                        CFunction(
-                            name = "puzzle_update_timedblock_$id",
-                            returnType = CVoid,
-                            body = updateBody,
-                            sectionComment = "Puzzle timed block: $id",
-                        )
-
-                    // Hidden state variable and reveal/hide functions
-                    vars +=
-                        CVarDecl(
-                            name = "_timedblock_${id}_hidden",
-                            type = CU8,
-                            initializer = CLiteral(if (obj.hidden) 1 else 0),
-                        )
-                    functions += buildPuzzleRevealFunction(id, "_timedblock_${id}_hidden")
-                    functions += buildPuzzleHideFunction(id, "_timedblock_${id}_hidden")
-
-                    // Add to per-frame update list
-                    perFrameCalls +=
-                        CExprStatement(CCall("puzzle_update_timedblock_$id", emptyList()))
-                }
-
-                is TriggerObjectIR -> {
-                    // Generic trigger: no built-in state, all logic in handlers.
-                    // Generates puzzle_trigger_{id}_fire(UINT8 event) with switch-case dispatch.
-
-                    // Group handlers by event type for switch-case generation
-                    val handlersByEvent = obj.handlers.groupBy { it.event }
-
-                    // Build switch-case body for each registered event
-                    val cases =
-                        buildList<CSwitchCase> {
-                            for ((eventType, handlers) in handlersByEvent) {
-                                val caseBody =
-                                    buildList<CStatement> {
-                                        // requires() guard inside each case
-                                        addAll(buildRequiresGuard(obj.requires, puzzleById))
-                                        for (handler in handlers) {
-                                            for (op in handler.actions) add(
-                                                ScriptOpVisitor.visit(op)
-                                            )
-                                        }
-                                        add(CBreak)
-                                    }
-                                // Use event type ordinal as the C case value (EVENT_INTERACT=0,
-                                // etc.)
-                                add(
-                                    CSwitchCase(
-                                        value = CLiteral(eventType.ordinal),
-                                        body = caseBody,
-                                    )
-                                )
-                            }
-                        }
-
-                    val fireBody =
-                        buildList<CStatement> {
-                            if (cases.isNotEmpty()) {
-                                add(CSwitch(expr = CVar("event"), cases = cases))
-                            }
-                        }
-
-                    functions +=
-                        CFunction(
-                            name = "puzzle_trigger_${id}_fire",
-                            returnType = CVoid,
-                            params = listOf(CParam("event", CU8)),
-                            body = fireBody,
-                            sectionComment = "Puzzle generic trigger: $id",
-                        )
-
-                    // Hidden state variable and reveal/hide functions
-                    vars +=
-                        CVarDecl(
-                            name = "_trigger_${id}_hidden",
-                            type = CU8,
-                            initializer = CLiteral(if (obj.hidden) 1 else 0),
-                        )
-                    functions += buildPuzzleRevealFunction(id, "_trigger_${id}_hidden")
-                    functions += buildPuzzleHideFunction(id, "_trigger_${id}_hidden")
-                }
-            }
+            vars += output.vars
+            functions += output.functions
+            perFrameCalls += output.perFrameCalls
         }
 
-        // puzzle_update_all(): calls all per-frame puzzle checks (plates + timed blocks)
         functions +=
             CFunction(
                 name = "puzzle_update_all",
@@ -5437,7 +4888,7 @@ class GBDKSystemVisitor(
         val conditions = requiresIds.mapNotNull { reqId ->
             val sanitizedId = reqId.replace('-', '_').replace(' ', '_')
             val activeVar =
-                when (val reqObj = puzzleById[reqId]) {
+                when (puzzleById[reqId]) {
                     is SwitchObjectIR -> "_switch_${sanitizedId}_active"
                     is DoorObjectIR -> "_door_${sanitizedId}_open"
                     is PressurePlateObjectIR -> "_plate_${sanitizedId}_pressed"
@@ -5476,6 +4927,460 @@ class GBDKSystemVisitor(
             body = listOf(CExprStatement(CBinaryExpr(CVar(hiddenVarName), "=", CLiteral(1)))),
         )
 
+    /** Accumulated output for a single puzzle object: vars, functions, and per-frame calls. */
+    private data class PuzzleObjectOutput(
+        val vars: List<CVarDecl>,
+        val functions: List<CFunction>,
+        val perFrameCalls: List<CStatement> = emptyList(),
+    )
+
+    private fun buildSwitchObjectOutput(
+        obj: SwitchObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): PuzzleObjectOutput {
+        val vars = mutableListOf<CVarDecl>()
+        val functions = mutableListOf<CFunction>()
+
+        // State variable: UINT8 _switch_{id}_active = 0
+        vars += CVarDecl(name = "_switch_${id}_active", type = CU8, initializer = CLiteral(0))
+
+        // puzzle_activate_{id}(): toggle switch active state, run onActivate
+        val activateBody =
+            buildList<CStatement> {
+                // requires() guard: if any required object is not active, return early
+                addAll(buildRequiresGuard(obj.requires, puzzleById))
+                // _switch_{id}_active = 1;
+                add(CExprStatement(CBinaryExpr(CVar("_switch_${id}_active"), "=", CLiteral(1))))
+                // Run onActivate ScriptOps
+                for (op in obj.onActivate) add(ScriptOpVisitor.visit(op))
+            }
+        functions +=
+            CFunction(
+                name = "puzzle_activate_$id",
+                returnType = CVoid,
+                body = activateBody,
+                sectionComment = "Puzzle switch: $id",
+            )
+
+        // puzzle_deactivate_{id}(): toggle switch inactive state, run onDeactivate
+        val deactivateBody =
+            buildList<CStatement> {
+                // _switch_{id}_active = 0;
+                add(CExprStatement(CBinaryExpr(CVar("_switch_${id}_active"), "=", CLiteral(0))))
+                // Run onDeactivate ScriptOps
+                for (op in obj.onDeactivate) add(ScriptOpVisitor.visit(op))
+            }
+        functions +=
+            CFunction(
+                name = "puzzle_deactivate_$id",
+                returnType = CVoid,
+                body = deactivateBody,
+            )
+
+        // Hidden state variable and reveal/hide functions
+        vars +=
+            CVarDecl(
+                name = "_switch_${id}_hidden",
+                type = CU8,
+                initializer = CLiteral(if (obj.hidden) 1 else 0),
+            )
+        functions += buildPuzzleRevealFunction(id, "_switch_${id}_hidden")
+        functions += buildPuzzleHideFunction(id, "_switch_${id}_hidden")
+
+        return PuzzleObjectOutput(vars = vars, functions = functions)
+    }
+
+    private fun buildDoorObjectOutput(
+        obj: DoorObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): PuzzleObjectOutput {
+        val vars = mutableListOf<CVarDecl>()
+        val functions = mutableListOf<CFunction>()
+
+        // State variable: UINT8 _door_{id}_open = 0
+        vars += CVarDecl(name = "_door_${id}_open", type = CU8, initializer = CLiteral(0))
+
+        // puzzle_activate_{id}(): open door — set state, swap tile to openTile, run onOpen
+        val openBody =
+            buildList<CStatement> {
+                // requires() guard: all required objects must be active before door opens
+                addAll(buildRequiresGuard(obj.requires, puzzleById))
+                add(CExprStatement(CBinaryExpr(CVar("_door_${id}_open"), "=", CLiteral(1))))
+                // Swap the door's background tile to its open graphic.
+                add(
+                    CExprStatement(
+                        CCall(
+                            "set_bkg_tile_xy",
+                            listOf(CLiteral(obj.x), CLiteral(obj.y), CLiteral(obj.openTile)),
+                        )
+                    )
+                )
+                for (op in obj.onOpen) add(ScriptOpVisitor.visit(op))
+            }
+        functions +=
+            CFunction(
+                name = "puzzle_activate_$id",
+                returnType = CVoid,
+                body = openBody,
+                sectionComment = "Puzzle door: $id",
+            )
+
+        // puzzle_deactivate_{id}(): close door — set state, swap tile to closedTile, run onClose
+        val closeBody =
+            buildList<CStatement> {
+                add(CExprStatement(CBinaryExpr(CVar("_door_${id}_open"), "=", CLiteral(0))))
+                // Swap the door's background tile back to its closed graphic.
+                add(
+                    CExprStatement(
+                        CCall(
+                            "set_bkg_tile_xy",
+                            listOf(CLiteral(obj.x), CLiteral(obj.y), CLiteral(obj.closedTile)),
+                        )
+                    )
+                )
+                for (op in obj.onClose) add(ScriptOpVisitor.visit(op))
+            }
+        functions +=
+            CFunction(
+                name = "puzzle_deactivate_$id",
+                returnType = CVoid,
+                body = closeBody,
+            )
+
+        // Hidden state variable and reveal/hide functions
+        vars +=
+            CVarDecl(
+                name = "_door_${id}_hidden",
+                type = CU8,
+                initializer = CLiteral(if (obj.hidden) 1 else 0),
+            )
+        functions += buildPuzzleRevealFunction(id, "_door_${id}_hidden")
+        functions += buildPuzzleHideFunction(id, "_door_${id}_hidden")
+
+        return PuzzleObjectOutput(vars = vars, functions = functions)
+    }
+
+    private fun buildPressurePlateObjectOutput(
+        obj: PressurePlateObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): PuzzleObjectOutput {
+        val vars = mutableListOf<CVarDecl>()
+        val functions = mutableListOf<CFunction>()
+
+        // State variable: UINT8 _plate_{id}_pressed = 0
+        vars += CVarDecl(name = "_plate_${id}_pressed", type = CU8, initializer = CLiteral(0))
+
+        // puzzle_check_plate_{id}(): test if any respondTo actor/pool entity is at plate position
+        functions +=
+            CFunction(
+                name = "puzzle_check_plate_$id",
+                returnType = CVoid,
+                body = buildPlateCheckBody(obj, id, puzzleById),
+                sectionComment = "Puzzle pressure plate: $id",
+            )
+
+        // Hidden state variable and reveal/hide functions
+        vars +=
+            CVarDecl(
+                name = "_plate_${id}_hidden",
+                type = CU8,
+                initializer = CLiteral(if (obj.hidden) 1 else 0),
+            )
+        functions += buildPuzzleRevealFunction(id, "_plate_${id}_hidden")
+        functions += buildPuzzleHideFunction(id, "_plate_${id}_hidden")
+
+        return PuzzleObjectOutput(
+            vars = vars,
+            functions = functions,
+            perFrameCalls = listOf(CExprStatement(CCall("puzzle_check_plate_$id", emptyList()))),
+        )
+    }
+
+    /**
+     * Builds the body of `puzzle_check_plate_{id}()`.
+     *
+     * Extracted from [buildPressurePlateObjectOutput] to flatten nesting (SonarCloud S3776 18-28).
+     */
+    private fun buildPlateCheckBody(
+        obj: PressurePlateObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): List<CStatement> = buildList {
+        // requires() guard: check required objects before processing step events
+        val requiresGuard = buildRequiresGuard(obj.requires, puzzleById)
+        if (requiresGuard.isNotEmpty()) addAll(requiresGuard)
+        // UINT8 _on = 0; (local var)
+        add(CVarDecl("_on", CU8, initializer = CLiteral(0)))
+        // Check each respondTo actor or pool entity
+        addAll(buildPlateRespondToChecks(obj))
+        // if (_on && !_plate_{id}_pressed) { onStepOn; _plate_{id}_pressed = 1; }
+        add(
+            CIf(
+                condition = CBinaryExpr(CVar("_on"), "&&", CRawExpr("!_plate_${id}_pressed")),
+                thenBody = buildPlatePressedBody(obj, id),
+            )
+        )
+        // if (!_on && _plate_{id}_pressed) { onStepOff; _plate_{id}_pressed = 0; }
+        add(
+            CIf(
+                condition = CBinaryExpr(CRawExpr("!_on"), "&&", CVar("_plate_${id}_pressed")),
+                thenBody = buildPlateReleasedBody(obj, id),
+            )
+        )
+    }
+
+    /**
+     * Builds the `_on` setter checks for each respondTo actor or pool entity.
+     *
+     * Extracted from [buildPlateCheckBody] to flatten nesting (SonarCloud S3776 18-28).
+     */
+    private fun buildPlateRespondToChecks(obj: PressurePlateObjectIR): List<CStatement> =
+        buildList {
+            for (actorId in obj.respondToActorIds) {
+                if (actorId.startsWith("pool:")) {
+                    // Pool entity: pool:<poolName> — check pool entity positions
+                    val poolName = actorId.removePrefix("pool:").replace('-', '_').replace(' ', '_')
+                    // pool_<name>_any_at(plate.x, plate.y) returns nonzero if any entity there
+                    add(
+                        CIf(
+                            condition =
+                                CCall(
+                                    "pool_${poolName}_any_at",
+                                    listOf(CLiteral(obj.x), CLiteral(obj.y)),
+                                ),
+                            thenBody =
+                                listOf(CExprStatement(CBinaryExpr(CVar("_on"), "=", CLiteral(1)))),
+                        )
+                    )
+                } else {
+                    val sanitizedActorId = actorId.replace('-', '_').replace(' ', '_')
+                    // if (_<actor>_x == plate.x && _<actor>_y == plate.y) _on = 1;
+                    add(
+                        CIf(
+                            condition =
+                                CBinaryExpr(
+                                    CBinaryExpr(
+                                        CVar("_${sanitizedActorId}_x"),
+                                        "==",
+                                        CLiteral(obj.x),
+                                    ),
+                                    "&&",
+                                    CBinaryExpr(
+                                        CVar("_${sanitizedActorId}_y"),
+                                        "==",
+                                        CLiteral(obj.y),
+                                    ),
+                                ),
+                            thenBody =
+                                listOf(CExprStatement(CBinaryExpr(CVar("_on"), "=", CLiteral(1)))),
+                        )
+                    )
+                }
+            }
+        }
+
+    /**
+     * Builds the then-body of the `_on && !_pressed` step-on CIf.
+     *
+     * Always iterates [PressurePlateObjectIR.onStepOn] (empty list = zero iterations, same result
+     * as the original else branch). Extracted from [buildPlateCheckBody] to flatten nesting.
+     */
+    private fun buildPlatePressedBody(obj: PressurePlateObjectIR, id: String): List<CStatement> =
+        buildList {
+            for (op in obj.onStepOn) add(ScriptOpVisitor.visit(op))
+            add(CExprStatement(CBinaryExpr(CVar("_plate_${id}_pressed"), "=", CLiteral(1))))
+        }
+
+    /**
+     * Builds the then-body of the `!_on && _pressed` step-off CIf.
+     *
+     * Always iterates [PressurePlateObjectIR.onStepOff] (empty list = zero iterations, same result
+     * as the original else branch). Extracted from [buildPlateCheckBody] to flatten nesting.
+     */
+    private fun buildPlateReleasedBody(obj: PressurePlateObjectIR, id: String): List<CStatement> =
+        buildList {
+            for (op in obj.onStepOff) add(ScriptOpVisitor.visit(op))
+            add(CExprStatement(CBinaryExpr(CVar("_plate_${id}_pressed"), "=", CLiteral(0))))
+        }
+
+    private fun buildTimedBlockObjectOutput(
+        obj: TimedBlockObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): PuzzleObjectOutput {
+        val vars = mutableListOf<CVarDecl>()
+        val functions = mutableListOf<CFunction>()
+
+        // State variables: UINT16 _timedblock_{id}_timer = 0, UINT8 _timedblock_{id}_solid = 1
+        vars += CVarDecl(name = "_timedblock_${id}_timer", type = CU16, initializer = CLiteral(0))
+        vars += CVarDecl(name = "_timedblock_${id}_solid", type = CU8, initializer = CLiteral(1))
+
+        // puzzle_update_timedblock_{id}(): increment timer, swap tile when interval reached
+        val updateBody =
+            buildList<CStatement> {
+                // requires() guard: only update when required objects are active
+                addAll(buildRequiresGuard(obj.requires, puzzleById))
+                // _timedblock_{id}_timer++;
+                add(CExprStatement(CUnaryExpr("++", CVar("_timedblock_${id}_timer"))))
+                // if (_timedblock_{id}_timer >= interval) { swap tile; reset timer; }
+                val swapBody =
+                    buildList<CStatement> {
+                        // _timedblock_{id}_timer = 0;
+                        add(
+                            CExprStatement(
+                                CBinaryExpr(CVar("_timedblock_${id}_timer"), "=", CLiteral(0))
+                            )
+                        )
+                        // if (_timedblock_{id}_solid) { set_bkg_tile_xy(x, y, emptyTile); }
+                        // else { set_bkg_tile_xy(x, y, solidTile); }
+                        add(
+                            CIf(
+                                condition = CVar("_timedblock_${id}_solid"),
+                                thenBody =
+                                    listOf(
+                                        CExprStatement(
+                                            CCall(
+                                                "set_bkg_tile_xy",
+                                                listOf(
+                                                    CLiteral(obj.x),
+                                                    CLiteral(obj.y),
+                                                    CLiteral(obj.emptyTile),
+                                                ),
+                                            )
+                                        ),
+                                        CExprStatement(
+                                            CBinaryExpr(
+                                                CVar("_timedblock_${id}_solid"),
+                                                "=",
+                                                CLiteral(0),
+                                            )
+                                        ),
+                                    ),
+                                elseBody =
+                                    listOf(
+                                        CExprStatement(
+                                            CCall(
+                                                "set_bkg_tile_xy",
+                                                listOf(
+                                                    CLiteral(obj.x),
+                                                    CLiteral(obj.y),
+                                                    CLiteral(obj.solidTile),
+                                                ),
+                                            )
+                                        ),
+                                        CExprStatement(
+                                            CBinaryExpr(
+                                                CVar("_timedblock_${id}_solid"),
+                                                "=",
+                                                CLiteral(1),
+                                            )
+                                        ),
+                                    ),
+                            )
+                        )
+                    }
+                add(
+                    CIf(
+                        condition =
+                            CBinaryExpr(
+                                CVar("_timedblock_${id}_timer"),
+                                ">=",
+                                CLiteral(obj.interval),
+                            ),
+                        thenBody = swapBody,
+                    )
+                )
+            }
+        functions +=
+            CFunction(
+                name = "puzzle_update_timedblock_$id",
+                returnType = CVoid,
+                body = updateBody,
+                sectionComment = "Puzzle timed block: $id",
+            )
+
+        // Hidden state variable and reveal/hide functions
+        vars +=
+            CVarDecl(
+                name = "_timedblock_${id}_hidden",
+                type = CU8,
+                initializer = CLiteral(if (obj.hidden) 1 else 0),
+            )
+        functions += buildPuzzleRevealFunction(id, "_timedblock_${id}_hidden")
+        functions += buildPuzzleHideFunction(id, "_timedblock_${id}_hidden")
+
+        return PuzzleObjectOutput(
+            vars = vars,
+            functions = functions,
+            perFrameCalls =
+                listOf(CExprStatement(CCall("puzzle_update_timedblock_$id", emptyList()))),
+        )
+    }
+
+    private fun buildTriggerObjectOutput(
+        obj: TriggerObjectIR,
+        id: String,
+        puzzleById: Map<String, io.github.gbkt.core.ir.PuzzleObjectIR>,
+    ): PuzzleObjectOutput {
+        val vars = mutableListOf<CVarDecl>()
+        val functions = mutableListOf<CFunction>()
+
+        // Generic trigger: no built-in state, all logic in handlers.
+        // Generates puzzle_trigger_{id}_fire(UINT8 event) with switch-case dispatch.
+
+        // Group handlers by event type for switch-case generation
+        val handlersByEvent = obj.handlers.groupBy { it.event }
+
+        // Build switch-case body for each registered event
+        val cases =
+            buildList<CSwitchCase> {
+                for ((eventType, handlers) in handlersByEvent) {
+                    val caseBody =
+                        buildList<CStatement> {
+                            // requires() guard inside each case
+                            addAll(buildRequiresGuard(obj.requires, puzzleById))
+                            for (handler in handlers) {
+                                for (op in handler.actions) add(ScriptOpVisitor.visit(op))
+                            }
+                            add(CBreak)
+                        }
+                    // Use event type ordinal as the C case value (EVENT_INTERACT=0, etc.)
+                    add(CSwitchCase(value = CLiteral(eventType.ordinal), body = caseBody))
+                }
+            }
+
+        val fireBody =
+            buildList<CStatement> {
+                if (cases.isNotEmpty()) {
+                    add(CSwitch(expr = CVar("event"), cases = cases))
+                }
+            }
+
+        functions +=
+            CFunction(
+                name = "puzzle_trigger_${id}_fire",
+                returnType = CVoid,
+                params = listOf(CParam("event", CU8)),
+                body = fireBody,
+                sectionComment = "Puzzle generic trigger: $id",
+            )
+
+        // Hidden state variable and reveal/hide functions
+        vars +=
+            CVarDecl(
+                name = "_trigger_${id}_hidden",
+                type = CU8,
+                initializer = CLiteral(if (obj.hidden) 1 else 0),
+            )
+        functions += buildPuzzleRevealFunction(id, "_trigger_${id}_hidden")
+        functions += buildPuzzleHideFunction(id, "_trigger_${id}_hidden")
+
+        return PuzzleObjectOutput(vars = vars, functions = functions)
+    }
+
     /**
      * Builds NPC-NPC collision check functions for all [CollisionRuleIR] entries.
      *
@@ -5486,253 +5391,21 @@ class GBDKSystemVisitor(
      *
      * Returns an empty list when [GameIR.collisionRules] is empty.
      */
-    @Suppress("LongMethod")
     fun buildNpcCollisionFunctions(gameIR: GameIR): List<CFunction> {
         val rules = gameIR.collisionRules
         if (rules.isEmpty()) return emptyList()
 
-        // Build a map: groupId → list of actor IDs in that group
-        val groupActors: Map<String, List<String>> = buildMap {
-            for (actor in gameIR.actors) {
-                val cfg = actor.npcCollisionConfig ?: continue
-                for (groupId in cfg.groupIds) {
-                    getOrPut(groupId) { mutableListOf() }
-                    (getValue(groupId) as MutableList).add(actor.id)
-                }
-            }
-        }
-
-        // Build a map: actorId → mass (default 1)
-        val actorMass: Map<String, Int> = buildMap {
-            for (actor in gameIR.actors) {
-                val cfg = actor.npcCollisionConfig ?: continue
-                put(actor.id, cfg.mass)
-            }
-        }
-
-        // ExprVisitor for onCollide callback codegen (actor-aware expression resolution)
+        val groupActors = buildNpcGroupActorMap(gameIR)
+        val actorMass = buildNpcActorMassMap(gameIR)
         val exprVisitor = ExprVisitor(gameIR.actors)
 
-        val ruleFunctions = mutableListOf<CFunction>()
-
-        for (rule in rules) {
-            val actorsA = groupActors[rule.groupA] ?: emptyList()
-            val actorsB = groupActors[rule.groupB] ?: emptyList()
-            if (actorsA.isEmpty() || actorsB.isEmpty()) continue
-
-            val fnName =
-                "check_collision_${rule.groupA.replace('-', '_')}_${rule.groupB.replace('-', '_')}"
-            val body = mutableListOf<CStatement>()
-
-            // Interval counter: static UINT8 _npc_interval_{sanitized}
-            if (rule.interval > 1) {
-                val counterName = "_npc_interval_${fnName}"
-                body.add(CVarDecl(counterName, CU8, CLiteral(0), isStatic = true))
-                body.add(
-                    CExprStatement(
-                        CBinaryExpr(
-                            CVar(counterName),
-                            "=",
-                            CBinaryExpr(
-                                CBinaryExpr(CVar(counterName), "+", CLiteral(1)),
-                                "%",
-                                CLiteral(rule.interval),
-                            ),
-                        )
-                    )
-                )
-                body.add(
-                    CIf(
-                        condition = CBinaryExpr(CVar(counterName), "!=", CLiteral(0)),
-                        thenBody = listOf(CReturn()),
-                    )
-                )
-            }
-
-            // Nested loop: for each actor in A, for each actor in B (explicit unrolled)
-            for (idA in actorsA) {
-                for (idB in actorsB) {
-                    // Skip self-collision in intra-group rules
-                    if (rule.groupA == rule.groupB && idA == idB) continue
-
-                    val xA = CVar("_${idA}_x")
-                    val yA = CVar("_${idA}_y")
-                    val xB = CVar("_${idB}_x")
-                    val yB = CVar("_${idB}_y")
-
-                    // AABB overlap: ax < bx+8 && ax+8 > bx && ay < by+8 && ay+8 > by
-                    // Using 8 as default hitbox size for sprite entities
-                    val hitSize = CLiteral(8)
-                    val overlapX =
-                        CBinaryExpr(
-                            CBinaryExpr(xA, "<", CBinaryExpr(xB, "+", hitSize)),
-                            "&&",
-                            CBinaryExpr(CBinaryExpr(xA, "+", hitSize), ">", xB),
-                        )
-                    val overlapY =
-                        CBinaryExpr(
-                            CBinaryExpr(yA, "<", CBinaryExpr(yB, "+", hitSize)),
-                            "&&",
-                            CBinaryExpr(CBinaryExpr(yA, "+", hitSize), ">", yB),
-                        )
-                    val aabb = CBinaryExpr(overlapX, "&&", overlapY)
-
-                    val responseBody = mutableListOf<CStatement>()
-
-                    // Built-in response dispatch
-                    when (rule.response) {
-                        CollisionResponse.OVERLAP -> {
-                            // No movement change — only callback
-                        }
-                        CollisionResponse.BLOCK -> {
-                            // Zero velocity of actor A on collision
-                            responseBody.add(CComment("BLOCK: stop actor $idA velocity"))
-                            responseBody.add(
-                                CExprStatement(CBinaryExpr(CVar("_${idA}_vx"), "=", CLiteral(0)))
-                            )
-                            responseBody.add(
-                                CExprStatement(CBinaryExpr(CVar("_${idA}_vy"), "=", CLiteral(0)))
-                            )
-                        }
-                        CollisionResponse.BOUNCE -> {
-                            // Reverse velocity of actor A
-                            responseBody.add(CComment("BOUNCE: reverse actor $idA velocity"))
-                            responseBody.add(
-                                CExprStatement(
-                                    CBinaryExpr(
-                                        CVar("_${idA}_vx"),
-                                        "=",
-                                        CUnaryExpr("-", CVar("_${idA}_vx")),
-                                    )
-                                )
-                            )
-                            responseBody.add(
-                                CExprStatement(
-                                    CBinaryExpr(
-                                        CVar("_${idA}_vy"),
-                                        "=",
-                                        CUnaryExpr("-", CVar("_${idA}_vy")),
-                                    )
-                                )
-                            )
-                        }
-                        CollisionResponse.PUSH -> {
-                            // Mass-proportional displacement
-                            // dispA = massB / (massA + massB), dispB = massA / (massA + massB)
-                            val massA = actorMass[idA] ?: 1
-                            val massB = actorMass[idB] ?: 1
-                            val totalMass = massA + massB
-                            responseBody.add(
-                                CComment("PUSH: mass $idA=$massA, $idB=$massB, total=$totalMass")
-                            )
-                            // Horizontal overlap displacement
-                            responseBody.add(
-                                CIf(
-                                    condition =
-                                        CBinaryExpr(
-                                            CBinaryExpr(xA, "+", CLiteral(4)),
-                                            "<",
-                                            CBinaryExpr(xB, "+", CLiteral(4)),
-                                        ),
-                                    thenBody =
-                                        listOf(
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    xA,
-                                                    "=",
-                                                    CBinaryExpr(
-                                                        xA,
-                                                        "-",
-                                                        CLiteral(
-                                                            massB / totalMass.coerceAtLeast(1)
-                                                        ),
-                                                    ),
-                                                )
-                                            ),
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    xB,
-                                                    "=",
-                                                    CBinaryExpr(
-                                                        xB,
-                                                        "+",
-                                                        CLiteral(
-                                                            massA / totalMass.coerceAtLeast(1)
-                                                        ),
-                                                    ),
-                                                )
-                                            ),
-                                        ),
-                                    elseBody =
-                                        listOf(
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    xA,
-                                                    "=",
-                                                    CBinaryExpr(
-                                                        xA,
-                                                        "+",
-                                                        CLiteral(
-                                                            massB / totalMass.coerceAtLeast(1)
-                                                        ),
-                                                    ),
-                                                )
-                                            ),
-                                            CExprStatement(
-                                                CBinaryExpr(
-                                                    xB,
-                                                    "=",
-                                                    CBinaryExpr(
-                                                        xB,
-                                                        "-",
-                                                        CLiteral(
-                                                            massA / totalMass.coerceAtLeast(1)
-                                                        ),
-                                                    ),
-                                                )
-                                            ),
-                                        ),
-                                )
-                            )
-                        }
-                    }
-
-                    // Emit onCollide script ops (if any) as typed C statements
-                    if (rule.onCollide.isNotEmpty()) {
-                        responseBody.add(CComment("onCollide callback"))
-                        for (op in rule.onCollide) {
-                            val stmt = ScriptOpVisitor.visit(op, exprVisitor)
-                            responseBody.add(stmt)
-                        }
-                    }
-
-                    if (responseBody.isNotEmpty()) {
-                        body.add(CIf(condition = aabb, thenBody = responseBody))
-                    } else {
-                        // OVERLAP with no callback — still emit the check to allow future extension
-                        body.add(
-                            CIf(condition = aabb, thenBody = listOf(CRawCode("/* overlap */")))
-                        )
-                    }
-                }
-            }
-
-            ruleFunctions.add(
-                CFunction(
-                    name = fnName,
-                    returnType = CVoid,
-                    body = body,
-                    sectionComment =
-                        "NPC collision: ${rule.groupA} vs ${rule.groupB} (${rule.response})",
-                )
-            )
+        val ruleFunctions = rules.mapNotNull { rule ->
+            buildNpcCollisionRuleFunction(rule, groupActors, actorMass, exprVisitor)
         }
 
         if (ruleFunctions.isEmpty()) return emptyList()
 
-        // Master function: calls all rule check functions
         val masterBody = ruleFunctions.map { fn -> CExprStatement(CCall(fn.name, emptyList())) }
-
         val masterFn =
             CFunction(
                 name = "check_all_npc_collisions",
@@ -5742,6 +5415,240 @@ class GBDKSystemVisitor(
             )
 
         return ruleFunctions + listOf(masterFn)
+    }
+
+    private fun buildNpcGroupActorMap(gameIR: GameIR): Map<String, List<String>> = buildMap {
+        for (actor in gameIR.actors) {
+            val cfg = actor.npcCollisionConfig ?: continue
+            for (groupId in cfg.groupIds) {
+                getOrPut(groupId) { mutableListOf() }
+                (getValue(groupId) as MutableList).add(actor.id)
+            }
+        }
+    }
+
+    private fun buildNpcActorMassMap(gameIR: GameIR): Map<String, Int> = buildMap {
+        for (actor in gameIR.actors) {
+            val cfg = actor.npcCollisionConfig ?: continue
+            put(actor.id, cfg.mass)
+        }
+    }
+
+    private fun buildNpcCollisionRuleFunction(
+        rule: CollisionRuleIR,
+        groupActors: Map<String, List<String>>,
+        actorMass: Map<String, Int>,
+        exprVisitor: ExprVisitor,
+    ): CFunction? {
+        val actorsA = groupActors[rule.groupA] ?: emptyList()
+        val actorsB = groupActors[rule.groupB] ?: emptyList()
+        if (actorsA.isEmpty() || actorsB.isEmpty()) return null
+
+        val fnName =
+            "check_collision_${rule.groupA.replace('-', '_')}_${rule.groupB.replace('-', '_')}"
+        val body = mutableListOf<CStatement>()
+        body += buildNpcIntervalGuardStatements(rule, fnName)
+
+        // Nested loop: for each actor in A, for each actor in B (explicit unrolled)
+        for (idA in actorsA) {
+            for (idB in actorsB) {
+                if (rule.groupA == rule.groupB && idA == idB) continue
+                body.add(buildNpcActorPairCollisionCheck(rule, idA, idB, actorMass, exprVisitor))
+            }
+        }
+
+        return CFunction(
+            name = fnName,
+            returnType = CVoid,
+            body = body,
+            sectionComment = "NPC collision: ${rule.groupA} vs ${rule.groupB} (${rule.response})",
+        )
+    }
+
+    private fun buildNpcIntervalGuardStatements(
+        rule: CollisionRuleIR,
+        fnName: String,
+    ): List<CStatement> {
+        if (rule.interval <= 1) return emptyList()
+        val counterName = "_npc_interval_${fnName}"
+        return listOf(
+            CVarDecl(counterName, CU8, CLiteral(0), isStatic = true),
+            CExprStatement(
+                CBinaryExpr(
+                    CVar(counterName),
+                    "=",
+                    CBinaryExpr(
+                        CBinaryExpr(CVar(counterName), "+", CLiteral(1)),
+                        "%",
+                        CLiteral(rule.interval),
+                    ),
+                )
+            ),
+            CIf(
+                condition = CBinaryExpr(CVar(counterName), "!=", CLiteral(0)),
+                thenBody = listOf(CReturn()),
+            ),
+        )
+    }
+
+    private fun buildNpcActorPairCollisionCheck(
+        rule: CollisionRuleIR,
+        idA: String,
+        idB: String,
+        actorMass: Map<String, Int>,
+        exprVisitor: ExprVisitor,
+    ): CStatement {
+        val xA = CVar("_${idA}_x")
+        val yA = CVar("_${idA}_y")
+        val xB = CVar("_${idB}_x")
+        val yB = CVar("_${idB}_y")
+        // AABB overlap: ax < bx+8 && ax+8 > bx && ay < by+8 && ay+8 > by
+        // Using 8 as default hitbox size for sprite entities
+        val hitSize = CLiteral(8)
+        val overlapX =
+            CBinaryExpr(
+                CBinaryExpr(xA, "<", CBinaryExpr(xB, "+", hitSize)),
+                "&&",
+                CBinaryExpr(CBinaryExpr(xA, "+", hitSize), ">", xB),
+            )
+        val overlapY =
+            CBinaryExpr(
+                CBinaryExpr(yA, "<", CBinaryExpr(yB, "+", hitSize)),
+                "&&",
+                CBinaryExpr(CBinaryExpr(yA, "+", hitSize), ">", yB),
+            )
+        val aabb = CBinaryExpr(overlapX, "&&", overlapY)
+        val responseBody =
+            buildNpcCollisionResponseStatements(rule, idA, idB, actorMass, exprVisitor)
+        return if (responseBody.isNotEmpty()) {
+            CIf(condition = aabb, thenBody = responseBody)
+        } else {
+            // OVERLAP with no callback — still emit the check to allow future extension
+            CIf(condition = aabb, thenBody = listOf(CRawCode("/* overlap */")))
+        }
+    }
+
+    private fun buildNpcCollisionResponseStatements(
+        rule: CollisionRuleIR,
+        idA: String,
+        idB: String,
+        actorMass: Map<String, Int>,
+        exprVisitor: ExprVisitor,
+    ): List<CStatement> {
+        val responseBody = mutableListOf<CStatement>()
+        // Built-in response dispatch
+        when (rule.response) {
+            CollisionResponse.OVERLAP -> {
+                // No movement change — only callback
+            }
+            CollisionResponse.BLOCK -> {
+                // Zero velocity of actor A on collision
+                responseBody.add(CComment("BLOCK: stop actor $idA velocity"))
+                responseBody.add(CExprStatement(CBinaryExpr(CVar("_${idA}_vx"), "=", CLiteral(0))))
+                responseBody.add(CExprStatement(CBinaryExpr(CVar("_${idA}_vy"), "=", CLiteral(0))))
+            }
+            CollisionResponse.BOUNCE -> {
+                // Reverse velocity of actor A
+                responseBody.add(CComment("BOUNCE: reverse actor $idA velocity"))
+                responseBody.add(
+                    CExprStatement(
+                        CBinaryExpr(
+                            CVar("_${idA}_vx"),
+                            "=",
+                            CUnaryExpr("-", CVar("_${idA}_vx")),
+                        )
+                    )
+                )
+                responseBody.add(
+                    CExprStatement(
+                        CBinaryExpr(
+                            CVar("_${idA}_vy"),
+                            "=",
+                            CUnaryExpr("-", CVar("_${idA}_vy")),
+                        )
+                    )
+                )
+            }
+            CollisionResponse.PUSH -> {
+                // Mass-proportional displacement
+                // dispA = massB / (massA + massB), dispB = massA / (massA + massB)
+                val massA = actorMass[idA] ?: 1
+                val massB = actorMass[idB] ?: 1
+                val totalMass = massA + massB
+                val xA = CVar("_${idA}_x")
+                val xB = CVar("_${idB}_x")
+                responseBody.add(CComment("PUSH: mass $idA=$massA, $idB=$massB, total=$totalMass"))
+                // Horizontal overlap displacement
+                responseBody.add(
+                    CIf(
+                        condition =
+                            CBinaryExpr(
+                                CBinaryExpr(xA, "+", CLiteral(4)),
+                                "<",
+                                CBinaryExpr(xB, "+", CLiteral(4)),
+                            ),
+                        thenBody =
+                            listOf(
+                                CExprStatement(
+                                    CBinaryExpr(
+                                        xA,
+                                        "=",
+                                        CBinaryExpr(
+                                            xA,
+                                            "-",
+                                            CLiteral(massB / totalMass.coerceAtLeast(1)),
+                                        ),
+                                    )
+                                ),
+                                CExprStatement(
+                                    CBinaryExpr(
+                                        xB,
+                                        "=",
+                                        CBinaryExpr(
+                                            xB,
+                                            "+",
+                                            CLiteral(massA / totalMass.coerceAtLeast(1)),
+                                        ),
+                                    )
+                                ),
+                            ),
+                        elseBody =
+                            listOf(
+                                CExprStatement(
+                                    CBinaryExpr(
+                                        xA,
+                                        "=",
+                                        CBinaryExpr(
+                                            xA,
+                                            "+",
+                                            CLiteral(massB / totalMass.coerceAtLeast(1)),
+                                        ),
+                                    )
+                                ),
+                                CExprStatement(
+                                    CBinaryExpr(
+                                        xB,
+                                        "=",
+                                        CBinaryExpr(
+                                            xB,
+                                            "-",
+                                            CLiteral(massA / totalMass.coerceAtLeast(1)),
+                                        ),
+                                    )
+                                ),
+                            ),
+                    )
+                )
+            }
+        }
+        // Emit onCollide script ops (if any) as typed C statements
+        if (rule.onCollide.isNotEmpty()) {
+            responseBody.add(CComment("onCollide callback"))
+            for (op in rule.onCollide) {
+                responseBody.add(ScriptOpVisitor.visit(op, exprVisitor))
+            }
+        }
+        return responseBody
     }
 
     // -------------------------------------------------------------------------

@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.1.0
-milestone_name: MVP — Compiler Pipeline Rebuild
+milestone: v0.1.1
+milestone_name: Hardening
 status: Awaiting next milestone
-stopped_at: v0.1.0 milestone shipped and archived
-last_updated: "2026-06-09T15:52:30.144Z"
-last_activity: 2026-06-11 — Completed quick task 260611-k1w: unify version catalog across all Gradle build scripts
+stopped_at: Completed 22-06-PLAN.md
+last_updated: "2026-06-15T13:45:42.241Z"
+last_activity: 2026-06-15 — Milestone v0.1.1 completed and archived
 progress:
-  total_phases: 71
-  completed_phases: 56
-  total_plans: 654
-  completed_plans: 639
-  percent: 79
+  total_phases: 7
+  completed_phases: 7
+  total_plans: 79
+  completed_plans: 82
+  percent: 100
 ---
 
 # Project State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** The framework automatically manages Game Boy hardware resources (VRAM, banking, OAM, RAM) so the developer writes only declarative Kotlin DSL — like Jetpack Compose for Game Boy.
-**Current focus:** Planning next milestone (v0.1.0 shipped 2026-06-09)
+**Current focus:** Phase 22 — golden-screenshot-and-evidence-storage-overhaul
 
 ## Deferred Items
 
@@ -54,10 +54,14 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: Milestone v0.1.0 complete
+Phase: Milestone v0.1.1 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-06-11 — Completed quick task 260611-k1w: unify version catalog (libs.versions.toml) across all Gradle build scripts
+Last activity: 2026-06-15 — Milestone v0.1.1 completed and archived
+
+### Roadmap Evolution
+
+- Phase 22 added 2026-06-14: Golden Screenshot and Evidence Storage Overhaul (FIX-07). Reopens v0.1.1 because the milestone's visual/emission evidence — its own proof of every codegen fix — is stored via the broken per-phase EVIDENCE_DIR pattern (archived phases regenerate as untracked garbage; current phases churn capturedAt sidecars; GBC ROMs captured in DMG render inverted). USER chose "new phase in v0.1.1, before merge". Source: backlog/v0.2.0/SEED-GOLDEN-SCREENSHOT-STORAGE-OVERHAUL.md (to be moved into the phase). See [[project_golden_screenshot_storage_decision]].
 
 ### Bisect state as of Plan 06d complete
 
@@ -81,7 +85,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 
 **Velocity:**
 
-- Total plans completed: 363
+- Total plans completed: 403
 - Average duration: 6.4 min
 - Total execution time: 0.71 hours
 
@@ -121,6 +125,11 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | 13.7 | 7 | - | - |
 | 13.8 | 7 | - | - |
 | 15 | 6 | - | - |
+| 16 | 10 | - | - |
+| 19 | 4 | - | - |
+| 20 | 4 | - | - |
+| 21 | 8 | - | - |
+| 22 | 14 | - | - |
 
 **Recent Trend:**
 
@@ -131,6 +140,11 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 
 | Phase/Plan | Duration | Tasks | Files |
 |------------|----------|-------|-------|
+| Phase 18 P26 | 3 min | 2 tasks | 2 files |
+| Phase 18 P23 | 6 min | 2 tasks | 2 files |
+| Phase 18 P22 | 8 min | 2 tasks | 2 files |
+| Phase 18 P20 | 3 min | 2 tasks | 1 file |
+| Phase 18 P16 | 4 min | 2 tasks | 1 file |
 | Phase 02 P04 | 12 min | 2 tasks | 5 files |
 | Phase 03-asset-pipeline-and-jvm-test-runner P01 | 6 | 2 tasks | 10 files |
 | Phase 03 P03 | 13 | 2 tasks | 5 files |
@@ -381,6 +395,56 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | Phase 15 P03 | 18 min | 2 tasks | 4 files |
 | Phase 15 P05 | 34 min | 3 tasks | 6 files |
 | Phase 15 P06 | 14 min | 2 tasks | 2 files |
+| Phase 16-seed-triage P02 | 7min | 2 tasks | 4 files |
+| Phase 16-seed-triage P05 | 6 | 2 tasks | 7 files |
+| Phase 16-seed-triage P08 | 2min | 1 tasks | 2 files |
+| Phase 16-seed-triage P09 | 5 | 2 tasks | 45 files |
+| Phase 17 P01 | 7 | 2 tasks | 1 files |
+| Phase 17 P02 | 1 | 3 tasks | 2 files |
+| Phase 17 P03 | 4 | 2 tasks | 2 files |
+| Phase 17 P04 | 7 | 2 tasks | 13 files |
+| Phase 17 P05 | 6 | 3 tasks | 5 files |
+| Phase 17 P08 | 4 | 2 tasks | 1 files |
+| Phase 17 P07 | 10 | 2 tasks | 5 files |
+| Phase 17 P09 | 5min | 2 tasks | 1 files |
+| Phase 17 P10 | 70s | 2 tasks | 1 files |
+| Phase 17 P11 | 45 | 3 tasks | 5 files |
+| Phase 17 P12 | 3 | 2 tasks | 13 files |
+| Phase 18 P02 | 4 | 1 tasks | 1 files |
+| Phase 18 P03 | 2 | 1 tasks | 2 files |
+| Phase 18 P04 | 2 | 2 tasks | 2 files |
+| Phase 18 P05 | 2 min | 1 tasks | 2 files |
+| Phase 18 P06 | 3 min | 3 tasks | 3 files |
+| Phase 18 P08 | 3 min | 3 tasks | 3 files |
+| Phase 18 P09 | 5min | 3 tasks | 2 files |
+| Phase 18 P10 | 10 | 3 tasks | 3 files |
+| Phase 18 P12 | 5 | 1 tasks | 4 files |
+| Phase 18 P13 | 8 min | 2 tasks | 1 files |
+| Phase 18 P14 | 7 | 2 tasks | 1 files |
+| Phase 18 P17 | 7 min | 1 tasks | 1 files |
+| Phase 18-deprecation-removals-and-sonar-burn-down P19 | 12 | 2 tasks | 1 files |
+| Phase 18 P21 | 8 min | 1 tasks | 1 files |
+| Phase 18 P24 | 90 | 2 tasks | 2 files |
+| Phase 19 P01 | 2 min | 2 tasks | 1 files |
+| Phase 19 P03 | 2 | 2 tasks | 6 files |
+| Phase 19 P04 | 2 | 2 tasks | 1 files |
+| Phase 20 P01 | 3min | 2 tasks | 4 files |
+| Phase 20 P03 | 4min | 2 tasks | 6 files |
+| Phase 20 P02 | 2 | 1 tasks | 1 files |
+| Phase 20 P04 | 2 | 2 tasks | 4 files |
+| Phase 21 P01 | 3 | 2 tasks | 4 files |
+| Phase 21 P03 | 5 | - tasks | - files |
+| Phase 21 P04 | 2 | 1 tasks | 2 files |
+| Phase 21 P07 | 59 min | 3 tasks | 2 files |
+| Phase 22 P02 | 2 | 1 tasks | 2 files |
+| Phase 22 P03 | 2 min | 2 tasks | 7 files |
+| Phase 22 P09 | 2 | 2 tasks | 9 files |
+| Phase 22 P04 | 2 | 1 tasks | 6 files |
+| Phase 22 P05 | 2 | 1 tasks | 16 files |
+| Phase 22 P08 | 4 | 2 tasks | 2 files |
+| Phase 22 P06 | 4 | 2 tasks | 3 files |
+| Phase 22 P07 | 2 sessions | 2 tasks | 4 files |
+| Phase 22 P14 | 1 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -389,6 +453,9 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- Plan 20-03: FIX-04 oracle test classes use separate Phase-20-specific test files with dedicated EVIDENCE_DIR (not new methods in existing tests) — mirrors Phase 12.8/19 clone-and-retarget precedent; avoids invasive EVIDENCE_DIR changes to production test classes
+- Plan 20-03: Both FIX-04 captures use gbcMode=true — metasprites and platformer-template both target GBC_COMPATIBLE; DMG mode produces false grayscale/green-tinted artifacts (D-05)
+- Plan 18-20: E-11/E-14 S3776 cleared via value-returning extract-method (buildZoneOnExitSwitch, buildEdgeAutoPositionSwitch, buildEncounterRollStatements, buildEncounterEntryGuard); GBDKSystemVisitor.kt S3776 = 0; byte-identity ROM sweep green
 - Plan 10.2-07: Fix shape Option B (Order-Tweaked) chosen for DEF-10.1-13-C 5th layer — swap addAll(hoistedBgFillCheckerboardStatements) before addAll(allSpriteDataLoads) in GBDKPipelineV2.kt mainBody buildList; mechanism = LCDC.4=1 shared $8000-$97FF VRAM, last-write wins, Plan 22 emit order corrupted sprite tile 0; all 5 locked tests preserved; RED test at commit 20691a7d
 - UAT_GUIDE.md created with 3 real Phase 07 debugging walkthroughs; emulator_press documented with frames+1 semantics; variable type range table added; UAT-02 requirement satisfied
 - scrollAware defaults to false on all VramTextVerifier methods to preserve backward compatibility; WINDOW layer is always unaffected by scroll registers (GB hardware behavior)
@@ -867,6 +934,55 @@ Recent decisions affecting current work:
 - [Phase ?]: W1: IOException-only catch in countUsedVisibleColors — scan-loop logic errors propagate, protecting REQ-5 OBJ-palette overflow guard from silent bypass
 - [Phase ?]: W2+W3: stemName-keyed prePermuteIndexedPng temp name + temporaryDir relocation — collision-free naming for same-basename sprites, and temp files outside @OutputDirectory fingerprint
 - [Phase ?]: Ran all 7 generateC tasks in single chained Gradle invocation (CLAUDE.md no-parallel-clean rule)
+- [Phase 16-seed-triage]: D-13 complied: single serial Gradle invocation for all 7 clean+buildRom
+- [Phase 16-seed-triage]: D-14 complied: SHA 8cef3dbca7d0868f42cf0d627921b8559d7754e8 pinned to substrate-sha.txt before build
+- [Phase 16-seed-triage]: BanksEmissionTest INV-2 GREEN: SEED-014 and SEED-015 signalled VERIFIED-ALREADY-FIXED
+- [Phase 16-seed-triage]: validatePlugins + pluginTest PASS: SEED-026 signalled VERIFIED-ALREADY-FIXED
+- [Phase ?]: SEED-014 VERIFIED-ALREADY-FIXED: INV-2+INV-6 GREEN at substrate SHA; hasZoneSceneBinder guard sufficient
+- [Phase ?]: SEED-015/016 VERIFIED-ALREADY-FIXED: trampoline calls dedup canonical pause_enter; Anchor-4 SRAM @Test present at BanksUatTest.kt:291
+- [Phase ?]: TODO-13.8 WR-01/02/03 CONFIRMED-OPEN: allocatedZoneBank single-zone gap, initialSubPaletteSlot no collision guard, RGB555 no range check; route Phase 19/20
+- [Phase ?]: D-08 passed: 10 visual seeds human-reviewed and locked by Michal Svacha on 2026-06-12
+- [Phase ?]: SEED-004 override: user confirmed elephant renders correctly (VERIFIED-ALREADY-FIXED), overriding agent-proposed CONFIRMED-OPEN
+- [Phase ?]: Visual cluster final split: 8 VERIFIED-ALREADY-FIXED + 2 CONFIRMED-OPEN (spawn-polish, sub-pixel-offset); cluster-visual.md locked for Plan 09 merge
+- [Phase ?]: TargetProfiles.GAME_BOY_SCREEN added as canonical single-source-of-truth for 160x144 Game Boy screen dimensions; GameBoyConstants const val dropped to val for derivation chain
+- [Phase ?]: MagicNumber ignoreNumbers=[0,1,2,3,4,8,16] covers idiomatic tile/bit values; expand if dry-run in 17-06 forces it
+- [Phase ?]: detekt.yml D-01 complexity blocks preserved byte-unchanged for Phase 18 S3776 work (LongMethod/TooManyFunctions/LongParameterList/LargeClass)
+- [Phase ?]: Entity Pools (#5) replaced with accurate data-pool API (pool delegate variants + acquire/free/hasSpace/activeCount)
+- [Phase ?]: Tweening section (#6) removed entirely — tween()/Easing.* absent (FEAT-TWEENING.md archive)
+- [Phase ?]: Camera System (#7) rewritten with CameraBuilder config + cameraOp(CameraAction.*) table
+- [Phase ?]: Physics (#9) rewritten: per-actor gravity(n)/velocity/bounce/maxFallSpeed/platformerMode() + physicsUpdate()
+- [Phase ?]: All 13 stale-API sections rewritten across plans 17-08/09/10
+- [Phase ?]: D-16 cross-doc pass: zero stale-API references in any non-DSL_REFERENCE doc; FEAT-* provenance D-11 complete with real removal-commit hashes
+- [Phase ?]: D-01: Hard-remove whenever with no @Deprecated grace — pool-collision overload relocated to runIf, all 80+ call sites migrated in same atomic wave
+- [Phase ?]: Replace whenever with runIf throughout DSL_REFERENCE.md (DEPR-01 doc half)
+- [Phase ?]: DEPR-02: Deleted typed-vs-string equivalence test; String overload removed, no meaningful re-expression possible
+- [Phase ?]: Two-tier deprecation rule: post-1.0 uses @Deprecated grace period; pre-1.0/Hardening milestones use hard removal with CHANGELOG as minimum bar (D-04)
+- [Phase ?]: N-01 batchAssert: EXTRACT-METHOD (not NOSONAR) — per-type helpers + CheckResult data class reduce cc=74 to below threshold
+- [Phase ?]: Promoted walkOps from local closure to top-level private fun with explicit result parameter (E-13+E-19); extracted three buildHeaderFile sub-builders as value-returning functions (E-15)
+- [Phase 18]: Per-type puzzle helpers return PuzzleObjectOutput(vars, functions, perFrameCalls) — value-returning extract-method with no shared-mutable accumulation — Pitfall 1 compliance: extracting each sealed-interface branch into a focused helper that returns its contribution as data (not side-effecting a shared list) preserves emission order and enables future independent testing of each puzzle type
+- [Phase ?]: E-02 MenuVisitor.buildMenuFunction (cc90) decomposed: 11 class methods + 5 file-level privates; 7-example byte-identity sweep passes
+- [Phase ?]: D-07 byte-identity oracle baseline captured at phase start; before.sha256 records 3 generated C hashes from clean dual buildRom
+- [Phase ?]: after.sha256 byte-identity oracle CLEAN: Phase 19 introduced zero production codegen drift (D-07/Req 5)
+- [Phase ?]: D-08 commit separation confirmed: all 8 Phase 19 commits are evidence/test/doc only, zero S3776 refactors
+- [Phase ?]: D-02 gate: INV-2/INV-5/INV-6 GREEN at HEAD; SEED-014/015/016 VERIFIED-ALREADY-FIXED
+- [Phase ?]: D-06 two-tier byte-identity proof: per-commit baselines (tier 1) + phase-close 7-example sweep (tier 2) — all 14 .c files stable, zero generated-C drift
+- [Phase ?]: SEED-021 closed: pivotAdjust(Int) DSL setter is single source of truth; visitor reads from config with fallback
+- [Phase ?]: GameIRSerializer: Option 2 documented contract for 10 stubs; GenericSystem round-trips; full typed SystemIR serialize-only
+- [Phase ?]: SEED-027 + SEED-028 closed VERIFIED-ALREADY-FIXED (Phase 18); archived to seeds/archive/ with grep evidence; zero production code change
+- [Phase ?]: GBC-target ROMs must be UAT-captured with gbcMode=true; discoverFiles() does not enable GBC (DMG default inverts the palette)
+- [Phase ?]: Phase 21 plan 21-07: all four LOCKED-visual platformer seeds archived (3 FIXED, 1 CLOSED-AS-ACCEPTED) on binding GBC-mode sign-off
+- [Phase ?]: CGB_FLAG_OFFSET=0x143L named constant; discoverFiles auto-detects gbcMode from ROM header byte 0x143
+- [Phase ?]: .planning/phases/**/evidence/ gitignore rule for evidence scratch dirs
+- [Phase ?]: gbkt.updateGoldens systemProperty wiring uses project.hasProperty (opt-in boolean, no accidental re-bless)
+- [Phase ?]: EVIDENCE_DIR redirected to build/gbkt/test-evidence across all 9 gbkt-backend-gbdk emission tests
+- [Phase ?]: Raw cp only for golden migration — sha256 equality is the binding tamper proof per T-22-04
+- [Phase ?]: Raw byte copy (cp) for golden migration — ImageIO re-encode strictly forbidden to preserve user-blessed GBC baseline bytes
+- [Phase ?]: D-07 guard is caller responsibility in GBC test helpers
+- [Phase ?]: Phase-10 behavior shots not in blessed anchor set — smoke-only, no golden
+- [Phase ?]: MetaspritePhase20OracleTest perceptual .txt to build/gbkt/test-evidence scratch (R3, no text golden)
+- [Phase ?]: Preserve animation-structural gate
+- [Phase ?]: Keep perceptual smoke assertions in 128UatTest
+- [Phase ?]: Explicit gbcMode in build.gradle.kts
 
 ### Pending Todos
 
@@ -962,8 +1078,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-09T08:02:17.065Z
-Stopped at: Phase 15 context gathered
+Last session: 2026-06-15T06:43:13.987Z
+Stopped at: Completed 22-06-PLAN.md
 
 ## Operator Next Steps
 

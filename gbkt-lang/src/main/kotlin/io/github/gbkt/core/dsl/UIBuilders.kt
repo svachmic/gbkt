@@ -140,7 +140,7 @@ class DialogBuilder(private val id: String) {
  * // In a scene:
  * scene("village") {
  *     frame {
- *         whenever(buttons.a.pressed) {
+ *         runIf(buttons.a.pressed) {
  *             elder.say("Welcome, traveler.")
  *             elder.choice {
  *                 option("Accept quest") { navigate(questScene) }

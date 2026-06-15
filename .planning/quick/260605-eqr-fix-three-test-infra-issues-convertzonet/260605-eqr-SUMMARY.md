@@ -1,6 +1,7 @@
 ---
 quick_task: 260605-eqr
 type: quick-execute
+status: complete
 completed: 2026-06-05
 duration_minutes: 35
 branch: feat/d_and_d_gaps

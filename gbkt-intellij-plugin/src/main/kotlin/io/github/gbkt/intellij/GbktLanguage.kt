@@ -25,7 +25,11 @@ import com.intellij.lang.Language
  * files.
  */
 object GbktLanguage : Language("gbkt") {
-    private fun readResolve(): Any = GbktLanguage
+    // readResolve() is the Java serialization hook that returns the singleton when a deserialized
+    // instance is resolved. Required for Kotlin objects used as IntelliJ Language singletons to
+    // survive plugin classloader reload without creating a second Language instance — the method
+    // itself is invoked by the JVM serialization machinery, not by Kotlin call-sites.
+    @Suppress("UnusedPrivateMember") private fun readResolve(): Any = GbktLanguage
 
     override fun getDisplayName(): String = "gbkt"
 

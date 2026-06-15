@@ -73,33 +73,44 @@ class VariableInspector(private val memory: MemoryAccess, symFile: File? = null)
     fun loadSymbols(symFile: File) {
         symFile.readLines().forEach { line ->
             val parts = line.trim().split("\\s+".toRegex())
-            if (parts.size >= 3 && parts[0] == "DEF" && parts[1].startsWith("_")) {
-                // Strip all leading underscores — SDCC uses one (_score), GBDK .noi uses two
-                // (__score)
-                val name = parts[1].trimStart('_')
-                if (name.isEmpty()) return@forEach
-                val addrStr = parts[2]
-                val address =
-                    try {
-                        when {
-                            // SDCC .sym format: "00:C100" — take part after colon as hex
-                            addrStr.contains(":") -> addrStr.substringAfter(":").toInt(16)
-                            // GBDK .noi format: "0xC0D5" — strip 0x prefix
-                            addrStr.startsWith("0x") || addrStr.startsWith("0X") ->
-                                addrStr.removePrefix("0x").removePrefix("0X").toInt(16)
-                            // Unknown format — skip
-                            else -> return@forEach
-                        }
-                    } catch (_: Exception) {
-                        return@forEach
-                    }
-                // Only load symbols in WRAM range — filters out ROM functions, I/O regs, linker
-                // metadata
-                if (address !in WRAM_START..WRAM_END) return@forEach
-                symbols[name] = SymbolEntry(name, address, inferVariableType(name))
-            }
+            if (parts.size < 3 || parts[0] != "DEF" || !parts[1].startsWith("_")) return@forEach
+            val name = parseSymbolName(parts[1]) ?: return@forEach
+            val address = parseSymbolAddress(parts[2]) ?: return@forEach
+            if (address !in WRAM_START..WRAM_END) return@forEach
+            symbols[name] = SymbolEntry(name, address, inferVariableType(name))
         }
     }
+
+    /**
+     * Strips leading underscores from a raw SDCC/GBDK symbol name and returns the clean DSL name.
+     *
+     * SDCC uses one leading underscore (`_score`); GBDK `.noi` uses two (`__score`). Returns null
+     * if the stripped result is empty (bare underscore lines are skipped).
+     */
+    private fun parseSymbolName(rawName: String): String? {
+        val name = rawName.trimStart('_')
+        return if (name.isEmpty()) null else name
+    }
+
+    /**
+     * Parses a symbol address string in either SDCC `.sym` or GBDK `.noi` format.
+     *
+     * - SDCC `.sym` format: `"bank:ADDR"` — hex after the colon (e.g. `"00:C100"` → 0xC100)
+     * - GBDK `.noi` format: `"0xADDR"` — hex after the `0x` prefix (e.g. `"0xC0D5"` → 0xC0D5)
+     *
+     * Returns null for unknown formats or when parsing fails.
+     */
+    private fun parseSymbolAddress(addrStr: String): Int? =
+        try {
+            when {
+                addrStr.contains(":") -> addrStr.substringAfter(":").toInt(16)
+                addrStr.startsWith("0x") || addrStr.startsWith("0X") ->
+                    addrStr.removePrefix("0x").removePrefix("0X").toInt(16)
+                else -> null
+            }
+        } catch (_: Exception) {
+            null
+        }
 
     /**
      * Reads the current byte value for a named DSL variable.

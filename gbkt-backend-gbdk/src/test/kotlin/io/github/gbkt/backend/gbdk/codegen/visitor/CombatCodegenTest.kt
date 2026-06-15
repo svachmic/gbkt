@@ -311,7 +311,7 @@ class CombatCodegenTest {
 
     @Test
     fun `combatEngine onVictoryCondition generates per-frame condition check`() {
-        // Use a simple IfOp with a literal condition: whenever(1 == 1) { }
+        // Use a simple IfOp with a literal condition: runIf(1 == 1) { }
         val victoryCondition =
             IfOp(
                 condition = BinaryExpr(left = Literal(1), op = BinaryOp.EQ, right = Literal(0)),

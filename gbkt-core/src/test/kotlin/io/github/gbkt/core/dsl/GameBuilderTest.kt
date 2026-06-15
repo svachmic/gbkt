@@ -100,7 +100,7 @@ class GameBuilderTest {
                     val titleScene =
                         scene("title") {
                             frame {
-                                whenever(buttons.start.pressed) { navigate(SceneRef("title")) }
+                                runIf(buttons.start.pressed) { navigate(SceneRef("title")) }
                             }
                         }
                     start = titleScene
@@ -281,8 +281,8 @@ class GameBuilderTest {
         val ir =
             game("TestGame") {
                     config {
-                        cartridge = Cartridge.ROM_ONLY
-                        romBanks = 2
+                        cartridge(Cartridge.ROM_ONLY)
+                        romBanks(2)
                     }
                     val gameScene = scene("game") { enter {} }
                     start = gameScene
@@ -307,8 +307,8 @@ class GameBuilderTest {
                         scene("game") {
                             enter { showSprites() }
                             frame {
-                                whenever(dpad.up.held) { moveBy(player, 0, -2) }
-                                whenever(dpad.down.held) { moveBy(player, 0, 2) }
+                                runIf(dpad.up.held) { moveBy(player, 0, -2) }
+                                runIf(dpad.down.held) { moveBy(player, 0, 2) }
                             }
                         }
 
@@ -318,7 +318,7 @@ class GameBuilderTest {
                                 hideSprites()
                                 clear()
                             }
-                            frame { whenever(buttons.start.pressed) { navigate(gameScene) } }
+                            frame { runIf(buttons.start.pressed) { navigate(gameScene) } }
                         }
 
                     start = titleScene

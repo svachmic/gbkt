@@ -42,20 +42,16 @@ class PongNoExitRegressionTest {
 
     companion object {
         /**
-         * Evidence is written under the **active checkout root** (worktree-safe).
+         * Emission scratch is written under the module's gitignored build/ directory (R1 + R3).
          *
          * `user.dir` resolves to the Gradle project's working directory, which inside a Claude Code
          * worktree is the worktree root — not the main repository. Hard-coding the main-repo
          * absolute path would silently route evidence files outside the active checkout (#3099).
+         * The path `build/gbkt/test-evidence` is gitignored via the root `.gitignore` `build/`
+         * pattern — no committed artifact.
          */
         val EVIDENCE_DIR =
-            File(System.getProperty("user.dir"))
-                .resolve(
-                    "../../.planning/phases/" +
-                        "13.5-framework-primitives-graphics-level-codegen-inserted/" +
-                        "evidence/tier1-shape"
-                )
-                .normalize()
+            File(System.getProperty("user.dir")).resolve("build/gbkt/test-evidence").normalize()
     }
 
     // -------------------------------------------------------------------------

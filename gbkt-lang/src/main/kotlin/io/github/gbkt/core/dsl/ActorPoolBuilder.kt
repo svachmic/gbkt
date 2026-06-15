@@ -34,7 +34,7 @@ import kotlin.reflect.KProperty
  *
  * ```kotlin
  * forEachActive(bulletPool, "bi") { bi ->
- *     whenever(bullet.y isBelow 4) { destroy(bulletPool, bi.toExpr()) }
+ *     runIf(bullet.y isBelow 4) { destroy(bulletPool, bi.toExpr()) }
  * }
  * ```
  */
@@ -65,21 +65,21 @@ class ActorPoolRef(val poolId: String, val maxSize: Int = 0, val actorTemplateId
 // =============================================================================
 
 /**
- * Typed wrapper produced by [ActorPoolRef.collides]. Carries both pool refs so the [whenever]
- * overload can derive iterator slot variable names matching the codegen's auto-named loop variables
- * (e.g. `_pool_bi`, `_pool_ei`).
+ * Typed wrapper produced by [ActorPoolRef.collides]. Carries both pool refs so the [runIf] overload
+ * can derive iterator slot variable names matching the codegen's auto-named loop variables (e.g.
+ * `_pool_bi`, `_pool_ei`).
  *
- * DSL-only — the IR-level form emitted by [whenever] is the existing `CallExpr("collides",
+ * DSL-only — the IR-level form emitted by [runIf] is the existing `CallExpr("collides",
  * [VarRef(templateA), VarRef(templateB)])` shape that `tryBuildPoolCollisionStatement` already
  * detects in the GBDK backend.
  */
 data class PoolPoolCollisionExpr(val poolA: ActorPoolRef, val poolB: ActorPoolRef)
 
 /**
- * Returns a typed pool-pool collision expression for use in [whenever] with a 2-arg lambda.
+ * Returns a typed pool-pool collision expression for use in [runIf] with a 2-arg lambda.
  *
  * ```kotlin
- * whenever(bulletPool.collides(enemyPool)) { bi, ei ->
+ * runIf(bulletPool.collides(enemyPool)) { bi, ei ->
  *     score += 10
  *     destroy(bulletPool, bi)
  *     destroy(enemyPool, ei)
@@ -192,7 +192,7 @@ class ActorPoolDelegate(
  *
  * // In a scene frame block:
  * frame {
- *     whenever(buttons.a.pressed) {
+ *     runIf(buttons.a.pressed) {
  *         spawn(bulletPool, player.x, player.y)
  *     }
  * }
@@ -222,7 +222,7 @@ fun GameBuilder.pool(
  *
  * ```kotlin
  * frame {
- *     whenever(buttons.a.pressed) {
+ *     runIf(buttons.a.pressed) {
  *         spawn(bulletPool, player.x.toInt(), player.y.toInt())
  *     }
  * }
@@ -250,7 +250,7 @@ fun ScriptBuilder.spawn(pool: ActorPoolRef, x: Int, y: Int) {
  *
  * ```kotlin
  * frame {
- *     whenever(bulletActive[i] isEqualTo 0) {
+ *     runIf(bulletActive[i] isEqualTo 0) {
  *         destroy(bulletPool, i.toExpr()) { playAnim("explode") }
  *     }
  * }
@@ -313,7 +313,7 @@ fun ScriptBuilder.forEachActive(
  *
  * ```kotlin
  * forEachActive(bulletPool, "bi") { bi ->
- *     whenever(bullet.y isBelow 4) { destroy(bulletPool, bi.toExpr()) }
+ *     runIf(bullet.y isBelow 4) { destroy(bulletPool, bi.toExpr()) }
  * }
  * ```
  */
@@ -339,11 +339,11 @@ fun ScriptBuilder.forEachActive(
 /**
  * Returns an [Expr] expression evaluating to the number of active slots in the pool.
  *
- * Emits `pool_<poolId>_active_count()` in generated C. Usable in `whenever()` conditions and
- * variable assignments.
+ * Emits `pool_<poolId>_active_count()` in generated C. Usable in `runIf()` conditions and variable
+ * assignments.
  *
  * ```kotlin
- * whenever(bulletPool.activeCount isEqualTo 0) { navigate(winScene) }
+ * runIf(bulletPool.activeCount isEqualTo 0) { navigate(winScene) }
  * ```
  */
 val ActorPoolRef.activeCount: Expr
@@ -357,7 +357,7 @@ val ActorPoolRef.activeCount: Expr
  *
  * ```kotlin
  * frame {
- *     whenever(buttons.start.pressed) { bulletPool.destroyAll() }
+ *     runIf(buttons.start.pressed) { bulletPool.destroyAll() }
  * }
  * ```
  */
@@ -366,7 +366,7 @@ fun ScriptBuilder.destroyAll(pool: ActorPoolRef) {
 }
 
 // =============================================================================
-// POOL-POOL COLLISION — typed `whenever` overload with iterator handles
+// POOL-POOL COLLISION — typed `runIf` overload with iterator handles
 // =============================================================================
 
 /**
@@ -377,7 +377,7 @@ fun ScriptBuilder.destroyAll(pool: ActorPoolRef) {
  * names are the user's choice — no magic strings.
  *
  * ```kotlin
- * whenever(bulletPool.collides(enemyPool)) { bi, ei ->
+ * runIf(bulletPool.collides(enemyPool)) { bi, ei ->
  *     score += 10
  *     destroy(bulletPool, bi)
  *     destroy(enemyPool, ei)
@@ -393,7 +393,7 @@ fun ScriptBuilder.destroyAll(pool: ActorPoolRef) {
  * (`_pool_<short>i`), so `destroy(pool, iter)` resolves to `pool_<id>_destroy(_pool_<short>i)` in
  * the generated C.
  */
-fun ScriptBuilder.whenever(
+fun ScriptBuilder.runIf(
     collision: PoolPoolCollisionExpr,
     block: ScriptBuilder.(PoolIterator, PoolIterator) -> Unit,
 ) {

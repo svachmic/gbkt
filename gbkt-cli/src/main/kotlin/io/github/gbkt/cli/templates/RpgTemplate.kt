@@ -65,19 +65,19 @@ object RpgTemplate : Template {
         |    scene("town") {
         |        every.frame {
         |            // 4-directional movement
-        |            whenever(button.down.isPressed) {
+        |            runIf(button.down.isPressed) {
         |                player.y += moveSpeed
         |                playerDir set 0
         |            }
-        |            whenever(button.up.isPressed) {
+        |            runIf(button.up.isPressed) {
         |                player.y -= moveSpeed
         |                playerDir set 1
         |            }
-        |            whenever(button.left.isPressed) {
+        |            runIf(button.left.isPressed) {
         |                player.x -= moveSpeed
         |                playerDir set 2
         |            }
-        |            whenever(button.right.isPressed) {
+        |            runIf(button.right.isPressed) {
         |                player.x += moveSpeed
         |                playerDir set 3
         |            }
@@ -85,25 +85,25 @@ object RpgTemplate : Template {
         |            // Tilemap collision (uncomment when tilemap is loaded)
         |            // val tileX = player.x / tileSize
         |            // val tileY = player.y / tileSize
-        |            // whenever(world.isBlocked(tileX, tileY)) {
+        |            // runIf(world.isBlocked(tileX, tileY)) {
         |            //     // Undo movement on collision
-        |            //     whenever(playerDir isEqual 0) { player.y -= moveSpeed }
-        |            //     whenever(playerDir isEqual 1) { player.y += moveSpeed }
-        |            //     whenever(playerDir isEqual 2) { player.x += moveSpeed }
-        |            //     whenever(playerDir isEqual 3) { player.x -= moveSpeed }
+        |            //     runIf(playerDir isEqual 0) { player.y -= moveSpeed }
+        |            //     runIf(playerDir isEqual 1) { player.y += moveSpeed }
+        |            //     runIf(playerDir isEqual 2) { player.x += moveSpeed }
+        |            //     runIf(playerDir isEqual 3) { player.x -= moveSpeed }
         |            // }
         |
         |            // Screen bounds (remove when using tilemap)
-        |            whenever(player.x isBelow 0) { player.x set 0 }
-        |            whenever(player.x isAbove 144) { player.x set 144 }
-        |            whenever(player.y isBelow 0) { player.y set 0 }
-        |            whenever(player.y isAbove 128) { player.y set 128 }
+        |            runIf(player.x isBelow 0) { player.x set 0 }
+        |            runIf(player.x isAbove 144) { player.x set 144 }
+        |            runIf(player.y isBelow 0) { player.y set 0 }
+        |            runIf(player.y isAbove 128) { player.y set 128 }
         |
         |            // NPC interaction (uncomment when NPC is added)
-        |            // whenever(button.a.justPressed) {
+        |            // runIf(button.a.justPressed) {
         |            //     val nearNpc = (player.x - npc.x).abs() < 20 and
         |            //                   (player.y - npc.y).abs() < 20
-        |            //     whenever(nearNpc) {
+        |            //     runIf(nearNpc) {
         |            //         dialog("Villager") {
         |            //             line("Welcome to our town!")
         |            //             line("The cave to the north")
@@ -121,7 +121,7 @@ object RpgTemplate : Template {
         |        text("Press START", 4, 10)
         |
         |        every.frame {
-        |            whenever(button.start.justPressed) {
+        |            runIf(button.start.justPressed) {
         |                camera.fadeOut(30.frames) {
         |                    scene("town")
         |                }

@@ -20,14 +20,14 @@ import io.github.gbkt.core.ir.VarRef
  * Typed reference to a hardware input (d-pad direction or button).
  *
  * Wraps a GBDK joypad constant name (e.g. "J_UP", "J_A") and produces [Expr] instances for use in
- * [ScriptBuilder.whenever] conditions. Use [held] for continuous input, [pressed] for
- * edge-triggered input, and [released] for falling-edge (key-up) input.
+ * [ScriptBuilder.runIf] conditions. Use [held] for continuous input, [pressed] for edge-triggered
+ * input, and [released] for falling-edge (key-up) input.
  *
  * Example:
  * ```kotlin
- * whenever(dpad.up.held) { moveBy(player, 0, -2) }
- * whenever(buttons.a.pressed) { jump() }
- * whenever(buttons.b.released) { cancelDash() }
+ * runIf(dpad.up.held) { moveBy(player, 0, -2) }
+ * runIf(buttons.a.pressed) { jump() }
+ * runIf(buttons.b.released) { cancelDash() }
  * ```
  *
  * @param gbdkConstant The GBDK joypad bitmask constant name (e.g. "J_UP", "J_A").
@@ -67,7 +67,7 @@ class InputRef(
      * Produces `CallExpr(releasedFn, [VarRef(gbdkConstant)])`. True when the input was held on the
      * previous frame but is not held on the current frame.
      *
-     * Example: `whenever(buttons.b.released) { cancelDash() }`
+     * Example: `runIf(buttons.b.released) { cancelDash() }`
      */
     val released: Expr
         get() = CallExpr(releasedFn, listOf(VarRef(gbdkConstant)))
@@ -87,10 +87,10 @@ class InputRef(
  *
  * Usage:
  * ```kotlin
- * whenever(dpad.left.held) { moveBy(paddle, -3, 0) }
- * whenever(dpad.right.held) { moveBy(paddle, 3, 0) }
- * whenever(dpad.up.pressed) { jump() }
- * whenever(dpad.any) { stepCount += 1 }
+ * runIf(dpad.left.held) { moveBy(paddle, -3, 0) }
+ * runIf(dpad.right.held) { moveBy(paddle, 3, 0) }
+ * runIf(dpad.up.pressed) { jump() }
+ * runIf(dpad.any) { stepCount += 1 }
  * // dx = dpad.x  → -1 (left), 0 (none), +1 (right)
  * // dy = dpad.y  → -1 (up), 0 (none), +1 (down)
  * ```
@@ -178,10 +178,10 @@ object dpad {
  *
  * Usage:
  * ```kotlin
- * whenever(buttons.a.pressed) { jump() }
- * whenever(buttons.start.pressed) { navigate(pauseScene) }
- * whenever(buttons.b.held) { sprint() }
- * whenever(buttons.b.released) { cancelSprint() }
+ * runIf(buttons.a.pressed) { jump() }
+ * runIf(buttons.start.pressed) { navigate(pauseScene) }
+ * runIf(buttons.b.held) { sprint() }
+ * runIf(buttons.b.released) { cancelSprint() }
  * ```
  */
 @Suppress("ClassNaming")

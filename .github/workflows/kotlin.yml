@@ -231,8 +231,10 @@ jobs:
       - name: Static analysis (detekt + spotless)
         # All lint/format checks live in this job — the build job runs with -x detekt
         # -x spotlessCheck. :gbkt-gradle-plugin:spotlessCheck is addressed explicitly
-        # (included build — root task names don't reach it); the plugin build does not
-        # apply detekt (tracked debt).
+        # (included build — root task names don't reach it via the subprojects block).
+        # Plain `detekt` now covers the composite via a root-task bridge:
+        # tasks.named("detekt") { dependsOn(gradle.includedBuild("gbkt-gradle-plugin").task(":detekt")) }
+        # Gap D-03 is closed — no detekt exclusions for the composite remain.
         run: ./gradlew detekt spotlessCheck :gbkt-gradle-plugin:spotlessCheck
 
   version-consistency:

@@ -23,10 +23,10 @@ import io.github.gbkt.core.ir.CombatStateId
  * scene("battle") {
  *     every.frame {
  *         battleUpdate(combat)
- *         whenever(combatIsInState(CombatStates.VICTORY)) {
+ *         runIf(combatIsInState(CombatStates.VICTORY)) {
  *             navigate(victoryScene)
  *         }
- *         whenever(combatIsInState(CombatStates.DEFEAT)) {
+ *         runIf(combatIsInState(CombatStates.DEFEAT)) {
  *             navigate(gameOverScene)
  *         }
  *     }

@@ -484,6 +484,149 @@ class DialogVisitor(private val gameIR: GameIR) {
         )
     }
 
+    /** Computed text-area layout for a single [DialogDef]. */
+    private data class DialogLayout(
+        val textStartX: Int,
+        val textStartY: Int,
+        val textWidth: Int,
+        val textHeight: Int,
+        val hasBorder: Boolean,
+        val hasPortrait: Boolean,
+        val hasSpeaker: Boolean,
+        val printFn: String,
+        val textStartXBase: Int,
+        val textStartYBase: Int,
+    )
+
+    /**
+     * Compute the text-area layout from a [DialogDef]: insets for border, portrait, and speaker
+     * name, plus the print-helper function name.
+     */
+    private fun computeDialogLayout(def: DialogDef): DialogLayout {
+        val hasBorder = def.border != BorderStyle.NONE
+        val textStartXBase = if (hasBorder) 1 else 0
+        val textStartYBase = if (hasBorder) 1 else 0
+        val textWidthBase = def.boxWidth - (if (hasBorder) 2 else 0)
+        val textHeightBase = def.boxHeight - (if (hasBorder) 2 else 0)
+        val hasPortrait = def.portrait != null
+        val textStartX = textStartXBase + (if (hasPortrait) 2 else 0)
+        val textWidth = textWidthBase - (if (hasPortrait) 2 else 0)
+        val hasSpeaker = def.speaker != null
+        val textStartY = textStartYBase + (if (hasSpeaker) 1 else 0)
+        val textHeight = textHeightBase - (if (hasSpeaker) 1 else 0)
+        val printFn =
+            if (def.fontMode == FontMode.VARIABLE_WIDTH) "_vwf_print_at" else "_win_print_at"
+        return DialogLayout(
+            textStartX,
+            textStartY,
+            textWidth,
+            textHeight,
+            hasBorder,
+            hasPortrait,
+            hasSpeaker,
+            printFn,
+            textStartXBase,
+            textStartYBase,
+        )
+    }
+
+    /**
+     * Generate `set_win_tiles` statements for a CUSTOM border whose [DialogDef.customBorderTiles]
+     * may be absent. Falls back to SINGLE if the tile list is null or too short.
+     */
+    private fun buildCustomBorderStatements(def: DialogDef): List<CStatement> {
+        val customTiles = def.customBorderTiles
+        return if (customTiles != null && customTiles.size >= 8) {
+            buildBorderStatements(
+                def.boxX,
+                def.boxY,
+                def.boxWidth,
+                def.boxHeight,
+                BorderTiles(
+                    tl = customTiles[0],
+                    tr = customTiles[1],
+                    bl = customTiles[2],
+                    br = customTiles[3],
+                    h = customTiles[4],
+                    v = customTiles[6], // H-top, V-left used as primary
+                ),
+            )
+        } else {
+            // Fallback to SINGLE
+            buildBorderStatements(
+                def.boxX,
+                def.boxY,
+                def.boxWidth,
+                def.boxHeight,
+                BorderTiles(tl = 0xDA, tr = 0xBF, bl = 0xC0, br = 0xD9, h = 0xC4, v = 0xB3),
+            )
+        }
+    }
+
+    /**
+     * Generate `set_win_tiles` border statements for the [def]'s [DialogDef.border] style. Returns
+     * an empty list for [BorderStyle.NONE].
+     */
+    private fun buildDialogBorderStatements(def: DialogDef): List<CStatement> =
+        when (def.border) {
+            BorderStyle.NONE -> emptyList()
+            BorderStyle.SINGLE ->
+                buildBorderStatements(
+                    def.boxX,
+                    def.boxY,
+                    def.boxWidth,
+                    def.boxHeight,
+                    BorderTiles(tl = 0xDA, tr = 0xBF, bl = 0xC0, br = 0xD9, h = 0xC4, v = 0xB3),
+                )
+            BorderStyle.DOUBLE ->
+                buildBorderStatements(
+                    def.boxX,
+                    def.boxY,
+                    def.boxWidth,
+                    def.boxHeight,
+                    BorderTiles(tl = 0xC9, tr = 0xBB, bl = 0xC8, br = 0xBC, h = 0xCD, v = 0xBA),
+                )
+            BorderStyle.CUSTOM -> buildCustomBorderStatements(def)
+        }
+
+    /**
+     * Build the per-character body of the typewriter inner loop: places one character at the
+     * computed position and optionally inserts a delay.
+     */
+    private fun buildTypewriterCharBody(
+        def: DialogDef,
+        textStartX: Int,
+        textStartY: Int,
+        textWidth: Int,
+    ): List<CStatement> {
+        val stmts = mutableListOf<CStatement>()
+        stmts +=
+            CExprStatement(
+                CCall(
+                    "set_win_tiles",
+                    listOf(
+                        CBinaryExpr(
+                            CLiteral(textStartX),
+                            "+",
+                            CBinaryExpr(CVar("_tw_i"), "%", CLiteral(textWidth)),
+                        ),
+                        CBinaryExpr(
+                            CLiteral(textStartY),
+                            "+",
+                            CBinaryExpr(CVar("_tw_i"), "/", CLiteral(textWidth)),
+                        ),
+                        CLiteral(1),
+                        CLiteral(1),
+                        CRawExpr("(unsigned char*)&_text[_pg_off + _tw_i]"),
+                    ),
+                )
+            )
+        if (def.textSpeed > 0) {
+            stmts += CExprStatement(CCall("delay_frames", listOf(CLiteral(def.textSpeed))))
+        }
+        return stmts
+    }
+
     /**
      * Generate the `show_dialog_<id>()` function for a single [DialogDef].
      *
@@ -498,31 +641,10 @@ class DialogVisitor(private val gameIR: GameIR) {
      *
      * Zero gotoxy/printf — all text goes through `_win_print_at` or `_vwf_print_at`.
      */
-    @Suppress("LongMethod", "CyclomaticComplexMethod")
     private fun buildDialogFunction(def: DialogDef): CFunction {
         val sanitizedId = def.id.replace('-', '_').replace(' ', '_')
+        val layout = computeDialogLayout(def)
         val body = mutableListOf<CStatement>()
-
-        // Determine text area inset based on border style
-        val hasBorder = def.border != BorderStyle.NONE
-        val textStartXBase = if (hasBorder) 1 else 0
-        val textStartYBase = if (hasBorder) 1 else 0
-        val textWidthBase = def.boxWidth - (if (hasBorder) 2 else 0)
-        val textHeightBase = def.boxHeight - (if (hasBorder) 2 else 0)
-
-        // Portrait offset — portrait takes 2 tiles of horizontal space
-        val hasPortrait = def.portrait != null
-        val textStartX = textStartXBase + (if (hasPortrait) 2 else 0)
-        val textWidth = textWidthBase - (if (hasPortrait) 2 else 0)
-
-        // Speaker name reduces text height by 1 row
-        val hasSpeaker = def.speaker != null
-        val textStartY = textStartYBase + (if (hasSpeaker) 1 else 0)
-        val textHeight = textHeightBase - (if (hasSpeaker) 1 else 0)
-
-        // Font helper function name based on fontMode
-        val printFn =
-            if (def.fontMode == FontMode.VARIABLE_WIDTH) "_vwf_print_at" else "_win_print_at"
 
         // C89: declare local variables at the top of the function
         body += CVarDecl("_pg_off", CU8, CLiteral(0)) // page offset into message string
@@ -533,75 +655,10 @@ class DialogVisitor(private val gameIR: GameIR) {
         body += GBDKMacros.showWin()
 
         // 2. Border drawing (before text)
-        when (def.border) {
-            BorderStyle.NONE -> {
-                // No border — text uses full box area
-            }
-            BorderStyle.SINGLE -> {
-                // CP437 single-line box drawing characters
-                body +=
-                    buildBorderStatements(
-                        def.boxX,
-                        def.boxY,
-                        def.boxWidth,
-                        def.boxHeight,
-                        BorderTiles(tl = 0xDA, tr = 0xBF, bl = 0xC0, br = 0xD9, h = 0xC4, v = 0xB3),
-                    )
-            }
-            BorderStyle.DOUBLE -> {
-                // CP437 double-line box drawing characters
-                body +=
-                    buildBorderStatements(
-                        def.boxX,
-                        def.boxY,
-                        def.boxWidth,
-                        def.boxHeight,
-                        BorderTiles(tl = 0xC9, tr = 0xBB, bl = 0xC8, br = 0xBC, h = 0xCD, v = 0xBA),
-                    )
-            }
-            BorderStyle.CUSTOM -> {
-                // User-provided tile indices (8 values: TL, TR, BL, BR, H-top, H-bottom, V-left,
-                // V-right). Fall back to SINGLE if customBorderTiles is null.
-                val customTiles = def.customBorderTiles
-                if (customTiles != null && customTiles.size >= 8) {
-                    body +=
-                        buildBorderStatements(
-                            def.boxX,
-                            def.boxY,
-                            def.boxWidth,
-                            def.boxHeight,
-                            BorderTiles(
-                                tl = customTiles[0],
-                                tr = customTiles[1],
-                                bl = customTiles[2],
-                                br = customTiles[3],
-                                h = customTiles[4],
-                                v = customTiles[6], // H-top, V-left used as primary
-                            ),
-                        )
-                } else {
-                    // Fallback to SINGLE
-                    body +=
-                        buildBorderStatements(
-                            def.boxX,
-                            def.boxY,
-                            def.boxWidth,
-                            def.boxHeight,
-                            BorderTiles(
-                                tl = 0xDA,
-                                tr = 0xBF,
-                                bl = 0xC0,
-                                br = 0xD9,
-                                h = 0xC4,
-                                v = 0xB3,
-                            ),
-                        )
-                }
-            }
-        }
+        body += buildDialogBorderStatements(def)
 
         // 3. Portrait sprite rendering
-        if (hasPortrait) {
+        if (layout.hasPortrait) {
             val portraitTile = 0 // portrait tile index — first tile of portrait sprite
             // Load portrait tile into dedicated sprite slot
             body +=
@@ -612,8 +669,8 @@ class DialogVisitor(private val gameIR: GameIR) {
                     )
                 )
             // Position portrait at dialog box corner (OAM offsets: +8 X, +16 Y)
-            val portraitX = (def.boxX + textStartXBase) * 8 + 8
-            val portraitY = (def.boxY + textStartYBase) * 8 + 16
+            val portraitX = (def.boxX + layout.textStartXBase) * 8 + 8
+            val portraitY = (def.boxY + layout.textStartYBase) * 8 + 16
             body +=
                 CExprStatement(
                     CCall(
@@ -628,15 +685,15 @@ class DialogVisitor(private val gameIR: GameIR) {
         }
 
         // 4. Speaker name — written as first line of text area
-        if (hasSpeaker) {
+        if (layout.hasSpeaker) {
             val speaker = def.speaker!!
             body +=
                 CExprStatement(
                     CCall(
-                        printFn,
+                        layout.printFn,
                         listOf(
-                            CLiteral(textStartX),
-                            CLiteral(textStartYBase),
+                            CLiteral(layout.textStartX),
+                            CLiteral(layout.textStartYBase),
                             CStringLiteral(speaker),
                             CLiteral(speaker.length),
                         ),
@@ -652,8 +709,7 @@ class DialogVisitor(private val gameIR: GameIR) {
         val pageBodyStmts = mutableListOf<CStatement>()
 
         // Clear text area at start of each subsequent page (not first — handled by SHOW_WIN)
-        // Use a page-offset check: if (_pg_off > 0) { _win_clear_region(textStartX, textStartY,
-        // textWidth, textHeight); }
+        // Use a page-offset check: if (_pg_off > 0) { _win_clear_region(...); }
         pageBodyStmts +=
             CIf(
                 condition = CBinaryExpr(CVar("_pg_off"), ">", CLiteral(0)),
@@ -663,10 +719,10 @@ class DialogVisitor(private val gameIR: GameIR) {
                             CCall(
                                 "_win_clear_region",
                                 listOf(
-                                    CLiteral(textStartX),
-                                    CLiteral(textStartY),
-                                    CLiteral(textWidth),
-                                    CLiteral(textHeight),
+                                    CLiteral(layout.textStartX),
+                                    CLiteral(layout.textStartY),
+                                    CLiteral(layout.textWidth),
+                                    CLiteral(layout.textHeight),
                                 ),
                             )
                         )
@@ -674,39 +730,9 @@ class DialogVisitor(private val gameIR: GameIR) {
             )
 
         // Inner typewriter loop: for (i = 0; i < textWidth * textHeight && ...
-        val pageSize = textWidth * textHeight
-        // for (i = 0; i < pageSize && (_pg_off + i) < msg_len; i++)
-        //     _win_print_at(textStartX + (i % textWidth), textStartY + (i / textWidth), ...)
-        //     delay_frames(textSpeed)
-        val typewriterLoopBody = buildList {
-            // Place one character at computed position
-            add(
-                CExprStatement(
-                    CCall(
-                        "set_win_tiles",
-                        listOf(
-                            CBinaryExpr(
-                                CLiteral(textStartX),
-                                "+",
-                                CBinaryExpr(CVar("_tw_i"), "%", CLiteral(textWidth)),
-                            ),
-                            CBinaryExpr(
-                                CLiteral(textStartY),
-                                "+",
-                                CBinaryExpr(CVar("_tw_i"), "/", CLiteral(textWidth)),
-                            ),
-                            CLiteral(1),
-                            CLiteral(1),
-                            CRawExpr("(unsigned char*)&_text[_pg_off + _tw_i]"),
-                        ),
-                    )
-                )
-            )
-            // Typewriter delay between characters
-            if (def.textSpeed > 0) {
-                add(CExprStatement(CCall("delay_frames", listOf(CLiteral(def.textSpeed)))))
-            }
-        }
+        val pageSize = layout.textWidth * layout.textHeight
+        val typewriterLoopBody =
+            buildTypewriterCharBody(def, layout.textStartX, layout.textStartY, layout.textWidth)
 
         // Inner typewriter loop — C89: declare loop var before for
         pageBodyStmts += CVarDecl("_tw_i", CU8, initializer = null)
@@ -744,14 +770,13 @@ class DialogVisitor(private val gameIR: GameIR) {
                 body = listOf(CExprStatement(CCall("wait_vbl_done", emptyList()))),
             )
 
-        // Outer pagination loop: while (1) { ... if (_pg_off >= msg_total) break; }
-        // We use a simple while(1) with break when done
+        // Outer pagination loop: while (1) { ... break; }
         val paginationLoop = CWhile(condition = CLiteral(1), body = pageBodyStmts + listOf(CBreak))
         body += paginationLoop
 
         // 6. Hide window and portrait
         body += GBDKMacros.hideWin()
-        if (hasPortrait) {
+        if (layout.hasPortrait) {
             // Hide portrait by moving off-screen (position 0, 0 in OAM)
             body +=
                 CExprStatement(

@@ -53,7 +53,7 @@ import kotlin.reflect.KProperty
  * ```kotlin
  * ball.x += ballDx        // compound assign
  * ball.visible set false  // boolean assign
- * whenever(ball.x isAbove 160) { ... }  // comparison expression
+ * runIf(ball.x isAbove 160) { ... }  // comparison expression
  * ```
  *
  * The [objectId] is the actor ID (e.g. "ball"), [property] is the field name (e.g. "x").
@@ -349,7 +349,7 @@ fun ActorRef.moveTo(x: Expr, y: Expr) {
 /**
  * Returns an expression that is true when [this] actor collides with [other].
  *
- * Emits a `CallExpr("collides", [VarRef(this.id), VarRef(other.id)])` for use in `whenever()`
+ * Emits a `CallExpr("collides", [VarRef(this.id), VarRef(other.id)])` for use in `runIf()`
  * conditions.
  */
 fun ActorRef.collides(other: ActorRef): Expr =

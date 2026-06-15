@@ -1,5 +1,0 @@
-void _bkg_tiles_load_banked(UINT8 bank, UINT8 x, UINT8 y, UINT8 w, UINT8 h, const UINT8* tiles) {
-    SWITCH_ROM(bank);
-    set_bkg_tiles(x, y, w, h, tiles);
-    SWITCH_ROM(1);
-}

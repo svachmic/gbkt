@@ -262,7 +262,7 @@ class UIBuilderTest {
                     val pauseMenu = menu("pause") {}
                     val gameplayScene =
                         scene("gameplay") {
-                            frame { whenever(buttons.start.pressed) { pauseMenu.show() } }
+                            frame { runIf(buttons.start.pressed) { pauseMenu.show() } }
                         }
                     start = gameplayScene
                 }

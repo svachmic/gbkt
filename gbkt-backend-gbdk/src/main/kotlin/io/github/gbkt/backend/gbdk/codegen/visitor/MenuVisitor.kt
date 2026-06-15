@@ -80,63 +80,78 @@ class MenuVisitor(private val gameIR: GameIR) {
         return gameIR.menus.map { menu -> buildMenuFunction(menu) }
     }
 
-    @Suppress("LongMethod", "CyclomaticComplexMethod")
     private fun buildMenuFunction(menu: MenuDef): CFunction {
-        // Capture cross-module nullable properties into local vals (Kotlin cross-module smart cast)
-        val menuLayout = menu.layout
-        val menuX = menu.x
-        val menuY = menu.y
-        val menuHeight = menu.height
-        val menuColumns = menu.columns
-        val menuRenderOnWindow = menu.renderOnWindow
-        val menuParentId = menu.parentId
-        val menuSfxOnMove = menu.sfxOnMove
-        val menuSfxOnSelect = menu.sfxOnSelect
-        val menuSfxOnCancel = menu.sfxOnCancel
-        val menuCursorChar = menu.cursorChar
-        val menuCursorSprite = menu.cursorSprite
-        val menuDataSource = menu.dataSource
-
         val sanitizedId = menu.id.replace('-', '_').replace(' ', '_')
-        val body = mutableListOf<CStatement>()
-        val selVar = CVar("sel")
-        val joyVar = CVar("joy")
-        val lastIdx = (menu.items.size - 1).coerceAtLeast(0)
-        val isGrid = menuLayout == MenuLayout.GRID
-        val isHorizontal = menuLayout == MenuLayout.HORIZONTAL
-        val isVertical = menuLayout == MenuLayout.VERTICAL
-        val hasScroll = menu.items.size > menuHeight && (isVertical || isGrid)
-        val hasSpriteCursor = menuCursorSprite != null
+        return CFunction(
+            name = "show_menu_$sanitizedId",
+            returnType = CU8,
+            body = buildMenuBodyStatements(menu),
+            sectionComment = "Menu: ${menu.id}",
+        )
+    }
 
+    private fun buildMenuBodyStatements(menu: MenuDef): List<CStatement> {
+        val body = mutableListOf<CStatement>()
+        body += buildMenuVarDecls(menu)
+        body += buildMenuInitStatements(menu)
+        body += buildMenuItemDrawStatements(menu)
+        body += CWhile(condition = CLiteral(1), body = buildMenuInputLoopBody(menu))
+        // ---- Hide sprite cursor on successful selection ----
+        if (menu.cursorSprite != null) {
+            body +=
+                CExprStatement(
+                    CCall(
+                        "move_sprite",
+                        listOf(CLiteral(MENU_CURSOR_SPRITE_ID), CLiteral(0), CLiteral(0)),
+                    )
+                )
+        }
+        // ---- Hide window on close (after loop exits via J_A) ----
+        if (menu.renderOnWindow) {
+            body += GBDKMacros.hideWin()
+        }
+        // ---- Return selection ----
+        body += CReturn(CVar("sel"))
+        return body
+    }
+
+    private fun buildMenuVarDecls(menu: MenuDef): List<CStatement> {
+        val isGrid = menu.layout == MenuLayout.GRID
+        val isVertical = menu.layout == MenuLayout.VERTICAL
+        val hasScroll = menu.items.size > menu.height && (isVertical || isGrid)
         // ---- C89: declare all local variables first ----
-        body += CVarDecl("sel", CU8, CLiteral(0))
-        body += CVarDecl("joy", CU8, CLiteral(0))
+        val result = mutableListOf<CStatement>()
+        result += CVarDecl("sel", CU8, CLiteral(0))
+        result += CVarDecl("joy", CU8, CLiteral(0))
         if (isGrid) {
-            body += CVarDecl("col", CU8, CLiteral(0))
-            body += CVarDecl("row", CU8, CLiteral(0))
+            result += CVarDecl("col", CU8, CLiteral(0))
+            result += CVarDecl("row", CU8, CLiteral(0))
         }
         if (hasScroll) {
-            body += CVarDecl("scroll_offset", CU8, CLiteral(0))
+            result += CVarDecl("scroll_offset", CU8, CLiteral(0))
         }
+        return result
+    }
 
+    private fun buildMenuInitStatements(menu: MenuDef): List<CStatement> {
+        val result = mutableListOf<CStatement>()
         // ---- Window layer setup ----
-        if (menuRenderOnWindow) {
-            body += CExprStatement(CCall("move_win", listOf(CLiteral(7), CLiteral(menuY * 8))))
-            body += GBDKMacros.showWin()
+        if (menu.renderOnWindow) {
+            result += CExprStatement(CCall("move_win", listOf(CLiteral(7), CLiteral(menu.y * 8))))
+            result += GBDKMacros.showWin()
         }
-
         // ---- Sprite cursor: load tile into dedicated sprite slot ----
-        if (hasSpriteCursor) {
+        if (menu.cursorSprite != null) {
             // set_sprite_tile(MENU_CURSOR_SPRITE_ID, cursorSpriteTile)
             // cursorSprite tile index assumed to be 0 for the referenced sprite asset
-            body +=
+            result +=
                 CExprStatement(
                     CCall("set_sprite_tile", listOf(CLiteral(MENU_CURSOR_SPRITE_ID), CLiteral(0)))
                 )
             // Position sprite initially at item 0
-            val initPixelX = (menuX + 1) * 8 + 8
-            val initPixelY = menuY * 8 + 16
-            body +=
+            val initPixelX = (menu.x + 1) * 8 + 8
+            val initPixelY = menu.y * 8 + 16
+            result +=
                 CExprStatement(
                     CCall(
                         "move_sprite",
@@ -148,368 +163,153 @@ class MenuVisitor(private val gameIR: GameIR) {
                     )
                 )
         }
+        return result
+    }
 
+    private fun buildMenuItemDrawStatements(menu: MenuDef): List<CStatement> {
         // ---- Draw static menu items ----
-        if (menuDataSource == null) {
-            for ((i, item) in menu.items.withIndex()) {
-                val itemX: Int
-                val itemY: Int
-                when {
-                    isGrid -> {
-                        itemX = menuX + (i % menuColumns) * 6
-                        itemY = menuY + (i / menuColumns)
-                    }
-                    isHorizontal -> {
-                        itemX = menuX + i * 6
-                        itemY = menuY
-                    }
-                    else -> { // VERTICAL
-                        itemX = menuX + 1
-                        itemY = menuY + i
-                    }
+        if (menu.dataSource != null) {
+            return buildMenuDynamicItemStatements(menu)
+        }
+        val isGrid = menu.layout == MenuLayout.GRID
+        val isHorizontal = menu.layout == MenuLayout.HORIZONTAL
+        val result = mutableListOf<CStatement>()
+        for ((i, item) in menu.items.withIndex()) {
+            val itemX: Int
+            val itemY: Int
+            when {
+                isGrid -> {
+                    itemX = menu.x + (i % menu.columns) * 6
+                    itemY = menu.y + (i / menu.columns)
                 }
-                if (menuRenderOnWindow) {
-                    body +=
+                isHorizontal -> {
+                    itemX = menu.x + i * 6
+                    itemY = menu.y
+                }
+                else -> { // VERTICAL
+                    itemX = menu.x + 1
+                    itemY = menu.y + i
+                }
+            }
+            if (menu.renderOnWindow) {
+                result +=
+                    CExprStatement(
+                        CCall(
+                            "_win_print_at",
+                            listOf(
+                                CLiteral(itemX),
+                                CLiteral(itemY),
+                                CStringLiteral(item.label),
+                                CLiteral(item.label.length),
+                            ),
+                        )
+                    )
+            } else {
+                result += CExprStatement(CCall("gotoxy", listOf(CLiteral(itemX), CLiteral(itemY))))
+                result += CExprStatement(CCall("printf", listOf(CStringLiteral(item.label))))
+            }
+        }
+        return result
+    }
+
+    private fun buildMenuInputLoopBody(menu: MenuDef): List<CStatement> {
+        val joyVar = CVar("joy")
+        // ---- Input loop: while(1) ----
+        val loopBody = mutableListOf<CStatement>()
+        // Draw cursor at current selection
+        loopBody += buildMenuCursorDrawStatements(menu)
+        // wait_vbl_done
+        loopBody += CExprStatement(CCall("wait_vbl_done", emptyList()))
+        // joy = joypad()
+        loopBody += CExprStatement(CBinaryExpr(joyVar, "=", CCall("joypad", emptyList())))
+        // ---- Layout-dependent navigation ----
+        loopBody += buildMenuNavigationStatements(menu)
+        // ---- J_A: Select ----
+        loopBody += buildMenuSelectStatements(menu)
+        // ---- J_B: Cancel / parent menu ----
+        loopBody += buildMenuCancelStatements(menu)
+        return loopBody
+    }
+
+    private fun buildMenuCursorDrawStatements(menu: MenuDef): List<CStatement> {
+        // Text cursor: draw cursorChar at current position each frame
+        // (sprite cursor skips this — sprite is repositioned during navigation)
+        if (menu.cursorSprite != null) return emptyList()
+        val selVar = CVar("sel")
+        val menuCursorChar = menu.cursorChar
+        val result = mutableListOf<CStatement>()
+        if (menu.renderOnWindow) {
+            when {
+                menu.layout == MenuLayout.GRID -> {
+                    result +=
+                        CRawCode(
+                            "_win_print_at(${menu.x} + col * 6, ${menu.y} + row, \"$menuCursorChar\", 1);"
+                        )
+                }
+                menu.layout == MenuLayout.HORIZONTAL -> {
+                    result +=
+                        CRawCode(
+                            "_win_print_at(${menu.x} + sel * 6, ${menu.y}, \"$menuCursorChar\", 1);"
+                        )
+                }
+                else -> {
+                    result +=
                         CExprStatement(
                             CCall(
                                 "_win_print_at",
                                 listOf(
-                                    CLiteral(itemX),
-                                    CLiteral(itemY),
-                                    CStringLiteral(item.label),
-                                    CLiteral(item.label.length),
+                                    CLiteral(menu.x),
+                                    selVar,
+                                    CStringLiteral(menuCursorChar),
+                                    CLiteral(1),
                                 ),
                             )
                         )
-                } else {
-                    body +=
-                        CExprStatement(CCall("gotoxy", listOf(CLiteral(itemX), CLiteral(itemY))))
-                    body += CExprStatement(CCall("printf", listOf(CStringLiteral(item.label))))
                 }
             }
         } else {
-            // Dynamic data: generate population loop — capture dataSource into local val for smart
-            // cast
-            val ds = menuDataSource
-            when (ds) {
-                is InventoryDataSource -> {
-                    // Aligned with InventoryVisitor naming: _inv_<id>_items, _inv_<id>_counts,
-                    // _inv_<id>_size
-                    val invId = ds.inventoryId
-                    body +=
-                        CRawCode("{ UINT8 _mi; for (_mi = 0; _mi < _inv_${invId}_size; _mi++) {")
-                    if (menuRenderOnWindow) {
-                        body +=
-                            CRawCode(
-                                "_win_print_at(${menuX + 1}, ${menuY} + _mi, _inv_${invId}_items[_mi], 12);"
-                            )
-                    } else {
-                        body +=
-                            CRawCode(
-                                "gotoxy(${menuX + 1}, ${menuY} + _mi); printf(\"%u\", _inv_${invId}_items[_mi]);"
-                            )
-                    }
-                    body += CRawCode("} }")
-                }
-                is ArrayDataSource -> {
-                    val arrId = ds.arrayId
-                    body +=
-                        CRawCode(
-                            "{ UINT8 _mi; for (_mi = 0; _mi < sizeof(_${arrId}) / sizeof(_${arrId}[0]); _mi++) {"
-                        )
-                    if (menuRenderOnWindow) {
-                        body +=
-                            CRawCode(
-                                "_win_print_at(${menuX + 1}, ${menuY} + _mi, _${arrId}_labels[_${arrId}[_mi]], 12);"
-                            )
-                    } else {
-                        body +=
-                            CRawCode(
-                                "gotoxy(${menuX + 1}, ${menuY} + _mi); printf(\"%s\", _${arrId}_labels[_${arrId}[_mi]]);"
-                            )
-                    }
-                    body += CRawCode("} }")
-                }
-            }
+            // Background layer
+            result += CExprStatement(CCall("gotoxy", listOf(CLiteral(menu.x), selVar)))
+            result += CExprStatement(CCall("printf", listOf(CStringLiteral(menuCursorChar))))
         }
+        return result
+    }
 
-        // ---- Input loop: while(1) ----
-        val loopBody = mutableListOf<CStatement>()
-
-        // Draw cursor at current selection
-        if (!hasSpriteCursor) {
-            // Text cursor: draw cursorChar at current position each frame
-            if (menuRenderOnWindow) {
-                when {
-                    isGrid -> {
-                        loopBody +=
-                            CRawCode(
-                                "_win_print_at($menuX + col * 6, $menuY + row, \"$menuCursorChar\", 1);"
-                            )
-                    }
-                    isHorizontal -> {
-                        loopBody +=
-                            CRawCode(
-                                "_win_print_at($menuX + sel * 6, $menuY, \"$menuCursorChar\", 1);"
-                            )
-                    }
-                    else -> {
-                        loopBody +=
-                            CExprStatement(
-                                CCall(
-                                    "_win_print_at",
-                                    listOf(
-                                        CLiteral(menuX),
-                                        selVar,
-                                        CStringLiteral(menuCursorChar),
-                                        CLiteral(1),
-                                    ),
-                                )
-                            )
-                    }
-                }
-            } else {
-                // Background layer
-                loopBody += CExprStatement(CCall("gotoxy", listOf(CLiteral(menuX), selVar)))
-                loopBody += CExprStatement(CCall("printf", listOf(CStringLiteral(menuCursorChar))))
-            }
+    private fun buildMenuNavigationStatements(menu: MenuDef): List<CStatement> {
+        val isVertical = menu.layout == MenuLayout.VERTICAL
+        val isHorizontal = menu.layout == MenuLayout.HORIZONTAL
+        val isGrid = menu.layout == MenuLayout.GRID
+        return when {
+            isVertical -> buildMenuVerticalNavStatements(menu)
+            isHorizontal -> buildMenuHorizontalNavStatements(menu)
+            isGrid -> buildMenuGridNavStatements(menu)
+            else -> emptyList()
         }
+    }
 
-        // wait_vbl_done
-        loopBody += CExprStatement(CCall("wait_vbl_done", emptyList()))
-
-        // joy = joypad()
-        loopBody += CExprStatement(CBinaryExpr(joyVar, "=", CCall("joypad", emptyList())))
-
-        // ---- Helper: emit SFX call if sfxOnMove is set ----
-        fun addMoveSound(target: MutableList<CStatement>) {
-            if (menuSfxOnMove != null) {
-                val sfxId = menuSfxOnMove.replace('-', '_').replace(' ', '_')
-                target += CExprStatement(CCall("play_sound_$sfxId", emptyList()))
-            }
-        }
-
-        // ---- Layout-dependent navigation ----
-        when {
-            isVertical -> {
-                // J_UP: erase old cursor, sel--, reposition sprite, SFX
-                val upBody = mutableListOf<CStatement>()
-                if (!hasSpriteCursor) {
-                    if (menuRenderOnWindow) {
-                        upBody +=
-                            CExprStatement(
-                                CCall(
-                                    "_win_print_at",
-                                    listOf(
-                                        CLiteral(menuX),
-                                        selVar,
-                                        CStringLiteral(" "),
-                                        CLiteral(1),
-                                    ),
-                                )
-                            )
-                    } else {
-                        upBody += CExprStatement(CCall("gotoxy", listOf(CLiteral(menuX), selVar)))
-                        upBody += CExprStatement(CCall("printf", listOf(CStringLiteral(" "))))
-                    }
-                }
-                upBody += CExprStatement(CUnaryExpr("--", selVar))
-                if (hasSpriteCursor) {
-                    upBody +=
-                        CRawCode(
-                            "move_sprite($MENU_CURSOR_SPRITE_ID, ${(menuX + 1) * 8 + 8}, ($menuY + sel) * 8 + 16);"
-                        )
-                }
-                addMoveSound(upBody)
-                loopBody +=
-                    CIf(
-                        condition =
-                            CBinaryExpr(
-                                CBinaryExpr(joyVar, "&", CVar("J_UP")),
-                                "&&",
-                                CBinaryExpr(selVar, ">", CLiteral(0)),
-                            ),
-                        thenBody = upBody,
-                    )
-
-                // J_DOWN: erase old cursor, sel++, reposition sprite, SFX
-                val downBody = mutableListOf<CStatement>()
-                if (!hasSpriteCursor) {
-                    if (menuRenderOnWindow) {
-                        downBody +=
-                            CExprStatement(
-                                CCall(
-                                    "_win_print_at",
-                                    listOf(
-                                        CLiteral(menuX),
-                                        selVar,
-                                        CStringLiteral(" "),
-                                        CLiteral(1),
-                                    ),
-                                )
-                            )
-                    } else {
-                        downBody += CExprStatement(CCall("gotoxy", listOf(CLiteral(menuX), selVar)))
-                        downBody += CExprStatement(CCall("printf", listOf(CStringLiteral(" "))))
-                    }
-                }
-                downBody += CExprStatement(CUnaryExpr("++", selVar))
-                if (hasSpriteCursor) {
-                    downBody +=
-                        CRawCode(
-                            "move_sprite($MENU_CURSOR_SPRITE_ID, ${(menuX + 1) * 8 + 8}, ($menuY + sel) * 8 + 16);"
-                        )
-                }
-                addMoveSound(downBody)
-                loopBody +=
-                    CIf(
-                        condition =
-                            CBinaryExpr(
-                                CBinaryExpr(joyVar, "&", CVar("J_DOWN")),
-                                "&&",
-                                CBinaryExpr(selVar, "<", CLiteral(lastIdx)),
-                            ),
-                        thenBody = downBody,
-                    )
-            }
-
-            isHorizontal -> {
-                // J_LEFT: erase old cursor, sel--, reposition sprite, SFX
-                val leftBody = mutableListOf<CStatement>()
-                if (!hasSpriteCursor) {
-                    if (menuRenderOnWindow) {
-                        leftBody += CRawCode("_win_print_at($menuX + sel * 6, $menuY, \" \", 1);")
-                    } else {
-                        leftBody += CRawCode("gotoxy($menuX + sel * 6, $menuY); printf(\" \");")
-                    }
-                }
-                leftBody += CExprStatement(CUnaryExpr("--", selVar))
-                if (hasSpriteCursor) {
-                    leftBody +=
-                        CRawCode(
-                            "move_sprite($MENU_CURSOR_SPRITE_ID, ($menuX + sel * 6) * 8 + 8, ${menuY * 8 + 16});"
-                        )
-                }
-                addMoveSound(leftBody)
-                loopBody +=
-                    CIf(
-                        condition =
-                            CBinaryExpr(
-                                CBinaryExpr(joyVar, "&", CVar("J_LEFT")),
-                                "&&",
-                                CBinaryExpr(selVar, ">", CLiteral(0)),
-                            ),
-                        thenBody = leftBody,
-                    )
-
-                // J_RIGHT: erase old cursor, sel++, reposition sprite, SFX
-                val rightBody = mutableListOf<CStatement>()
-                if (!hasSpriteCursor) {
-                    if (menuRenderOnWindow) {
-                        rightBody += CRawCode("_win_print_at($menuX + sel * 6, $menuY, \" \", 1);")
-                    } else {
-                        rightBody += CRawCode("gotoxy($menuX + sel * 6, $menuY); printf(\" \");")
-                    }
-                }
-                rightBody += CExprStatement(CUnaryExpr("++", selVar))
-                if (hasSpriteCursor) {
-                    rightBody +=
-                        CRawCode(
-                            "move_sprite($MENU_CURSOR_SPRITE_ID, ($menuX + sel * 6) * 8 + 8, ${menuY * 8 + 16});"
-                        )
-                }
-                addMoveSound(rightBody)
-                loopBody +=
-                    CIf(
-                        condition =
-                            CBinaryExpr(
-                                CBinaryExpr(joyVar, "&", CVar("J_RIGHT")),
-                                "&&",
-                                CBinaryExpr(selVar, "<", CLiteral(lastIdx)),
-                            ),
-                        thenBody = rightBody,
-                    )
-            }
-
-            isGrid -> {
-                val cols = menuColumns
-                val maxRow = if (menu.items.isEmpty()) 0 else (menu.items.size - 1) / cols
-                val maxCol = (cols - 1).coerceAtLeast(0)
-
-                // J_UP: row--
-                val upBody = mutableListOf<CStatement>()
-                upBody += CRawCode("if (row > 0) { row--; sel -= $cols; }")
-                if (hasSpriteCursor) {
-                    upBody +=
-                        CRawCode(
-                            "move_sprite($MENU_CURSOR_SPRITE_ID, ($menuX + col * 6) * 8 + 8, ($menuY + row) * 8 + 16);"
-                        )
-                }
-                addMoveSound(upBody)
-                loopBody +=
-                    CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_UP")), thenBody = upBody)
-
-                // J_DOWN: row++
-                val downBody = mutableListOf<CStatement>()
-                downBody +=
-                    CRawCode(
-                        "if (row < $maxRow) { row++; sel += $cols; if (sel > $lastIdx) sel = $lastIdx; }"
-                    )
-                if (hasSpriteCursor) {
-                    downBody +=
-                        CRawCode(
-                            "move_sprite($MENU_CURSOR_SPRITE_ID, ($menuX + col * 6) * 8 + 8, ($menuY + row) * 8 + 16);"
-                        )
-                }
-                addMoveSound(downBody)
-                loopBody +=
-                    CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_DOWN")), thenBody = downBody)
-
-                // J_LEFT: col--
-                val leftBody = mutableListOf<CStatement>()
-                leftBody += CRawCode("if (col > 0) { col--; sel--; }")
-                if (hasSpriteCursor) {
-                    leftBody +=
-                        CRawCode(
-                            "move_sprite($MENU_CURSOR_SPRITE_ID, ($menuX + col * 6) * 8 + 8, ($menuY + row) * 8 + 16);"
-                        )
-                }
-                addMoveSound(leftBody)
-                loopBody +=
-                    CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_LEFT")), thenBody = leftBody)
-
-                // J_RIGHT: col++
-                val rightBody = mutableListOf<CStatement>()
-                rightBody += CRawCode("if (col < $maxCol && sel < $lastIdx) { col++; sel++; }")
-                if (hasSpriteCursor) {
-                    rightBody +=
-                        CRawCode(
-                            "move_sprite($MENU_CURSOR_SPRITE_ID, ($menuX + col * 6) * 8 + 8, ($menuY + row) * 8 + 16);"
-                        )
-                }
-                addMoveSound(rightBody)
-                loopBody +=
-                    CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_RIGHT")), thenBody = rightBody)
-            }
-        }
-
-        // ---- J_A: Select ----
+    private fun buildMenuSelectStatements(menu: MenuDef): CStatement {
+        val joyVar = CVar("joy")
+        // Standard selection: break (sel is returned after loop)
+        val menuSfxOnSelect = menu.sfxOnSelect
         val selectBody = mutableListOf<CStatement>()
         if (menuSfxOnSelect != null) {
             val sfxId = menuSfxOnSelect.replace('-', '_').replace(' ', '_')
             selectBody += CExprStatement(CCall("play_sound_$sfxId", emptyList()))
         }
-        // Standard selection: break (sel is returned after loop)
         selectBody += CBreak
-        loopBody += CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_A")), thenBody = selectBody)
+        return CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_A")), thenBody = selectBody)
+    }
 
-        // ---- J_B: Cancel / parent menu ----
+    private fun buildMenuCancelStatements(menu: MenuDef): CStatement {
+        val joyVar = CVar("joy")
+        val menuSfxOnCancel = menu.sfxOnCancel
+        val menuParentId = menu.parentId
         val cancelBody = mutableListOf<CStatement>()
         if (menuSfxOnCancel != null) {
             val sfxId = menuSfxOnCancel.replace('-', '_').replace(' ', '_')
             cancelBody += CExprStatement(CCall("play_sound_$sfxId", emptyList()))
         }
-        if (hasSpriteCursor) {
+        if (menu.cursorSprite != null) {
             // Hide sprite cursor on cancel
             cancelBody +=
                 CExprStatement(
@@ -521,51 +321,306 @@ class MenuVisitor(private val gameIR: GameIR) {
         }
         if (menuParentId != null) {
             val parentSanitized = menuParentId.replace('-', '_').replace(' ', '_')
-            if (menuRenderOnWindow) {
+            if (menu.renderOnWindow) {
                 cancelBody += GBDKMacros.hideWin()
             }
             cancelBody += CExprStatement(CCall("show_menu_$parentSanitized", emptyList()))
             cancelBody += CReturn(CLiteral(0xFF))
         } else {
             // No parent: return cancel sentinel
-            if (menuRenderOnWindow) {
+            if (menu.renderOnWindow) {
                 cancelBody += GBDKMacros.hideWin()
             }
             cancelBody += CReturn(CLiteral(0xFF))
         }
-        loopBody += CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_B")), thenBody = cancelBody)
-
-        body += CWhile(condition = CLiteral(1), body = loopBody)
-
-        // ---- Hide sprite cursor on successful selection ----
-        if (hasSpriteCursor) {
-            body +=
-                CExprStatement(
-                    CCall(
-                        "move_sprite",
-                        listOf(CLiteral(MENU_CURSOR_SPRITE_ID), CLiteral(0), CLiteral(0)),
-                    )
-                )
-        }
-
-        // ---- Hide window on close (after loop exits via J_A) ----
-        if (menuRenderOnWindow) {
-            body += GBDKMacros.hideWin()
-        }
-
-        // ---- Return selection ----
-        body += CReturn(selVar)
-
-        return CFunction(
-            name = "show_menu_$sanitizedId",
-            returnType = CU8,
-            body = body,
-            sectionComment = "Menu: ${menu.id}",
-        )
+        return CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_B")), thenBody = cancelBody)
     }
 
     companion object {
         /** Reserved sprite slot for menu cursor sprite (distinct from portrait slot 39). */
         const val MENU_CURSOR_SPRITE_ID = 38
     }
+}
+
+// =============================================================================
+// File-level private helpers — extracted to avoid TooManyFunctions in the class
+// while keeping each helper focused on a single menu subsystem.
+// =============================================================================
+
+/** Builds C statements for dynamic data sources (InventoryDataSource, ArrayDataSource). */
+private fun buildMenuDynamicItemStatements(menu: MenuDef): List<CStatement> {
+    // Dynamic data: generate population loop — capture dataSource into local val for smart cast
+    val result = mutableListOf<CStatement>()
+    val ds = menu.dataSource
+    when (ds) {
+        is InventoryDataSource -> {
+            // Aligned with InventoryVisitor naming: _inv_<id>_items, _inv_<id>_counts,
+            // _inv_<id>_size
+            val invId = ds.inventoryId
+            result += CRawCode("{ UINT8 _mi; for (_mi = 0; _mi < _inv_${invId}_size; _mi++) {")
+            if (menu.renderOnWindow) {
+                result +=
+                    CRawCode(
+                        "_win_print_at(${menu.x + 1}, ${menu.y} + _mi, _inv_${invId}_items[_mi], 12);"
+                    )
+            } else {
+                result +=
+                    CRawCode(
+                        "gotoxy(${menu.x + 1}, ${menu.y} + _mi); printf(\"%u\", _inv_${invId}_items[_mi]);"
+                    )
+            }
+            result += CRawCode("} }")
+        }
+        is ArrayDataSource -> {
+            val arrId = ds.arrayId
+            result +=
+                CRawCode(
+                    "{ UINT8 _mi; for (_mi = 0; _mi < sizeof(_${arrId}) / sizeof(_${arrId}[0]); _mi++) {"
+                )
+            if (menu.renderOnWindow) {
+                result +=
+                    CRawCode(
+                        "_win_print_at(${menu.x + 1}, ${menu.y} + _mi, _${arrId}_labels[_${arrId}[_mi]], 12);"
+                    )
+            } else {
+                result +=
+                    CRawCode(
+                        "gotoxy(${menu.x + 1}, ${menu.y} + _mi); printf(\"%s\", _${arrId}_labels[_${arrId}[_mi]]);"
+                    )
+            }
+            result += CRawCode("} }")
+        }
+        null -> Unit // unreachable: caller guards dataSource != null
+    }
+    return result
+}
+
+/**
+ * Returns move-sound call statements for the given SFX ID string, or empty if null. Caller uses
+ * `upBody += buildMoveSoundStatements(menu.sfxOnMove)`.
+ */
+private fun buildMoveSoundStatements(sfxOnMove: String?): List<CStatement> {
+    if (sfxOnMove == null) return emptyList()
+    val sfxId = sfxOnMove.replace('-', '_').replace(' ', '_')
+    return listOf(CExprStatement(CCall("play_sound_$sfxId", emptyList())))
+}
+
+/** Builds J_UP / J_DOWN navigation statements for VERTICAL menus. */
+private fun buildMenuVerticalNavStatements(menu: MenuDef): List<CStatement> {
+    val hasSpriteCursor = menu.cursorSprite != null
+    val selVar = CVar("sel")
+    val joyVar = CVar("joy")
+    val lastIdx = (menu.items.size - 1).coerceAtLeast(0)
+    val result = mutableListOf<CStatement>()
+
+    // J_UP: erase old cursor, sel--, reposition sprite, SFX
+    val upBody = mutableListOf<CStatement>()
+    if (!hasSpriteCursor) {
+        if (menu.renderOnWindow) {
+            upBody +=
+                CExprStatement(
+                    CCall(
+                        "_win_print_at",
+                        listOf(
+                            CLiteral(menu.x),
+                            selVar,
+                            CStringLiteral(" "),
+                            CLiteral(1),
+                        ),
+                    )
+                )
+        } else {
+            upBody += CExprStatement(CCall("gotoxy", listOf(CLiteral(menu.x), selVar)))
+            upBody += CExprStatement(CCall("printf", listOf(CStringLiteral(" "))))
+        }
+    }
+    upBody += CExprStatement(CUnaryExpr("--", selVar))
+    if (hasSpriteCursor) {
+        upBody +=
+            CRawCode(
+                "move_sprite(${MenuVisitor.MENU_CURSOR_SPRITE_ID}, ${(menu.x + 1) * 8 + 8}, (${menu.y} + sel) * 8 + 16);"
+            )
+    }
+    upBody += buildMoveSoundStatements(menu.sfxOnMove)
+    result +=
+        CIf(
+            condition =
+                CBinaryExpr(
+                    CBinaryExpr(joyVar, "&", CVar("J_UP")),
+                    "&&",
+                    CBinaryExpr(selVar, ">", CLiteral(0)),
+                ),
+            thenBody = upBody,
+        )
+
+    // J_DOWN: erase old cursor, sel++, reposition sprite, SFX
+    val downBody = mutableListOf<CStatement>()
+    if (!hasSpriteCursor) {
+        if (menu.renderOnWindow) {
+            downBody +=
+                CExprStatement(
+                    CCall(
+                        "_win_print_at",
+                        listOf(
+                            CLiteral(menu.x),
+                            selVar,
+                            CStringLiteral(" "),
+                            CLiteral(1),
+                        ),
+                    )
+                )
+        } else {
+            downBody += CExprStatement(CCall("gotoxy", listOf(CLiteral(menu.x), selVar)))
+            downBody += CExprStatement(CCall("printf", listOf(CStringLiteral(" "))))
+        }
+    }
+    downBody += CExprStatement(CUnaryExpr("++", selVar))
+    if (hasSpriteCursor) {
+        downBody +=
+            CRawCode(
+                "move_sprite(${MenuVisitor.MENU_CURSOR_SPRITE_ID}, ${(menu.x + 1) * 8 + 8}, (${menu.y} + sel) * 8 + 16);"
+            )
+    }
+    downBody += buildMoveSoundStatements(menu.sfxOnMove)
+    result +=
+        CIf(
+            condition =
+                CBinaryExpr(
+                    CBinaryExpr(joyVar, "&", CVar("J_DOWN")),
+                    "&&",
+                    CBinaryExpr(selVar, "<", CLiteral(lastIdx)),
+                ),
+            thenBody = downBody,
+        )
+
+    return result
+}
+
+/** Builds J_LEFT / J_RIGHT navigation statements for HORIZONTAL menus. */
+private fun buildMenuHorizontalNavStatements(menu: MenuDef): List<CStatement> {
+    val hasSpriteCursor = menu.cursorSprite != null
+    val selVar = CVar("sel")
+    val joyVar = CVar("joy")
+    val lastIdx = (menu.items.size - 1).coerceAtLeast(0)
+    val result = mutableListOf<CStatement>()
+
+    // J_LEFT: erase old cursor, sel--, reposition sprite, SFX
+    val leftBody = mutableListOf<CStatement>()
+    if (!hasSpriteCursor) {
+        if (menu.renderOnWindow) {
+            leftBody += CRawCode("_win_print_at(${menu.x} + sel * 6, ${menu.y}, \" \", 1);")
+        } else {
+            leftBody += CRawCode("gotoxy(${menu.x} + sel * 6, ${menu.y}); printf(\" \");")
+        }
+    }
+    leftBody += CExprStatement(CUnaryExpr("--", selVar))
+    if (hasSpriteCursor) {
+        leftBody +=
+            CRawCode(
+                "move_sprite(${MenuVisitor.MENU_CURSOR_SPRITE_ID}, (${menu.x} + sel * 6) * 8 + 8, ${menu.y * 8 + 16});"
+            )
+    }
+    leftBody += buildMoveSoundStatements(menu.sfxOnMove)
+    result +=
+        CIf(
+            condition =
+                CBinaryExpr(
+                    CBinaryExpr(joyVar, "&", CVar("J_LEFT")),
+                    "&&",
+                    CBinaryExpr(selVar, ">", CLiteral(0)),
+                ),
+            thenBody = leftBody,
+        )
+
+    // J_RIGHT: erase old cursor, sel++, reposition sprite, SFX
+    val rightBody = mutableListOf<CStatement>()
+    if (!hasSpriteCursor) {
+        if (menu.renderOnWindow) {
+            rightBody += CRawCode("_win_print_at(${menu.x} + sel * 6, ${menu.y}, \" \", 1);")
+        } else {
+            rightBody += CRawCode("gotoxy(${menu.x} + sel * 6, ${menu.y}); printf(\" \");")
+        }
+    }
+    rightBody += CExprStatement(CUnaryExpr("++", selVar))
+    if (hasSpriteCursor) {
+        rightBody +=
+            CRawCode(
+                "move_sprite(${MenuVisitor.MENU_CURSOR_SPRITE_ID}, (${menu.x} + sel * 6) * 8 + 8, ${menu.y * 8 + 16});"
+            )
+    }
+    rightBody += buildMoveSoundStatements(menu.sfxOnMove)
+    result +=
+        CIf(
+            condition =
+                CBinaryExpr(
+                    CBinaryExpr(joyVar, "&", CVar("J_RIGHT")),
+                    "&&",
+                    CBinaryExpr(selVar, "<", CLiteral(lastIdx)),
+                ),
+            thenBody = rightBody,
+        )
+
+    return result
+}
+
+/** Builds J_UP / J_DOWN / J_LEFT / J_RIGHT navigation statements for GRID menus. */
+private fun buildMenuGridNavStatements(menu: MenuDef): List<CStatement> {
+    val hasSpriteCursor = menu.cursorSprite != null
+    val joyVar = CVar("joy")
+    val lastIdx = (menu.items.size - 1).coerceAtLeast(0)
+    val cols = menu.columns
+    val maxRow = if (menu.items.isEmpty()) 0 else (menu.items.size - 1) / cols
+    val maxCol = (cols - 1).coerceAtLeast(0)
+    val result = mutableListOf<CStatement>()
+
+    // J_UP: row--
+    val upBody = mutableListOf<CStatement>()
+    upBody += CRawCode("if (row > 0) { row--; sel -= $cols; }")
+    if (hasSpriteCursor) {
+        upBody +=
+            CRawCode(
+                "move_sprite(${MenuVisitor.MENU_CURSOR_SPRITE_ID}, (${menu.x} + col * 6) * 8 + 8, (${menu.y} + row) * 8 + 16);"
+            )
+    }
+    upBody += buildMoveSoundStatements(menu.sfxOnMove)
+    result += CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_UP")), thenBody = upBody)
+
+    // J_DOWN: row++
+    val downBody = mutableListOf<CStatement>()
+    downBody +=
+        CRawCode("if (row < $maxRow) { row++; sel += $cols; if (sel > $lastIdx) sel = $lastIdx; }")
+    if (hasSpriteCursor) {
+        downBody +=
+            CRawCode(
+                "move_sprite(${MenuVisitor.MENU_CURSOR_SPRITE_ID}, (${menu.x} + col * 6) * 8 + 8, (${menu.y} + row) * 8 + 16);"
+            )
+    }
+    downBody += buildMoveSoundStatements(menu.sfxOnMove)
+    result += CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_DOWN")), thenBody = downBody)
+
+    // J_LEFT: col--
+    val leftBody = mutableListOf<CStatement>()
+    leftBody += CRawCode("if (col > 0) { col--; sel--; }")
+    if (hasSpriteCursor) {
+        leftBody +=
+            CRawCode(
+                "move_sprite(${MenuVisitor.MENU_CURSOR_SPRITE_ID}, (${menu.x} + col * 6) * 8 + 8, (${menu.y} + row) * 8 + 16);"
+            )
+    }
+    leftBody += buildMoveSoundStatements(menu.sfxOnMove)
+    result += CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_LEFT")), thenBody = leftBody)
+
+    // J_RIGHT: col++
+    val rightBody = mutableListOf<CStatement>()
+    rightBody += CRawCode("if (col < $maxCol && sel < $lastIdx) { col++; sel++; }")
+    if (hasSpriteCursor) {
+        rightBody +=
+            CRawCode(
+                "move_sprite(${MenuVisitor.MENU_CURSOR_SPRITE_ID}, (${menu.x} + col * 6) * 8 + 8, (${menu.y} + row) * 8 + 16);"
+            )
+    }
+    rightBody += buildMoveSoundStatements(menu.sfxOnMove)
+    result += CIf(condition = CBinaryExpr(joyVar, "&", CVar("J_RIGHT")), thenBody = rightBody)
+
+    return result
 }

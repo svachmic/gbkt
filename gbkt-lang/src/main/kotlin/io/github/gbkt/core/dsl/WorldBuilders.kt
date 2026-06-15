@@ -514,7 +514,7 @@ class EncounterEntryBuilder(private val id: String, private val weight: Int) {
  * }
  *
  * // In scene frame:
- * whenever(checkFlag(bossDefeated)) { navigate(victoryScene) }
+ * runIf(checkFlag(bossDefeated)) { navigate(victoryScene) }
  * setFlag(hasKey)
  * clearFlag(hasKey)
  * ```

@@ -1,0 +1,19 @@
+# SEED-014: `_bkg_tiles_load_banked` helper gated behind sport-racing genre
+
+> **Triage:** VERIFIED-ALREADY-FIXED — [TRIAGE.md#SEED-014](.planning/phases/16-seed-triage/TRIAGE.md#SEED-014) · 2026-06-12
+
+**Surfaced by:** Phase 11 (banks port close — Plan 11-14)
+**Evidence:** `.planning/phases/11-port-banks-gbdk-example-to-gbkt/evidence/inv2-failure.txt` + `gbkt-examples/banks/11-UAT.md` §"Phase 11 UAT Outcome" + `gbkt-examples/banks/build/gbkt/generated/main.c` (grep returns zero matches for `_bkg_tiles_load_banked`, `SWITCH_ROM`, `set_bkg_tiles`)
+**Symptom:** The Plan 07.4-30 HOME-bank SWITCH_ROM wrapper (`_bkg_tiles_load_banked`) is NOT emitted in any game without the sport_racing genre. The helper at `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/pipeline/GBDKPipelineV2.kt:972-980` is gated behind `hasSportRacing && bank > 1`. Banks.kt has no sport_racing genre → helper never emitted → cross-bank zone tilemap is never loaded into VRAM → at runtime the play scene renders as a blank DMG frame even though `_current_scene` variable evidence shows the scene transition fired (variable GREEN, visual BLACK). Anchor 1 + Anchor 2 of Phase 11's UAT contract both fail visually on this. INV-2 RED-by-design sentinel in `BanksEmissionTest.kt:167` locks the JVM-tier prediction of this runtime failure.
+**Hypothesis:** `GBDKPipelineV2.buildHomeFile()` (or `buildBkgTilesLoadBankedHelper()` if such a helper-builder exists) gates the emission on `hasSportRacing` because Phase 07.4-30 originally landed the wrapper for the racer example. The gate should instead be `gameIR.zones.isNotEmpty() && gameIR.zones.any { it.bankOverride != null || allocateZoneBanks(...) > 1 }` — i.e. any game with a zone whose tilemap data lives in a non-HOME bank needs the SWITCH_ROM-from-HOME wrapper to load it. The fix touches every game with banked zones (pong, dungeon, racer, banks, future ports).
+**Blast radius:** **WIDE.** The gating expression lives in pipeline / banking code that runs for every game; un-gating it changes generated `main.c` for `dungeon`, `racer`, `rpg-lite`, `explorer`, and any future game with a banked zone. Regression risk across the entire example suite. Per user memory `feedback_route_to_proper_phase_when_blast_radius_is_wide.md`, this MUST NOT be patched inline in Plan 11-14 — it needs discuss-phase + research first.
+**Routing:** **Phase 11.1** (terminal closer subphase, see ROADMAP Phase 11.1). Phase 11.1 MUST run `/gsd-discuss-phase 11.1` + `/gsd-plan-phase 11.1 --research-phase 11.1` before any code change. The fix produces a RED→GREEN cycle for the INV-2 sentinel test in `BanksEmissionTest.kt` and is verified by a clean buildRom + UAT screenshot (Anchor 1 + 2 GREEN) on banks.
+
+**JVM-tier sentinel:** `BanksEmissionTest > INV-2 bkg_tiles_load_banked wrapper in main_c has SWITCH_ROM sequence` — currently RED. Phase 11.1's GREEN gate is this test passing.
+
+**Files in play (initial pointer for Phase 11.1 research):**
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/pipeline/GBDKPipelineV2.kt:972-980` — the `hasSportRacing && bank > 1` gating expression
+- `gbkt-backend-gbdk/src/main/kotlin/io/github/gbkt/backend/gbdk/codegen/pipeline/GBDKPipelineV2.kt:1882+` — Plan 07.4-30 wrapper emission site
+- `gbkt-examples/banks/build/gbkt/generated/main.c` — current (broken) output: no wrapper, no SWITCH_ROM
+- `gbkt-examples/dungeon/build/gbkt/generated/main.c` — reference (working) output to diff against
+- `gbkt-examples/banks/src/test/kotlin/.../BanksEmissionTest.kt:167` — RED INV-2 sentinel

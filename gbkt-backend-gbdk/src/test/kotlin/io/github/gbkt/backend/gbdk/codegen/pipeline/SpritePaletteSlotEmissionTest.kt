@@ -63,8 +63,8 @@ private fun extractFunctionBodyForSlotTest(source: String, signature: String): S
 private fun buildFourPaletteGame() =
     game("FourPaletteTest") {
             config {
-                cartridge = Cartridge.ROM_ONLY
-                romBanks = 2
+                cartridge(Cartridge.ROM_ONLY)
+                romBanks(2)
                 target(GbcTarget.GBC_COMPATIBLE)
             }
 
@@ -163,8 +163,8 @@ class SpritePaletteSlotEmissionTest {
         val gameIR =
             game("SinglePaletteTest") {
                     config {
-                        cartridge = Cartridge.ROM_ONLY
-                        romBanks = 2
+                        cartridge(Cartridge.ROM_ONLY)
+                        romBanks(2)
                         target(GbcTarget.GBC_COMPATIBLE)
                     }
                     val hero by spritePalette {
@@ -181,8 +181,6 @@ class SpritePaletteSlotEmissionTest {
                     start = playScene
                 }
                 .build()
-
-        val mainC = pipeline.generate(gameIR).files["main.c"] ?: error("main.c not generated")
 
         val allFilesSingle = pipeline.generate(gameIR).files
         val allSourceSingle = allFilesSingle.values.joinToString("\n")

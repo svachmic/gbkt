@@ -148,7 +148,7 @@ class SportVisitor : GenreSystemVisitor {
      * it.
      *
      * Recurses through [IfOp] (the lowering of `whenever { … }` blocks) so guarded
-     * `whenever(buttons.start.pressed) { navigate(raceScene) }` bodies are walked.
+     * `runIf(buttons.start.pressed) { navigate(raceScene) }` bodies are walked.
      */
     private fun findFirstNavigateTarget(gameIR: GameIR): String? {
         val startId = gameIR.startScene ?: return null

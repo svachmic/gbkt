@@ -10,6 +10,7 @@ import io.github.gbkt.core.constraints.AudioChannel
 import io.github.gbkt.core.constraints.AudioChannelType
 import io.github.gbkt.core.constraints.AudioSpec
 import io.github.gbkt.core.constraints.SpriteSize
+import io.github.gbkt.core.constraints.TargetProfiles
 
 /**
  * Shared constants for Game Boy and Game Boy Color hardware.
@@ -22,11 +23,21 @@ object GameBoyConstants {
     // SCREEN
     // =============================================================================
 
-    /** Screen width in pixels. */
-    const val SCREEN_WIDTH = 160
+    /**
+     * Screen width in pixels.
+     *
+     * Derived from the canonical Game Boy screen specification [TargetProfiles.GAME_BOY_SCREEN] —
+     * the single source of truth for 160×144 dimensions.
+     */
+    val SCREEN_WIDTH = TargetProfiles.GAME_BOY_SCREEN.width
 
-    /** Screen height in pixels. */
-    const val SCREEN_HEIGHT = 144
+    /**
+     * Screen height in pixels.
+     *
+     * Derived from the canonical Game Boy screen specification [TargetProfiles.GAME_BOY_SCREEN] —
+     * the single source of truth for 160×144 dimensions.
+     */
+    val SCREEN_HEIGHT = TargetProfiles.GAME_BOY_SCREEN.height
 
     /** Bits per pixel for tiles (both DMG and GBC use 2bpp tiles). */
     const val BITS_PER_PIXEL = 2

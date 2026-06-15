@@ -1,4 +1,0 @@
-camera_y_at_race_entry=8
-car_y_at_race_entry=80
-camera_y_after_60_frame_up_hold=0
-car_y_after_60_frame_up_hold=5

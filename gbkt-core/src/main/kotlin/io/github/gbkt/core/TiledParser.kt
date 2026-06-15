@@ -21,6 +21,12 @@ import org.json.JSONObject
  */
 object TiledParser {
 
+    /** Game Boy background tilemap width and height in tiles (32×32 tile grid). */
+    private const val GB_BG_MAP_DIMENSION = 32
+
+    /** Maximum VRAM tile index (0-based), matching the 256-entry tile table. */
+    private const val GB_MAX_TILE_COUNT = 256
+
     /**
      * Parse a Tiled JSON map file.
      *
@@ -159,22 +165,22 @@ object TiledParser {
                 .trimIndent()
         }
 
-        // Map size must not exceed 32x32 tiles
-        require(map.width <= 32 && map.height <= 32) {
+        // Map size must not exceed GB_BG_MAP_DIMENSION x GB_BG_MAP_DIMENSION tiles
+        require(map.width <= GB_BG_MAP_DIMENSION && map.height <= GB_BG_MAP_DIMENSION) {
             """
             Map too large: ${map.width}x${map.height} tiles
-            Maximum background size is 32x32 tiles (256x256 pixels).
+            Maximum background size is ${GB_BG_MAP_DIMENSION}x${GB_BG_MAP_DIMENSION} tiles (${GB_BG_MAP_DIMENSION * 8}x${GB_BG_MAP_DIMENSION * 8} pixels).
             For larger levels, consider using bank switching or scrolling regions.
             """
                 .trimIndent()
         }
 
-        // Tileset must not exceed 256 tiles
+        // Tileset must not exceed GB_MAX_TILE_COUNT tiles
         val totalTiles = map.tilesets.sumOf { it.tileCount }
-        require(totalTiles <= 256) {
+        require(totalTiles <= GB_MAX_TILE_COUNT) {
             """
             Too many tiles: $totalTiles
-            Maximum is 256 unique tiles (indices 0-255).
+            Maximum is $GB_MAX_TILE_COUNT unique tiles (indices 0-${GB_MAX_TILE_COUNT - 1}).
             Reduce tileset size or use tile sharing between layers.
             """
                 .trimIndent()
