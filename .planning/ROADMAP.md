@@ -340,7 +340,7 @@ Plans:
 | 19. Codegen Fixes — Metasprite Cluster | v0.1.1 | 4/4 | Complete    | 2026-06-13 |
 | 20. Codegen Fixes — Banks and Sprite Transparency | v0.1.1 | 4/4 | Complete    | 2026-06-14 |
 | 21. Codegen Fixes — Platformer and Remaining Seeds | v0.1.1 | 8/8 | Complete    | 2026-06-14 |
-| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 14/14 | Complete   | 2026-06-15 |
+| 22. Golden Screenshot and Evidence Storage Overhaul | v0.1.1 | 14/14 | Complete    | 2026-06-15 |
 
 ### Phase 22: Golden Screenshot and Evidence Storage Overhaul
 

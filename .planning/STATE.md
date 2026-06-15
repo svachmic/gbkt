@@ -4,7 +4,7 @@ milestone: v0.1.1
 milestone_name: Hardening
 status: verifying
 stopped_at: Completed 22-06-PLAN.md
-last_updated: "2026-06-15T06:43:13.994Z"
+last_updated: "2026-06-15T07:04:43.920Z"
 last_activity: 2026-06-15
 progress:
   total_phases: 7
@@ -54,8 +54,8 @@ Phase 12 Wave 12 (Plan 12-19, UAT Anchor 1 title→gameplay): BLOCKED 2026-05-22
 
 ## Current Position
 
-Phase: 22 (golden-screenshot-and-evidence-storage-overhaul) — EXECUTING
-Plan: 14 of 14
+Phase: 22
+Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-06-15
 
@@ -93,7 +93,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 
 **Velocity:**
 
-- Total plans completed: 389
+- Total plans completed: 403
 - Average duration: 6.4 min
 - Total execution time: 0.71 hours
 
@@ -137,6 +137,7 @@ Backlog: minor Shmup gameplay polish — pool-pool collision lacks destroy-on-hi
 | 19 | 4 | - | - |
 | 20 | 4 | - | - |
 | 21 | 8 | - | - |
+| 22 | 14 | - | - |
 
 **Recent Trend:**
 
